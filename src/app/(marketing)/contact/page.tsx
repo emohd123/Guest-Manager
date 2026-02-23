@@ -153,7 +153,7 @@ export default function ContactPage() {
                     <div>
                       <p className="font-medium">Email</p>
                       <p className="text-sm text-muted-foreground">
-                        hello@guestmanager.com
+                        info@onestonead.com
                       </p>
                     </div>
                   </div>
@@ -164,7 +164,7 @@ export default function ContactPage() {
                     <div>
                       <p className="font-medium">Phone</p>
                       <p className="text-sm text-muted-foreground">
-                        +1 (555) 123-4567
+                        +973-33382366
                       </p>
                     </div>
                   </div>
