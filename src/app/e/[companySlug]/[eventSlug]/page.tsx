@@ -1,630 +1,248 @@
 "use client";
 
-import { use, useEffect } from "react";
-import Link from "next/link";
-import { format } from "date-fns";
+import { use } from "react";
 import { trpc } from "@/lib/trpc/client";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
-import { Skeleton } from "@/components/ui/skeleton";
-import {
-  CalendarDays,
-  MapPin,
-  Clock,
-  Users,
-  Ticket,
-  Check,
-  DollarSign,
-  Share2,
-  Loader2,
+import { format } from "date-fns";
+import { 
+  Calendar, 
+  MapPin, 
+  Clock, 
+  Share2, 
+  ShieldCheck, 
+  ArrowLeft,
+  Info,
+  ChevronRight,
+  Ticket
 } from "lucide-react";
-import { useState } from "react";
-import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { TicketWidget } from "@/components/public/TicketWidget";
+import { Skeleton } from "@/components/ui/skeleton";
+import Link from "next/link";
 
-type CartItem = {
-  ticketTypeId: string;
-  name: string;
-  price: number;
-  currency: string;
-  quantity: number;
-};
-
-export default function PublicEventPage({
-  params,
-}: {
-  params: Promise<{ companySlug: string; eventSlug: string }>;
+export default function PublicEventPage({ 
+  params 
+}: { 
+  params: Promise<{ companySlug: string; eventSlug: string }> 
 }) {
   const { companySlug, eventSlug } = use(params);
-  const [cart, setCart] = useState<CartItem[]>([]);
-  const [checkoutStep, setCheckoutStep] = useState<"tickets" | "info" | "confirm">("tickets");
-  const [attendeeInfo, setAttendeeInfo] = useState({ name: "", email: "" });
-  const [orderNumber, setOrderNumber] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const { data: event, isLoading: eventLoading } = trpc.events.getBySlug.useQuery({
-    companySlug,
-    eventSlug,
+  const { data: event, isLoading: eventLoading } = trpc.events.getBySlug.useQuery({ 
+    companySlug, 
+    eventSlug 
   });
 
-  const { data: ticketTypeList, isLoading: ticketsLoading } = trpc.ticketTypes.listPublic.useQuery(
-    { eventId: event?.id ?? "" },
+  const { data: ticketTypes, isLoading: ticketsLoading } = trpc.ticketTypes.listPublic.useQuery(
+    { eventId: event?.id as string },
     { enabled: !!event?.id }
   );
 
-  // Handle Stripe success redirect
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    if (params.get("success") === "1") {
-      setCheckoutStep("confirm");
-      // Clean up the URL
-      window.history.replaceState({}, "", window.location.pathname);
-    }
-    if (params.get("cancelled") === "1") {
-      toast.error("Payment was cancelled. Your order was not placed.");
-      window.history.replaceState({}, "", window.location.pathname);
-    }
-  }, []);
-
-  function updateCart(ticketTypeId: string, name: string, price: number, currency: string, delta: number) {
-    setCart((prev) => {
-      const existing = prev.find((i) => i.ticketTypeId === ticketTypeId);
-      if (!existing) {
-        if (delta <= 0) return prev;
-        return [...prev, { ticketTypeId, name, price, currency, quantity: delta }];
-      }
-      const newQty = existing.quantity + delta;
-      if (newQty <= 0) return prev.filter((i) => i.ticketTypeId !== ticketTypeId);
-      return prev.map((i) => i.ticketTypeId === ticketTypeId ? { ...i, quantity: newQty } : i);
-    });
-  }
-
-  const cartTotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const cartQty = cart.reduce((sum, item) => sum + item.quantity, 0);
-  const isFree = cartTotal === 0;
-
-  function handleCheckout() {
-    if (cart.length === 0) {
-      toast.error("Please select at least one ticket");
-      return;
-    }
-    setCheckoutStep("info");
-  }
-
-  async function handleCompleteOrder() {
-    if (!attendeeInfo.name || !attendeeInfo.email) {
-      toast.error("Please fill in your name and email");
-      return;
-    }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(attendeeInfo.email)) {
-      toast.error("Please enter a valid email address");
-      return;
-    }
-
-    setIsSubmitting(true);
-    try {
-      const response = await fetch("/api/orders", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          companySlug,
-          eventSlug,
-          attendeeName: attendeeInfo.name,
-          attendeeEmail: attendeeInfo.email,
-          cartItems: cart,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error ?? "Failed to complete registration");
-      }
-
-      // Paid order: redirect to Stripe
-      if (data.checkoutUrl) {
-        window.location.href = data.checkoutUrl;
-        return;
-      }
-
-      // Free order: show confirmation
-      setOrderNumber(data.orderNumber ?? null);
-      setCheckoutStep("confirm");
-      toast.success("Registration complete! Check your email for confirmation.");
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Something went wrong. Please try again.");
-    } finally {
-      setIsSubmitting(false);
-    }
-  }
-
   if (eventLoading) {
-    return (
-      <div className="min-h-screen bg-background">
-        <div className="mx-auto max-w-4xl px-4 py-12 sm:px-6 lg:px-8">
-          <Skeleton className="h-64 w-full rounded-2xl" />
-          <div className="mt-8 grid gap-6 lg:grid-cols-3">
-            <div className="lg:col-span-2 space-y-4">
-              <Skeleton className="h-10 w-3/4" />
-              <Skeleton className="h-4 w-full" />
-              <Skeleton className="h-4 w-2/3" />
-            </div>
-            <Skeleton className="h-64 w-full" />
-          </div>
-        </div>
-      </div>
-    );
+    return <LandingPageSkeleton />;
   }
 
   if (!event) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-background px-4 text-center">
-        <Ticket className="h-16 w-16 text-muted-foreground/30" />
-        <h1 className="text-2xl font-bold">Event Not Found</h1>
-        <p className="text-muted-foreground">
-          This event may have been cancelled, is not published, or the link is incorrect.
-        </p>
-        <Link href="/">
-          <Button variant="outline">Go Home</Button>
-        </Link>
+      <div className="flex flex-col items-center justify-center min-h-[70vh] p-8 text-center space-y-6">
+        <div className="h-20 w-20 rounded-3xl bg-zinc-100 flex items-center justify-center text-zinc-400">
+          <Info className="h-10 w-10" />
+        </div>
+        <div className="space-y-2">
+          <h1 className="text-3xl font-black tracking-tight">Event not found</h1>
+          <p className="text-muted-foreground max-w-sm mx-auto">This event may have been moved, deleted, or is not yet published.</p>
+        </div>
+        <Button asChild className="rounded-2xl h-12 px-8 font-bold">
+          <Link href="/">Return Home</Link>
+        </Button>
       </div>
     );
   }
 
-  if (checkoutStep === "confirm") {
-    return (
-      <div className="flex min-h-screen flex-col items-center justify-center bg-background px-4">
-        <div className="w-full max-w-md text-center">
-          <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/50">
-            <Check className="h-10 w-10 text-green-600" />
-          </div>
-          <h1 className="mt-6 text-2xl font-bold">You&apos;re registered!</h1>
-          <p className="mt-2 text-muted-foreground">
-            A confirmation has been sent to <strong>{attendeeInfo.email || "your email"}</strong>.
-          </p>
-          <div className="mt-6 rounded-lg border bg-card p-4 text-left">
-            <p className="font-semibold">{event.title}</p>
-            <p className="mt-1 text-sm text-muted-foreground">
-              {format(new Date(event.startsAt), "EEEE, MMMM d, yyyy · h:mm a")}
-            </p>
-            {orderNumber && (
-              <p className="mt-1 text-xs text-muted-foreground">Order #{orderNumber}</p>
-            )}
-            {cart.length > 0 && (
-              <div className="mt-3 divide-y text-sm">
-                {cart.map((item) => (
-                  <div key={item.ticketTypeId} className="flex justify-between py-2">
-                    <span>{item.name} × {item.quantity}</span>
-                    <span>
-                      {item.price === 0
-                        ? "Free"
-                        : `$${((item.price * item.quantity) / 100).toFixed(2)}`}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-          <Button
-            className="mt-6 w-full"
-            onClick={() => {
-              setCheckoutStep("tickets");
-              setCart([]);
-              setAttendeeInfo({ name: "", email: "" });
-              setOrderNumber(null);
-            }}
-          >
-            Register Another Person
-          </Button>
-          <Link href="/" className="mt-3 block text-sm text-muted-foreground hover:underline">
-            Return to home
-          </Link>
-        </div>
-      </div>
-    );
-  }
+  const handleCheckout = (selection: Record<string, number>) => {
+    // Phase 6.2: Redirect to registration or Stripe checkout
+    console.log("Proceeding to checkout with:", selection);
+    window.alert("Checkout logic coming in the next iteration! Selection: " + JSON.stringify(selection));
+  };
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Cover Image / Header */}
-      <div
-        className={`relative h-48 sm:h-64 lg:h-80 ${
-          event.coverImageUrl
-            ? "bg-cover bg-center"
-            : "bg-gradient-to-br from-primary/80 to-primary"
-        }`}
-        style={event.coverImageUrl ? { backgroundImage: `url(${event.coverImageUrl})` } : undefined}
-      >
-        <div className="absolute inset-0 bg-black/30" />
-        <div className="absolute bottom-0 left-0 right-0 p-6">
-          <div className="mx-auto max-w-4xl">
-            <Badge
-              variant="secondary"
-              className="mb-3 bg-white/20 text-white backdrop-blur"
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <div className="grid lg:grid-cols-12 gap-12 items-start">
+        
+        {/* Left Column: Event Details */}
+        <div className="lg:col-span-7 space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-700">
+          
+          {/* Header */}
+          <div className="space-y-6">
+            <Link 
+              href="/" 
+              className="inline-flex items-center gap-2 text-sm font-black uppercase tracking-widest text-zinc-400 hover:text-primary transition-colors mb-4"
             >
-              {event.eventType.replace("_", " ")}
-            </Badge>
-            <h1 className="text-2xl font-bold text-white sm:text-3xl lg:text-4xl">
+              <ArrowLeft className="h-4 w-4" />
+              All Events
+            </Link>
+            
+            <h1 className="text-5xl sm:text-6xl font-black tracking-tighter leading-[0.9] text-zinc-950 dark:text-white">
               {event.title}
             </h1>
-          </div>
-        </div>
-      </div>
 
-      {/* Main Content */}
-      <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
-        <div className="grid gap-8 lg:grid-cols-3">
-          {/* Left: Event Details */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Event Meta */}
-            <div className="flex flex-wrap gap-4 text-sm">
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <CalendarDays className="h-4 w-4 text-primary" />
-                <span>{format(new Date(event.startsAt), "EEEE, MMMM d, yyyy")}</span>
-              </div>
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <Clock className="h-4 w-4 text-primary" />
-                <span>{format(new Date(event.startsAt), "h:mm a")}</span>
-                {event.endsAt && (
-                  <span>– {format(new Date(event.endsAt), "h:mm a")}</span>
-                )}
-              </div>
-              {event.maxCapacity && (
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Users className="h-4 w-4 text-primary" />
-                  <span>{event.maxCapacity} capacity</span>
+            <div className="flex flex-wrap gap-4 pt-2">
+              <div className="flex items-center gap-3 px-5 py-3 rounded-2xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800">
+                <Calendar className="h-5 w-5 text-primary" />
+                <div className="flex flex-col">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400 leading-none mb-1">Date</span>
+                  <span className="text-sm font-bold leading-none">{format(new Date(event.startsAt), "MMMM d, yyyy")}</span>
                 </div>
-              )}
+              </div>
+              
+              <div className="flex items-center gap-3 px-5 py-3 rounded-2xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800">
+                <Clock className="h-5 w-5 text-primary" />
+                <div className="flex flex-col">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400 leading-none mb-1">Time</span>
+                  <span className="text-sm font-bold leading-none">{format(new Date(event.startsAt), "h:mm a")}</span>
+                </div>
+              </div>
             </div>
+          </div>
 
-            <Separator />
-
-            {/* Description */}
-            {event.description && (
-              <div>
-                <h2 className="mb-3 text-lg font-semibold">About This Event</h2>
-                <p className="whitespace-pre-wrap text-sm text-muted-foreground leading-relaxed">
-                  {event.description}
-                </p>
+          {/* Cover Image */}
+          <div className="aspect-video bg-zinc-100 dark:bg-zinc-900 rounded-[2.5rem] overflow-hidden relative shadow-2xl shadow-zinc-200 dark:shadow-none border border-zinc-100 dark:border-zinc-800">
+            {event.coverImageUrl ? (
+              <img 
+                src={event.coverImageUrl} 
+                alt={event.title} 
+                className="w-full h-full object-cover transition-transform duration-700 hover:scale-110" 
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center">
+                <div className="flex flex-col items-center gap-4 text-zinc-300 dark:text-zinc-800">
+                  <div className="h-20 w-20 rounded-full border-4 border-current border-dashed" />
+                  <span className="font-black italic tracking-tighter text-2xl uppercase">GuestManager</span>
+                </div>
               </div>
             )}
-
-            {/* Tickets section on mobile */}
-            <div className="lg:hidden">
-              <TicketSelector
-                ticketTypes={ticketTypeList ?? []}
-                isLoading={ticketsLoading}
-                cart={cart}
-                updateCart={updateCart}
-                cartTotal={cartTotal}
-                cartQty={cartQty}
-                isFree={isFree}
-                checkoutStep={checkoutStep}
-                attendeeInfo={attendeeInfo}
-                setAttendeeInfo={setAttendeeInfo}
-                onCheckout={handleCheckout}
-                onCompleteOrder={handleCompleteOrder}
-                onBack={() => setCheckoutStep("tickets")}
-                registrationEnabled={event.registrationEnabled ?? false}
-                isSubmitting={isSubmitting}
-              />
-            </div>
-
-            {/* Share */}
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                className="gap-2"
-                onClick={() => {
-                  navigator.clipboard.writeText(window.location.href);
-                  toast.success("Link copied!");
-                }}
-              >
-                <Share2 className="h-4 w-4" /> Share Event
-              </Button>
+            <div className="absolute top-6 left-6 flex gap-2">
+              <span className="px-4 py-2 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white text-xs font-black uppercase tracking-widest shadow-xl">
+                Confirmed Event
+              </span>
             </div>
           </div>
 
-          {/* Right: Ticket selector (desktop) */}
-          <div className="hidden lg:block">
-            <div className="sticky top-6">
-              <TicketSelector
-                ticketTypes={ticketTypeList ?? []}
-                isLoading={ticketsLoading}
-                cart={cart}
-                updateCart={updateCart}
-                cartTotal={cartTotal}
-                cartQty={cartQty}
-                isFree={isFree}
-                checkoutStep={checkoutStep}
-                attendeeInfo={attendeeInfo}
-                setAttendeeInfo={setAttendeeInfo}
-                onCheckout={handleCheckout}
-                onCompleteOrder={handleCompleteOrder}
-                onBack={() => setCheckoutStep("tickets")}
-                registrationEnabled={event.registrationEnabled ?? false}
-                isSubmitting={isSubmitting}
-              />
+          {/* Description */}
+          <div className="space-y-6">
+            <div className="flex items-center gap-3">
+              <div className="h-1px bg-zinc-100 dark:bg-zinc-800 grow" />
+              <h2 className="text-xs font-black uppercase tracking-[0.3em] text-zinc-400 whitespace-nowrap">About this event</h2>
+              <div className="h-1px bg-zinc-100 dark:bg-zinc-800 grow" />
+            </div>
+            
+            <div className="prose prose-zinc dark:prose-invert max-w-none">
+              <p className="text-xl leading-relaxed text-zinc-600 dark:text-zinc-400">
+                {event.description || "Join us for an unforgettable experience. No description provided by the organizer, but expect excellence."}
+              </p>
+            </div>
+
+            <div className="grid sm:grid-cols-2 gap-4 pt-8">
+              <div className="p-6 rounded-3xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 space-y-4">
+                <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+                  <MapPin className="h-5 w-5" />
+                </div>
+                <div>
+                  <h4 className="font-bold">Location</h4>
+                  <p className="text-sm text-muted-foreground">Virtual Event or Venue TBD</p>
+                </div>
+                <Button variant="link" className="px-0 font-bold text-xs h-auto uppercase tracking-wider hvr-underline-from-left">
+                  Show on map <ChevronRight className="h-3 w-3" />
+                </Button>
+              </div>
+
+              <div className="p-6 rounded-3xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 space-y-4">
+                <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+                  <Share2 className="h-5 w-5" />
+                </div>
+                <div>
+                  <h4 className="font-bold">Spread the word</h4>
+                  <p className="text-sm text-muted-foreground">Invite friends and colleagues.</p>
+                </div>
+                <Button variant="link" className="px-0 font-bold text-xs h-auto uppercase tracking-wider hvr-underline-from-left">
+                  Copy link <ChevronRight className="h-3 w-3" />
+                </Button>
+              </div>
             </div>
           </div>
+        </div>
+
+        {/* Right Column: Tickets */}
+        <div className="lg:col-span-5 sticky top-12 space-y-8 animate-in fade-in slide-in-from-right-4 duration-700 delay-200">
+          <div className="p-8 sm:p-10 rounded-[2.5rem] bg-white dark:bg-zinc-950 border border-zinc-100 dark:border-zinc-800 shadow-3xl shadow-zinc-200/50 dark:shadow-none relative overflow-hidden">
+            {/* Background Accent */}
+            <div className="absolute -top-24 -right-24 h-64 w-64 bg-primary/5 rounded-full blur-3xl" />
+            
+            <div className="relative space-y-8">
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
+                  <span className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400">Tickets Available</span>
+                </div>
+                <h3 className="text-3xl font-black tracking-tighter">Registration</h3>
+                <p className="text-muted-foreground text-sm">Select your tickets and proceed to complete your registration below.</p>
+              </div>
+
+              {ticketsLoading ? (
+                <div className="space-y-4">
+                  <Skeleton className="h-24 w-full rounded-2xl" />
+                  <Skeleton className="h-24 w-full rounded-2xl" />
+                </div>
+              ) : (
+                <TicketWidget 
+                  ticketTypes={ticketTypes || []} 
+                  onCheckout={handleCheckout} 
+                />
+              )}
+
+              <div className="pt-6 border-t border-zinc-100 dark:border-zinc-800 flex items-center justify-center gap-6">
+                <div className="flex items-center gap-2 text-zinc-400">
+                  <ShieldCheck className="h-4 w-4" />
+                  <span className="text-[10px] font-bold uppercase tracking-widest">Secure Payments</span>
+                </div>
+                <div className="h-1 w-1 rounded-full bg-zinc-200 dark:bg-zinc-800" />
+                <div className="flex items-center gap-2 text-zinc-400">
+                  <Ticket className="h-4 w-4" />
+                  <span className="text-[10px] font-bold uppercase tracking-widest">Digital Delivery</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <p className="text-center text-xs text-muted-foreground font-medium px-8">
+            Registration is subject to terms of service. Digital tickets will be sent immediately upon successful payment confirmation.
+          </p>
         </div>
       </div>
     </div>
   );
 }
 
-function TicketSelector({
-  ticketTypes,
-  isLoading,
-  cart,
-  updateCart,
-  cartTotal,
-  cartQty,
-  isFree,
-  checkoutStep,
-  attendeeInfo,
-  setAttendeeInfo,
-  onCheckout,
-  onCompleteOrder,
-  onBack,
-  registrationEnabled,
-  isSubmitting,
-}: {
-  ticketTypes: Array<{
-    id: string;
-    name: string;
-    description: string | null;
-    price: number | null;
-    currency: string | null;
-    quantityTotal: number | null;
-    quantitySold: number | null;
-    maxPerOrder: number | null;
-    minPerOrder: number | null;
-  }>;
-  isLoading: boolean;
-  cart: CartItem[];
-  updateCart: (id: string, name: string, price: number, currency: string, delta: number) => void;
-  cartTotal: number;
-  cartQty: number;
-  isFree: boolean;
-  checkoutStep: "tickets" | "info" | "confirm";
-  attendeeInfo: { name: string; email: string };
-  setAttendeeInfo: React.Dispatch<React.SetStateAction<{ name: string; email: string }>>;
-  onCheckout: () => void;
-  onCompleteOrder: () => void;
-  onBack: () => void;
-  registrationEnabled: boolean;
-  isSubmitting: boolean;
-}) {
-  if (!registrationEnabled) {
-    return (
-      <Card>
-        <CardContent className="p-6 text-center">
-          <Ticket className="mx-auto h-8 w-8 text-muted-foreground/50" />
-          <p className="mt-3 text-sm font-medium">Registration Not Open</p>
-          <p className="mt-1 text-xs text-muted-foreground">
-            Registration for this event is not currently available.
-          </p>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (checkoutStep === "info") {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Your Information</CardTitle>
-          <CardDescription>
-            {isFree
-              ? "We'll send your confirmation to this email."
-              : "We'll send your tickets to this email."}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Full Name *</label>
-            <input
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              placeholder="John Doe"
-              value={attendeeInfo.name}
-              onChange={(e) => setAttendeeInfo((a) => ({ ...a, name: e.target.value }))}
-            />
-          </div>
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Email Address *</label>
-            <input
-              type="email"
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              placeholder="john@example.com"
-              value={attendeeInfo.email}
-              onChange={(e) => setAttendeeInfo((a) => ({ ...a, email: e.target.value }))}
-            />
-          </div>
-
-          <Separator />
-
-          <div className="text-sm">
-            <p className="font-medium mb-2">Order Summary</p>
-            {cart.map((item) => (
-              <div key={item.ticketTypeId} className="flex justify-between py-1">
-                <span className="text-muted-foreground">{item.name} × {item.quantity}</span>
-                <span>
-                  {item.price === 0
-                    ? "Free"
-                    : `$${((item.price * item.quantity) / 100).toFixed(2)}`}
-                </span>
-              </div>
-            ))}
-            <Separator className="my-2" />
-            <div className="flex justify-between font-semibold">
-              <span>Total</span>
-              <span>{isFree ? "Free" : `$${(cartTotal / 100).toFixed(2)}`}</span>
-            </div>
-          </div>
-
-          <div className="flex gap-2">
-            <Button variant="outline" className="flex-1" onClick={onBack} disabled={isSubmitting}>
-              Back
-            </Button>
-            <Button className="flex-1 gap-2" onClick={onCompleteOrder} disabled={isSubmitting}>
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  {isFree ? "Registering..." : "Redirecting..."}
-                </>
-              ) : isFree ? (
-                "Complete Registration"
-              ) : (
-                <>
-                  <DollarSign className="h-4 w-4" /> Pay ${(cartTotal / 100).toFixed(2)}
-                </>
-              )}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
+function LandingPageSkeleton() {
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-base">
-          {isLoading ? "Loading tickets..." : "Select Tickets"}
-        </CardTitle>
-        {!isLoading && ticketTypes.length > 0 && (
-          <CardDescription>Choose the tickets you&apos;d like</CardDescription>
-        )}
-      </CardHeader>
-      <CardContent className="space-y-3">
-        {isLoading ? (
-          <div className="space-y-2">
-            {[1, 2].map((i) => (
-              <Skeleton key={i} className="h-20 w-full" />
-            ))}
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <div className="grid lg:grid-cols-12 gap-12">
+        <div className="lg:col-span-7 space-y-8">
+          <Skeleton className="h-6 w-32 rounded-lg" />
+          <Skeleton className="h-16 w-3/4 rounded-xl" />
+          <div className="flex gap-4">
+            <Skeleton className="h-12 w-40 rounded-2xl" />
+            <Skeleton className="h-12 w-40 rounded-2xl" />
           </div>
-        ) : ticketTypes.length === 0 ? (
-          <div className="py-4 text-center text-sm text-muted-foreground">
-            <Ticket className="mx-auto mb-2 h-8 w-8 opacity-30" />
-            No tickets available yet.
+          <Skeleton className="aspect-video w-full rounded-[2.5rem]" />
+          <div className="space-y-4">
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-5/6" />
           </div>
-        ) : (
-          <>
-            {ticketTypes.map((tt) => {
-              const cartItem = cart.find((i) => i.ticketTypeId === tt.id);
-              const qty = cartItem?.quantity ?? 0;
-              const available =
-                tt.quantityTotal != null
-                  ? tt.quantityTotal - (tt.quantitySold ?? 0)
-                  : null;
-              const maxQty = Math.min(
-                tt.maxPerOrder ?? 10,
-                available ?? 10
-              );
-              const isSoldOut = available !== null && available <= 0;
-
-              return (
-                <div
-                  key={tt.id}
-                  className={`rounded-lg border p-4 ${
-                    qty > 0 ? "border-primary/50 bg-primary/5" : ""
-                  } ${isSoldOut ? "opacity-50" : ""}`}
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-sm">{tt.name}</p>
-                      {tt.description && (
-                        <p className="mt-0.5 text-xs text-muted-foreground line-clamp-2">
-                          {tt.description}
-                        </p>
-                      )}
-                      <div className="mt-1 flex items-center gap-2">
-                        <span className="text-sm font-semibold text-primary">
-                          {(tt.price ?? 0) === 0
-                            ? "Free"
-                            : `$${((tt.price ?? 0) / 100).toFixed(2)}`}
-                        </span>
-                        {available !== null && (
-                          <span className="text-xs text-muted-foreground">
-                            {isSoldOut ? "Sold out" : `${available} left`}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                      {qty > 0 ? (
-                        <>
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            className="h-7 w-7"
-                            onClick={() => updateCart(tt.id, tt.name, tt.price ?? 0, tt.currency ?? "USD", -1)}
-                          >
-                            −
-                          </Button>
-                          <span className="w-5 text-center text-sm font-medium">{qty}</span>
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            className="h-7 w-7"
-                            disabled={qty >= maxQty}
-                            onClick={() => updateCart(tt.id, tt.name, tt.price ?? 0, tt.currency ?? "USD", 1)}
-                          >
-                            +
-                          </Button>
-                        </>
-                      ) : (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          disabled={isSoldOut}
-                          onClick={() => updateCart(tt.id, tt.name, tt.price ?? 0, tt.currency ?? "USD", 1)}
-                        >
-                          {isSoldOut ? "Sold Out" : "Add"}
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-
-            {cartQty > 0 && (
-              <>
-                <Separator />
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">
-                    {cartQty} ticket{cartQty !== 1 ? "s" : ""}
-                  </span>
-                  <span className="font-semibold">
-                    {isFree ? "Free" : `$${(cartTotal / 100).toFixed(2)}`}
-                  </span>
-                </div>
-                <Button className="w-full gap-2" onClick={onCheckout}>
-                  {isFree ? (
-                    <>
-                      <Check className="h-4 w-4" /> Register Free
-                    </>
-                  ) : (
-                    <>
-                      <DollarSign className="h-4 w-4" /> Checkout
-                    </>
-                  )}
-                </Button>
-              </>
-            )}
-          </>
-        )}
-      </CardContent>
-    </Card>
+        </div>
+        <div className="lg:col-span-5">
+          <Skeleton className="h-[600px] w-full rounded-[2.5rem]" />
+        </div>
+      </div>
+    </div>
   );
 }

@@ -80,6 +80,7 @@ export const guestsRouter = router({
         phone: z.string().max(50).optional(),
         guestType: z.string().max(100).optional(),
         tableNumber: z.string().max(50).optional(),
+        seatNumber: z.string().max(50).optional(),
         notes: z.string().optional(),
         tags: z.array(z.string()).optional(),
       })
@@ -96,6 +97,7 @@ export const guestsRouter = router({
           phone: input.phone,
           guestType: input.guestType,
           tableNumber: input.tableNumber,
+          seatNumber: input.seatNumber,
           notes: input.notes,
           tags: input.tags,
           source: "manual",
@@ -117,6 +119,7 @@ export const guestsRouter = router({
             phone: z.string().optional(),
             guestType: z.string().optional(),
             tableNumber: z.string().optional(),
+            seatNumber: z.string().optional(),
             notes: z.string().optional(),
             tags: z.array(z.string()).optional(),
           })
@@ -133,6 +136,7 @@ export const guestsRouter = router({
         phone: g.phone,
         guestType: g.guestType,
         tableNumber: g.tableNumber,
+        seatNumber: g.seatNumber,
         notes: g.notes,
         tags: g.tags,
         source: "import" as const,
@@ -155,6 +159,7 @@ export const guestsRouter = router({
           .optional(),
         guestType: z.string().max(100).optional(),
         tableNumber: z.string().max(50).optional(),
+        seatNumber: z.string().max(50).optional(),
         notes: z.string().optional(),
         tags: z.array(z.string()).optional(),
       })

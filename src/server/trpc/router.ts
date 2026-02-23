@@ -12,6 +12,7 @@ import { formResponsesRouter } from "./routers/formResponses";
 import { devicesRouter } from "./routers/devices";
 import { ticketsRouter } from "./routers/tickets";
 import { listsRouter } from "./routers/lists";
+import { dataImportsRouter } from "./routers/dataImports";
 
 export const appRouter = router({
   events: eventsRouter,
@@ -27,6 +28,7 @@ export const appRouter = router({
   devices: devicesRouter,
   tickets: ticketsRouter,
   lists: listsRouter,
+  dataImports: dataImportsRouter,
 });
 
 export type AppRouter = typeof appRouter;

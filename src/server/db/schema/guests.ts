@@ -32,6 +32,7 @@ export const guests = pgTable("guests", {
   partySize: integer("party_size").default(1),
   partyLeaderId: uuid("party_leader_id"),
   tableNumber: varchar("table_number", { length: 50 }),
+  seatNumber: varchar("seat_number", { length: 50 }),
   notes: text("notes"),
   tags: text("tags").array(),
   guestType: varchar("guest_type", { length: 100 }),

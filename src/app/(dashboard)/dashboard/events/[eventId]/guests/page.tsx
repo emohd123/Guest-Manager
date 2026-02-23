@@ -9,16 +9,7 @@ import { GuestImportDialog } from "@/components/guests/guest-import-dialog";
 import { GuestQrDialog, BulkQrPrintDialog } from "@/components/guests/guest-qr-dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { GuestModal } from "@/components/guests/GuestModal";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -56,6 +47,7 @@ type Guest = {
   status: string;
   guestType: string | null;
   tableNumber: string | null;
+  seatNumber: string | null;
   tags: string[] | null;
   notes: string | null;
   createdAt: string;
@@ -73,15 +65,6 @@ const statusColors: Record<string, string> = {
   no_show: "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200",
 };
 
-const emptyGuestForm = {
-  firstName: "",
-  lastName: "",
-  email: "",
-  phone: "",
-  guestType: "",
-  tableNumber: "",
-  notes: "",
-};
 
 export default function EventGuestsPage({
   params,
@@ -92,7 +75,6 @@ export default function EventGuestsPage({
   const [importOpen, setImportOpen] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
   const [editGuest, setEditGuest] = useState<Guest | null>(null);
-  const [guestForm, setGuestForm] = useState(emptyGuestForm);
   const [qrGuest, setQrGuest] = useState<Guest | null>(null);
   const [bulkQrOpen, setBulkQrOpen] = useState(false);
 
@@ -110,22 +92,7 @@ export default function EventGuestsPage({
     ...(statusFilter !== "all" ? { status: statusFilter } : {}),
   });
 
-  const { data: stats, refetch: refetchStats } = trpc.guests.stats.useQuery({
-    eventId,
-  });
-
-  const createGuest = trpc.guests.create.useMutation({
-    onSuccess: () => {
-      toast.success("Guest added");
-      setAddOpen(false);
-      setGuestForm(emptyGuestForm);
-      refetch();
-      refetchStats();
-    },
-    onError: (err) => {
-      toast.error(err.message);
-    },
-  });
+  const { data: stats, refetch: refetchStats } = trpc.guests.stats.useQuery({ eventId });
 
   const deleteGuest = trpc.guests.delete.useMutation({
     onSuccess: () => {
@@ -137,10 +104,9 @@ export default function EventGuestsPage({
 
   const updateGuest = trpc.guests.update.useMutation({
     onSuccess: () => {
-      toast.success("Guest updated");
-      setEditGuest(null);
       refetch();
       refetchStats();
+      toast.success("Guest updated");
     },
   });
 
@@ -195,29 +161,6 @@ export default function EventGuestsPage({
 
   const openEditDialog = (guest: Guest) => {
     setEditGuest(guest);
-    setGuestForm({
-      firstName: guest.firstName ?? "",
-      lastName: guest.lastName ?? "",
-      email: guest.email ?? "",
-      phone: guest.phone ?? "",
-      guestType: guest.guestType ?? "",
-      tableNumber: guest.tableNumber ?? "",
-      notes: guest.notes ?? "",
-    });
-  };
-
-  const handleEditSave = () => {
-    if (!editGuest) return;
-    updateGuest.mutate({
-      id: editGuest.id,
-      firstName: guestForm.firstName || undefined,
-      lastName: guestForm.lastName || undefined,
-      email: guestForm.email || undefined,
-      phone: guestForm.phone || undefined,
-      guestType: guestForm.guestType || undefined,
-      tableNumber: guestForm.tableNumber || undefined,
-      notes: guestForm.notes || undefined,
-    });
   };
 
   const columns: ColumnDef<Guest>[] = [
@@ -258,9 +201,16 @@ export default function EventGuestsPage({
     },
     {
       accessorKey: "tableNumber",
-      header: "Table",
+      header: "Table/Seat",
       cell: ({ row }) => (
-        <span className="text-sm">{row.original.tableNumber ?? "—"}</span>
+        <div className="flex flex-col">
+          <span className="text-sm font-medium">{row.original.tableNumber ?? "—"}</span>
+          {row.original.seatNumber && (
+            <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-tighter">
+              Seat {row.original.seatNumber}
+            </span>
+          )}
+        </div>
       ),
     },
     {
@@ -366,7 +316,7 @@ export default function EventGuestsPage({
           <Button
             className="gap-2"
             onClick={() => {
-              setGuestForm(emptyGuestForm);
+              setEditGuest(null);
               setAddOpen(true);
             }}
           >
@@ -412,135 +362,22 @@ export default function EventGuestsPage({
         }}
       />
 
-      {/* Add Guest Dialog */}
-      <Dialog open={addOpen} onOpenChange={setAddOpen}>
-        <DialogContent className="sm:max-w-lg">
-          <DialogHeader>
-            <DialogTitle>Add Guest</DialogTitle>
-            <DialogDescription>
-              Manually add a guest to this event.
-            </DialogDescription>
-          </DialogHeader>
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              createGuest.mutate({
-                eventId,
-                firstName: guestForm.firstName,
-                lastName: guestForm.lastName || undefined,
-                email: guestForm.email || undefined,
-                phone: guestForm.phone || undefined,
-                guestType: guestForm.guestType || undefined,
-                tableNumber: guestForm.tableNumber || undefined,
-                notes: guestForm.notes || undefined,
-              });
-            }}
-            className="space-y-4"
-          >
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="g-firstName">First Name *</Label>
-                <Input
-                  id="g-firstName"
-                  value={guestForm.firstName}
-                  onChange={(e) =>
-                    setGuestForm((d) => ({
-                      ...d,
-                      firstName: e.target.value,
-                    }))
-                  }
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="g-lastName">Last Name</Label>
-                <Input
-                  id="g-lastName"
-                  value={guestForm.lastName}
-                  onChange={(e) =>
-                    setGuestForm((d) => ({ ...d, lastName: e.target.value }))
-                  }
-                />
-              </div>
-            </div>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="g-email">Email</Label>
-                <Input
-                  id="g-email"
-                  type="email"
-                  value={guestForm.email}
-                  onChange={(e) =>
-                    setGuestForm((d) => ({ ...d, email: e.target.value }))
-                  }
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="g-phone">Phone</Label>
-                <Input
-                  id="g-phone"
-                  value={guestForm.phone}
-                  onChange={(e) =>
-                    setGuestForm((d) => ({ ...d, phone: e.target.value }))
-                  }
-                />
-              </div>
-            </div>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="g-type">Guest Type</Label>
-                <Input
-                  id="g-type"
-                  placeholder="e.g. VIP, Speaker, Media"
-                  value={guestForm.guestType}
-                  onChange={(e) =>
-                    setGuestForm((d) => ({
-                      ...d,
-                      guestType: e.target.value,
-                    }))
-                  }
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="g-table">Table Number</Label>
-                <Input
-                  id="g-table"
-                  value={guestForm.tableNumber}
-                  onChange={(e) =>
-                    setGuestForm((d) => ({
-                      ...d,
-                      tableNumber: e.target.value,
-                    }))
-                  }
-                />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="g-notes">Notes</Label>
-              <Textarea
-                id="g-notes"
-                value={guestForm.notes}
-                onChange={(e) =>
-                  setGuestForm((d) => ({ ...d, notes: e.target.value }))
-                }
-                rows={3}
-              />
-            </div>
-            <div className="flex justify-end gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setAddOpen(false)}
-              >
-                Cancel
-              </Button>
-              <Button type="submit" disabled={createGuest.isPending}>
-                {createGuest.isPending ? "Adding..." : "Add Guest"}
-              </Button>
-            </div>
-          </form>
-        </DialogContent>
-      </Dialog>
+      {/* Unified Guest Modal */}
+      <GuestModal
+        open={addOpen || !!editGuest}
+        onOpenChange={(open) => {
+          if (!open) {
+            setAddOpen(false);
+            setEditGuest(null);
+          }
+        }}
+        eventId={eventId}
+        guest={editGuest}
+        onSuccess={() => {
+          refetch();
+          refetchStats();
+        }}
+      />
 
       {/* QR Code Dialog (single guest) */}
       <GuestQrDialog
@@ -548,139 +385,15 @@ export default function EventGuestsPage({
         onOpenChange={(open) => {
           if (!open) setQrGuest(null);
         }}
-        guest={qrGuest}
+        guest={qrGuest as NonNullable<Guest>}
       />
 
       {/* Bulk QR Print Dialog */}
       <BulkQrPrintDialog
         open={bulkQrOpen}
         onOpenChange={setBulkQrOpen}
-        guests={(data?.guests ?? []) as Guest[]}
+        guests={(data?.guests ?? []) as NonNullable<Guest>[]}
       />
-
-      {/* Edit Guest Dialog */}
-      <Dialog
-        open={!!editGuest}
-        onOpenChange={(open) => {
-          if (!open) setEditGuest(null);
-        }}
-      >
-        <DialogContent className="sm:max-w-lg">
-          <DialogHeader>
-            <DialogTitle>Edit Guest</DialogTitle>
-            <DialogDescription>Update guest details.</DialogDescription>
-          </DialogHeader>
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              handleEditSave();
-            }}
-            className="space-y-4"
-          >
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="e-firstName">First Name *</Label>
-                <Input
-                  id="e-firstName"
-                  value={guestForm.firstName}
-                  onChange={(e) =>
-                    setGuestForm((d) => ({
-                      ...d,
-                      firstName: e.target.value,
-                    }))
-                  }
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="e-lastName">Last Name</Label>
-                <Input
-                  id="e-lastName"
-                  value={guestForm.lastName}
-                  onChange={(e) =>
-                    setGuestForm((d) => ({ ...d, lastName: e.target.value }))
-                  }
-                />
-              </div>
-            </div>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="e-email">Email</Label>
-                <Input
-                  id="e-email"
-                  type="email"
-                  value={guestForm.email}
-                  onChange={(e) =>
-                    setGuestForm((d) => ({ ...d, email: e.target.value }))
-                  }
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="e-phone">Phone</Label>
-                <Input
-                  id="e-phone"
-                  value={guestForm.phone}
-                  onChange={(e) =>
-                    setGuestForm((d) => ({ ...d, phone: e.target.value }))
-                  }
-                />
-              </div>
-            </div>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="e-type">Guest Type</Label>
-                <Input
-                  id="e-type"
-                  placeholder="e.g. VIP, Speaker, Media"
-                  value={guestForm.guestType}
-                  onChange={(e) =>
-                    setGuestForm((d) => ({
-                      ...d,
-                      guestType: e.target.value,
-                    }))
-                  }
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="e-table">Table Number</Label>
-                <Input
-                  id="e-table"
-                  value={guestForm.tableNumber}
-                  onChange={(e) =>
-                    setGuestForm((d) => ({
-                      ...d,
-                      tableNumber: e.target.value,
-                    }))
-                  }
-                />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="e-notes">Notes</Label>
-              <Textarea
-                id="e-notes"
-                value={guestForm.notes}
-                onChange={(e) =>
-                  setGuestForm((d) => ({ ...d, notes: e.target.value }))
-                }
-                rows={3}
-              />
-            </div>
-            <div className="flex justify-end gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setEditGuest(null)}
-              >
-                Cancel
-              </Button>
-              <Button type="submit" disabled={updateGuest.isPending}>
-                {updateGuest.isPending ? "Saving..." : "Save Changes"}
-              </Button>
-            </div>
-          </form>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

@@ -17,3 +17,4 @@ export * from "./scans";
 export * from "./campaigns";
 export * from "./form-responses";
 export * from "./devices";
+export * from "./data-imports";

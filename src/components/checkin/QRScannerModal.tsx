@@ -185,7 +185,7 @@ export function QRScannerModal({ open, onClose, onScan }: QRScannerModalProps) {
                 {/* Scan laser line */}
                 <div
                   className={cn(
-                    "absolute left-4 right-4 h-0.5 bg-gradient-to-r from-transparent via-green-400 to-transparent",
+                    "absolute left-4 right-4 h-0.5 bg-linear-to-r from-transparent via-green-400 to-transparent",
                     "animate-[scanline_2s_ease-in-out_infinite]"
                   )}
                   style={{ animation: "scanline 2s ease-in-out infinite" }}

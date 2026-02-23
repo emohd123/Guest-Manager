@@ -19,7 +19,8 @@ import {
   Upload,
   Megaphone,
   Paintbrush,
-  ArrowLeft
+  ArrowLeft,
+  Armchair
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -31,6 +32,7 @@ const getNavigation = (eventId: string) => [
     items: [
       { label: "Overview", href: `/dashboard/events/${eventId}`, icon: LayoutDashboard },
       { label: "Attendees", href: `/dashboard/events/${eventId}/guests`, icon: Users },
+      { label: "Seating", href: `/dashboard/events/${eventId}/seating`, icon: Armchair },
       { label: "Sessions", href: `/dashboard/events/${eventId}/sessions`, icon: CalendarDays },
     ],
   },
@@ -38,7 +40,7 @@ const getNavigation = (eventId: string) => [
     group: "Ticketing",
     items: [
       { label: "Orders", href: `/dashboard/events/${eventId}/orders`, icon: ShoppingCart },
-      { label: "Registration types", href: `/dashboard/events/${eventId}/registration-types`, icon: Ticket },
+      { label: "Ticket types", href: `/dashboard/events/${eventId}/tickets`, icon: Ticket },
     ],
   },
   {
@@ -55,7 +57,6 @@ const getNavigation = (eventId: string) => [
       { label: "Design and setup", href: `/dashboard/events/${eventId}/design`, icon: Paintbrush },
       { label: "Edit event details", href: `/dashboard/events/${eventId}/settings`, icon: Settings },
       { label: "Sent emails", href: `/dashboard/events/${eventId}/emails`, icon: Mail },
-      { label: "Ticket types", href: `/dashboard/events/${eventId}/tickets`, icon: Ticket },
       { label: "Imports", href: `/dashboard/events/${eventId}/imports`, icon: Upload },
       { label: "Lists", href: `/dashboard/events/${eventId}/lists`, icon: List },
       { label: "Campaigns", href: `/dashboard/events/${eventId}/campaigns`, icon: Megaphone },
