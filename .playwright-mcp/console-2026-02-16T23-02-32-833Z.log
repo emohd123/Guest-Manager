@@ -1,0 +1,147 @@
+[    2515ms] [ERROR] A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:
+
+- A server/client branch `if (typeof window !== 'undefined')`.
+- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.
+- Date formatting in a user's locale which doesn't match the server.
+- External changing data without sending a snapshot of it along with the HTML.
+- Invalid HTML tag nesting.
+
+It can also happen if the client has a browser extension installed which messes with the HTML before React loaded.
+
+%s%s https://react.dev/link/hydration-mismatch 
+
+  ...
+    <script>
+    <script>
+    <script>
+    <script>
+    <script>
+    <ClientSegmentRoot Component={function DashboardLayout} slots={{...}} serverProvidedParams={{params:{}, ...}}>
+      <DashboardLayout params={Promise}>
+        <div className="flex h-scr...">
+          <CommandPalette>
+            <CommandDialog open={false} onOpenChange={function bound dispatchSetState}>
+              <Dialog open={false} onOpenChange={function bound dispatchSetState}>
+                <Dialog data-slot="dialog" open={false} onOpenChange={function bound dispatchSetState}>
+                  <DialogProvider scope={undefined} triggerRef={{current:null}} contentRef={{current:null}} ...>
+                    <DialogHeader className="sr-only">
+                      <div data-slot="dialog-header" className="flex flex-...">
+                        <DialogTitle>
+                          <DialogTitle data-slot="dialog-title" className="text-lg le...">
+                            <Primitive.h2 id="radix-_R_1..." data-slot="dialog-title" className="text-lg le..." ...>
+                              <h2
++                               id="radix-_R_1itmlbH1_"
+-                               id="radix-_R_6itmlbH1_"
+                                data-slot="dialog-title"
+                                className="text-lg leading-none font-semibold"
+                                ref={null}
+                              >
++                               Command Palette
+                        <DialogDescription>
+                          <DialogDescription data-slot="dialog-des..." className="text-muted...">
+                            <Primitive.p id="radix-_R_1..." data-slot="dialog-des..." className="text-muted..." ...>
+                              <p
++                               id="radix-_R_1itmlbH2_"
+-                               id="radix-_R_6itmlbH2_"
+                                data-slot="dialog-description"
+                                className="text-muted-foreground text-sm"
+                                ref={null}
+                              >
++                               Search for a command to run...
+                    ...
+          <div>
+          <Sheet>
+          <div className="flex flex-...">
+            ...
+              <DropdownMenuTrigger data-slot="dropdown-m..." asChild={true}>
+                <MenuAnchor asChild={true} __scopeMenu={{Menu:[...], ...}}>
+                  <PopperAnchor __scopePopper={{Menu:[...], ...}} asChild={true} ref={null}>
+                    <Primitive.div asChild={true} ref={function}>
+                      <Primitive.div.Slot ref={function}>
+                        <Primitive.div.SlotClone ref={function}>
+                          <Primitive.button type="button" id="radix-_R_e..." aria-haspopup="menu" aria-expanded={false} ...>
+                            <Primitive.button.Slot type="button" id="radix-_R_e..." aria-haspopup="menu" ...>
+                              <Primitive.button.SlotClone type="button" id="radix-_R_e..." aria-haspopup="menu" ...>
+                                <Button variant="ghost" size="icon" className="rounded-full" type="button" ...>
+                                  <button
+                                    data-slot="dropdown-menu-trigger"
+                                    data-variant="ghost"
+                                    data-size="icon"
+                                    className={"inline-flex items-center justify-center gap-2 whitespace-nowrap text-..."}
+                                    type="button"
++                                   id="radix-_R_ecitmlb_"
+-                                   id="radix-_R_1piitmlb_"
+                                    aria-haspopup="menu"
+                                    aria-expanded={false}
+                                    aria-controls={undefined}
+                                    data-state="closed"
+                                    data-disabled={undefined}
+                                    disabled={false}
+                                    onPointerDown={function handleEvent}
+                                    onKeyDown={function handleEvent}
+                                    ref={function}
+                                  >
+            ...
+              <div className="space-y-4">
+                ...
+                  <SelectTrigger className="w-[150px]">
+                    <SelectTrigger data-slot="select-tri..." data-size="default" className={"border-i..."}>
+                      <PopperAnchor asChild={true} __scopePopper={{Popper:[...]}}>
+                        <Primitive.div asChild={true} ref={function}>
+                          <Primitive.div.Slot ref={function}>
+                            <Primitive.div.SlotClone ref={function}>
+                              <Primitive.button type="button" role="combobox" aria-controls="radix-_R_9..." ...>
+                                <button
+                                  type="button"
+                                  role="combobox"
++                                 aria-controls="radix-_R_9aatpesnebn5rkitmlb_"
+-                                 aria-controls="radix-_R_159bn5ritpesneiitmlb_"
+                                  aria-expanded={false}
+                                  aria-required={undefined}
+                                  aria-autocomplete="none"
+                                  dir="ltr"
+                                  data-state="closed"
+                                  disabled={false}
+                                  data-disabled={undefined}
+                                  data-placeholder={undefined}
+                                  data-slot="select-trigger"
+                                  data-size="default"
+                                  className={"border-input data-[placeholder]:text-muted-foreground [&_svg:not([class..."}
+                                  onClick={function handleEvent}
+                                  onPointerDown={function handleEvent}
+                                  onKeyDown={function handleEvent}
+                                  ref={function}
+                                >
+                  ...
+                <div>
+                ...
+                  <SelectTrigger className="h-8 w-[70px]">
+                    <SelectTrigger data-slot="select-tri..." data-size="default" className={"border-i..."}>
+                      <PopperAnchor asChild={true} __scopePopper={{Popper:[...]}}>
+                        <Primitive.div asChild={true} ref={function}>
+                          <Primitive.div.Slot ref={function}>
+                            <Primitive.div.SlotClone ref={function}>
+                              <Primitive.button type="button" role="combobox" aria-controls="radix-_R_r..." ...>
+                                <button
+                                  type="button"
+                                  role="combobox"
++                                 aria-controls="radix-_R_raatpesnebn5rkitmlb_"
+-                                 aria-controls="radix-_R_3d9bn5ritpesneiitmlb_"
+                                  aria-expanded={false}
+                                  aria-required={undefined}
+                                  aria-autocomplete="none"
+                                  dir="ltr"
+                                  data-state="closed"
+                                  disabled={false}
+                                  data-disabled={undefined}
+                                  data-placeholder={undefined}
+                                  data-slot="select-trigger"
+                                  data-size="default"
+                                  className={"border-input data-[placeholder]:text-muted-foreground [&_svg:not([class..."}
+                                  onClick={function handleEvent}
+                                  onPointerDown={function handleEvent}
+                                  onKeyDown={function handleEvent}
+                                  ref={function}
+                                >
+                  ...
+ @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127

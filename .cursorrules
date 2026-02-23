@@ -1,0 +1,44 @@
+# Guest Manager Clone - AI Assistant Rules & Context
+
+## 1. Tech Stack
+- **Framework**: Next.js (App Router, React 19)
+- **Styling**: Tailwind CSS v4, shadcn/ui, Radix UI primitives, Lucide React icons, Framer Motion
+- **Database**: PostgreSQL (via Supabase)
+- **ORM**: Drizzle ORM
+- **API/Data Fetching**: tRPC + React Query (@tanstack/react-query)
+- **Authentication**: Supabase Auth (@supabase/ssr)
+- **Forms & Validation**: React Hook Form + Zod
+- **Tables**: @tanstack/react-table (Data Tables)
+- **Integrations**: Stripe (Payments), Resend (Emails)
+
+## 2. Project Goal
+We are cloning the functionality and design of `app.guestmanager.com`.
+The application is a data-heavy B2B dashboard focused on Event Management.
+Core modules include: Events, Contacts (CRM), Tickets, Scans, Orders, Promotions, Campaigns, and Form Responses.
+
+## 3. Key Design Principles (UI/UX)
+- **Data Tables Everywhere**: Almost every primary view is a powerful data table. Tables MUST support row selection (checkboxes), column visibility toggling, pagination, and global search.
+- **Global Actions**: Use a global `+` Add menu in the top navigation for quick entity creation (events, contacts) from anywhere.
+- **Sidebar Navigation**: Persistent, collapsible left sidebar containing icons for all modules.
+- **Empty States**: Views without data must have a clean "Empty State" with a large subtle icon, a description, and a primary CTA button to create the first item.
+- **Modals & Dialogs**: Prefer opening shadcn `Dialog` components for creating/editing entities to avoid navigating away from list views unless the form is extremely complex.
+
+## 4. Coding Conventions
+- **Absolute Imports**: Always use `@/` alias for importing internal modules (e.g., `@/components/ui/button`, `@/lib/utils`).
+- **Server vs Client Components**: Use `"use client"` ONLY when necessary (hooks, interactive state, event listeners). Keep layouts and complex data-fetching at the server level where possible.
+- **tRPC Usage**: 
+  - Define routers in `src/server/api/routers/`
+  - Fetch data on the client using `trpc.module.queryName.useQuery()`
+  - Mutate data using `trpc.module.mutationName.useMutation()` and always call `.refetch()` on the associated query list after a successful mutation.
+- **Drizzle schema**: Define all tables in `src/server/db/schema/`. Run `npm run db:generate` and `npm run db:push` when modifying schema. DO NOT edit generated SQL directly.
+- **Icons**: Always use `lucide-react` for icons.
+
+## 5. Security & Auth
+- All protected dashboard routes must verify the Supabase session in Next.js Middleware or at the layout level.
+- tRPC procedures should use `protectedProcedure` when accessing user data.
+
+## 6. Development Commands
+- `npm run dev` - Start local development server
+- `npm run db:generate` - Generate Drizzle migrations
+- `npm run db:push` - Push schema changes directly to Supabase DB
+- `npm run db:studio` - Open Drizzle local studio UI to inspect the local database
