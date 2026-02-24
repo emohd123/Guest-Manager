@@ -1,6 +1,6 @@
 "use client";
 
-import { use } from "react";
+import { use, useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,7 +13,12 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { ImagePlus, Paintbrush, Globe, ExternalLink } from "lucide-react";
+import { ImagePlus, Paintbrush, ExternalLink, Loader2, Check } from "lucide-react";
+import { trpc } from "@/lib/trpc/client";
+import { ImageUpload } from "@/components/shared/ImageUpload";
+import { toast } from "sonner";
+import Link from "next/link";
+import { DesignSettings } from "@/types/event";
 
 export default function DesignSetupPage({
   params,
@@ -21,117 +26,178 @@ export default function DesignSetupPage({
   params: Promise<{ eventId: string }>;
 }) {
   const { eventId } = use(params);
+  const utils = trpc.useUtils();
+
+  const { data: event, isLoading } = trpc.events.get.useQuery({ id: eventId });
+  
+  const [coverImageUrl, setCoverImageUrl] = useState("");
+  const [logoUrl, setLogoUrl] = useState("");
+  const [primaryColor, setPrimaryColor] = useState("#2563EB");
+  const [backgroundColor, setBackgroundColor] = useState("#FFFFFF");
+  const [customCss, setCustomCss] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
+
+  const [isInitialized, setIsInitialized] = useState(false);
+
+  useEffect(() => {
+    // Initial state population from fetched data
+    if (event && !isInitialized) {
+      setTimeout(() => {
+        setCoverImageUrl(event.coverImageUrl || "");
+        const settings = (event.settings as DesignSettings) || {};
+        setLogoUrl(settings.logoUrl || "");
+        setPrimaryColor(settings.primaryColor || "#2563EB");
+        setBackgroundColor(settings.backgroundColor || "#FFFFFF");
+        setCustomCss(settings.customCss || "");
+        setIsInitialized(true);
+      }, 0);
+    }
+  }, [event, isInitialized]);
+
+  const updateMutation = trpc.events.update.useMutation({
+    onSuccess: () => {
+      toast.success("Design settings saved successfully");
+      utils.events.get.invalidate({ id: eventId });
+      setIsSaving(false);
+    },
+    onError: (err) => {
+      toast.error(err.message);
+      setIsSaving(false);
+    }
+  });
+
+  const handleSave = () => {
+    setIsSaving(true);
+    updateMutation.mutate({
+      id: eventId,
+      coverImageUrl: coverImageUrl || undefined,
+      settings: {
+        logoUrl,
+        primaryColor,
+        backgroundColor,
+        customCss,
+      }
+    });
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex h-[50vh] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="space-y-6 max-w-5xl mx-auto pb-20">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold">Design and Setup</h1>
+          <h1 className="text-3xl font-black tracking-tight">Design and Setup</h1>
           <p className="text-muted-foreground">Customize your event landing page and branding.</p>
         </div>
-        <Button className="gap-2" variant="outline">
-          <ExternalLink className="h-4 w-4" /> Preview Live Page
-        </Button>
+        <div className="flex items-center gap-3">
+          <Button className="gap-2 rounded-2xl h-12 font-bold" variant="outline" asChild>
+            <Link href={`/e/${(event as any)?.companySlug}/${event?.slug}`} target="_blank">
+              <ExternalLink className="h-4 w-4" /> Preview
+            </Link>
+          </Button>
+          <Button 
+            className="gap-2 rounded-2xl h-12 px-8 font-black shadow-xl shadow-primary/20" 
+            onClick={handleSave}
+            disabled={isSaving}
+          >
+            {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+            Save Changes
+          </Button>
+        </div>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <ImagePlus className="h-5 w-5" />
+      <div className="grid gap-8 md:grid-cols-2">
+        <Card className="rounded-[2.5rem] border-none shadow-xl shadow-zinc-200/50 dark:shadow-none bg-white dark:bg-zinc-950">
+          <CardHeader className="p-8 pb-4">
+            <CardTitle className="flex items-center gap-3 text-xl font-bold">
+              <div className="h-10 w-10 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
+                <ImagePlus className="h-5 w-5" />
+              </div>
               Event Branding
             </CardTitle>
-            <CardDescription>Upload logos and banner images for your public event page.</CardDescription>
+            <CardDescription className="text-md">Upload logos and banner images for your public event page.</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="space-y-2">
-              <Label>Cover Image</Label>
-              <div className="flex flex-col items-center justify-center rounded-lg border border-dashed p-8 text-center bg-muted/30 hover:bg-muted/50 transition-colors cursor-pointer">
-                <ImagePlus className="h-8 w-8 text-muted-foreground mb-3" />
-                <p className="text-sm font-medium">Click to upload banner</p>
-                <p className="text-xs text-muted-foreground mt-1">Recommended: 1200x600px (16:9 ratio)</p>
-              </div>
-            </div>
+          <CardContent className="p-8 pt-4 space-y-10">
+            <ImageUpload
+              label="Cover Image"
+              description="A beautiful banner image that appears at the top of your landing page."
+              value={coverImageUrl}
+              onChange={setCoverImageUrl}
+              onRemove={() => setCoverImageUrl("")}
+              aspectRatio="video"
+            />
             
-            <Separator />
+            <Separator className="bg-zinc-100 dark:bg-zinc-800" />
             
-            <div className="space-y-2">
-              <Label>Event Logo</Label>
-              <div className="flex items-center gap-4">
-                <div className="flex h-20 w-20 shrink-0 flex-col items-center justify-center rounded-lg border border-dashed bg-muted/30 hover:bg-muted/50 transition-colors cursor-pointer">
-                  <ImagePlus className="h-5 w-5 text-muted-foreground" />
-                </div>
-                <div>
-                  <p className="text-sm">Upload a square logo</p>
-                  <p className="text-xs text-muted-foreground">Will be used in header and emails.</p>
-                </div>
-              </div>
-            </div>
+            <ImageUpload
+              label="Event Logo"
+              description="A square logo used in the header and email communications."
+              value={logoUrl}
+              onChange={setLogoUrl}
+              onRemove={() => setLogoUrl("")}
+              aspectRatio="square"
+            />
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Paintbrush className="h-5 w-5" />
+        <Card className="rounded-[2.5rem] border-none shadow-xl shadow-zinc-200/50 dark:shadow-none bg-white dark:bg-zinc-950">
+          <CardHeader className="p-8 pb-4">
+            <CardTitle className="flex items-center gap-3 text-xl font-bold">
+              <div className="h-10 w-10 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
+                <Paintbrush className="h-5 w-5" />
+              </div>
               Theme Colors
             </CardTitle>
-            <CardDescription>Select colors that match your brand identity.</CardDescription>
+            <CardDescription className="text-md">Select colors that match your brand identity.</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label>Primary Color</Label>
-                <div className="flex items-center gap-2">
-                  <div className="h-8 w-8 rounded border bg-blue-600"></div>
-                  <Input defaultValue="#2563EB" className="font-mono text-sm" />
+          <CardContent className="p-8 pt-4 space-y-8">
+            <div className="grid gap-6 sm:grid-cols-2">
+              <div className="space-y-3">
+                <Label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Primary Color</Label>
+                <div className="flex items-center gap-3 bg-zinc-50 dark:bg-zinc-900 p-2 rounded-2xl border border-zinc-100 dark:border-zinc-800">
+                  <div 
+                    className="h-10 w-10 rounded-xl border border-white/20 shadow-inner" 
+                    style={{ backgroundColor: primaryColor }}
+                  />
+                  <Input 
+                    value={primaryColor} 
+                    onChange={(e) => setPrimaryColor(e.target.value)}
+                    className="border-none bg-transparent font-mono text-sm focus-visible:ring-0 h-8" 
+                  />
                 </div>
               </div>
-              <div className="space-y-2">
-                <Label>Background Color</Label>
-                <div className="flex items-center gap-2">
-                  <div className="h-8 w-8 rounded border bg-white dark:bg-zinc-950"></div>
-                  <Input defaultValue="#FFFFFF" className="font-mono text-sm" />
+              <div className="space-y-3">
+                <Label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Background Color</Label>
+                <div className="flex items-center gap-3 bg-zinc-50 dark:bg-zinc-900 p-2 rounded-2xl border border-zinc-100 dark:border-zinc-800">
+                  <div 
+                    className="h-10 w-10 rounded-xl border border-zinc-200 dark:border-zinc-700 shadow-inner" 
+                    style={{ backgroundColor: backgroundColor }}
+                  />
+                  <Input 
+                    value={backgroundColor} 
+                    onChange={(e) => setBackgroundColor(e.target.value)}
+                    className="border-none bg-transparent font-mono text-sm focus-visible:ring-0 h-8" 
+                  />
                 </div>
               </div>
             </div>
             
-            <Separator />
+            <Separator className="bg-zinc-100 dark:bg-zinc-800" />
             
-            <div className="space-y-2">
-              <Label>Custom CSS</Label>
+            <div className="space-y-3">
+              <Label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Custom CSS</Label>
               <Textarea 
-                placeholder="/* Advanced customization only */"
-                className="font-mono text-xs min-h-[120px]"
+                placeholder="/* Advanced customization only (e.g., .event-header { ... }) */"
+                value={customCss}
+                onChange={(e) => setCustomCss(e.target.value)}
+                className="font-mono text-xs min-h-[160px] rounded-[2rem] bg-zinc-50 dark:bg-zinc-900 border-zinc-100 dark:border-zinc-800 p-6 focus-visible:ring-primary"
               />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="md:col-span-2">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Globe className="h-5 w-5" />
-              Event Website Customization
-            </CardTitle>
-            <CardDescription>Structure the content on your customized URL.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label>Custom URL Slug</Label>
-              <div className="flex items-center">
-                <span className="inline-flex h-9 items-center rounded-l-md border border-r-0 border-input bg-muted px-3 text-sm text-muted-foreground">
-                  app.guestmanager.com/e/
-                </span>
-                <Input 
-                  className="rounded-l-none" 
-                  defaultValue={`event-${eventId.slice(0,6)}`} 
-                />
-              </div>
-            </div>
-            
-            <div className="flex justify-end pt-4">
-              <Button>Save Design Settings</Button>
             </div>
           </CardContent>
         </Card>

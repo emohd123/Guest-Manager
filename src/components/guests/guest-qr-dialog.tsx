@@ -13,20 +13,13 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Download, Printer, QrCode } from "lucide-react";
 import { toast } from "sonner";
+import { Guest } from "@/types/guest";
 
-type GuestForQR = {
-  id: string;
-  firstName: string | null;
-  lastName: string | null;
-  email: string | null;
-  guestType: string | null;
-  tableNumber: string | null;
-};
 
 interface GuestQrDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  guest: GuestForQR | null;
+  guest: Guest | null;
   eventName?: string;
 }
 
@@ -185,7 +178,7 @@ export function GuestQrDialog({
 interface BulkQrDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  guests: GuestForQR[];
+  guests: Guest[];
   eventName?: string;
 }
 

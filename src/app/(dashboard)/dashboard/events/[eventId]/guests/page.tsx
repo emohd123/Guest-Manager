@@ -10,6 +10,7 @@ import { GuestQrDialog, BulkQrPrintDialog } from "@/components/guests/guest-qr-d
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { GuestModal } from "@/components/guests/GuestModal";
+import { Guest } from "@/types/guest";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -38,20 +39,6 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
-type Guest = {
-  id: string;
-  firstName: string | null;
-  lastName: string | null;
-  email: string | null;
-  phone: string | null;
-  status: string;
-  guestType: string | null;
-  tableNumber: string | null;
-  seatNumber: string | null;
-  tags: string[] | null;
-  notes: string | null;
-  createdAt: string;
-};
 
 const statusColors: Record<string, string> = {
   invited: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",

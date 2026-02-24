@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { router, protectedProcedure, publicProcedure } from "../index";
-import { events, guests } from "@/server/db/schema";
+import { events, guests, companies } from "@/server/db/schema";
 import { eq, and, desc, ilike, sql } from "drizzle-orm";
 import { nanoid } from "nanoid";
 
@@ -50,9 +50,13 @@ export const eventsRouter = router({
   get: protectedProcedure
     .input(z.object({ id: z.string().uuid() }))
     .query(async ({ ctx, input }) => {
-      const event = await ctx.db
-        .select()
+      const result = await ctx.db
+        .select({
+          event: events,
+          companySlug: companies.slug,
+        })
         .from(events)
+        .leftJoin(companies, eq(events.companyId, companies.id))
         .where(
           and(
             eq(events.id, input.id),
@@ -61,11 +65,14 @@ export const eventsRouter = router({
         )
         .limit(1);
 
-      if (!event[0]) {
+      if (!result[0]) {
         throw new Error("Event not found");
       }
 
-      return event[0];
+      return {
+        ...result[0].event,
+        companySlug: result[0].companySlug,
+      };
     }),
 
   create: protectedProcedure
@@ -125,6 +132,8 @@ export const eventsRouter = router({
         categoryId: z.string().uuid().optional(),
         maxCapacity: z.number().int().positive().optional(),
         registrationEnabled: z.boolean().optional(),
+        coverImageUrl: z.string().url().optional(),
+        settings: z.any().optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -144,6 +153,8 @@ export const eventsRouter = router({
       if (data.categoryId !== undefined) updateData.categoryId = data.categoryId;
       if (data.maxCapacity !== undefined) updateData.maxCapacity = data.maxCapacity;
       if (data.registrationEnabled !== undefined) updateData.registrationEnabled = data.registrationEnabled;
+      if (input.coverImageUrl !== undefined) updateData.coverImageUrl = input.coverImageUrl;
+      if (input.settings !== undefined) updateData.settings = input.settings;
 
       const result = await ctx.db
         .update(events)
@@ -244,24 +255,29 @@ export const eventsRouter = router({
     .input(z.object({ companySlug: z.string(), eventSlug: z.string() }))
     .query(async ({ ctx, input }) => {
       // Import companies inline to avoid circular deps
-      const { companies } = await import('@/server/db/schema');
+      const { companies, events } = await import('@/server/db/schema');
       const company = await ctx.db
         .select({ id: companies.id })
         .from(companies)
         .where(eq(companies.slug, input.companySlug))
         .limit(1);
+      
       if (!company[0]) return null;
+
+      const filters = [
+        eq(events.companyId, company[0].id),
+        eq(events.slug, input.eventSlug),
+      ];
+
+      // Only allow 'published' events for public, unless authenticated user belongs to the company
+      if (ctx.companyId !== company[0].id) {
+        filters.push(eq(events.status, 'published'));
+      }
 
       const event = await ctx.db
         .select()
         .from(events)
-        .where(
-          and(
-            eq(events.companyId, company[0].id),
-            eq(events.slug, input.eventSlug),
-            eq(events.status, 'published')
-          )
-        )
+        .where(and(...filters))
         .limit(1);
 
       return event[0] ?? null;

@@ -65,10 +65,10 @@ const emptyForm = {
 
 export function TicketTypeModal({ open, onOpenChange, eventId, ticketType, onSuccess }: TicketTypeModalProps) {
   const [form, setForm] = useState(emptyForm);
-  const [lastId, setLastId] = useState<string | null>(null);
+  const [lastId, setLastId] = useState<string | undefined>(undefined);
 
-  if (open && (ticketType?.id ?? "new") !== lastId) {
-    setLastId(ticketType?.id ?? "new");
+  if (open && ticketType?.id !== lastId) {
+    setLastId(ticketType?.id);
     if (ticketType) {
       setForm({
         name: ticketType.name,

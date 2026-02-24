@@ -16,12 +16,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc/client";
 import { Loader2, User, Mail, Phone, Tag, Armchair, FileText } from "lucide-react";
+import { Guest } from "@/types/guest";
 
 interface GuestModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   eventId: string;
-  guest?: any; // If provided, we are in edit mode
+  guest?: Guest | null; // If provided, we are in edit mode
   onSuccess: () => void;
 }
 
@@ -39,11 +40,11 @@ const emptyForm = {
 export function GuestModal({ open, onOpenChange, eventId, guest, onSuccess }: GuestModalProps) {
   const [form, setForm] = useState(emptyForm);
 
-  // We use this to prevent the "setState in effect" warning by only updating when necessary
-  const [lastGuestId, setLastGuestId] = useState<string | null>(null);
+  // Sync form state when guest changes or modal opens
+  const [lastId, setLastId] = useState<string | undefined>(undefined);
 
-  if (open && guest?.id !== lastGuestId) {
-    setLastGuestId(guest?.id ?? "new");
+  if (open && guest?.id !== lastId) {
+    setLastId(guest?.id);
     if (guest) {
       setForm({
         firstName: guest.firstName ?? "",
