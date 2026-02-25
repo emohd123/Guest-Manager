@@ -7,6 +7,27 @@ import { generateQRCodeDataUri } from "../utils/qrcode";
 const resendApiKey = process.env.RESEND_API_KEY;
 const resend = resendApiKey ? new Resend(resendApiKey) : null;
 
+export interface EmailDesign {
+  headerImageUrl?: string;
+  senderName?: string;
+  replyTo?: string;
+  bodyHtml?: string;
+}
+
+export interface TicketDesignSettings {
+  labelColor?: string;
+  visibleFields?: {
+    eventName?: boolean;
+    ticketType?: boolean;
+    venue?: boolean;
+    startDate?: boolean;
+    attendeeName?: boolean;
+    barcode?: boolean;
+    price?: boolean;
+    orderNumber?: boolean;
+  };
+}
+
 interface SendTicketEmailParams {
   toEmail: string;
   eventName: string;
@@ -17,6 +38,10 @@ interface SendTicketEmailParams {
   eventDate?: string;
   eventTime?: string;
   eventLocation?: string;
+  ticketUrl?: string;
+  // Design settings from event.settings
+  emailDesign?: EmailDesign;
+  ticketDesign?: TicketDesignSettings;
 }
 
 export async function sendTicketEmail({
@@ -29,13 +54,19 @@ export async function sendTicketEmail({
   eventDate,
   eventTime,
   eventLocation,
+  ticketUrl,
+  emailDesign,
+  ticketDesign,
 }: SendTicketEmailParams) {
   try {
     // Generate the QR code data URI from the barcode
     const qrCodeDataUri = await generateQRCodeDataUri(barcode);
 
-    // Provide default fallback values if date/time/location aren't perfectly formatted yet
-    const emailHtml = TicketEmail({
+    const senderName = emailDesign?.senderName || "Guest Manager";
+    const replyTo = emailDesign?.replyTo;
+
+    // Build the email component with design settings applied
+    const emailComponent = TicketEmail({
       eventName,
       attendeeName,
       ticketName,
@@ -43,7 +74,20 @@ export async function sendTicketEmail({
       qrCodeDataUri,
       eventDate: eventDate ?? "TBD",
       eventTime: eventTime ?? "TBD",
-      eventLocation: eventLocation ?? "Check your dashboard for location",
+      eventLocation: eventLocation ?? "TBD",
+      ticketUrl: ticketUrl ?? "#",
+      headerImageUrl: emailDesign?.headerImageUrl,
+      labelColor: ticketDesign?.labelColor ?? "#2563EB",
+      senderName,
+      customBodyHtml: emailDesign?.bodyHtml,
+      visibleFields: ticketDesign?.visibleFields ?? {
+        eventName: true,
+        ticketType: true,
+        venue: true,
+        startDate: true,
+        attendeeName: true,
+        barcode: true,
+      },
     });
 
     if (!resend) {
@@ -54,12 +98,18 @@ export async function sendTicketEmail({
       return { success: true, mock: true };
     }
 
-    const data = await resend.emails.send({
-      from: "Guest Manager <onboarding@resend.dev>", // Typically you'd use a verified domain here
+    const sendOptions: Parameters<typeof resend.emails.send>[0] = {
+      from: `${senderName} <onboarding@resend.dev>`,
       to: [toEmail],
       subject: `Your ticket for ${eventName}`,
-      react: emailHtml,
-    });
+      react: emailComponent,
+    };
+
+    if (replyTo) {
+      sendOptions.replyTo = replyTo;
+    }
+
+    const data = await resend.emails.send(sendOptions);
 
     return { success: true, data };
   } catch (error) {

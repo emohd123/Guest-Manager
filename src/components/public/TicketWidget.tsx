@@ -9,12 +9,12 @@ interface TicketType {
   id: string;
   name: string;
   description: string | null;
-  price: number;
-  currency: string;
+  price: number | null;
+  currency: string | null;
   quantityTotal: number | null;
-  quantitySold: number;
-  minPerOrder: number;
-  maxPerOrder: number;
+  quantitySold: number | null;
+  minPerOrder: number | null;
+  maxPerOrder: number | null;
 }
 
 interface TicketWidgetProps {
@@ -41,14 +41,14 @@ export function TicketWidget({ ticketTypes, onCheckout, isLoading }: TicketWidge
   };
 
   const totalItems = Object.values(quantities).reduce((acc, q) => acc + q, 0);
-  const totalPrice = ticketTypes.reduce((acc, t) => acc + (quantities[t.id] || 0) * t.price, 0);
+  const totalPrice = ticketTypes.reduce((acc, t) => acc + (quantities[t.id] || 0) * (t.price ?? 0), 0);
 
   return (
     <div className="space-y-6">
       <div className="space-y-4">
         {ticketTypes.map((ticket) => {
           const quantity = quantities[ticket.id] || 0;
-          const isSoldOut = ticket.quantityTotal !== null && ticket.quantitySold >= ticket.quantityTotal;
+          const isSoldOut = ticket.quantityTotal !== null && (ticket.quantitySold ?? 0) >= ticket.quantityTotal;
 
           return (
             <div 
@@ -74,11 +74,11 @@ export function TicketWidget({ ticketTypes, onCheckout, isLoading }: TicketWidge
                   )}
                   <div className="flex items-center gap-4 pt-1">
                     <span className="text-2xl font-black text-primary">
-                      {ticket.price === 0 ? "FREE" : `$${(ticket.price / 100).toFixed(2)}`}
+                      {(ticket.price ?? 0) === 0 ? "FREE" : `$${((ticket.price ?? 0) / 100).toFixed(2)}`}
                     </span>
                     {ticket.quantityTotal && (
                       <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest bg-zinc-100 dark:bg-zinc-800 px-2 py-1 rounded-lg">
-                        {Math.max(0, ticket.quantityTotal - ticket.quantitySold)} Left
+                        {Math.max(0, ticket.quantityTotal - (ticket.quantitySold ?? 0))} Left
                       </span>
                     )}
                   </div>
@@ -88,7 +88,7 @@ export function TicketWidget({ ticketTypes, onCheckout, isLoading }: TicketWidge
                   <Button
                     variant="ghost"
                     size="icon"
-                    onClick={() => updateQuantity(ticket.id, -1, ticket.minPerOrder, ticket.maxPerOrder)}
+                    onClick={() => updateQuantity(ticket.id, -1, ticket.minPerOrder ?? 1, ticket.maxPerOrder ?? 10)}
                     disabled={quantity === 0}
                     className="h-10 w-10 rounded-xl hover:bg-white dark:hover:bg-zinc-800 shadow-sm"
                   >
@@ -100,8 +100,8 @@ export function TicketWidget({ ticketTypes, onCheckout, isLoading }: TicketWidge
                   <Button
                     variant="ghost"
                     size="icon"
-                    onClick={() => updateQuantity(ticket.id, 1, ticket.minPerOrder, ticket.maxPerOrder)}
-                    disabled={quantity >= ticket.maxPerOrder}
+                    onClick={() => updateQuantity(ticket.id, 1, ticket.minPerOrder ?? 1, ticket.maxPerOrder ?? 10)}
+                    disabled={quantity >= (ticket.maxPerOrder ?? 10)}
                     className="h-10 w-10 rounded-xl hover:bg-white dark:hover:bg-zinc-800 shadow-sm"
                   >
                     <Plus className="h-4 w-4" />

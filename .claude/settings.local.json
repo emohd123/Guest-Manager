@@ -51,7 +51,9 @@
       "Bash(cmd /c \"del /f /q \"\"C:\\\\Users\\\\cactu\\\\OneDrive\\\\Desktop\\\\app\\\\Guest Manager\\\\.next\\\\dev\\\\lock\"\" 2>nul && echo deleted\")",
       "Bash(cmd /c \"taskkill /F /IM node.exe 2>nul & echo done\")",
       "Bash(cmd /c \"for /f \"\"tokens=5\"\" %a in \\(''netstat -aon ^| findstr :3000 ^| findstr LISTENING''\\) do @echo PID=%a & tasklist /FI \"\"PID eq %a\"\"\")",
-      "Bash(cmd /c \"rmdir /s /q \"\"C:\\\\Users\\\\cactu\\\\OneDrive\\\\Desktop\\\\app\\\\Guest Manager\\\\.next\\\\dev\"\" 2>nul && echo removed_dev_dir || echo failed\")"
+      "Bash(cmd /c \"rmdir /s /q \"\"C:\\\\Users\\\\cactu\\\\OneDrive\\\\Desktop\\\\app\\\\Guest Manager\\\\.next\\\\dev\"\" 2>nul && echo removed_dev_dir || echo failed\")",
+      "mcp__Claude_Preview__preview_start",
+      "Bash(where:*)"
     ]
   }
 }

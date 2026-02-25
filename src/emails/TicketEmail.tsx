@@ -2,17 +2,20 @@ import {
   Body,
   Container,
   Head,
-  Heading,
   Hr,
   Html,
   Img,
   Preview,
   Section,
   Text,
+  Button,
+  Row,
+  Column,
 } from "@react-email/components";
 import * as React from "react";
 
 interface TicketEmailProps {
+  // Event info
   eventName?: string;
   attendeeName?: string;
   ticketName?: string;
@@ -21,72 +24,197 @@ interface TicketEmailProps {
   eventTime?: string;
   eventLocation?: string;
   qrCodeDataUri?: string;
+  ticketUrl?: string;
+  // Design settings (from event.settings)
+  headerImageUrl?: string;
+  labelColor?: string;
+  senderName?: string;
+  customBodyHtml?: string;
+  visibleFields?: {
+    eventName?: boolean;
+    ticketType?: boolean;
+    venue?: boolean;
+    startDate?: boolean;
+    attendeeName?: boolean;
+    barcode?: boolean;
+    price?: boolean;
+    orderNumber?: boolean;
+  };
 }
 
-const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "";
+const DEFAULT_BODY = `Kindly read the instructions carefully:
+
+• Please present the invitation ticket to the check-in point at the venue to avoid any delay, as the tickets are valid for one-time use only.
+• Kindly follow the instructions by the ushers during the ceremony.`;
 
 export const TicketEmail = ({
-  eventName = "Global Tech Summit 2026",
-  attendeeName = "John Doe",
-  ticketName = "VIP All-Access Pass",
-  orderNumber = "ORD-ABC-123",
-  eventDate = "Sept 12, 2026",
-  eventTime = "9:00 AM - 6:00 PM PST",
-  eventLocation = "Moscone Center, San Francisco",
+  eventName = "Event",
+  attendeeName = "Attendee",
+  ticketName = "General Admission",
+  orderNumber = "000000",
+  eventDate = "TBD",
+  eventTime = "TBD",
+  eventLocation = "TBD",
   qrCodeDataUri = "",
+  ticketUrl = "#",
+  headerImageUrl = "",
+  labelColor = "#2563EB",
+  senderName = "Guest Manager",
+  customBodyHtml = DEFAULT_BODY,
+  visibleFields = {
+    eventName: true,
+    ticketType: true,
+    venue: true,
+    startDate: true,
+    attendeeName: true,
+    barcode: true,
+    orderNumber: false,
+  },
 }: TicketEmailProps) => {
+  const accent = labelColor;
+
   return (
     <Html>
-      <Head />
-      <Preview>Your Digital Ticket for {eventName}</Preview>
+      <Head>
+        <style>{`
+          @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap');
+          * { font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+        `}</style>
+      </Head>
+      <Preview>Your ticket for {eventName} — {attendeeName}</Preview>
       <Body style={main}>
         <Container style={container}>
-          <Heading style={heading}>Here is your ticket!</Heading>
-          <Text style={paragraph}>
-            Hi {attendeeName},
-          </Text>
-          <Text style={paragraph}>
-            Thank you for registering for <strong>{eventName}</strong>. Below is your digital ticket. Please present the QR code at the entrance for quick check-in.
-          </Text>
-          
-          <Section style={ticketCard}>
-            <Text style={eventNameStyle}>{eventName}</Text>
-            <Text style={eventDetailsStyle}>
-              📅 {eventDate}
-            </Text>
-            <Text style={eventDetailsStyle}>
-              ⏰ {eventTime}
-            </Text>
-            <Text style={eventDetailsStyle}>
-              📍 {eventLocation}
-            </Text>
 
-            <Hr style={hr} />
-            
-            <Text style={ticketTypeStyle}>🎟️ {ticketName}</Text>
-            <Text style={attendeeNameStyle}>{attendeeName}</Text>
-            <Text style={orderNumberStyle}>Order #{orderNumber}</Text>
+          {/* Header image */}
+          {headerImageUrl && (
+            <Img
+              src={headerImageUrl}
+              width="600"
+              height="200"
+              alt={eventName}
+              style={{ width: "100%", height: "auto", display: "block", borderRadius: "12px 12px 0 0" }}
+            />
+          )}
 
-            {qrCodeDataUri ? (
-              <Section style={qrCodeSection}>
-                <Img
-                  src={qrCodeDataUri}
-                  width="200"
-                  height="200"
-                  alt="Ticket QR Code"
-                  style={qrCodeImage}
-                />
-              </Section>
-            ) : (
-              <Section style={qrCodeSection}>
-                <div style={qrCodePlaceholder}>QR Code Here</div>
-              </Section>
-            )}
+          {/* Greeting */}
+          <Section style={{ padding: "32px 40px 0" }}>
+            <Text style={{ fontSize: "22px", fontWeight: "900", color: "#111", marginBottom: "4px" }}>
+              Here is your ticket! 🎟️
+            </Text>
+            <Text style={{ fontSize: "15px", color: "#555", marginTop: "0", lineHeight: "24px" }}>
+              Hi {attendeeName}, thank you for registering for <strong>{eventName}</strong>.
+              Please find your ticket details below.
+            </Text>
           </Section>
 
-          <Text style={footer}>
-            If you have any questions, please reply to this email. See you at the event!
-          </Text>
+          {/* Custom body */}
+          {customBodyHtml && (
+            <Section style={{ padding: "0 40px" }}>
+              <div
+                style={{ fontSize: "14px", color: "#444", lineHeight: "24px", whiteSpace: "pre-wrap" }}
+                dangerouslySetInnerHTML={{ __html: customBodyHtml.replace(/\n/g, "<br/>") }}
+              />
+            </Section>
+          )}
+
+          <Hr style={{ borderColor: "#e5e7eb", margin: "24px 40px" }} />
+
+          {/* Ticket card */}
+          <Section style={{ padding: "0 24px 24px" }}>
+            <div style={ticketCard}>
+              {/* Left side: Fields */}
+              <Row>
+                <Column style={{ verticalAlign: "top", paddingRight: "24px" }}>
+                  {/* 3-column grid of fields */}
+                  <Row>
+                    {visibleFields.eventName && (
+                      <Column style={fieldCol}>
+                        <Text style={{ ...fieldLabel, color: accent }}>EVENT</Text>
+                        <Text style={fieldValue}>{eventName}</Text>
+                      </Column>
+                    )}
+                    {visibleFields.startDate && (
+                      <Column style={fieldCol}>
+                        <Text style={{ ...fieldLabel, color: accent }}>DATE</Text>
+                        <Text style={fieldValue}>{eventDate}</Text>
+                      </Column>
+                    )}
+                    {visibleFields.ticketType && (
+                      <Column style={fieldCol}>
+                        <Text style={{ ...fieldLabel, color: accent }}>TICKET TYPE</Text>
+                        <Text style={fieldValue}>{ticketName}</Text>
+                      </Column>
+                    )}
+                  </Row>
+                  <Row style={{ marginTop: "16px" }}>
+                    {visibleFields.venue && (
+                      <Column style={fieldCol}>
+                        <Text style={{ ...fieldLabel, color: accent }}>VENUE</Text>
+                        <Text style={fieldValue}>{eventLocation}</Text>
+                      </Column>
+                    )}
+                    {visibleFields.attendeeName && (
+                      <Column style={fieldCol}>
+                        <Text style={{ ...fieldLabel, color: accent }}>ATTENDEE</Text>
+                        <Text style={fieldValue}>{attendeeName}</Text>
+                      </Column>
+                    )}
+                    {visibleFields.orderNumber && (
+                      <Column style={fieldCol}>
+                        <Text style={{ ...fieldLabel, color: accent }}>ORDER</Text>
+                        <Text style={fieldValue}>#{orderNumber}</Text>
+                      </Column>
+                    )}
+                  </Row>
+                </Column>
+
+                {/* QR Code */}
+                {visibleFields.barcode && qrCodeDataUri && (
+                  <Column style={{ verticalAlign: "top", textAlign: "center" as const, width: "110px" }}>
+                    <Img
+                      src={qrCodeDataUri}
+                      width="100"
+                      height="100"
+                      alt="Ticket QR Code"
+                      style={{ border: "1px solid #e5e7eb", borderRadius: "8px", padding: "4px", backgroundColor: "#fff" }}
+                    />
+                    <Text style={{ fontSize: "8px", fontFamily: "monospace", color: "#9ca3af", marginTop: "4px" }}>
+                      {orderNumber}
+                    </Text>
+                  </Column>
+                )}
+              </Row>
+            </div>
+          </Section>
+
+          {/* CTA Buttons */}
+          <Section style={{ padding: "0 40px 32px", textAlign: "center" as const }}>
+            <Button
+              href={ticketUrl}
+              style={{
+                backgroundColor: accent,
+                color: "#fff",
+                borderRadius: "10px",
+                padding: "14px 28px",
+                fontWeight: "700",
+                fontSize: "14px",
+                textDecoration: "none",
+                display: "inline-block",
+                marginRight: "12px",
+              }}
+            >
+              View Ticket
+            </Button>
+          </Section>
+
+          {/* Footer */}
+          <Hr style={{ borderColor: "#e5e7eb", margin: "0 40px" }} />
+          <Section style={{ padding: "20px 40px" }}>
+            <Text style={{ fontSize: "12px", color: "#9ca3af", textAlign: "center" as const, lineHeight: "20px" }}>
+              This email was sent by {senderName}. If you have questions, please reply to this email.
+              <br />Tickets are for one-time use only.
+            </Text>
+          </Section>
         </Container>
       </Body>
     </Html>
@@ -96,110 +224,45 @@ export const TicketEmail = ({
 // Styles
 const main = {
   backgroundColor: "#f6f9fc",
-  fontFamily:
-    '-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Ubuntu,sans-serif',
+  fontFamily: "Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
 };
 
 const container = {
   backgroundColor: "#ffffff",
-  margin: "0 auto",
-  padding: "40px 20px",
-  marginBottom: "64px",
-  borderRadius: "8px",
-  boxShadow: "0 4px 6px rgba(0, 0, 0, 0.05)",
+  margin: "40px auto",
+  borderRadius: "16px",
+  boxShadow: "0 4px 24px rgba(0,0,0,0.08)",
   maxWidth: "600px",
-};
-
-const heading = {
-  fontSize: "24px",
-  fontWeight: "bold",
-  textAlign: "center" as const,
-  margin: "30px 0",
-  color: "#333",
-};
-
-const paragraph = {
-  fontSize: "16px",
-  lineHeight: "26px",
-  color: "#555",
+  overflow: "hidden" as const,
 };
 
 const ticketCard = {
-  backgroundColor: "#f9fafb",
-  border: "1px solid #e5e7eb",
-  borderRadius: "8px",
+  backgroundColor: "#f8fafc",
+  border: "1px solid #e2e8f0",
+  borderRadius: "12px",
   padding: "24px",
-  marginTop: "24px",
-  marginBottom: "24px",
-  textAlign: "center" as const,
 };
 
-const eventNameStyle = {
-  fontSize: "20px",
-  fontWeight: "bold",
-  color: "#111",
-  marginBottom: "16px",
+const fieldCol = {
+  paddingRight: "16px",
+  minWidth: "120px",
 };
 
-const eventDetailsStyle = {
-  fontSize: "14px",
-  color: "#6b7280",
-  margin: "4px 0",
+const fieldLabel = {
+  fontSize: "8px",
+  fontWeight: "900" as const,
+  letterSpacing: "0.15em",
+  textTransform: "uppercase" as const,
+  margin: "0 0 2px",
 };
 
-const hr = {
-  borderColor: "#e5e7eb",
-  margin: "24px 0",
-};
-
-const ticketTypeStyle = {
-  fontSize: "18px",
-  fontWeight: "600",
-  color: "#3b82f6", // Blue
-  margin: "8px 0",
-};
-
-const attendeeNameStyle = {
-  fontSize: "16px",
-  fontWeight: "500",
-  color: "#111",
-  margin: "4px 0",
-};
-
-const orderNumberStyle = {
+const fieldValue = {
   fontSize: "12px",
-  color: "#9ca3af",
-  margin: "4px 0",
-};
-
-const qrCodeSection = {
-  marginTop: "24px",
-  display: "inline-block",
-  padding: "16px",
-  backgroundColor: "#ffffff",
-  borderRadius: "8px",
-  border: "1px dashed #d1d5db",
-};
-
-const qrCodeImage = {
-  display: "block",
-  margin: "0 auto",
-};
-
-const qrCodePlaceholder = {
-  width: "200px",
-  height: "200px",
-  backgroundColor: "#e5e7eb",
-  lineHeight: "200px",
-  color: "#6b7280",
-  borderRadius: "4px",
-};
-
-const footer = {
-  fontSize: "14px",
-  color: "#8898aa",
-  textAlign: "center" as const,
-  marginTop: "32px",
+  fontWeight: "700" as const,
+  color: "#1e293b",
+  fontFamily: "monospace",
+  margin: "0",
+  lineHeight: "1.4",
 };
 
 export default TicketEmail;

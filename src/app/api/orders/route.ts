@@ -1,11 +1,11 @@
 export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/server/db";
-import { companies, events, orders, orderItems, ticketTypes } from "@/server/db/schema";
+import { companies, events, orders, orderItems, ticketTypes, tickets } from "@/server/db/schema";
 import { eq, and, sql } from "drizzle-orm";
 import { stripe } from "@/lib/stripe";
-import { sendRegistrationConfirmation } from "@/lib/resend";
-import { format } from "date-fns";
+import { generateAndSendTicket } from "@/server/actions/generateAndSendTicket";
+import { nanoid } from "nanoid";
 
 function generateOrderNumber(): string {
   const timestamp = Date.now().toString(36).toUpperCase();
@@ -159,25 +159,44 @@ export async function POST(request: NextRequest) {
         .where(eq(ticketTypes.id, item.ticketTypeId));
     }
 
-    // Send confirmation email
+    // Create individual ticket records + send emails
     try {
-      await sendRegistrationConfirmation({
-        to: attendeeEmail,
-        attendeeName,
-        eventTitle: event[0].title,
-        eventDate: format(new Date(event[0].startsAt), "EEEE, MMMM d, yyyy 'at' h:mm a"),
-        orderNumber,
-        tickets: cartItems.map((item) => ({
-          name: item.name,
-          quantity: item.quantity,
-          price: item.price,
-        })),
-        total: 0,
-        isFree: true,
-      });
-    } catch (emailError) {
-      // Don't fail the order if email fails
-      console.error("Failed to send confirmation email:", emailError);
+      const origin = request.nextUrl.origin;
+      for (const item of cartItems) {
+        const ticketType = validTicketTypes.find(tt => tt.id === item.ticketTypeId);
+        for (let i = 0; i < item.quantity; i++) {
+          const barcode = `TKT-${nanoid(12).toUpperCase()}`;
+          const [newTicket] = await db
+            .insert(tickets)
+            .values({
+              companyId: company[0].id,
+              eventId: event[0].id,
+              ticketTypeId: item.ticketTypeId,
+              orderId: order[0].id,
+              barcode,
+              attendeeName,
+              attendeeEmail,
+              status: "valid",
+            })
+            .returning();
+
+          // Fire-and-forget: generate PDF + send email
+          generateAndSendTicket({
+            ticketId: newTicket.id,
+            toEmail: attendeeEmail,
+            attendeeName,
+            ticketTypeName: ticketType?.name ?? item.name,
+            orderNumber,
+            barcode,
+            eventName: event[0].title,
+            eventStartsAt: event[0].startsAt,
+            appBaseUrl: origin,
+            eventSettings: event[0].settings,
+          }).catch((e) => console.error("[orders] ticket send failed:", e));
+        }
+      }
+    } catch (ticketErr) {
+      console.error("Ticket creation error (non-fatal):", ticketErr);
     }
 
     return NextResponse.json({
