@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { router, protectedProcedure } from "../index";
 import { guests, scans, tickets } from "@/server/db/schema";
-import { eq, and, desc, ilike, sql, or } from "drizzle-orm";
+import { eq, and, desc, ilike, sql, or, inArray } from "drizzle-orm";
 
 export const guestsRouter = router({
   list: protectedProcedure
@@ -207,6 +207,35 @@ export const guestsRouter = router({
       return { deleted: input.ids.length };
     }),
 
+  bulkUpdateStatus: protectedProcedure
+    .input(
+      z.object({
+        ids: z.array(z.string().uuid()),
+        status: z.enum(["invited", "confirmed", "declined", "waitlisted", "checked_in", "no_show"]),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const updateData: Record<string, unknown> = { status: input.status, updatedAt: new Date() };
+      if (input.status === "checked_in") {
+        updateData.checkedInAt = new Date();
+      } else if (input.status === "confirmed") {
+        updateData.checkedInAt = null;
+      }
+
+      const result = await ctx.db
+        .update(guests)
+        .set(updateData)
+        .where(
+          and(
+            inArray(guests.id, input.ids),
+            eq(guests.companyId, ctx.companyId)
+          )
+        )
+        .returning();
+
+      return { updated: result.length };
+    }),
+
   stats: protectedProcedure
     .input(z.object({ eventId: z.string().uuid() }))
     .query(async ({ ctx, input }) => {
@@ -220,20 +249,39 @@ export const guestsRouter = router({
           )
         );
 
-      const checkedIn = await ctx.db
-        .select({ count: sql<number>`count(*)` })
+      const statusCounts = await ctx.db
+        .select({
+          status: guests.status,
+          count: sql<number>`count(*)`,
+        })
         .from(guests)
         .where(
           and(
             eq(guests.eventId, input.eventId),
-            eq(guests.companyId, ctx.companyId),
-            eq(guests.status, "checked_in")
+            eq(guests.companyId, ctx.companyId)
           )
-        );
+        )
+        .groupBy(guests.status);
+
+      const counts = {
+        total: Number(all[0].count),
+        invited: 0,
+        confirmed: 0,
+        declined: 0,
+        waitlisted: 0,
+        checked_in: 0,
+        no_show: 0,
+      };
+
+      statusCounts.forEach((row) => {
+        if (row.status && row.status in counts) {
+          counts[row.status as keyof typeof counts] = Number(row.count);
+        }
+      });
 
       return {
-        total: Number(all[0].count),
-        checkedIn: Number(checkedIn[0].count),
+        ...counts,
+        checkedIn: counts.checked_in,
       };
     }),
 

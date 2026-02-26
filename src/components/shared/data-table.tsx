@@ -53,6 +53,8 @@ interface DataTableProps<TData, TValue> {
   pageSize?: number;
   totalCount?: number;
   isLoading?: boolean;
+  rowSelection?: Record<string, boolean>;
+  setRowSelection?: React.Dispatch<React.SetStateAction<Record<string, boolean>>>;
 }
 
 export function DataTable<TData, TValue>({
@@ -63,11 +65,16 @@ export function DataTable<TData, TValue>({
   toolbar,
   pageSize = 20,
   isLoading = false,
+  rowSelection: externalRowSelection,
+  setRowSelection: setExternalRowSelection,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
-  const [rowSelection, setRowSelection] = useState({});
+  
+  const [internalRowSelection, setInternalRowSelection] = useState<Record<string, boolean>>({});
+  const rowSelection = externalRowSelection !== undefined ? externalRowSelection : internalRowSelection;
+  const setRowSelection = setExternalRowSelection !== undefined ? setExternalRowSelection as any : setInternalRowSelection;
 
   const table = useReactTable({
     data,

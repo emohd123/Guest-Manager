@@ -25,6 +25,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Progress } from "@/components/ui/progress";
 import {
   ArrowLeft,
   Plus,
@@ -33,9 +35,11 @@ import {
   Trash2,
   Edit,
   CheckCircle,
+  Undo2,
   Download,
   QrCode,
   Printer,
+  Users,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -64,6 +68,7 @@ export default function EventGuestsPage({
   const [editGuest, setEditGuest] = useState<Guest | null>(null);
   const [qrGuest, setQrGuest] = useState<Guest | null>(null);
   const [bulkQrOpen, setBulkQrOpen] = useState(false);
+  const [rowSelection, setRowSelection] = useState<Record<string, boolean>>({});
 
   type GuestStatus =
     | "invited"
@@ -106,6 +111,23 @@ export default function EventGuestsPage({
     },
     onError: (err) => {
       toast.error(err.message);
+    },
+  });
+
+  const bulkUpdateStatus = trpc.guests.bulkUpdateStatus.useMutation({
+    onSuccess: (data) => {
+      toast.success(`Updated ${data.updated} guests`);
+      setRowSelection({});
+      refetch();
+      refetchStats();
+    },
+  });
+
+  const undoCheckIn = trpc.guests.undoCheckIn.useMutation({
+    onSuccess: () => {
+      toast.success("Check-in undone");
+      refetch();
+      refetchStats();
     },
   });
 
@@ -152,6 +174,30 @@ export default function EventGuestsPage({
 
   const columns: ColumnDef<Guest>[] = [
     {
+      id: "select",
+      header: ({ table }) => (
+        <Checkbox
+          checked={
+            table.getIsAllPageRowsSelected() ||
+            (table.getIsSomePageRowsSelected() && "indeterminate")
+          }
+          onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+          aria-label="Select all"
+          className="translate-y-[2px]"
+        />
+      ),
+      cell: ({ row }) => (
+        <Checkbox
+          checked={row.getIsSelected()}
+          onCheckedChange={(value) => row.toggleSelected(!!value)}
+          aria-label="Select row"
+          className="translate-y-[2px]"
+        />
+      ),
+      enableSorting: false,
+      enableHiding: false,
+    },
+    {
       accessorKey: "firstName",
       header: "Name",
       cell: ({ row }) => (
@@ -187,6 +233,13 @@ export default function EventGuestsPage({
       ),
     },
     {
+      accessorKey: "source",
+      header: "Source",
+      cell: ({ row }) => (
+        <span className="text-sm capitalize">{row.original.source ?? "—"}</span>
+      ),
+    },
+    {
       accessorKey: "tableNumber",
       header: "Table/Seat",
       cell: ({ row }) => (
@@ -217,46 +270,67 @@ export default function EventGuestsPage({
         ),
     },
     {
-      id: "actions",
+      id: "quick_actions",
+      header: "Check-in",
       cell: ({ row }) => (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-8 w-8">
-              <MoreHorizontal className="h-4 w-4" />
+        <div className="flex justify-end gap-2">
+          {row.original.status !== "checked_in" ? (
+            <Button
+              size="sm"
+              variant="outline"
+              className="bg-green-500/10 text-green-600 hover:bg-green-500/20 hover:text-green-700 border-green-500/20"
+              onClick={() =>
+                updateGuest.mutate({
+                  id: row.original.id,
+                  status: "checked_in",
+                })
+              }
+            >
+              <CheckCircle className="mr-2 h-4 w-4" /> Check In
             </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            {row.original.status !== "checked_in" && (
+          ) : (
+            <Button
+              size="sm"
+              variant="outline"
+              className="bg-orange-500/10 text-orange-600 hover:bg-orange-500/20 hover:text-orange-700 border-orange-500/20"
+              onClick={() =>
+                undoCheckIn.mutate({
+                  eventId,
+                  guestId: row.original.id,
+                })
+              }
+            >
+              <Undo2 className="mr-2 h-4 w-4" /> Undo
+            </Button>
+          )}
+          
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-9 w-9">
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
               <DropdownMenuItem
-                onClick={() =>
-                  updateGuest.mutate({
-                    id: row.original.id,
-                    status: "checked_in",
-                  })
-                }
+                onClick={() => openEditDialog(row.original)}
               >
-                <CheckCircle className="mr-2 h-4 w-4" /> Check In
+                <Edit className="mr-2 h-4 w-4" /> Edit
               </DropdownMenuItem>
-            )}
-            <DropdownMenuItem
-              onClick={() => openEditDialog(row.original)}
-            >
-              <Edit className="mr-2 h-4 w-4" /> Edit
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => setQrGuest(row.original)}
-            >
-              <QrCode className="mr-2 h-4 w-4" /> QR Code
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              className="text-destructive"
-              onClick={() => deleteGuest.mutate({ id: row.original.id })}
-            >
-              <Trash2 className="mr-2 h-4 w-4" /> Remove
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+              <DropdownMenuItem
+                onClick={() => setQrGuest(row.original)}
+              >
+                <QrCode className="mr-2 h-4 w-4" /> QR Code
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                className="text-destructive"
+                onClick={() => deleteGuest.mutate({ id: row.original.id })}
+              >
+                <Trash2 className="mr-2 h-4 w-4" /> Remove
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       ),
     },
   ];
@@ -272,9 +346,7 @@ export default function EventGuestsPage({
           </Link>
           <div>
             <h1 className="text-2xl font-bold">Guest List</h1>
-            <p className="text-muted-foreground">
-              {stats?.total ?? 0} guests · {stats?.checkedIn ?? 0} checked in
-            </p>
+            <p className="text-muted-foreground">Manage attendance and guest details</p>
           </div>
         </div>
         <div className="flex gap-2">
@@ -312,30 +384,99 @@ export default function EventGuestsPage({
         </div>
       </div>
 
+      {/* Enhanced Stats Overview */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="p-4 rounded-xl border bg-card flex flex-col justify-center">
+          <div className="flex items-center gap-2 mb-2">
+            <Users className="h-4 w-4 text-muted-foreground" />
+            <h3 className="font-semibold text-sm">Total Attendees</h3>
+          </div>
+          <p className="text-3xl font-bold">{stats?.total ?? 0}</p>
+        </div>
+        <div className="p-4 rounded-xl border bg-card md:col-span-3 flex flex-col justify-center">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="font-semibold text-sm">Check-in Progress</h3>
+            <span className="text-sm font-medium">
+              {stats?.checkedIn ?? 0} / {stats?.total ?? 0} ({stats?.total ? Math.round(((stats?.checkedIn ?? 0) / stats.total) * 100) : 0}%)
+            </span>
+          </div>
+          <Progress value={stats?.total ? ((stats?.checkedIn ?? 0) / stats.total) * 100 : 0} className="h-3" />
+          <div className="flex gap-4 mt-4">
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full bg-emerald-500" />
+              <span className="text-xs text-muted-foreground">Checked In ({stats?.checked_in ?? 0})</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full bg-blue-500" />
+              <span className="text-xs text-muted-foreground">Invited ({stats?.invited ?? 0})</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full bg-green-500" />
+              <span className="text-xs text-muted-foreground">Confirmed ({stats?.confirmed ?? 0})</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <DataTable
         columns={columns}
         data={(data?.guests ?? []) as Guest[]}
         searchKey="firstName"
         searchPlaceholder="Search guests..."
         isLoading={isLoading}
+        rowSelection={rowSelection}
+        setRowSelection={setRowSelection}
         toolbar={
-          <Select
-            value={statusFilter}
-            onValueChange={(v) => setStatusFilter(v as GuestStatus | "all")}
-          >
-            <SelectTrigger className="w-[150px]">
-              <SelectValue placeholder="All statuses" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All statuses</SelectItem>
-              <SelectItem value="invited">Invited</SelectItem>
-              <SelectItem value="confirmed">Confirmed</SelectItem>
-              <SelectItem value="checked_in">Checked In</SelectItem>
-              <SelectItem value="declined">Declined</SelectItem>
-              <SelectItem value="waitlisted">Waitlisted</SelectItem>
-              <SelectItem value="no_show">No Show</SelectItem>
-            </SelectContent>
-          </Select>
+          <div className="flex gap-2 items-center">
+            {Object.keys(rowSelection).length > 0 && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="secondary" className="gap-2 border border-primary/20 bg-primary/10 text-primary hover:bg-primary/20">
+                    Bulk Actions ({Object.keys(rowSelection).length})
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  <DropdownMenuItem
+                    onClick={() => {
+                      const selectedIds = Object.keys(rowSelection).map(idx => (data?.guests?.[parseInt(idx)] as Guest)?.id).filter(Boolean);
+                      if (selectedIds.length) {
+                        bulkUpdateStatus.mutate({ ids: selectedIds, status: "checked_in" });
+                      }
+                    }}
+                  >
+                    <CheckCircle className="mr-2 h-4 w-4 text-green-500" /> Bulk Check In
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => {
+                      const selectedIds = Object.keys(rowSelection).map(idx => (data?.guests?.[parseInt(idx)] as Guest)?.id).filter(Boolean);
+                      if (selectedIds.length) {
+                        bulkUpdateStatus.mutate({ ids: selectedIds, status: "confirmed" });
+                      }
+                    }}
+                  >
+                    <Undo2 className="mr-2 h-4 w-4 text-orange-500" /> Undo Check In
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+            <Select
+              value={statusFilter}
+              onValueChange={(v) => setStatusFilter(v as GuestStatus | "all")}
+            >
+              <SelectTrigger className="w-[150px]">
+                <SelectValue placeholder="All statuses" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All statuses</SelectItem>
+                <SelectItem value="invited">Invited</SelectItem>
+                <SelectItem value="confirmed">Confirmed</SelectItem>
+                <SelectItem value="checked_in">Checked In</SelectItem>
+                <SelectItem value="declined">Declined</SelectItem>
+                <SelectItem value="waitlisted">Waitlisted</SelectItem>
+                <SelectItem value="no_show">No Show</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         }
       />
 
