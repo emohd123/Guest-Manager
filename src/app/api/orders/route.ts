@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/server/db";
 import { companies, events, orders, orderItems, ticketTypes, tickets } from "@/server/db/schema";
 import { eq, and, sql } from "drizzle-orm";
-import { stripe } from "@/lib/stripe";
+import { getStripeClient } from "@/lib/stripe";
 import { generateAndSendTicket } from "@/server/actions/generateAndSendTicket";
 import { nanoid } from "nanoid";
 
@@ -87,6 +87,7 @@ export async function POST(request: NextRequest) {
 
     // For paid orders, create a Stripe Checkout Session instead
     if (!isFree) {
+      const stripe = getStripeClient();
       const origin = request.nextUrl.origin;
 
       const lineItems = cartItems.map((item) => ({

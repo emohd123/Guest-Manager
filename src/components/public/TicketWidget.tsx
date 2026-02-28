@@ -19,7 +19,7 @@ interface TicketType {
 
 interface TicketWidgetProps {
   ticketTypes: TicketType[];
-  onCheckout: (selection: Record<string, number>) => void;
+  onCheckout: (selection: Record<string, number>) => void | Promise<void>;
   isLoading?: boolean;
 }
 
@@ -29,13 +29,14 @@ export function TicketWidget({ ticketTypes, onCheckout, isLoading }: TicketWidge
   const updateQuantity = (id: string, delta: number, min: number, max: number) => {
     setQuantities((prev) => {
       const current = prev[id] || 0;
-      const next = current + delta;
-      
-      if (next < 0) return prev;
-      if (next > max) return prev;
-      if (next > 0 && next < min && delta > 0) return { ...prev, [id]: min };
-      if (next < min && delta < 0) return { ...prev, [id]: 0 };
-      
+      let next = current + delta;
+
+      if (next < 0) next = 0;
+      if (delta > 0 && current === 0 && min > 1) next = min;
+      if (delta < 0 && next < min) next = 0;
+      if (next > max) next = max;
+      if (next === current) return prev;
+
       return { ...prev, [id]: next };
     });
   };
@@ -48,7 +49,15 @@ export function TicketWidget({ ticketTypes, onCheckout, isLoading }: TicketWidge
       <div className="space-y-4">
         {ticketTypes.map((ticket) => {
           const quantity = quantities[ticket.id] || 0;
-          const isSoldOut = ticket.quantityTotal !== null && (ticket.quantitySold ?? 0) >= ticket.quantityTotal;
+          const remaining =
+            ticket.quantityTotal === null
+              ? null
+              : Math.max(0, ticket.quantityTotal - (ticket.quantitySold ?? 0));
+          const maxAllowed =
+            remaining === null
+              ? (ticket.maxPerOrder ?? 10)
+              : Math.min(ticket.maxPerOrder ?? 10, remaining);
+          const isSoldOut = maxAllowed === 0;
 
           return (
             <div 
@@ -88,7 +97,14 @@ export function TicketWidget({ ticketTypes, onCheckout, isLoading }: TicketWidge
                   <Button
                     variant="ghost"
                     size="icon"
-                    onClick={() => updateQuantity(ticket.id, -1, ticket.minPerOrder ?? 1, ticket.maxPerOrder ?? 10)}
+                    onClick={() =>
+                      updateQuantity(
+                        ticket.id,
+                        -1,
+                        ticket.minPerOrder ?? 1,
+                        maxAllowed
+                      )
+                    }
                     disabled={quantity === 0}
                     className="h-10 w-10 rounded-xl hover:bg-white dark:hover:bg-zinc-800 shadow-sm"
                   >
@@ -100,8 +116,15 @@ export function TicketWidget({ ticketTypes, onCheckout, isLoading }: TicketWidge
                   <Button
                     variant="ghost"
                     size="icon"
-                    onClick={() => updateQuantity(ticket.id, 1, ticket.minPerOrder ?? 1, ticket.maxPerOrder ?? 10)}
-                    disabled={quantity >= (ticket.maxPerOrder ?? 10)}
+                    onClick={() =>
+                      updateQuantity(
+                        ticket.id,
+                        1,
+                        ticket.minPerOrder ?? 1,
+                        maxAllowed
+                      )
+                    }
+                    disabled={isSoldOut || quantity >= maxAllowed}
                     className="h-10 w-10 rounded-xl hover:bg-white dark:hover:bg-zinc-800 shadow-sm"
                   >
                     <Plus className="h-4 w-4" />

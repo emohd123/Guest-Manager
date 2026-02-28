@@ -90,7 +90,7 @@ export default function RegistrationTicketingPage() {
             </Link>
             <Link href="/contact">
               <Button size="lg" variant="outline">
-                Request Demo
+                Request Pricing
               </Button>
             </Link>
           </div>

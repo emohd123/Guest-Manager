@@ -1,7 +1,10 @@
 import { z } from "zod";
 import { router, protectedProcedure } from "../index";
-import { guests, scans, tickets } from "@/server/db/schema";
+import { guests, scans, tickets, events, ticketTypes } from "@/server/db/schema";
 import { eq, and, desc, ilike, sql, or, inArray } from "drizzle-orm";
+import { sendTicketEmail } from "@/server/actions/email";
+import { format } from "date-fns";
+import crypto from "crypto";
 
 export const guestsRouter = router({
   list: protectedProcedure
@@ -36,7 +39,7 @@ export const guestsRouter = router({
         );
       }
 
-      const results = await ctx.db
+      const guestsList = await ctx.db
         .select()
         .from(guests)
         .where(and(...filters))
@@ -44,13 +47,34 @@ export const guestsRouter = router({
         .limit(input.limit)
         .offset(input.offset);
 
+      const guestIds = guestsList.map((g) => g.id);
+      
+      let ticketsList: (typeof tickets.$inferSelect)[] = [];
+      if (guestIds.length > 0) {
+        ticketsList = await ctx.db
+          .select()
+          .from(tickets)
+          .where(
+            and(
+              inArray(tickets.guestId, guestIds),
+              eq(tickets.eventId, input.eventId)
+            )
+          );
+      }
+
       const countResult = await ctx.db
         .select({ count: sql<number>`count(*)` })
         .from(guests)
         .where(and(...filters));
 
       return {
-        guests: results,
+        guests: guestsList.map((guest) => {
+          const ticket = ticketsList.find((t) => t.guestId === guest.id);
+          return {
+            ...guest,
+            ticket: ticket || null,
+          };
+        }),
         total: Number(countResult[0].count),
       };
     }),
@@ -379,5 +403,153 @@ export const guestsRouter = router({
 
       return { guest: updatedGuest };
     }),
-});
 
+  sendTicketEmail: protectedProcedure
+    .input(z.object({ guestId: z.string().uuid() }))
+    .mutation(async ({ ctx, input }) => {
+      const guestResult = await ctx.db
+        .select({
+          guest: guests,
+          event: events,
+        })
+        .from(guests)
+        .leftJoin(events, eq(guests.eventId, events.id))
+        .where(and(eq(guests.id, input.guestId), eq(guests.companyId, ctx.companyId)))
+        .limit(1);
+
+      const guestRow = guestResult[0];
+      if (!guestRow) throw new Error("Guest not found");
+
+      const guestData = guestRow.guest;
+      const eventData = guestRow.event;
+      if (!guestData.email) {
+        throw new Error("Guest does not have an email address.");
+      }
+
+      const ticketResult = await ctx.db
+        .select({
+          ticket: tickets,
+          ticketType: ticketTypes,
+        })
+        .from(tickets)
+        .leftJoin(ticketTypes, eq(tickets.ticketTypeId, ticketTypes.id))
+        .where(
+          and(
+            eq(tickets.guestId, input.guestId),
+            eq(tickets.eventId, guestData.eventId),
+            eq(tickets.companyId, ctx.companyId)
+          )
+        )
+        .orderBy(desc(tickets.createdAt))
+        .limit(1);
+
+      let ticketData = ticketResult[0]?.ticket;
+      let ticketTypeData = ticketResult[0]?.ticketType;
+
+      // If this guest does not yet have a ticket, create one on-demand.
+      if (!ticketData) {
+        let fallbackTicketType: typeof ticketTypes.$inferSelect | undefined;
+
+        // Prefer an active ticket type for the event.
+        [fallbackTicketType] = await ctx.db
+          .select()
+          .from(ticketTypes)
+          .where(
+            and(
+              eq(ticketTypes.eventId, guestData.eventId),
+              eq(ticketTypes.companyId, ctx.companyId),
+              eq(ticketTypes.status, "active")
+            )
+          )
+          .orderBy(desc(ticketTypes.createdAt))
+          .limit(1);
+
+        // If none is active, use any existing ticket type for the event.
+        if (!fallbackTicketType) {
+          [fallbackTicketType] = await ctx.db
+            .select()
+            .from(ticketTypes)
+            .where(
+              and(
+                eq(ticketTypes.eventId, guestData.eventId),
+                eq(ticketTypes.companyId, ctx.companyId)
+              )
+            )
+            .orderBy(desc(ticketTypes.createdAt))
+            .limit(1);
+        }
+
+        // If this event has no ticket types yet, create a default free type.
+        if (!fallbackTicketType) {
+          [fallbackTicketType] = await ctx.db
+            .insert(ticketTypes)
+            .values({
+              eventId: guestData.eventId,
+              companyId: ctx.companyId,
+              name: "General Admission",
+              description: "Auto-created for guest ticket delivery",
+              price: 0,
+              currency: "USD",
+              status: "active",
+            })
+            .returning();
+        }
+
+        const barcode = `TCK-${crypto.randomBytes(6).toString("hex").toUpperCase()}`;
+        const attendeeName = `${guestData.firstName ?? ""} ${guestData.lastName ?? ""}`.trim() || "Guest";
+
+        [ticketData] = await ctx.db
+          .insert(tickets)
+          .values({
+            companyId: ctx.companyId,
+            eventId: guestData.eventId,
+            ticketTypeId: fallbackTicketType.id,
+            guestId: guestData.id,
+            barcode,
+            attendeeName,
+            attendeeEmail: guestData.email,
+            status: "valid",
+          })
+          .returning();
+
+        ticketTypeData = fallbackTicketType;
+      }
+
+      if (!ticketData) {
+        throw new Error("Failed to create or find ticket for guest.");
+      }
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const settings = (eventData?.settings as any) || {};
+
+      const eventDate = eventData?.startsAt ? format(new Date(eventData.startsAt), "MMM d, yyyy") : undefined;
+      const eventTime = eventData?.startsAt ? format(new Date(eventData.startsAt), "h:mm a") : undefined;
+      
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+      const ticketUrl = `${baseUrl}/api/tickets/${ticketData.id}/pdf`;
+
+      const result = await sendTicketEmail({
+        toEmail: guestData.email,
+        eventName: eventData?.title || "Event",
+        attendeeName: `${guestData.firstName} ${guestData.lastName || ""}`.trim(),
+        ticketName: ticketTypeData?.name || "General Admission",
+        orderNumber: ticketData.barcode, // Fallback if no order ID is used
+        barcode: ticketData.barcode,
+        eventDate,
+        eventTime,
+        eventLocation: undefined, // Requires venue lookup, omit if unavailable here
+        ticketUrl,
+        emailDesign: settings.emailDesign,
+        ticketDesign: settings.ticketDesign,
+      });
+
+      if (!result.success) {
+        if (result.code === "EMAIL_NOT_CONFIGURED") {
+          throw new Error("Email service is not configured. Add RESEND_API_KEY to .env.local and restart the app.");
+        }
+        throw new Error("Failed to send email. Check server logs for provider details.");
+      }
+
+      return result;
+    }),
+});

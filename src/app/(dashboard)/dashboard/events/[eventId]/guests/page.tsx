@@ -40,6 +40,7 @@ import {
   QrCode,
   Printer,
   Users,
+  Mail,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -129,6 +130,15 @@ export default function EventGuestsPage({
       refetch();
       refetchStats();
     },
+  });
+
+  const sendEmail = trpc.guests.sendTicketEmail.useMutation({
+    onSuccess: () => {
+      toast.success("Ticket email queued successfully");
+    },
+    onError: (err) => {
+      toast.error(err.message || "Failed to send email");
+    }
   });
 
   const handleExportCSV = () => {
@@ -240,22 +250,57 @@ export default function EventGuestsPage({
       ),
     },
     {
-      accessorKey: "tableNumber",
-      header: "Table/Seat",
-      cell: ({ row }) => (
-        <div className="flex flex-col">
-          <span className="text-sm font-medium">{row.original.tableNumber ?? "—"}</span>
-          {row.original.seatNumber && (
-            <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-tighter">
-              Seat {row.original.seatNumber}
-            </span>
-          )}
-        </div>
-      ),
+      accessorKey: "barcode",
+      header: "Barcode",
+      cell: ({ row }) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const t = (row.original as any).ticket;
+        return <span className="text-sm">{t?.barcode ?? "—"}</span>;
+      },
+    },
+    {
+      id: "pdfUrl",
+      header: "PDF",
+      cell: ({ row }) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const t = (row.original as any).ticket;
+        return t ? (
+          <a
+            href={`/api/tickets/${t.id}/pdf`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-sm text-blue-600 hover:underline"
+          >
+            Download
+          </a>
+        ) : (
+          <span className="text-sm text-muted-foreground">—</span>
+        );
+      },
+    },
+    {
+      id: "walletUrl",
+      header: "Wallet",
+      cell: ({ row }) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const t = (row.original as any).ticket;
+        return t?.walletUrl ? (
+          <a
+            href={t.walletUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-sm text-blue-600 hover:underline"
+          >
+            Download
+          </a>
+        ) : (
+          <span className="text-sm text-muted-foreground">—</span>
+        );
+      },
     },
     {
       accessorKey: "tags",
-      header: "Tags",
+      header: "Tag",
       cell: ({ row }) =>
         row.original.tags?.length ? (
           <div className="flex flex-wrap gap-1">
@@ -270,8 +315,29 @@ export default function EventGuestsPage({
         ),
     },
     {
+      id: "section",
+      header: "Section",
+      cell: ({ row }) => (
+        <span className="text-sm font-medium">{row.original.tableNumber ?? "—"}</span>
+      ),
+    },
+    {
+      id: "row",
+      header: "Row",
+      cell: () => (
+        <span className="text-sm text-muted-foreground">—</span>
+      ),
+    },
+    {
+      accessorKey: "seatNumber",
+      header: "Seat Number",
+      cell: ({ row }) => (
+        <span className="text-sm font-medium">{row.original.seatNumber ?? "—"}</span>
+      ),
+    },
+    {
       id: "quick_actions",
-      header: "Check-in",
+      header: "Actions",
       cell: ({ row }) => (
         <div className="flex justify-end gap-2">
           {row.original.status !== "checked_in" ? (
@@ -317,9 +383,37 @@ export default function EventGuestsPage({
                 <Edit className="mr-2 h-4 w-4" /> Edit
               </DropdownMenuItem>
               <DropdownMenuItem
-                onClick={() => setQrGuest(row.original)}
+                onClick={() => openEditDialog(row.original)} // Needs proper View logic later
               >
-                <QrCode className="mr-2 h-4 w-4" /> QR Code
+                <QrCode className="mr-2 h-4 w-4" /> View
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem asChild>
+                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                {(row.original as any).ticket ? (
+                  <a
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    href={`/api/tickets/${(row.original as any).ticket.id}/pdf`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex w-full cursor-pointer items-center"
+                  >
+                    <Download className="mr-2 h-4 w-4" /> Download PDF
+                  </a>
+                ) : (
+                  <span className="flex w-full opacity-50"><Download className="mr-2 h-4 w-4" /> Download PDF</span>
+                )}
+              </DropdownMenuItem>
+              <DropdownMenuItem disabled>
+                <Download className="mr-2 h-4 w-4" /> Apple Wallet
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => {
+                  sendEmail.mutate({ guestId: row.original.id });
+                }}
+                disabled={sendEmail.isPending}
+              >
+                <Mail className="mr-2 h-4 w-4" /> Email
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem

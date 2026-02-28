@@ -87,9 +87,13 @@ export const listsRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       const { id, ...data } = input;
-      const updateData: Record<string, unknown> = { updatedAt: new Date() };
+      const updateData: Record<string, unknown> = {};
       if (data.name !== undefined) updateData.name = data.name;
       if (data.description !== undefined) updateData.description = data.description;
+
+      if (Object.keys(updateData).length === 0) {
+        throw new Error("No fields to update");
+      }
 
       const [list] = await ctx.db
         .update(lists)

@@ -2,11 +2,6 @@ import { Resend } from "resend";
 import TicketEmail from "@/emails/TicketEmail";
 import { generateQRCodeDataUri } from "../utils/qrcode";
 
-// Initialize Resend with the API key from environment variables
-// It will fall back to a mock mode if the active key is not set
-const resendApiKey = process.env.RESEND_API_KEY;
-const resend = resendApiKey ? new Resend(resendApiKey) : null;
-
 export interface EmailDesign {
   headerImageUrl?: string;
   senderName?: string;
@@ -44,6 +39,17 @@ interface SendTicketEmailParams {
   ticketDesign?: TicketDesignSettings;
 }
 
+type SendTicketEmailResult =
+  | {
+      success: true;
+      data: unknown;
+    }
+  | {
+      success: false;
+      code: "EMAIL_NOT_CONFIGURED" | "EMAIL_SEND_FAILED";
+      error: unknown;
+    };
+
 export async function sendTicketEmail({
   toEmail,
   eventName,
@@ -57,13 +63,33 @@ export async function sendTicketEmail({
   ticketUrl,
   emailDesign,
   ticketDesign,
-}: SendTicketEmailParams) {
+}: SendTicketEmailParams): Promise<SendTicketEmailResult> {
   try {
+    const resendApiKey = process.env.RESEND_API_KEY;
+    if (!resendApiKey) {
+      const configError = new Error(
+        "Email service is not configured. Set RESEND_API_KEY in .env.local and restart the server."
+      );
+      console.error("RESEND_API_KEY is not set. Email send blocked for:", toEmail);
+      return {
+        success: false,
+        code: "EMAIL_NOT_CONFIGURED",
+        error: configError,
+      };
+    }
+
+    const resend = new Resend(resendApiKey);
+
     // Generate the QR code data URI from the barcode
     const qrCodeDataUri = await generateQRCodeDataUri(barcode);
 
     const senderName = emailDesign?.senderName || "Guest Manager";
     const replyTo = emailDesign?.replyTo;
+    const configuredFrom = process.env.RESEND_FROM_EMAIL?.trim();
+    const fromEmail =
+      configuredFrom && configuredFrom !== "noreply@yourdomain.com"
+        ? configuredFrom
+        : "onboarding@resend.dev";
 
     // Build the email component with design settings applied
     const emailComponent = TicketEmail({
@@ -90,16 +116,8 @@ export async function sendTicketEmail({
       },
     });
 
-    if (!resend) {
-      console.log(
-        "RESEND_API_KEY is not set. 📧 Mock email dispatch blocked. Would have sent to:",
-        toEmail
-      );
-      return { success: true, mock: true };
-    }
-
     const sendOptions: Parameters<typeof resend.emails.send>[0] = {
-      from: `${senderName} <onboarding@resend.dev>`,
+      from: `${senderName} <${fromEmail}>`,
       to: [toEmail],
       subject: `Your ticket for ${eventName}`,
       react: emailComponent,
@@ -109,11 +127,34 @@ export async function sendTicketEmail({
       sendOptions.replyTo = replyTo;
     }
 
+    if (ticketUrl) {
+      try {
+        const pdfResponse = await fetch(ticketUrl);
+        if (pdfResponse.ok) {
+          const pdfBuffer = await pdfResponse.arrayBuffer();
+          sendOptions.attachments = [
+            {
+              filename: `ticket-${barcode}.pdf`,
+              content: Buffer.from(pdfBuffer),
+            },
+          ];
+        } else {
+          console.error("Failed to fetch PDF for attachment", pdfResponse.status);
+        }
+      } catch (err) {
+        console.error("Error fetching PDF for attachment:", err);
+      }
+    }
+
     const data = await resend.emails.send(sendOptions);
 
     return { success: true, data };
   } catch (error) {
     console.error("Error sending ticket email:", error);
-    return { success: false, error };
+    return {
+      success: false,
+      code: "EMAIL_SEND_FAILED",
+      error,
+    };
   }
 }

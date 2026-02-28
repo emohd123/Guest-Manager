@@ -1,5 +1,6 @@
 "use client";
 
+import { useSyncExternalStore } from "react";
 import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
 import {
@@ -23,7 +24,14 @@ export function DashboardTopbar({
   userName = "User",
   companyName = "Company",
 }: DashboardTopbarProps) {
+  const mounted = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false
+  );
   const { setTheme, theme } = useTheme();
+  const isDark = mounted && theme === "dark";
+
   const initials = userName
     .split(" ")
     .map((n) => n[0])
@@ -67,7 +75,7 @@ export function DashboardTopbar({
         <Button
           variant="ghost"
           size="icon"
-          onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+          onClick={() => setTheme(isDark ? "light" : "dark")}
         >
           <Sun className="h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
           <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />

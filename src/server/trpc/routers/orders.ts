@@ -194,7 +194,7 @@ export const ordersRouter = router({
 
             // Dispatch digital ticket email
             if (input.email && eventRow && ticketRow) {
-              await sendTicketEmail({
+              const emailResult = await sendTicketEmail({
                 toEmail: input.email,
                 eventName: eventRow.title,
                 attendeeName: input.name || "Guest",
@@ -203,6 +203,14 @@ export const ordersRouter = router({
                 barcode: barcode,
                 eventDate: eventRow.startsAt ? new Intl.DateTimeFormat('en-US', { dateStyle: 'medium' }).format(eventRow.startsAt) : undefined,
               });
+
+              if (!emailResult.success) {
+                console.error("[orders.create] Ticket email dispatch failed:", {
+                  code: emailResult.code,
+                  recipient: input.email,
+                  orderId: order[0].id,
+                });
+              }
             }
           }
         }

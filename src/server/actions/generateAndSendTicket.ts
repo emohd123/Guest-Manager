@@ -136,6 +136,11 @@ export async function generateAndSendTicket(payload: TicketEmailPayload): Promis
 
   const resend = new Resend(resendApiKey);
   const senderName = ticketSentEmail.senderName ?? "Guest Manager";
+  const configuredFrom = process.env.RESEND_FROM_EMAIL?.trim();
+  const fromEmail =
+    configuredFrom && configuredFrom !== "noreply@yourdomain.com"
+      ? configuredFrom
+      : "onboarding@resend.dev";
   const ticketUrl = pdfPublicUrl ?? `${appBaseUrl}/api/tickets/${ticketId}/pdf`;
 
   const emailHtml = TicketEmail({
@@ -163,7 +168,7 @@ export async function generateAndSendTicket(payload: TicketEmailPayload): Promis
   });
 
   const sendOptions: Parameters<typeof resend.emails.send>[0] = {
-    from: `${senderName} <onboarding@resend.dev>`,
+    from: `${senderName} <${fromEmail}>`,
     to: [toEmail],
     subject: `Your ticket for ${eventName}`,
     react: emailHtml,

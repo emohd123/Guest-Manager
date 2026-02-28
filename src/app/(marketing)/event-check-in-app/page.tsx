@@ -6,7 +6,6 @@ import {
   CheckCircle,
   Search,
   Smartphone,
-  Wifi,
   WifiOff,
   Users,
   QrCode,
@@ -93,7 +92,7 @@ export default function CheckInAppPage() {
             </Link>
             <Link href="/contact">
               <Button size="lg" variant="outline">
-                Book a Demo
+                Book a Call
               </Button>
             </Link>
           </div>
@@ -104,7 +103,7 @@ export default function CheckInAppPage() {
       <section className="mx-auto max-w-5xl px-4 py-16 sm:px-6 lg:px-8">
         <div className="overflow-hidden rounded-xl border bg-gradient-to-b from-muted/50 to-background p-8">
           <div className="mx-auto max-w-md space-y-4">
-            {/* Mock check-in screen */}
+            {/* Check-in screen preview */}
             <div className="rounded-lg border bg-background p-4 shadow-lg">
               <div className="mb-4 flex items-center justify-between">
                 <h3 className="font-bold">Check-In</h3>

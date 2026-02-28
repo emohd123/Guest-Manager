@@ -1,6 +1,6 @@
 "use client";
 
-import { use } from "react";
+import { use, useState } from "react";
 import { trpc } from "@/lib/trpc/client";
 import { format } from "date-fns";
 import { 
@@ -17,8 +17,10 @@ import {
 import { Button } from "@/components/ui/button";
 import { TicketWidget } from "@/components/public/TicketWidget";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Input } from "@/components/ui/input";
 import Link from "next/link";
 import type { DesignSettings } from "@/types/event";
+import { toast } from "sonner";
 
 export default function PublicEventPage({ 
   params 
@@ -26,6 +28,9 @@ export default function PublicEventPage({
   params: Promise<{ companySlug: string; eventSlug: string }> 
 }) {
   const { companySlug, eventSlug } = use(params);
+  const [attendeeName, setAttendeeName] = useState("");
+  const [attendeeEmail, setAttendeeEmail] = useState("");
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
 
   const { data: event, isLoading: eventLoading } = trpc.events.getBySlug.useQuery({ 
     companySlug, 
@@ -63,10 +68,73 @@ export default function PublicEventPage({
   const backgroundColor = settings.backgroundColor || "#FFFFFF";
   const logoUrl = settings.logoUrl || "";
 
-  const handleCheckout = (selection: Record<string, number>) => {
-    // Phase 6.2: Redirect to registration or Stripe checkout
-    console.log("Proceeding to checkout with:", selection);
-    window.alert("Checkout logic coming in the next iteration! Selection: " + JSON.stringify(selection));
+  const handleCheckout = async (selection: Record<string, number>) => {
+    if (!attendeeName.trim()) {
+      toast.error("Please enter your full name.");
+      return;
+    }
+    if (!attendeeEmail.trim()) {
+      toast.error("Please enter your email address.");
+      return;
+    }
+
+    const cartItems = Object.entries(selection)
+      .filter(([, quantity]) => quantity > 0)
+      .map(([ticketTypeId, quantity]) => {
+        const ticketType = (ticketTypes ?? []).find((t) => t.id === ticketTypeId);
+        if (!ticketType) return null;
+        return {
+          ticketTypeId,
+          name: ticketType.name,
+          price: ticketType.price ?? 0,
+          currency: ticketType.currency ?? "USD",
+          quantity,
+        };
+      })
+      .filter((item): item is NonNullable<typeof item> => item !== null);
+
+    if (cartItems.length === 0) {
+      toast.error("Please select at least one ticket.");
+      return;
+    }
+
+    try {
+      setCheckoutLoading(true);
+      const response = await fetch("/api/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          companySlug,
+          eventSlug,
+          attendeeName: attendeeName.trim(),
+          attendeeEmail: attendeeEmail.trim(),
+          cartItems,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || "Checkout failed");
+      }
+
+      if (result.checkoutUrl) {
+        window.location.href = result.checkoutUrl;
+        return;
+      }
+
+      if (result.success) {
+        toast.success("Registration complete. Your tickets are being sent by email.");
+        return;
+      }
+
+      throw new Error("Unexpected checkout response");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Checkout failed";
+      toast.error(message);
+    } finally {
+      setCheckoutLoading(false);
+    }
   };
 
   return (
@@ -206,6 +274,22 @@ export default function PublicEventPage({
                   <p className="text-muted-foreground text-sm">Select your tickets and proceed to complete your registration below.</p>
                 </div>
 
+                <div className="grid gap-3">
+                  <Input
+                    value={attendeeName}
+                    onChange={(e) => setAttendeeName(e.target.value)}
+                    placeholder="Full name"
+                    autoComplete="name"
+                  />
+                  <Input
+                    type="email"
+                    value={attendeeEmail}
+                    onChange={(e) => setAttendeeEmail(e.target.value)}
+                    placeholder="Email address"
+                    autoComplete="email"
+                  />
+                </div>
+
                 {ticketsLoading ? (
                   <div className="space-y-4">
                     <Skeleton className="h-24 w-full rounded-2xl" />
@@ -214,7 +298,8 @@ export default function PublicEventPage({
                 ) : (
                   <TicketWidget 
                     ticketTypes={ticketTypes || []} 
-                    onCheckout={handleCheckout} 
+                    onCheckout={handleCheckout}
+                    isLoading={checkoutLoading}
                   />
                 )}
 

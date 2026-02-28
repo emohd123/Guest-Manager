@@ -1,7 +1,6 @@
 "use client";
 
 import { use } from "react";
-import Link from "next/link";
 import { trpc } from "@/lib/trpc/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -41,27 +40,37 @@ export default function EventOverviewPage({
     return <div>Event not found.</div>;
   }
 
-  // Mock data for charts
+  // Chart data
   const emailData = [
-    { name: "Delivered", value: 124, count: 124 },
+    { name: "Delivered", value: 0, count: 0 },
     { name: "Failed delivery", value: 0, count: 0 },
     { name: "Deferred", value: 0, count: 0 },
   ];
 
   const sourceData = [
-    { name: "Imported", value: guestStats?.total || 0, count: guestStats?.total || 0 },
+    { name: "Imported", value: guestStats?.total ?? 0, count: guestStats?.total ?? 0 },
     { name: "Transfer", value: 0, count: 0 },
   ];
 
   const deliveryData = [
-    { name: "Sent", value: 40, count: 40 },
-    { name: "Downloaded", value: 20, count: 20 },
-    { name: "Unsent", value: ticketTypeStats?.totalSold || 1, count: ticketTypeStats?.totalSold || 1 },
+    { name: "Sent", value: ticketTypeStats?.totalSold ?? 0, count: ticketTypeStats?.totalSold ?? 0 },
+    { name: "Downloaded", value: 0, count: 0 },
+    { name: "Unsent", value: 0, count: 0 },
   ];
 
   const regData = [
-    { name: "Registered", value: guestStats?.total || 0, count: guestStats?.total || 0 },
-    { name: "Unsold", value: event.maxCapacity ? event.maxCapacity - (guestStats?.total || 0) : 100, count: event.maxCapacity ? event.maxCapacity - (guestStats?.total || 0) : "∞" },
+    { name: "Registered", value: guestStats?.total ?? 0, count: guestStats?.total ?? 0 },
+    {
+      name: "Unsold",
+      value:
+        event.maxCapacity != null
+          ? Math.max(event.maxCapacity - (guestStats?.total ?? 0), 0)
+          : 0,
+      count:
+        event.maxCapacity != null
+          ? Math.max(event.maxCapacity - (guestStats?.total ?? 0), 0)
+          : "Unlimited",
+    },
   ];
 
   return (
@@ -171,7 +180,7 @@ export default function EventOverviewPage({
                 <div>Source</div>
                 <div className="text-right">Action</div>
               </div>
-              {["Imported", "Added Onsite", "Order", "RSVP", "Invite", "SMS"].map((source, i) => {
+              {["Imported", "Added Onsite", "Order", "RSVP", "Invite", "SMS"].map((source) => {
                  const match = sourceData.find(d => d.name === source);
                  const hasData = match && match.count > 0;
                  return (
@@ -334,3 +343,4 @@ export default function EventOverviewPage({
     </div>
   );
 }
+

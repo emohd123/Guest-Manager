@@ -102,7 +102,7 @@ export default function TicketStudioPage() {
             </Link>
             <Link href="/contact">
               <Button size="lg" variant="outline">
-                See a Demo
+                See It Live
               </Button>
             </Link>
           </div>

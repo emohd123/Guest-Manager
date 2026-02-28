@@ -28,11 +28,7 @@ import {
   Users,
   Key,
   Shield,
-  Copy,
-  Eye,
-  EyeOff,
   Plus,
-  Trash2,
   Mail,
   Check,
   Zap,
@@ -675,9 +671,6 @@ function TeamSettings() {
 }
 
 function ApiSettings() {
-  const [showKey, setShowKey] = useState(false);
-  const mockKey = "gm_live_sk_xxxxxxxxxxxxxxxxxxxxxxxxxxxx";
-
   return (
     <div className="space-y-6">
       <Card>
@@ -688,56 +681,20 @@ function ApiSettings() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="rounded-lg border p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="font-medium">Live API Key</p>
-                <p className="text-xs text-muted-foreground">
-                  Created on Jan 1, 2025
-                </p>
-              </div>
-              <div className="flex items-center gap-2">
-                <Badge variant="outline" className="text-green-600">
-                  Active
-                </Badge>
-              </div>
-            </div>
-            <div className="mt-3 flex items-center gap-2">
-              <code className="flex-1 rounded bg-muted px-3 py-2 font-mono text-sm">
-                {showKey ? mockKey : "gm_live_sk_••••••••••••••••••••••••"}
-              </code>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setShowKey(!showKey)}
-              >
-                {showKey ? (
-                  <EyeOff className="h-4 w-4" />
-                ) : (
-                  <Eye className="h-4 w-4" />
-                )}
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => {
-                  navigator.clipboard.writeText(mockKey);
-                  toast.success("API key copied");
-                }}
-              >
-                <Copy className="h-4 w-4" />
-              </Button>
-              <Button variant="ghost" size="icon" className="text-destructive">
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            </div>
+          <div className="rounded-lg border border-dashed p-6 text-center">
+            <Key className="mx-auto h-8 w-8 text-muted-foreground/50" />
+            <p className="mt-2 text-sm text-muted-foreground">
+              No API keys have been generated for this workspace.
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground/70">
+              API key lifecycle management is disabled until secure key storage is configured.
+            </p>
           </div>
           <Button variant="outline" className="gap-2" disabled>
             <Plus className="h-4 w-4" /> Create New Key
           </Button>
         </CardContent>
       </Card>
-
       <Card>
         <CardHeader>
           <CardTitle>Webhooks</CardTitle>
@@ -758,7 +715,6 @@ function ApiSettings() {
           </div>
         </CardContent>
       </Card>
-
       <Card>
         <CardHeader>
           <CardTitle>API Documentation</CardTitle>

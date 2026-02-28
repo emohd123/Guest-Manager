@@ -359,7 +359,7 @@ export function ImportWizard({ open, onOpenChange, eventId, onSuccess }: ImportW
         </div>
 
         <DialogFooter className="p-6 bg-zinc-50 dark:bg-zinc-900 border-t border-zinc-200 dark:border-zinc-800 flex items-center justify-end gap-3 z-10">
-          {!isProcessing && step !== "upload" && (
+          {step !== "processing" && step !== "upload" && (
             <Button variant="outline" onClick={() => setStep(step === "mapping" ? "upload" : "mapping")} className="rounded-xl h-11 px-6 font-bold uppercase tracking-widest text-xs">
               Back
             </Button>
@@ -383,5 +383,3 @@ export function ImportWizard({ open, onOpenChange, eventId, onSuccess }: ImportW
     </Dialog>
   );
 }
-
-const isProcessing = false; // Mock for step logic

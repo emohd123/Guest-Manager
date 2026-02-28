@@ -1,85 +1,65 @@
 import { createClient } from '@supabase/supabase-js';
+import { config as loadEnv } from 'dotenv';
 
-const SUPABASE_URL = 'https://zworeyksseoicmpthycv.supabase.co';
-const SERVICE_ROLE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp3b3JleWtzc2VvaWNtcHRoeWN2Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MTA3ODMzNiwiZXhwIjoyMDg2NjU0MzM2fQ.kDmEZKUxGxrgVUEEwDbsuMU5GWjd5B4BUmHdlO9rJHs';
-const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp3b3JleWtzc2VvaWNtcHRoeWN2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzEwNzgzMzYsImV4cCI6MjA4NjY1NDMzNn0.vfEnudE5JnS08dE_-fpbJE4ggykF1Uwqm5gJPYCs3CU';
+loadEnv({ path: '.env.local' });
 
-// Admin client with service role
-const admin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const shouldConfirm = process.argv.includes('--confirm-unverified');
+
+if (!supabaseUrl || !serviceRoleKey) {
+  console.error('Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY in .env.local');
+  process.exit(1);
+}
+
+const admin = createClient(supabaseUrl, serviceRoleKey, {
   auth: { autoRefreshToken: false, persistSession: false },
 });
 
-// 1. List and confirm existing users
-console.log('=== Listing existing users ===');
-const { data: listData, error: listError } = await admin.auth.admin.listUsers();
-if (listError) {
-  console.log('Error listing users:', listError.message);
-} else {
-  const users = listData.users || [];
+async function main() {
+  console.log('=== Listing auth users ===');
+  const { data, error } = await admin.auth.admin.listUsers();
+
+  if (error) {
+    console.error('Error listing users:', error.message);
+    process.exit(1);
+  }
+
+  const users = data.users || [];
   console.log(`Found ${users.length} users`);
-  for (const u of users) {
-    console.log(`  - ${u.email} | confirmed: ${u.email_confirmed_at ? 'YES' : 'NO'} | id: ${u.id}`);
-    if (!u.email_confirmed_at) {
-      const { error } = await admin.auth.admin.updateUserById(u.id, { email_confirm: true });
-      console.log(`    -> ${error ? 'Failed: ' + error.message : 'Auto-confirmed!'}`);
+
+  for (const user of users) {
+    console.log(
+      `- ${user.email} | confirmed: ${user.email_confirmed_at ? 'YES' : 'NO'} | id: ${user.id}`
+    );
+  }
+
+  if (!shouldConfirm) {
+    console.log('\nRun with --confirm-unverified to auto-confirm pending users.');
+    return;
+  }
+
+  const pending = users.filter((u) => !u.email_confirmed_at);
+  if (pending.length === 0) {
+    console.log('\nNo unverified users to confirm.');
+    return;
+  }
+
+  console.log(`\nAuto-confirming ${pending.length} user(s)...`);
+  for (const user of pending) {
+    const { error: updateError } = await admin.auth.admin.updateUserById(user.id, {
+      email_confirm: true,
+    });
+
+    if (updateError) {
+      console.error(`  Failed: ${user.email} -> ${updateError.message}`);
+    } else {
+      console.log(`  Confirmed: ${user.email}`);
     }
   }
 }
 
-// 2. Create a dev test user (auto-confirmed)
-console.log('\n=== Creating dev test user ===');
-const { data: newUser, error: createError } = await admin.auth.admin.createUser({
-  email: 'dev@guestmanager.app',
-  password: 'password123',
-  email_confirm: true,
-  user_metadata: {
-    name: 'Dev Admin',
-    company_name: 'Guest Manager Dev',
-  },
+main().catch((err) => {
+  console.error('Unexpected error:', err);
+  process.exit(1);
 });
-
-if (createError) {
-  console.log('Create error:', createError.message);
-} else {
-  console.log(`Created: ${newUser.user.email} (id: ${newUser.user.id})`);
-}
-
-// 3. Test sign in with the new user
-console.log('\n=== Testing sign in ===');
-const anonClient = createClient(SUPABASE_URL, ANON_KEY);
-const { data: signInData, error: signInError } = await anonClient.auth.signInWithPassword({
-  email: 'dev@guestmanager.app',
-  password: 'password123',
-});
-
-if (signInError) {
-  console.log('Sign in error:', signInError.message);
-} else {
-  console.log('Sign in SUCCESS!');
-  console.log('  Email:', signInData.user?.email);
-  console.log('  Session:', signInData.session ? 'YES' : 'NO');
-}
-
-// 4. Test fresh signup with email confirm off
-console.log('\n=== Testing fresh signup (email confirm should be OFF) ===');
-const { data: signUpData, error: signUpError } = await anonClient.auth.signUp({
-  email: 'signuptest@gmail.com',
-  password: 'TestPass123',
-  options: {
-    data: { name: 'Signup Tester', company_name: 'Signup Co' },
-  },
-});
-
-if (signUpError) {
-  console.log('Signup error:', signUpError.message);
-} else {
-  console.log('Signup result:');
-  console.log('  Has session:', signUpData.session ? 'YES (auto-confirmed!)' : 'NO (still needs email)');
-  if (signUpData.session) {
-    console.log('  Email:', signUpData.user?.email);
-  }
-}
-
-console.log('\nDone! You can now log in at http://localhost:3000/login');
-console.log('  Email: dev@guestmanager.app');
-console.log('  Password: password123');

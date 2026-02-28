@@ -1,11 +1,5 @@
 import { Resend } from "resend";
 
-if (!process.env.RESEND_API_KEY) {
-  console.warn("RESEND_API_KEY is not set — email features will be unavailable");
-}
-
-export const resend = new Resend(process.env.RESEND_API_KEY || "re_placeholder");
-
 export interface RegistrationEmailData {
   to: string;
   attendeeName: string;
@@ -18,14 +12,33 @@ export interface RegistrationEmailData {
   isFree: boolean;
 }
 
+function getResendClient() {
+  const apiKey = process.env.RESEND_API_KEY?.trim();
+  if (!apiKey) {
+    throw new Error("RESEND_API_KEY is not configured");
+  }
+  return new Resend(apiKey);
+}
+
+function getFromEmail() {
+  const fromEmail = process.env.RESEND_FROM_EMAIL?.trim();
+  if (!fromEmail) {
+    throw new Error("RESEND_FROM_EMAIL is not configured");
+  }
+  return fromEmail;
+}
+
 export async function sendRegistrationConfirmation(data: RegistrationEmailData) {
+  const resend = getResendClient();
+  const fromEmail = getFromEmail();
+
   const ticketRows = data.tickets
     .map(
-      (t) =>
-        `<tr>
-          <td style="padding: 8px 0; border-bottom: 1px solid #f0f0f0;">${t.name} × ${t.quantity}</td>
+      (ticket) => `
+        <tr>
+          <td style="padding: 8px 0; border-bottom: 1px solid #f0f0f0;">${ticket.name} x ${ticket.quantity}</td>
           <td style="padding: 8px 0; border-bottom: 1px solid #f0f0f0; text-align: right;">
-            ${t.price === 0 ? "Free" : `$${((t.price * t.quantity) / 100).toFixed(2)}`}
+            ${ticket.price === 0 ? "Free" : `$${((ticket.price * ticket.quantity) / 100).toFixed(2)}`}
           </td>
         </tr>`
     )
@@ -44,7 +57,6 @@ export async function sendRegistrationConfirmation(data: RegistrationEmailData) 
     <tr>
       <td align="center">
         <table width="600" cellpadding="0" cellspacing="0" style="max-width: 600px; width: 100%; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
-          <!-- Header -->
           <tr>
             <td style="background: linear-gradient(135deg, #377DFF, #2563eb); padding: 32px 40px; text-align: center;">
               <h1 style="margin: 0; color: white; font-size: 24px; font-weight: 700;">You're registered!</h1>
@@ -53,8 +65,6 @@ export async function sendRegistrationConfirmation(data: RegistrationEmailData) 
               </p>
             </td>
           </tr>
-
-          <!-- Body -->
           <tr>
             <td style="padding: 32px 40px;">
               <p style="margin: 0 0 24px; color: #374151; font-size: 15px;">
@@ -62,7 +72,6 @@ export async function sendRegistrationConfirmation(data: RegistrationEmailData) 
                 Thanks for registering! Here are your order details:
               </p>
 
-              <!-- Event Info -->
               <div style="background: #f9fafb; border-radius: 8px; padding: 20px; margin-bottom: 24px;">
                 <p style="margin: 0; font-weight: 600; font-size: 16px; color: #111827;">${data.eventTitle}</p>
                 <p style="margin: 6px 0 0; color: #6b7280; font-size: 14px;">${data.eventDate}</p>
@@ -70,7 +79,6 @@ export async function sendRegistrationConfirmation(data: RegistrationEmailData) 
                 <p style="margin: 8px 0 0; font-size: 12px; color: #9ca3af;">Order #${data.orderNumber}</p>
               </div>
 
-              <!-- Ticket Summary -->
               <table width="100%" cellpadding="0" cellspacing="0" style="font-size: 14px;">
                 <thead>
                   <tr>
@@ -92,8 +100,6 @@ export async function sendRegistrationConfirmation(data: RegistrationEmailData) 
               </table>
             </td>
           </tr>
-
-          <!-- Footer -->
           <tr>
             <td style="padding: 24px 40px; border-top: 1px solid #f0f0f0; text-align: center;">
               <p style="margin: 0; font-size: 13px; color: #9ca3af;">
@@ -108,30 +114,15 @@ export async function sendRegistrationConfirmation(data: RegistrationEmailData) 
 </body>
 </html>`;
 
-  const text = `You're registered for ${data.eventTitle}!
+  const text = `You're registered for ${data.eventTitle}!\n\nHi ${data.attendeeName},\n\nThanks for registering!\n\nEvent: ${data.eventTitle}\nDate: ${data.eventDate}\n${data.eventLocation ? `Location: ${data.eventLocation}\n` : ""}Order #${data.orderNumber}\n\nTickets:\n${data.tickets
+    .map((ticket) => `- ${ticket.name} x ${ticket.quantity}: ${ticket.price === 0 ? "Free" : `$${((ticket.price * ticket.quantity) / 100).toFixed(2)}`}`)
+    .join("\n")}\n\nTotal: ${data.isFree ? "Free" : `$${(data.total / 100).toFixed(2)}`}\n\nPowered by GuestManager`;
 
-Hi ${data.attendeeName},
-
-Thanks for registering! Here are your order details:
-
-Event: ${data.eventTitle}
-Date: ${data.eventDate}
-${data.eventLocation ? `Location: ${data.eventLocation}\n` : ""}Order #${data.orderNumber}
-
-Tickets:
-${data.tickets.map((t) => `- ${t.name} × ${t.quantity}: ${t.price === 0 ? "Free" : `$${((t.price * t.quantity) / 100).toFixed(2)}`}`).join("\n")}
-
-Total: ${data.isFree ? "Free" : `$${(data.total / 100).toFixed(2)}`}
-
-Powered by GuestManager`;
-
-  const result = await resend.emails.send({
-    from: process.env.RESEND_FROM_EMAIL ?? "noreply@guestmanager.app",
+  return resend.emails.send({
+    from: fromEmail,
     to: data.to,
     subject: `Registration Confirmed: ${data.eventTitle}`,
     html,
     text,
   });
-
-  return result;
 }
