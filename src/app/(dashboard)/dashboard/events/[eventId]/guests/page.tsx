@@ -383,9 +383,9 @@ export default function EventGuestsPage({
                 <Edit className="mr-2 h-4 w-4" /> Edit
               </DropdownMenuItem>
               <DropdownMenuItem
-                onClick={() => openEditDialog(row.original)} // Needs proper View logic later
+                onClick={() => setQrGuest(row.original)}
               >
-                <QrCode className="mr-2 h-4 w-4" /> View
+                <QrCode className="mr-2 h-4 w-4" /> View QR
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem asChild>
@@ -532,7 +532,7 @@ export default function EventGuestsPage({
                 <DropdownMenuContent>
                   <DropdownMenuItem
                     onClick={() => {
-                      const selectedIds = Object.keys(rowSelection).map(idx => (data?.guests?.[parseInt(idx)] as Guest)?.id).filter(Boolean);
+                      const selectedIds = Object.keys(rowSelection).filter(Boolean);
                       if (selectedIds.length) {
                         bulkUpdateStatus.mutate({ ids: selectedIds, status: "checked_in" });
                       }
@@ -542,7 +542,7 @@ export default function EventGuestsPage({
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={() => {
-                      const selectedIds = Object.keys(rowSelection).map(idx => (data?.guests?.[parseInt(idx)] as Guest)?.id).filter(Boolean);
+                      const selectedIds = Object.keys(rowSelection).filter(Boolean);
                       if (selectedIds.length) {
                         bulkUpdateStatus.mutate({ ids: selectedIds, status: "confirmed" });
                       }

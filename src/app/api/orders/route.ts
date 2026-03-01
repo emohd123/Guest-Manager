@@ -1,11 +1,11 @@
 export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/server/db";
-import { companies, events, orders, orderItems, ticketTypes, tickets } from "@/server/db/schema";
+import { companies, events, guests, orders, orderItems, ticketTypes, tickets } from "@/server/db/schema";
 import { eq, and, sql } from "drizzle-orm";
 import { getStripeClient } from "@/lib/stripe";
 import { generateAndSendTicket } from "@/server/actions/generateAndSendTicket";
-import { nanoid } from "nanoid";
+import crypto from "crypto";
 
 function generateOrderNumber(): string {
   const timestamp = Date.now().toString(36).toUpperCase();
@@ -166,7 +166,24 @@ export async function POST(request: NextRequest) {
       for (const item of cartItems) {
         const ticketType = validTicketTypes.find(tt => tt.id === item.ticketTypeId);
         for (let i = 0; i < item.quantity; i++) {
-          const barcode = `TKT-${nanoid(12).toUpperCase()}`;
+          const barcode = `TKT-${crypto.randomBytes(6).toString("hex").toUpperCase()}`;
+
+          // Create guest record first so it appears in Guest List & Check-in app
+          const [firstName, ...lastNameParts] = attendeeName.trim().split(/\s+/).filter(Boolean);
+          const [newGuest] = await db
+            .insert(guests)
+            .values({
+              companyId: company[0].id,
+              eventId: event[0].id,
+              firstName: firstName || "Guest",
+              lastName: lastNameParts.join(" "),
+              email: attendeeEmail,
+              status: "confirmed",
+              guestType: ticketType?.name ?? item.name,
+              source: "registration",
+            })
+            .returning();
+
           const [newTicket] = await db
             .insert(tickets)
             .values({
@@ -174,6 +191,7 @@ export async function POST(request: NextRequest) {
               eventId: event[0].id,
               ticketTypeId: item.ticketTypeId,
               orderId: order[0].id,
+              guestId: newGuest.id,
               barcode,
               attendeeName,
               attendeeEmail,

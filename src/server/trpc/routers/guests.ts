@@ -356,6 +356,14 @@ export const guestsRouter = router({
         )
         .limit(1);
 
+      // Also mark the linked ticket as checked-in
+      if (ticket) {
+        await ctx.db
+          .update(tickets)
+          .set({ checkedIn: true, checkedInAt: new Date(), updatedAt: new Date() })
+          .where(eq(tickets.id, ticket.id));
+      }
+
       // Write a scan record for audit trail
       await ctx.db.insert(scans).values({
         companyId: ctx.companyId,
@@ -391,6 +399,25 @@ export const guestsRouter = router({
         .returning();
 
       if (!updatedGuest) throw new Error("Guest not found");
+
+      // Revert the linked ticket's check-in state
+      const [linkedTicket] = await ctx.db
+        .select()
+        .from(tickets)
+        .where(
+          and(
+            eq(tickets.guestId, input.guestId),
+            eq(tickets.eventId, input.eventId)
+          )
+        )
+        .limit(1);
+
+      if (linkedTicket) {
+        await ctx.db
+          .update(tickets)
+          .set({ checkedIn: false, checkedInAt: null, updatedAt: new Date() })
+          .where(eq(tickets.id, linkedTicket.id));
+      }
 
       // Write checkout scan record
       await ctx.db.insert(scans).values({
@@ -547,7 +574,9 @@ export const guestsRouter = router({
         if (result.code === "EMAIL_NOT_CONFIGURED") {
           throw new Error("Email service is not configured. Add RESEND_API_KEY to .env.local and restart the app.");
         }
-        throw new Error("Failed to send email. Check server logs for provider details.");
+        const detail = result.error instanceof Error ? result.error.message : String(result.error);
+        console.error("[sendTicketEmail] Resend error:", result.error);
+        throw new Error(`Failed to send email: ${detail}`);
       }
 
       return result;

@@ -1,6 +1,6 @@
 import { Resend } from "resend";
 import TicketEmail from "@/emails/TicketEmail";
-import { generateQRCodeDataUri } from "../utils/qrcode";
+import { generateAndUploadQRCode } from "../utils/qrcode";
 
 export interface EmailDesign {
   headerImageUrl?: string;
@@ -80,8 +80,8 @@ export async function sendTicketEmail({
 
     const resend = new Resend(resendApiKey);
 
-    // Generate the QR code data URI from the barcode
-    const qrCodeDataUri = await generateQRCodeDataUri(barcode);
+    // Generate QR code as a hosted public URL (data: URIs are blocked by email clients)
+    const qrCodeDataUri = await generateAndUploadQRCode(barcode);
 
     const senderName = emailDesign?.senderName || "Guest Manager";
     const replyTo = emailDesign?.replyTo;

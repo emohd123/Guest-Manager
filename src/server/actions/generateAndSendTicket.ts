@@ -11,7 +11,7 @@ import React, { type ReactElement } from "react";
 import { createClient } from "@supabase/supabase-js";
 import { format } from "date-fns";
 import { Resend } from "resend";
-import { generateQRCodeDataUri } from "@/server/utils/qrcode";
+import { generateQRCodeDataUri, generateAndUploadQRCode } from "@/server/utils/qrcode";
 import { TicketPDFDocument } from "@/lib/pdf/TicketPDF";
 import TicketEmail from "@/emails/TicketEmail";
 import { getDb } from "@/server/db";
@@ -64,8 +64,11 @@ export async function generateAndSendTicket(payload: TicketEmailPayload): Promis
   const formattedTime = format(eventStartsAt, "h:mm a");
   const formattedDateTime = format(eventStartsAt, "MMM d, yyyy • h:mm a");
 
-  // 1. Generate QR code
-  const qrCodeDataUri = await generateQRCodeDataUri(barcode);
+  // 1. Generate QR code — hosted URL for email, data URI for PDF (PDF renderer supports data URIs)
+  const [qrCodePublicUrl, qrCodeDataUri] = await Promise.all([
+    generateAndUploadQRCode(barcode),
+    generateQRCodeDataUri(barcode),
+  ]);
 
   // 2. Generate PDF
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -148,7 +151,7 @@ export async function generateAndSendTicket(payload: TicketEmailPayload): Promis
     attendeeName,
     ticketName: ticketTypeName,
     orderNumber,
-    qrCodeDataUri,
+    qrCodeDataUri: qrCodePublicUrl,
     eventDate: formattedDate,
     eventTime: formattedTime,
     eventLocation,
