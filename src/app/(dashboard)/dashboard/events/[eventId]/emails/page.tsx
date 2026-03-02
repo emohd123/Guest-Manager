@@ -61,7 +61,7 @@ export default function SentEmailsPage({ params }: { params: Promise<{ eventId: 
       accessorKey: "emailAddress",
       header: "Email",
       cell: ({ row }: { row: any }) => (
-        <a href={`mailto:${row.original.emailAddress}`} className="text-blue-500 hover:underline">
+        <a href={`mailto:${row.original.emailAddress}`} className="text-blue-500 hover:underline max-w-[250px] truncate inline-block">
           {row.original.emailAddress}
         </a>
       )
@@ -69,15 +69,17 @@ export default function SentEmailsPage({ params }: { params: Promise<{ eventId: 
     {
       accessorKey: "subject",
       header: "Subject",
-      cell: ({ row }: { row: any }) => <span className="text-muted-foreground">{row.original.subject}</span>
+      cell: ({ row }: { row: any }) => <div className="text-muted-foreground max-w-[200px] truncate">{row.original.subject}</div>
     },
     {
       accessorKey: "openCount",
-      header: "Open count",
+      header: () => <div className="whitespace-nowrap">Open count</div>,
+      cell: ({ row }: { row: any }) => <div className="whitespace-nowrap text-center">{row.original.openCount}</div>
     },
     {
       accessorKey: "clickCount",
-      header: "Click count",
+      header: () => <div className="whitespace-nowrap">Click count</div>,
+      cell: ({ row }: { row: any }) => <div className="whitespace-nowrap text-center">{row.original.clickCount}</div>
     },
     {
       accessorKey: "reason",
@@ -88,10 +90,10 @@ export default function SentEmailsPage({ params }: { params: Promise<{ eventId: 
       id: "actions",
       header: "Actions",
       cell: () => (
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm">View</Button>
-          <Button variant="outline" size="sm">Activity</Button>
-          <Button variant="outline" size="sm">Resend</Button>
+        <div className="flex items-center gap-2 whitespace-nowrap">
+          <Button variant="outline" size="sm" className="h-8 shadow-none">View</Button>
+          <Button variant="outline" size="sm" className="h-8 shadow-none">Activity</Button>
+          <Button variant="outline" size="sm" className="h-8 shadow-none">Resend</Button>
         </div>
       )
     },
