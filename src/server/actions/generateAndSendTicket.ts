@@ -11,6 +11,7 @@ import React, { type ReactElement } from "react";
 import { createClient } from "@supabase/supabase-js";
 import { format } from "date-fns";
 import { Resend } from "resend";
+import { render } from "@react-email/components";
 import { nanoid } from "nanoid";
 import { generateQRCodeDataUri, generateAndUploadQRCode } from "@/server/utils/qrcode";
 import { TicketPDFDocument } from "@/lib/pdf/TicketPDF";
@@ -171,11 +172,13 @@ export async function generateAndSendTicket(payload: TicketEmailPayload): Promis
     },
   });
 
+  const emailHtmlRaw = await render(emailHtml);
+
   const sendOptions: Parameters<typeof resend.emails.send>[0] = {
     from: `${senderName} <${fromEmail}>`,
     to: [toEmail],
     subject: `Your ticket for ${eventName}`,
-    react: emailHtml,
+    html: emailHtmlRaw,
     attachments: pdfBuffer
       ? [
           {

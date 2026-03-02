@@ -1,4 +1,5 @@
 import { Resend } from "resend";
+import { render } from "@react-email/components";
 import TicketEmail from "@/emails/TicketEmail";
 import { generateAndUploadQRCode } from "../utils/qrcode";
 import { getDb } from "@/server/db";
@@ -116,15 +117,17 @@ export async function sendTicketEmail({
         venue: true,
         startDate: true,
         attendeeName: true,
-        barcode: true,
+      barcode: true,
       },
     });
+
+    const emailHtmlRaw = await render(emailComponent);
 
     const sendOptions: Parameters<typeof resend.emails.send>[0] = {
       from: `${senderName} <${fromEmail}>`,
       to: [toEmail],
       subject: `Your ticket for ${eventName}`,
-      react: emailComponent,
+      html: emailHtmlRaw,
     };
 
     if (replyTo) {
