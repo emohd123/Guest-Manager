@@ -53,7 +53,21 @@
       "Bash(cmd /c \"for /f \"\"tokens=5\"\" %a in \\(''netstat -aon ^| findstr :3000 ^| findstr LISTENING''\\) do @echo PID=%a & tasklist /FI \"\"PID eq %a\"\"\")",
       "Bash(cmd /c \"rmdir /s /q \"\"C:\\\\Users\\\\cactu\\\\OneDrive\\\\Desktop\\\\app\\\\Guest Manager\\\\.next\\\\dev\"\" 2>nul && echo removed_dev_dir || echo failed\")",
       "mcp__Claude_Preview__preview_start",
-      "Bash(where:*)"
+      "Bash(where:*)",
+      "Bash(adb devices)",
+      "Bash(cmd.exe /c \"where adb\")",
+      "Bash(cmd.exe /c \"where emulator\")",
+      "Bash(cmd.exe /c \"where adb 2>&1 & where emulator 2>&1\")",
+      "Bash(cmd.exe /c \"dir /b C:\\\\Users\\\\cactu\\\\AppData\\\\Local\\\\Android\\\\Sdk\\\\platform-tools\\\\adb.exe 2>&1\")",
+      "Bash(cmd.exe /c \"dir /b C:\\\\Users\\\\cactu\\\\AppData\\\\Local\\\\Android\\\\Sdk\\\\emulator\\\\emulator.exe 2>&1\")",
+      "Bash(/c/Users/cactu/AppData/Local/Android/Sdk/emulator/emulator.exe -list-avds)",
+      "Bash(/c/Users/cactu/AppData/Local/Android/Sdk/platform-tools/adb.exe devices)",
+      "Bash(/c/Users/cactu/AppData/Local/Android/Sdk/platform-tools/adb.exe -s emulator-5554 reverse tcp:8081 tcp:8081)",
+      "Bash(/c/Users/cactu/AppData/Local/Android/Sdk/platform-tools/adb.exe -s emulator-5554 reverse tcp:3000 tcp:3000)",
+      "Bash(ipconfig)",
+      "Bash(ADB=/c/Users/cactu/AppData/Local/Android/Sdk/platform-tools/adb.exe)",
+      "Bash(\"$ADB\" -s emulator-5554 shell pm list packages)",
+      "Bash(java -version)"
     ]
   }
 }
