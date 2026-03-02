@@ -1,0 +1,15 @@
+⚠ The "middleware" file convention is deprecated. Please use "proxy" instead. Learn more: https://nextjs.org/docs/messages/middleware-to-proxy
+
+-----
+[1m[31mFATAL[39m[0m: An unexpected Turbopack error occurred. A panic log has been written to C:\Users\cactu\AppData\Local\Temp\next-panic-c514592a7c2c1cf23eb9b765aefb9851.log.
+
+To help make Turbopack better, report this error by clicking here: https://github.com/vercel/next.js/discussions/new?category=turbopack-error-report&title=Turbopack%20Error%3A%20reading%20file%20C%3A%5CUsers%5Ccactu%5COneDrive%5CDesktop%5Capp%5CGuest%20Manager%5Cnode_modules%5Cnext%5Cdist%5Cesm%5Cserver%5Cweb%5Cspec-extension%5Cadapters%5Creflect.js&body=Turbopack%20version%3A%20%6023c46498%60%0ANext.js%20version%3A%20%600.0.0%60%0A%0AError%20message%3A%0A%60%60%60%0ATurbopack%20Error%3A%20reading%20file%20C%3A%5CUsers%5Ccactu%5COneDrive%5CDesktop%5Capp%5CGuest%20Manager%5Cnode_modules%5Cnext%5Cdist%5Cesm%5Cserver%5Cweb%5Cspec-extension%5Cadapters%5Creflect.js%0A%60%60%60&labels=Turbopack,Turbopack%20Panic%20Backtrace
+-----
+
+
+-----
+[1m[31mFATAL[39m[0m: An unexpected Turbopack error occurred. A panic log has been written to C:\Users\cactu\AppData\Local\Temp\next-panic-c514592a7c2c1cf23eb9b765aefb9851.log.
+
+To help make Turbopack better, report this error by clicking here: https://github.com/vercel/next.js/discussions/new?category=turbopack-error-report&title=Turbopack%20Error%3A%20reading%20file%20C%3A%5CUsers%5Ccactu%5COneDrive%5CDesktop%5Capp%5CGuest%20Manager%5Cnode_modules%5Cnext%5Cdist%5Cesm%5Cserver%5Cweb%5Cspec-extension%5Cadapters%5Cheaders.js&body=Turbopack%20version%3A%20%6023c46498%60%0ANext.js%20version%3A%20%600.0.0%60%0A%0AError%20message%3A%0A%60%60%60%0ATurbopack%20Error%3A%20reading%20file%20C%3A%5CUsers%5Ccactu%5COneDrive%5CDesktop%5Capp%5CGuest%20Manager%5Cnode_modules%5Cnext%5Cdist%5Cesm%5Cserver%5Cweb%5Cspec-extension%5Cadapters%5Cheaders.js%0A%60%60%60&labels=Turbopack,Turbopack%20Panic%20Backtrace
+-----
+
