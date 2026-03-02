@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useSyncExternalStore } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   CommandDialog,
@@ -33,11 +33,6 @@ import { useTheme } from "next-themes";
 
 export function CommandPalette() {
   const [open, setOpen] = useState(false);
-  const mounted = useSyncExternalStore(
-    () => () => {},
-    () => true,
-    () => false
-  );
   const router = useRouter();
   const { setTheme, theme } = useTheme();
 
@@ -56,10 +51,6 @@ export function CommandPalette() {
     setOpen(false);
     router.push(path);
   };
-
-  if (!mounted) {
-    return null;
-  }
 
   return (
     <CommandDialog open={open} onOpenChange={setOpen}>
