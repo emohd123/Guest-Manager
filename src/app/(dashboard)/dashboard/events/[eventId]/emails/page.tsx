@@ -7,6 +7,15 @@ import { Plus, Mail, RefreshCw, Star, Filter, X, LayoutTemplate } from "lucide-r
 import { use } from "react";
 import { trpc } from "@/lib/trpc/client";
 import { Input } from "@/components/ui/input";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { format } from "date-fns";
 
 export default function SentEmailsPage({ params }: { params: Promise<{ eventId: string }> }) {
   const { eventId } = use(params);
@@ -14,6 +23,21 @@ export default function SentEmailsPage({ params }: { params: Promise<{ eventId: 
   const { data, isLoading } = trpc.sentEmails.list.useQuery({
     eventId,
     limit: 100,
+  });
+
+  const [viewingEmail, setViewingEmail] = React.useState<any | null>(null);
+  const [activityEmail, setActivityEmail] = React.useState<any | null>(null);
+  const [resendingEmail, setResendingEmail] = React.useState<any | null>(null);
+  
+  const utils = trpc.useUtils();
+  const resendMutation = trpc.sentEmails.resend.useMutation({
+    onSuccess: () => {
+      utils.sentEmails.list.invalidate();
+      setResendingEmail(null);
+    },
+    onError: (err) => {
+      alert("Failed to resend: " + err.message);
+    }
   });
 
   const emails = data?.emails ?? [];
@@ -89,11 +113,11 @@ export default function SentEmailsPage({ params }: { params: Promise<{ eventId: 
     {
       id: "actions",
       header: () => <div className="text-right w-full pr-4">Actions</div>,
-      cell: () => (
+      cell: ({ row }: { row: any }) => (
         <div className="flex items-center justify-end gap-2 w-max ml-auto">
-          <Button variant="outline" size="sm" className="h-8 shadow-none shrink-0 flex-none text-xs px-3">View</Button>
-          <Button variant="outline" size="sm" className="h-8 shadow-none shrink-0 flex-none text-xs px-3">Activity</Button>
-          <Button variant="outline" size="sm" className="h-8 shadow-none shrink-0 flex-none text-xs px-3">Resend</Button>
+          <Button variant="outline" size="sm" className="h-8 shadow-none shrink-0 flex-none text-xs px-3" onClick={() => setViewingEmail(row.original)}>View</Button>
+          <Button variant="outline" size="sm" className="h-8 shadow-none shrink-0 flex-none text-xs px-3" onClick={() => setActivityEmail(row.original)}>Activity</Button>
+          <Button variant="outline" size="sm" className="h-8 shadow-none shrink-0 flex-none text-xs px-3" onClick={() => setResendingEmail(row.original)}>Resend</Button>
         </div>
       )
     },
@@ -167,6 +191,96 @@ export default function SentEmailsPage({ params }: { params: Promise<{ eventId: 
           isLoading={isLoading}
         />
       </div>
+
+      <Dialog open={!!viewingEmail} onOpenChange={(o) => !o && setViewingEmail(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Email Summary</DialogTitle>
+            <DialogDescription>Details about this message.</DialogDescription>
+          </DialogHeader>
+          {viewingEmail && (
+            <div className="space-y-4 text-sm mt-4">
+              <div className="grid grid-cols-4 items-center gap-4">
+                <span className="font-semibold text-right col-span-1 border-r pr-4">Sent to</span>
+                <span className="col-span-3">{viewingEmail.emailAddress}</span>
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <span className="font-semibold text-right col-span-1 border-r pr-4">Subject</span>
+                <span className="col-span-3">{viewingEmail.subject}</span>
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <span className="font-semibold text-right col-span-1 border-r pr-4">Status</span>
+                <span className="col-span-3">{viewingEmail.status} ({viewingEmail.state})</span>
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <span className="font-semibold text-right col-span-1 border-r pr-4">Date</span>
+                <span className="col-span-3">{format(new Date(viewingEmail.createdAt), "PP pp")}</span>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+      
+      <Dialog open={!!activityEmail} onOpenChange={(o) => !o && setActivityEmail(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Email Activity</DialogTitle>
+            <DialogDescription>Timeline of interactions for ({activityEmail?.emailAddress}).</DialogDescription>
+          </DialogHeader>
+          {activityEmail && (
+            <div className="space-y-6 mt-4 relative border-l-2 border-muted ml-4 pl-6 pb-2">
+              <div className="relative">
+                <div className="absolute -left-[31px] top-1 h-3 w-3 rounded-full bg-blue-500 ring-4 ring-background" />
+                <h4 className="text-sm font-semibold">Message Created</h4>
+                <p className="text-xs text-muted-foreground">{format(new Date(activityEmail.createdAt), "PP pp")}</p>
+              </div>
+              
+              <div className="relative">
+                <div className={`absolute -left-[31px] top-1 h-3 w-3 rounded-full ring-4 ring-background ${activityEmail.state === 'Delivered' ? 'bg-green-500' : 'bg-yellow-500'}`} />
+                <h4 className="text-sm font-semibold">{activityEmail.state === 'Delivered' ? 'Message Delivered' : 'Sending...'}</h4>
+                <p className="text-xs text-muted-foreground">{format(new Date(activityEmail.updatedAt), "PP pp")}</p>
+                {activityEmail.reason && <p className="text-xs text-destructive mt-1">{activityEmail.reason}</p>}
+              </div>
+
+              {activityEmail.openCount > 0 && (
+                <div className="relative">
+                  <div className="absolute -left-[31px] top-1 h-3 w-3 rounded-full bg-purple-500 ring-4 ring-background" />
+                  <h4 className="text-sm font-semibold">Message Opened</h4>
+                  <p className="text-xs text-muted-foreground">{activityEmail.openCount} total {activityEmail.openCount === 1 ? 'open' : 'opens'}</p>
+                </div>
+              )}
+              
+              {activityEmail.clickCount > 0 && (
+                <div className="relative">
+                  <div className="absolute -left-[31px] top-1 h-3 w-3 rounded-full bg-orange-500 ring-4 ring-background" />
+                  <h4 className="text-sm font-semibold">Link Clicked</h4>
+                  <p className="text-xs text-muted-foreground">{activityEmail.clickCount} total {activityEmail.clickCount === 1 ? 'click' : 'clicks'}</p>
+                </div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!resendingEmail} onOpenChange={(o) => !o && setResendingEmail(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Resend Email</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to resend this "{resendingEmail?.type}" to {resendingEmail?.emailAddress}?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="mt-6">
+            <Button variant="outline" onClick={() => setResendingEmail(null)}>Cancel</Button>
+            <Button 
+              disabled={resendMutation.isLoading}
+              onClick={() => resendMutation.mutate({ emailAddress: resendingEmail.emailAddress, eventId })}
+            >
+              {resendMutation.isLoading ? "Sending..." : "Confirm & Send"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
