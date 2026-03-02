@@ -1,109 +1,338 @@
 "use client";
-/* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { DataTable } from "@/components/shared/data-table";
-import { Button } from "@/components/ui/button";
-import { Plus, Smartphone, Zap } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-
-import { use } from "react";
+import { use, useMemo, useState, type ReactNode } from "react";
 import { formatDistanceToNow } from "date-fns";
+import {
+  Archive,
+  Copy,
+  Pencil,
+  RefreshCcw,
+  Smartphone,
+  Trash2,
+  TriangleAlert,
+  Wifi,
+  WifiOff,
+  Zap,
+} from "lucide-react";
 import { trpc } from "@/lib/trpc/client";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { DataTable } from "@/components/shared/data-table";
+import { toast } from "sonner";
+
+type DeviceRow = {
+  id: string;
+  name: string;
+  platform: string | null;
+  model: string | null;
+  station: string | null;
+  status: "online" | "offline";
+  battery: number | null;
+  scannerBattery: number | null;
+  appVersion: string | null;
+  lastReportAt: Date | null;
+  lastSyncAt: Date | null;
+  computedOnline: boolean;
+};
+
+const iosUrl =
+  process.env.NEXT_PUBLIC_MOBILE_IOS_URL ??
+  "https://apps.apple.com/us/app/guest-manager-check-in/id1460267612";
+const androidUrl = process.env.NEXT_PUBLIC_MOBILE_ANDROID_URL ?? "";
+const checkinV2Enabled = process.env.NEXT_PUBLIC_CHECKIN_APP_V2_ENABLED !== "false";
 
 export default function DevicesPage({ params }: { params: Promise<{ eventId: string }> }) {
   const { eventId } = use(params);
-  
-  const { data, isLoading } = trpc.devices.list.useQuery({
+  const utils = trpc.useUtils();
+  const [latestQr, setLatestQr] = useState<{ token: string; expiresAt: string } | null>(null);
+
+  const { data: listData, isLoading } = trpc.devices.list.useQuery({
     eventId,
-    limit: 50,
+    limit: 200,
+    offset: 0,
+  });
+  const { data: stats } = trpc.devices.stats.useQuery({ eventId });
+  const { data: pairingAccess } = trpc.devices.getPairingAccess.useQuery({ eventId });
+
+  const rotatePairing = trpc.devices.rotatePairingAccess.useMutation({
+    onSuccess: async () => {
+      toast.success("Pairing credentials rotated");
+      await utils.devices.getPairingAccess.invalidate({ eventId });
+    },
   });
 
-  const devices = data?.devices ?? [];
+  const createQr = trpc.devices.createPairingQrToken.useMutation({
+    onSuccess: (data) => {
+      setLatestQr({ token: data.token, expiresAt: new Date(data.expiresAt).toISOString() });
+      toast.success("QR token generated");
+    },
+  });
+
+  const pingDevice = trpc.devices.ping.useMutation({
+    onSuccess: () => toast.success("Ping command queued"),
+  });
+
+  const updateDevice = trpc.devices.update.useMutation({
+    onSuccess: async () => {
+      toast.success("Device updated");
+      await Promise.all([
+        utils.devices.list.invalidate({ eventId, limit: 200, offset: 0 }),
+        utils.devices.stats.invalidate({ eventId }),
+      ]);
+    },
+  });
+
+  const archiveDevice = trpc.devices.archive.useMutation({
+    onSuccess: async () => {
+      toast.success("Device archived");
+      await Promise.all([
+        utils.devices.list.invalidate({ eventId, limit: 200, offset: 0 }),
+        utils.devices.stats.invalidate({ eventId }),
+      ]);
+    },
+  });
+
+  const deleteDevice = trpc.devices.delete.useMutation({
+    onSuccess: async () => {
+      toast.success("Device deleted");
+      await Promise.all([
+        utils.devices.list.invalidate({ eventId, limit: 200, offset: 0 }),
+        utils.devices.stats.invalidate({ eventId }),
+      ]);
+    },
+  });
+
+  const devices = useMemo(() => (listData?.devices ?? []) as DeviceRow[], [listData?.devices]);
+
+  if (!checkinV2Enabled) {
+    return (
+      <Card className="p-6">
+        <h1 className="text-xl font-semibold">Check-in App V2 is disabled</h1>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Enable `CHECKIN_APP_V2_ENABLED` to use device pairing and mobile controls.
+        </p>
+      </Card>
+    );
+  }
+
+  async function copyText(value: string, label: string) {
+    try {
+      await navigator.clipboard.writeText(value);
+      toast.success(`${label} copied`);
+    } catch {
+      toast.error(`Unable to copy ${label.toLowerCase()}`);
+    }
+  }
 
   const columns = [
     {
       accessorKey: "name",
-      header: "Device Name",
-      cell: ({ row }: any) => (
-        <div className="flex items-center gap-2">
-          <Smartphone className="h-4 w-4 text-muted-foreground" />
-          <span className="font-medium">{row.original.name}</span>
+      header: "Name",
+      cell: ({ row }: { row: { original: DeviceRow } }) => (
+        <div>
+          <div className="font-medium">{row.original.name}</div>
+          <div className="text-xs text-muted-foreground">
+            {row.original.platform ?? "mobile"} {row.original.model ? `• ${row.original.model}` : ""}
+          </div>
         </div>
       ),
     },
     {
       accessorKey: "status",
       header: "Status",
-      cell: ({ row }: any) => (
-        <Badge variant={row.original.status === "online" ? "default" : "secondary"} className="capitalize">
-          {row.original.status}
+      cell: ({ row }: { row: { original: DeviceRow } }) => (
+        <Badge variant={row.original.computedOnline ? "default" : "secondary"}>
+          {row.original.computedOnline ? "Online" : "Offline"}
         </Badge>
       ),
     },
     {
+      accessorKey: "station",
+      header: "Station",
+      cell: ({ row }: { row: { original: DeviceRow } }) => row.original.station ?? "—",
+    },
+    {
       accessorKey: "battery",
       header: "Battery",
-      cell: ({ row }: any) => (
-        <div className="flex items-center gap-1.5">
-          <Zap className="h-3.5 w-3.5 text-muted-foreground" />
-          <span>{row.original.battery}%</span>
+      cell: ({ row }: { row: { original: DeviceRow } }) => (
+        <div className="text-sm">
+          Phone: {row.original.battery ?? "—"}%
+          <br />
+          Scanner: {row.original.scannerBattery ?? "—"}%
         </div>
       ),
     },
     {
-      accessorKey: "appVersion",
-      header: "App Version",
+      accessorKey: "lastReportAt",
+      header: "Last Report",
+      cell: ({ row }: { row: { original: DeviceRow } }) =>
+        row.original.lastReportAt
+          ? formatDistanceToNow(new Date(row.original.lastReportAt), { addSuffix: true })
+          : "Never",
     },
     {
-      accessorKey: "lastSyncAt",
-      header: "Last Sync",
-      cell: ({ row }: any) => (
-        <span className="text-muted-foreground whitespace-nowrap">
-          {row.original.lastSyncAt ? formatDistanceToNow(new Date(row.original.lastSyncAt), { addSuffix: true }) : "Never"}
-        </span>
-      )
+      accessorKey: "actions",
+      header: "Actions",
+      cell: ({ row }: { row: { original: DeviceRow } }) => (
+        <div className="flex flex-wrap gap-2">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => pingDevice.mutate({ eventId, deviceId: row.original.id })}
+          >
+            Ping
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => {
+              const newName = window.prompt("Device name", row.original.name);
+              if (!newName) return;
+              const newStation = window.prompt("Station", row.original.station ?? "");
+              updateDevice.mutate({
+                eventId,
+                deviceId: row.original.id,
+                patch: {
+                  name: newName,
+                  station: newStation ?? undefined,
+                },
+              });
+            }}
+          >
+            <Pencil className="h-3.5 w-3.5" />
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => {
+              if (!window.confirm("Archive this device?")) return;
+              archiveDevice.mutate({ eventId, deviceId: row.original.id });
+            }}
+          >
+            <Archive className="h-3.5 w-3.5" />
+          </Button>
+          <Button
+            size="sm"
+            variant="destructive"
+            onClick={() => {
+              if (!window.confirm("Delete this device permanently?")) return;
+              deleteDevice.mutate({ eventId, deviceId: row.original.id });
+            }}
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+          </Button>
+        </div>
+      ),
     },
   ];
 
-  if (!isLoading && devices.length === 0) {
-    return (
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold">Devices</h1>
-            <p className="text-muted-foreground">Manage scanning devices and check connectivity.</p>
-          </div>
-          <Button className="gap-2">
-            <Plus className="h-4 w-4" /> Add Device
-          </Button>
-        </div>
-
-        <div className="flex flex-col items-center justify-center rounded-lg border border-dashed p-12 text-center">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
-            <Smartphone className="h-8 w-8 text-primary" />
-          </div>
-          <h3 className="mt-4 text-lg font-semibold">No devices connected</h3>
-          <p className="mt-2 text-sm text-muted-foreground max-w-sm">
-            Download the Check-in app on your phones or tablets and link them to this event to start scanning tickets.
-          </p>
-          <Button className="mt-6">Link a Device</Button>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Devices</h1>
-          <p className="text-muted-foreground">
-            {devices.length} device{devices.length !== 1 ? "s" : ""} connected
-          </p>
-        </div>
-        <Button className="gap-2">
-          <Plus className="h-4 w-4" /> Add Device
-        </Button>
+      <div className="grid gap-3 md:grid-cols-4 xl:grid-cols-8">
+        <MetricCard icon={<Wifi className="h-4 w-4 text-green-600" />} label="Devices online" value={stats?.devicesOnline ?? 0} />
+        <MetricCard icon={<WifiOff className="h-4 w-4 text-red-600" />} label="Devices offline" value={stats?.devicesOffline ?? 0} />
+        <MetricCard icon={<TriangleAlert className="h-4 w-4 text-amber-600" />} label="Low battery" value={stats?.lowBattery ?? 0} />
+        <MetricCard icon={<Zap className="h-4 w-4 text-green-600" />} label="Successful scans" value={stats?.successfulScans ?? 0} />
+        <MetricCard icon={<TriangleAlert className="h-4 w-4 text-red-600" />} label="Unsuccessful scans" value={stats?.unsuccessfulScans ?? 0} />
+        <MetricCard icon={<TriangleAlert className="h-4 w-4 text-red-600" />} label="No show" value={stats?.noShow ?? 0} />
+        <MetricCard icon={<RefreshCcw className="h-4 w-4 text-amber-600" />} label="Checked out" value={stats?.checkedOut ?? 0} />
+        <MetricCard icon={<Smartphone className="h-4 w-4 text-green-600" />} label="Checked in" value={stats?.checkedIn ?? 0} />
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-3">
+        <Card className="lg:col-span-1">
+          <CardHeader>
+            <CardTitle>Access Code + PIN</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3 text-sm">
+            <div className="rounded border p-3">
+              <div className="text-muted-foreground">Access Code</div>
+              <div className="mt-1 flex items-center justify-between">
+                <span className="font-mono text-lg">{pairingAccess?.accessCode ?? "------"}</span>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  disabled={!pairingAccess?.accessCode}
+                  onClick={() => pairingAccess?.accessCode && copyText(pairingAccess.accessCode, "Access code")}
+                >
+                  <Copy className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+            <div className="rounded border p-3">
+              <div className="text-muted-foreground">PIN</div>
+              <div className="mt-1 flex items-center justify-between">
+                <span className="font-mono text-lg">{pairingAccess?.pin ?? "Rotate to reveal new PIN"}</span>
+                {pairingAccess?.pin ? (
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    onClick={() => pairingAccess?.pin && copyText(pairingAccess.pin, "PIN")}
+                  >
+                    <Copy className="h-4 w-4" />
+                  </Button>
+                ) : null}
+              </div>
+            </div>
+            <Button
+              className="w-full"
+              onClick={() => rotatePairing.mutate({ eventId })}
+              disabled={rotatePairing.isPending}
+            >
+              Rotate Code + PIN
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card className="lg:col-span-1">
+          <CardHeader>
+            <CardTitle>QR Pairing</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3 text-sm">
+            <Button
+              className="w-full"
+              variant="outline"
+              onClick={() => createQr.mutate({ eventId })}
+              disabled={createQr.isPending}
+            >
+              Generate One-Time QR Token
+            </Button>
+            {latestQr ? (
+              <div className="rounded border p-3">
+                <div className="text-muted-foreground">Token</div>
+                <div className="font-mono text-xs break-all mt-1">{latestQr.token}</div>
+                <div className="mt-2 text-xs text-muted-foreground">
+                  Expires {formatDistanceToNow(new Date(latestQr.expiresAt), { addSuffix: true })}
+                </div>
+              </div>
+            ) : (
+              <p className="text-muted-foreground">Generate a short-lived token and render it in your QR flow.</p>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="lg:col-span-1">
+          <CardHeader>
+            <CardTitle>Mobile Apps</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <a href={iosUrl} target="_blank" rel="noreferrer" className="block">
+              <Button className="w-full">Download iPhone App</Button>
+            </a>
+            {androidUrl ? (
+              <a href={androidUrl} target="_blank" rel="noreferrer" className="block">
+                <Button className="w-full" variant="outline">
+                  Download Android App
+                </Button>
+              </a>
+            ) : (
+              <Button className="w-full" variant="outline" disabled>
+                Android Coming Soon
+              </Button>
+            )}
+          </CardContent>
+        </Card>
       </div>
 
       <DataTable
@@ -114,5 +343,27 @@ export default function DevicesPage({ params }: { params: Promise<{ eventId: str
         isLoading={isLoading}
       />
     </div>
+  );
+}
+
+function MetricCard({
+  icon,
+  label,
+  value,
+}: {
+  icon: ReactNode;
+  label: string;
+  value: number;
+}) {
+  return (
+    <Card>
+      <CardContent className="p-4">
+        <div className="flex items-center justify-between">
+          <span className="text-xs text-muted-foreground">{label}</span>
+          {icon}
+        </div>
+        <div className="mt-2 text-2xl font-semibold">{value}</div>
+      </CardContent>
+    </Card>
   );
 }

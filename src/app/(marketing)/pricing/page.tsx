@@ -188,14 +188,13 @@ export default function PricingPage() {
                     </li>
                   ))}
                 </ul>
-                <Link href="/signup">
-                  <Button
-                    variant={plan.variant}
-                    className="w-full"
-                  >
-                    {plan.cta}
-                  </Button>
-                </Link>
+                <Button
+                  asChild
+                  variant={plan.variant}
+                  className="w-full"
+                >
+                  <Link href="/signup">{plan.cta}</Link>
+                </Button>
               </CardContent>
             </Card>
           ))}
@@ -352,9 +351,9 @@ export default function PricingPage() {
           Start for free. No credit card required.
         </p>
         <div className="mt-6 flex justify-center gap-3">
-          <Link href="/signup">
-            <Button size="lg">Start Free Trial</Button>
-          </Link>
+          <Button asChild size="lg">
+            <Link href="/signup">Start Free Trial</Link>
+          </Button>
           <Link href="/contact">
             <Button size="lg" variant="outline">
               Contact Sales

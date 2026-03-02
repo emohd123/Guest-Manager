@@ -199,11 +199,11 @@ export default function TourPage() {
             Ready to streamline your events? Start with 50 free check-ins.
           </p>
           <div className="mt-8 flex justify-center gap-4">
-            <Link href="/signup">
-              <Button size="lg" variant="secondary" className="gap-2">
+            <Button asChild size="lg" variant="secondary" className="gap-2">
+              <Link href="/signup">
                 Get Started Free <ArrowRight className="h-4 w-4" />
-              </Button>
-            </Link>
+              </Link>
+            </Button>
             <Link href="/contact">
               <Button
                 size="lg"

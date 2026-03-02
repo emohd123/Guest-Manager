@@ -1,137 +1,157 @@
 "use client";
 
-import { use } from "react";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { use, useMemo, type ReactNode } from "react";
+import { Download, CheckCircle, XCircle, Users, LogOut } from "lucide-react";
+import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { trpc } from "@/lib/trpc/client";
 import { Button } from "@/components/ui/button";
-import { Download, Users, CheckCircle, XCircle } from "lucide-react";
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-} from "recharts";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { toast } from "sonner";
 
-const data = [
-  { time: "08:00", checkins: 12 },
-  { time: "09:00", checkins: 45 },
-  { time: "10:00", checkins: 156 },
-  { time: "11:00", checkins: 210 },
-  { time: "12:00", checkins: 180 },
-  { time: "13:00", checkins: 90 },
-  { time: "14:00", checkins: 40 },
-  { time: "15:00", checkins: 15 },
-];
+const checkinV2Enabled = process.env.NEXT_PUBLIC_CHECKIN_APP_V2_ENABLED !== "false";
 
-export default function ReportsPage({
-  params,
-}: {
-  params: Promise<{ eventId: string }>;
-}) {
+export default function ReportsPage({ params }: { params: Promise<{ eventId: string }> }) {
   const { eventId } = use(params);
+  const { data, isLoading } = trpc.reports.checkInSummary.useQuery({ eventId });
+  const checkinsExport = trpc.reports.exportCheckinsCsv.useQuery(
+    { eventId },
+    { enabled: false }
+  );
+  const noShowsExport = trpc.reports.exportNoShowsCsv.useQuery(
+    { eventId },
+    { enabled: false }
+  );
+  const arrivalsExport = trpc.reports.exportArrivalsCsv.useQuery(
+    { eventId },
+    { enabled: false }
+  );
+
+  const chartData = useMemo(
+    () => [
+      { metric: "Check-ins", value: data?.checkedIn ?? 0 },
+      { metric: "Check-outs", value: data?.checkedOut ?? 0 },
+      { metric: "No-show", value: data?.noShow ?? 0 },
+      { metric: "Invalid", value: data?.unsuccessfulScans ?? 0 },
+    ],
+    [data]
+  );
+
+  if (!checkinV2Enabled) {
+    return (
+      <Card className="p-6">
+        <h1 className="text-xl font-semibold">Check-in App V2 is disabled</h1>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Enable `CHECKIN_APP_V2_ENABLED` to use check-in report exports.
+        </p>
+      </Card>
+    );
+  }
+
+  async function downloadCsv(kind: "checkins" | "noShows" | "arrivals") {
+    try {
+      const source =
+        kind === "checkins"
+          ? checkinsExport
+          : kind === "noShows"
+          ? noShowsExport
+          : arrivalsExport;
+
+      const result = await source.refetch();
+      const payload = result.data;
+      if (!payload?.csv) {
+        toast.error("No data to export");
+        return;
+      }
+
+      const blob = new Blob([payload.csv], { type: payload.contentType });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = payload.filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+      toast.success("CSV export started");
+    } catch {
+      toast.error("Export failed");
+    }
+  }
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <div>
           <h1 className="text-2xl font-bold">Check-in Report</h1>
-          <p className="text-muted-foreground">Overview of arrival statistics and scanning activity.</p>
+          <p className="text-sm text-muted-foreground">Live summary and CSV exports for this event.</p>
         </div>
-        <Button variant="outline" className="gap-2">
-          <Download className="h-4 w-4" /> Export Report
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" className="gap-2" onClick={() => downloadCsv("checkins")}>
+            <Download className="h-4 w-4" />
+            Export check-ins
+          </Button>
+          <Button variant="outline" className="gap-2" onClick={() => downloadCsv("noShows")}>
+            <Download className="h-4 w-4" />
+            Export no-shows
+          </Button>
+          <Button variant="outline" className="gap-2" onClick={() => downloadCsv("arrivals")}>
+            <Download className="h-4 w-4" />
+            Export arrivals
+          </Button>
+        </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-3">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Checked In</CardTitle>
-            <CheckCircle className="h-4 w-4 text-green-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">748</div>
-            <p className="text-xs text-muted-foreground">out of 1,200 total guests (62%)</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Remaining Guests</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">452</div>
-            <p className="text-xs text-muted-foreground">expected to arrive</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Invalid Scans</CardTitle>
-            <XCircle className="h-4 w-4 text-destructive" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">14</div>
-            <p className="text-xs text-muted-foreground">duplicates or invalid tickets</p>
-          </CardContent>
-        </Card>
+      <div className="grid gap-4 md:grid-cols-4">
+        <Metric title="Checked In" value={data?.checkedIn ?? 0} icon={<CheckCircle className="h-4 w-4 text-green-600" />} />
+        <Metric title="Checked Out" value={data?.checkedOut ?? 0} icon={<LogOut className="h-4 w-4 text-blue-600" />} />
+        <Metric title="No Show" value={data?.noShow ?? 0} icon={<XCircle className="h-4 w-4 text-red-600" />} />
+        <Metric title="Total Guests" value={data?.totalGuests ?? 0} icon={<Users className="h-4 w-4 text-muted-foreground" />} />
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Peak Arrival Times</CardTitle>
-          <CardDescription>Number of check-ins per hour</CardDescription>
+          <CardTitle>Scan Outcomes</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="h-[350px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={data}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
-                <XAxis 
-                  dataKey="time" 
-                  stroke="hsl(var(--muted-foreground))"
-                  fontSize={12}
-                  tickLine={false}
-                  axisLine={false}
-                  dy={10}
-                />
-                <YAxis 
-                  stroke="hsl(var(--muted-foreground))"
-                  fontSize={12}
-                  tickLine={false}
-                  axisLine={false}
-                  tickFormatter={(value: number) => `${value}`}
-                />
-                <Tooltip 
-                  contentStyle={{ 
-                    backgroundColor: 'hsl(var(--popover))',
-                    border: '1px solid hsl(var(--border))',
-                    borderRadius: 'var(--radius)',
-                  }}
-                  itemStyle={{ color: 'hsl(var(--foreground))' }}
-                  labelStyle={{ color: 'hsl(var(--muted-foreground))', marginBottom: '4px' }}
-                />
-                <Line 
-                  type="monotone" 
-                  dataKey="checkins" 
-                  stroke="hsl(var(--primary))" 
-                  strokeWidth={2}
-                  dot={{ r: 4, fill: "hsl(var(--primary))" }}
-                  activeDot={{ r: 6 }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
+          {isLoading ? (
+            <div className="text-sm text-muted-foreground">Loading report…</div>
+          ) : (
+            <div className="h-[320px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={chartData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="metric" />
+                  <YAxis />
+                  <Tooltip />
+                  <Bar dataKey="value" fill="hsl(var(--primary))" radius={[6, 6, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+function Metric({
+  title,
+  value,
+  icon,
+}: {
+  title: string;
+  value: number;
+  icon: ReactNode;
+}) {
+  return (
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between pb-2">
+        <CardTitle className="text-sm font-medium">{title}</CardTitle>
+        {icon}
+      </CardHeader>
+      <CardContent>
+        <div className="text-2xl font-semibold">{value}</div>
+      </CardContent>
+    </Card>
   );
 }

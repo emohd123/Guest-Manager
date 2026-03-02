@@ -32,11 +32,11 @@ export default function HomePage() {
             across unlimited devices.
           </p>
           <div className="mt-10 flex justify-center gap-4">
-            <Link href="/signup">
-              <Button size="lg" className="gap-2 shadow-[0_4px_20px_0_rgba(99,102,241,0.5)] hover:shadow-[0_6px_25px_0_rgba(99,102,241,0.7)] transition-all duration-300">
+            <Button asChild size="lg" className="gap-2 shadow-[0_4px_20px_0_rgba(99,102,241,0.5)] hover:shadow-[0_6px_25px_0_rgba(99,102,241,0.7)] transition-all duration-300">
+              <Link href="/signup">
                 Sign Up Free <ArrowRight className="h-4 w-4" />
-              </Button>
-            </Link>
+              </Link>
+            </Button>
             <Link href="/pricing">
               <Button size="lg" variant="outline">
                 See Pricing
@@ -198,11 +198,11 @@ export default function HomePage() {
             Try GuestManager free. The first 50 check-ins are on us.
           </p>
           <div className="mt-12 flex justify-center gap-4">
-            <Link href="/signup">
-              <Button size="lg" className="gap-2 shadow-[0_4px_20px_0_rgba(99,102,241,0.5)] hover:shadow-[0_6px_25px_0_rgba(99,102,241,0.7)] transition-all duration-300 transform hover:-translate-y-1">
+            <Button asChild size="lg" className="gap-2 shadow-[0_4px_20px_0_rgba(99,102,241,0.5)] hover:shadow-[0_6px_25px_0_rgba(99,102,241,0.7)] transition-all duration-300 transform hover:-translate-y-1">
+              <Link href="/signup">
                 Sign Up Free <ArrowRight className="h-4 w-4" />
-              </Button>
-            </Link>
+              </Link>
+            </Button>
             <Link href="/contact">
               <Button
                 size="lg"

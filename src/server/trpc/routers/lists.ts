@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { router, protectedProcedure } from "../index";
-import { lists, listContacts } from "@/server/db/schema";
+import { lists, listContacts, contacts } from "@/server/db/schema";
 import { eq, and, desc, ilike, sql } from "drizzle-orm";
 
 export const listsRouter = router({
@@ -128,6 +128,14 @@ export const listsRouter = router({
         .limit(1);
       if (!list[0]) throw new Error("List not found");
 
+      // Validate the contact also belongs to this company
+      const contact = await ctx.db
+        .select({ id: contacts.id })
+        .from(contacts)
+        .where(and(eq(contacts.id, input.contactId), eq(contacts.companyId, ctx.companyId)))
+        .limit(1);
+      if (!contact[0]) throw new Error("Contact not found");
+
       await ctx.db
         .insert(listContacts)
         .values({ listId: input.listId, contactId: input.contactId })
@@ -144,6 +152,14 @@ export const listsRouter = router({
       })
     )
     .mutation(async ({ ctx, input }) => {
+      // Validate the list belongs to this company before deleting
+      const list = await ctx.db
+        .select({ id: lists.id })
+        .from(lists)
+        .where(and(eq(lists.id, input.listId), eq(lists.companyId, ctx.companyId)))
+        .limit(1);
+      if (!list[0]) throw new Error("List not found");
+
       await ctx.db
         .delete(listContacts)
         .where(

@@ -19,6 +19,12 @@ export const rsvpStatusEnum = pgEnum("rsvp_status", [
   "maybe",
 ]);
 
+export const attendanceStateEnum = pgEnum("attendance_state", [
+  "not_arrived",
+  "checked_in",
+  "checked_out",
+]);
+
 export const guests = pgTable("guests", {
   id: uuid("id").primaryKey().defaultRandom(),
   eventId: uuid("event_id").references(() => events.id, { onDelete: "cascade" }).notNull(),
@@ -42,6 +48,8 @@ export const guests = pgTable("guests", {
   source: varchar("source", { length: 100 }),
   sortOrder: integer("sort_order").default(0),
   checkedInAt: timestamp("checked_in_at"),
+  checkedOutAt: timestamp("checked_out_at"),
+  attendanceState: attendanceStateEnum("attendance_state").default("not_arrived").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

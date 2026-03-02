@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getStripeClient } from "@/lib/stripe";
 import { getDb } from "@/server/db";
 import { orders, orderItems, ticketTypes, guests, tickets, events } from "@/server/db/schema";
-import { eq, inArray, sql } from "drizzle-orm";
+import { eq, inArray, and, sql } from "drizzle-orm";
 import { sendRegistrationConfirmation } from "@/lib/resend";
 import { generateAndSendTicket } from "@/server/actions/generateAndSendTicket";
 import { format } from "date-fns";
@@ -122,7 +122,7 @@ export async function POST(request: NextRequest) {
         ? await db
             .select({ id: ticketTypes.id, name: ticketTypes.name })
             .from(ticketTypes)
-            .where(inArray(ticketTypes.id, ticketTypeIds))
+            .where(and(inArray(ticketTypes.id, ticketTypeIds), eq(ticketTypes.companyId, companyId)))
         : [];
 
       const ticketTypeNameById = new Map(

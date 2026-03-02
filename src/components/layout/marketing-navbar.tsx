@@ -130,12 +130,12 @@ export function MarketingNavbar() {
               <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
               <span className="sr-only">Toggle theme</span>
             </Button>
-            <Link href="/login">
-              <Button variant="ghost" className="hover:bg-accent transition-colors">Log In</Button>
-            </Link>
-            <Link href="/signup">
-              <Button className="shadow-[0_4px_20px_0_rgba(99,102,241,0.5)] hover:shadow-[0_6px_25px_0_rgba(99,102,241,0.7)] transition-all duration-300">Try It Free</Button>
-            </Link>
+            <Button asChild variant="ghost" className="hover:bg-accent transition-colors">
+              <Link href="/login">Log In</Link>
+            </Button>
+            <Button asChild className="shadow-[0_4px_20px_0_rgba(99,102,241,0.5)] hover:shadow-[0_6px_25px_0_rgba(99,102,241,0.7)] transition-all duration-300">
+              <Link href="/signup">Try It Free</Link>
+            </Button>
           </div>
 
           {/* Mobile menu toggle */}
@@ -203,14 +203,16 @@ export function MarketingNavbar() {
                 <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
                 <span className="sr-only">Toggle theme</span>
               </Button>
-              <Link href="/login" className="flex-1">
-                <Button variant="outline" className="w-full">
+              <Button asChild variant="outline" className="flex-1 w-full">
+                <Link href="/login" onClick={() => setMobileOpen(false)}>
                   Log In
-                </Button>
-              </Link>
-              <Link href="/signup" className="flex-1">
-                <Button className="w-full">Try It Free</Button>
-              </Link>
+                </Link>
+              </Button>
+              <Button asChild className="flex-1 w-full">
+                <Link href="/signup" onClick={() => setMobileOpen(false)}>
+                  Try It Free
+                </Link>
+              </Button>
             </div>
           </nav>
         </div>

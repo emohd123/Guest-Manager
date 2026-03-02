@@ -120,57 +120,62 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ checkoutUrl: session.url });
     }
 
-    // Free order — create directly
+    // Free order — create atomically in a transaction
     const orderNumber = generateOrderNumber();
+    const origin = request.nextUrl.origin;
 
-    const order = await db
-      .insert(orders)
-      .values({
-        companyId: company[0].id,
-        eventId: event[0].id,
-        orderNumber,
-        status: "completed",
-        email: attendeeEmail,
-        name: attendeeName,
-        subtotal: 0,
-        total: 0,
-        currency: cartItems[0]?.currency ?? "USD",
-        completedAt: new Date(),
-      })
-      .returning();
+    type TicketTask = {
+      ticketId: string;
+      barcode: string;
+      ticketTypeName: string;
+    };
+    let orderId = "";
+    const ticketTasks: TicketTask[] = [];
 
-    await db.insert(orderItems).values(
-      cartItems.map((item) => ({
-        orderId: order[0].id,
-        ticketTypeId: item.ticketTypeId,
-        quantity: item.quantity,
-        unitPrice: item.price,
-        total: item.price * item.quantity,
-      }))
-    );
-
-    // Increment quantitySold
-    for (const item of cartItems) {
-      await db
-        .update(ticketTypes)
-        .set({
-          quantitySold: sql`${ticketTypes.quantitySold} + ${item.quantity}`,
-          updatedAt: new Date(),
+    await db.transaction(async (tx) => {
+      const [order] = await tx
+        .insert(orders)
+        .values({
+          companyId: company[0].id,
+          eventId: event[0].id,
+          orderNumber,
+          status: "completed",
+          email: attendeeEmail,
+          name: attendeeName,
+          subtotal: 0,
+          total: 0,
+          currency: cartItems[0]?.currency ?? "USD",
+          completedAt: new Date(),
         })
-        .where(eq(ticketTypes.id, item.ticketTypeId));
-    }
+        .returning();
+      orderId = order.id;
 
-    // Create individual ticket records + send emails
-    try {
-      const origin = request.nextUrl.origin;
+      await tx.insert(orderItems).values(
+        cartItems.map((item) => ({
+          orderId: order.id,
+          ticketTypeId: item.ticketTypeId,
+          quantity: item.quantity,
+          unitPrice: item.price,
+          total: item.price * item.quantity,
+        }))
+      );
+
       for (const item of cartItems) {
-        const ticketType = validTicketTypes.find(tt => tt.id === item.ticketTypeId);
+        await tx
+          .update(ticketTypes)
+          .set({
+            quantitySold: sql`${ticketTypes.quantitySold} + ${item.quantity}`,
+            updatedAt: new Date(),
+          })
+          .where(eq(ticketTypes.id, item.ticketTypeId));
+
+        const ticketType = validTicketTypes.find((tt) => tt.id === item.ticketTypeId);
+        const [firstName, ...lastNameParts] = attendeeName.trim().split(/\s+/).filter(Boolean);
+
         for (let i = 0; i < item.quantity; i++) {
           const barcode = `TKT-${crypto.randomBytes(6).toString("hex").toUpperCase()}`;
 
-          // Create guest record first so it appears in Guest List & Check-in app
-          const [firstName, ...lastNameParts] = attendeeName.trim().split(/\s+/).filter(Boolean);
-          const [newGuest] = await db
+          const [newGuest] = await tx
             .insert(guests)
             .values({
               companyId: company[0].id,
@@ -184,13 +189,13 @@ export async function POST(request: NextRequest) {
             })
             .returning();
 
-          const [newTicket] = await db
+          const [newTicket] = await tx
             .insert(tickets)
             .values({
               companyId: company[0].id,
               eventId: event[0].id,
               ticketTypeId: item.ticketTypeId,
-              orderId: order[0].id,
+              orderId: order.id,
               guestId: newGuest.id,
               barcode,
               attendeeName,
@@ -199,29 +204,35 @@ export async function POST(request: NextRequest) {
             })
             .returning();
 
-          // Fire-and-forget: generate PDF + send email
-          generateAndSendTicket({
+          ticketTasks.push({
             ticketId: newTicket.id,
-            toEmail: attendeeEmail,
-            attendeeName,
-            ticketTypeName: ticketType?.name ?? item.name,
-            orderNumber,
             barcode,
-            eventName: event[0].title,
-            eventStartsAt: event[0].startsAt,
-            appBaseUrl: origin,
-            eventSettings: event[0].settings,
-          }).catch((e) => console.error("[orders] ticket send failed:", e));
+            ticketTypeName: ticketType?.name ?? item.name,
+          });
         }
       }
-    } catch (ticketErr) {
-      console.error("Ticket creation error (non-fatal):", ticketErr);
+    });
+
+    // Fire emails after the transaction commits
+    for (const task of ticketTasks) {
+      generateAndSendTicket({
+        ticketId: task.ticketId,
+        toEmail: attendeeEmail,
+        attendeeName,
+        ticketTypeName: task.ticketTypeName,
+        orderNumber,
+        barcode: task.barcode,
+        eventName: event[0].title,
+        eventStartsAt: event[0].startsAt,
+        appBaseUrl: origin,
+        eventSettings: event[0].settings,
+      }).catch((e) => console.error("[orders] ticket send failed:", e));
     }
 
     return NextResponse.json({
       success: true,
       orderNumber,
-      orderId: order[0].id,
+      orderId,
     });
   } catch (error) {
     console.error("Order creation error:", error);

@@ -829,11 +829,11 @@ export default async function TourCategoryPage({
             Get started free with 50 check-ins. No credit card required.
           </p>
           <div className="mt-8 flex justify-center gap-4">
-            <Link href="/signup">
-              <Button size="lg" variant="secondary" className="gap-2">
+            <Button asChild size="lg" variant="secondary" className="gap-2">
+              <Link href="/signup">
                 Sign Up Free <ArrowRight className="h-4 w-4" />
-              </Button>
-            </Link>
+              </Link>
+            </Button>
             <Link href="/tour">
               <Button
                 size="lg"

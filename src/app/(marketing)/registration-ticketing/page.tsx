@@ -83,11 +83,11 @@ export default function RegistrationTicketingPage() {
             small gatherings to large conferences, handle it all in one place.
           </p>
           <div className="mt-8 flex justify-center gap-4">
-            <Link href="/signup">
-              <Button size="lg" className="gap-2">
+            <Button asChild size="lg" className="gap-2">
+              <Link href="/signup">
                 Get Started Free <ArrowRight className="h-4 w-4" />
-              </Button>
-            </Link>
+              </Link>
+            </Button>
             <Link href="/contact">
               <Button size="lg" variant="outline">
                 Request Pricing
@@ -233,9 +233,9 @@ export default function RegistrationTicketingPage() {
           Create your first event page in minutes. Free to start.
         </p>
         <div className="mt-6 flex justify-center gap-3">
-          <Link href="/signup">
-            <Button size="lg">Start Free Trial</Button>
-          </Link>
+          <Button asChild size="lg">
+            <Link href="/signup">Start Free Trial</Link>
+          </Button>
           <Link href="/pricing">
             <Button size="lg" variant="outline">
               View Pricing

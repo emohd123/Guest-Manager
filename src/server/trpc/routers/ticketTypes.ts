@@ -7,6 +7,14 @@ export const ticketTypesRouter = router({
   listPublic: publicProcedure
     .input(z.object({ eventId: z.string().uuid() }))
     .query(async ({ ctx, input }) => {
+      // Verify the parent event is published before exposing ticket types
+      const [event] = await ctx.db
+        .select({ id: events.id })
+        .from(events)
+        .where(and(eq(events.id, input.eventId), eq(events.status, "published")))
+        .limit(1);
+      if (!event) return [];
+
       return ctx.db
         .select()
         .from(ticketTypes)

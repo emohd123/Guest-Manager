@@ -17,21 +17,7 @@ import {
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { GuestModal } from "@/components/guests/GuestModal";
-
-interface Guest {
-  id: string;
-  firstName: string | null;
-  lastName: string | null;
-  email: string | null;
-  phone: string | null;
-  status: string;
-  guestType: string | null;
-  tableNumber: string | null;
-  seatNumber: string | null;
-  tags: string[] | null;
-  notes: string | null;
-  createdAt: string;
-}
+import type { Guest } from "@/types/guest";
 
 export default function SeatingPage({ params }: { params: Promise<{ eventId: string }> }) {
   const { eventId } = use(params);
@@ -74,6 +60,23 @@ export default function SeatingPage({ params }: { params: Promise<{ eventId: str
   const assignedGuests = guests.filter(g => g.tableNumber).length;
   const unassignedGuests = totalGuests - assignedGuests;
   const assignmentPercentage = totalGuests > 0 ? (assignedGuests / totalGuests) * 100 : 0;
+
+  const toModalGuest = (guest: any): Guest => ({
+    id: guest.id,
+    firstName: guest.firstName,
+    lastName: guest.lastName,
+    email: guest.email,
+    phone: guest.phone,
+    status: guest.status,
+    guestType: guest.guestType,
+    tableNumber: guest.tableNumber,
+    seatNumber: guest.seatNumber,
+    tags: guest.tags ?? null,
+    notes: guest.notes,
+    source: guest.source ?? "manual",
+    checkedInAt: guest.checkedInAt ?? null,
+    createdAt: guest.createdAt,
+  });
 
   return (
     <div className="space-y-8 container py-8 max-w-7xl">
@@ -225,7 +228,7 @@ export default function SeatingPage({ params }: { params: Promise<{ eventId: str
                       </div>
                     </div>
                     <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full group-hover:bg-primary group-hover:text-white transition-all" onClick={() => {
-                      setSelectedGuest(g);
+                      setSelectedGuest(toModalGuest(g));
                       setIsModalOpen(true);
                     }}>
                       <ChevronRight className="h-4 w-4" />

@@ -177,7 +177,7 @@ export const ordersRouter = router({
               })
               .returning();
 
-            const barcode = `TCK-${crypto.randomBytes(6).toString("hex").toUpperCase()}`;
+            const barcode = `TKT-${crypto.randomBytes(6).toString("hex").toUpperCase()}`;
 
             await ctx.db.insert(tickets).values({
               companyId: ctx.companyId,

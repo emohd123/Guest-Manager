@@ -35,6 +35,38 @@ function LoginForm() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
+
+  const isGoogleAuthEnabled = async () => {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+    if (!supabaseUrl || !supabaseAnonKey) {
+      return false;
+    }
+
+    try {
+      const response = await fetch(`${supabaseUrl}/auth/v1/settings`, {
+        method: "GET",
+        headers: {
+          apikey: supabaseAnonKey,
+          Authorization: `Bearer ${supabaseAnonKey}`,
+        },
+      });
+
+      if (!response.ok) {
+        return true;
+      }
+
+      const settings = (await response.json()) as {
+        external?: Record<string, boolean>;
+      };
+
+      return settings.external?.google === true;
+    } catch {
+      return true;
+    }
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -58,13 +90,37 @@ function LoginForm() {
   };
 
   const handleGoogleLogin = async () => {
+    setGoogleLoading(true);
+    setError("");
+
+    const googleEnabled = await isGoogleAuthEnabled();
+    if (!googleEnabled) {
+      setError(
+        "Google sign-in is not enabled for this project. Enable it in Supabase Dashboard > Authentication > Providers > Google."
+      );
+      setGoogleLoading(false);
+      return;
+    }
+
     const supabase = createClient();
-    await supabase.auth.signInWithOAuth({
+    const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
         redirectTo: `${window.location.origin}/auth/callback?redirectTo=${redirectTo}`,
       },
     });
+
+    if (error) {
+      if (error.message.includes("Unsupported provider")) {
+        setError(
+          "Google sign-in is not enabled yet. Enable Google in Supabase Dashboard > Authentication > Providers."
+        );
+      } else {
+        setError(error.message);
+      }
+      setGoogleLoading(false);
+      return;
+    }
   };
 
   return (
@@ -126,7 +182,9 @@ function LoginForm() {
         <Button
           variant="outline"
           className="w-full"
+          type="button"
           onClick={handleGoogleLogin}
+          disabled={googleLoading}
         >
           <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
             <path
@@ -146,7 +204,7 @@ function LoginForm() {
               fill="#EA4335"
             />
           </svg>
-          Continue with Google
+          {googleLoading ? "Redirecting to Google..." : "Continue with Google"}
         </Button>
       </CardContent>
       <CardFooter className="justify-center">

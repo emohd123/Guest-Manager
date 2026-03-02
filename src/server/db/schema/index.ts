@@ -18,3 +18,7 @@ export * from "./campaigns";
 export * from "./form-responses";
 export * from "./devices";
 export * from "./data-imports";
+export * from "./event-device-access";
+export * from "./device-pair-tokens";
+export * from "./device-commands";
+export * from "./mobile-mutation-dedup";

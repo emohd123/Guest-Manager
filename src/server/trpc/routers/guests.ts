@@ -1,10 +1,11 @@
 import { z } from "zod";
 import { router, protectedProcedure } from "../index";
-import { guests, scans, tickets, events, ticketTypes } from "@/server/db/schema";
+import { guests, tickets, events, ticketTypes } from "@/server/db/schema";
 import { eq, and, desc, ilike, sql, or, inArray } from "drizzle-orm";
 import { sendTicketEmail } from "@/server/actions/email";
 import { format } from "date-fns";
 import crypto from "crypto";
+import { processScanWorkflow } from "@/server/services/checkin";
 
 export const guestsRouter = router({
   list: protectedProcedure
@@ -319,7 +320,7 @@ export const guestsRouter = router({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const guest = await ctx.db
+      const [guest] = await ctx.db
         .select()
         .from(guests)
         .where(
@@ -331,20 +332,13 @@ export const guestsRouter = router({
         )
         .limit(1);
 
-      if (!guest[0]) throw new Error("Guest not found for this event");
+      if (!guest) throw new Error("Guest not found for this event");
 
-      if (guest[0].status === "checked_in") {
-        return { guest: guest[0], alreadyCheckedIn: true };
+      if (guest.status === "checked_in") {
+        return { guest, alreadyCheckedIn: true };
       }
 
-      // Update guest status
-      const [updatedGuest] = await ctx.db
-        .update(guests)
-        .set({ status: "checked_in", checkedInAt: new Date(), updatedAt: new Date() })
-        .where(eq(guests.id, input.guestId))
-        .returning();
-
-      // Find associated ticket for this guest
+      // Find associated ticket for this guest and run canonical scan workflow.
       const [ticket] = await ctx.db
         .select()
         .from(tickets)
@@ -356,24 +350,41 @@ export const guestsRouter = router({
         )
         .limit(1);
 
-      // Also mark the linked ticket as checked-in
       if (ticket) {
-        await ctx.db
-          .update(tickets)
-          .set({ checkedIn: true, checkedInAt: new Date(), updatedAt: new Date() })
-          .where(eq(tickets.id, ticket.id));
+        const scanResult = await processScanWorkflow(ctx.db, {
+          eventId: input.eventId,
+          barcode: ticket.barcode,
+          action: "check_in",
+          method: input.barcode ? "scan" : "manual",
+          actor: {
+            companyId: ctx.companyId,
+            userId: ctx.userId,
+            deviceId: (input.deviceInfo?.deviceId as string | undefined) ?? null,
+            deviceName: (input.deviceInfo?.deviceName as string | undefined) ?? null,
+          },
+        });
+
+        const [updatedGuest] = await ctx.db
+          .select()
+          .from(guests)
+          .where(eq(guests.id, input.guestId))
+          .limit(1);
+
+        return { guest: updatedGuest ?? guest, alreadyCheckedIn: scanResult.status === "revalidated" };
       }
 
-      // Write a scan record for audit trail
-      await ctx.db.insert(scans).values({
-        companyId: ctx.companyId,
-        eventId: input.eventId,
-        ticketId: ticket?.id ?? undefined,
-        scanType: "check_in",
-        barcode: input.barcode ?? ticket?.barcode ?? undefined,
-        result: "Success",
-        deviceInfo: input.deviceInfo ?? {},
-      });
+      // Fallback for guest records without ticket linkage.
+      const [updatedGuest] = await ctx.db
+        .update(guests)
+        .set({
+          status: "checked_in",
+          checkedInAt: new Date(),
+          checkedOutAt: null,
+          attendanceState: "checked_in",
+          updatedAt: new Date(),
+        })
+        .where(eq(guests.id, input.guestId))
+        .returning();
 
       return { guest: updatedGuest, alreadyCheckedIn: false };
     }),
@@ -386,21 +397,6 @@ export const guestsRouter = router({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const [updatedGuest] = await ctx.db
-        .update(guests)
-        .set({ status: "confirmed", checkedInAt: null, updatedAt: new Date() })
-        .where(
-          and(
-            eq(guests.id, input.guestId),
-            eq(guests.eventId, input.eventId),
-            eq(guests.companyId, ctx.companyId)
-          )
-        )
-        .returning();
-
-      if (!updatedGuest) throw new Error("Guest not found");
-
-      // Revert the linked ticket's check-in state
       const [linkedTicket] = await ctx.db
         .select()
         .from(tickets)
@@ -413,20 +409,36 @@ export const guestsRouter = router({
         .limit(1);
 
       if (linkedTicket) {
-        await ctx.db
-          .update(tickets)
-          .set({ checkedIn: false, checkedInAt: null, updatedAt: new Date() })
-          .where(eq(tickets.id, linkedTicket.id));
+        await processScanWorkflow(ctx.db, {
+          eventId: input.eventId,
+          barcode: linkedTicket.barcode,
+          action: "checkout",
+          method: "manual",
+          actor: {
+            companyId: ctx.companyId,
+            userId: ctx.userId,
+          },
+        });
       }
 
-      // Write checkout scan record
-      await ctx.db.insert(scans).values({
-        companyId: ctx.companyId,
-        eventId: input.eventId,
-        scanType: "checkout",
-        result: "Undone by staff",
-        deviceInfo: {},
-      });
+      const [updatedGuest] = await ctx.db
+        .update(guests)
+        .set({
+          status: "confirmed",
+          checkedOutAt: new Date(),
+          attendanceState: "checked_out",
+          updatedAt: new Date(),
+        })
+        .where(
+          and(
+            eq(guests.id, input.guestId),
+            eq(guests.eventId, input.eventId),
+            eq(guests.companyId, ctx.companyId)
+          )
+        )
+        .returning();
+
+      if (!updatedGuest) throw new Error("Guest not found");
 
       return { guest: updatedGuest };
     }),
@@ -522,7 +534,7 @@ export const guestsRouter = router({
             .returning();
         }
 
-        const barcode = `TCK-${crypto.randomBytes(6).toString("hex").toUpperCase()}`;
+        const barcode = `TKT-${crypto.randomBytes(6).toString("hex").toUpperCase()}`;
         const attendeeName = `${guestData.firstName ?? ""} ${guestData.lastName ?? ""}`.trim() || "Guest";
 
         [ticketData] = await ctx.db

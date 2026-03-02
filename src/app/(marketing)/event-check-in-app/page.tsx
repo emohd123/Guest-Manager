@@ -85,11 +85,11 @@ export default function CheckInAppPage() {
             offline support.
           </p>
           <div className="mt-8 flex justify-center gap-4">
-            <Link href="/signup">
-              <Button size="lg" className="gap-2">
+            <Button asChild size="lg" className="gap-2">
+              <Link href="/signup">
                 Try It Free <ArrowRight className="h-4 w-4" />
-              </Button>
-            </Link>
+              </Link>
+            </Button>
             <Link href="/contact">
               <Button size="lg" variant="outline">
                 Book a Call
@@ -255,9 +255,9 @@ export default function CheckInAppPage() {
           Join thousands of event organizers who trust GuestManager.
         </p>
         <div className="mt-6 flex justify-center gap-3">
-          <Link href="/signup">
-            <Button size="lg">Start Free Trial</Button>
-          </Link>
+          <Button asChild size="lg">
+            <Link href="/signup">Start Free Trial</Link>
+          </Button>
           <Link href="/pricing">
             <Button size="lg" variant="outline">
               View Pricing
