@@ -22,3 +22,4 @@ export * from "./event-device-access";
 export * from "./device-pair-tokens";
 export * from "./device-commands";
 export * from "./mobile-mutation-dedup";
+export * from "./sent-emails";

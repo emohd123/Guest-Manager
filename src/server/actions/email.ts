@@ -1,6 +1,10 @@
 import { Resend } from "resend";
 import TicketEmail from "@/emails/TicketEmail";
 import { generateAndUploadQRCode } from "../utils/qrcode";
+import { getDb } from "@/server/db";
+import { tickets, sentEmails } from "@/server/db/schema";
+import { eq } from "drizzle-orm";
+import { nanoid } from "nanoid";
 
 export interface EmailDesign {
   headerImageUrl?: string;
@@ -147,6 +151,28 @@ export async function sendTicketEmail({
     }
 
     const data = await resend.emails.send(sendOptions);
+
+    try {
+      const db = getDb();
+      // Try to find the event from the barcode
+      const ticketResult = await db.select({ eventId: tickets.eventId }).from(tickets).where(eq(tickets.barcode, barcode)).limit(1);
+      const eventId = ticketResult[0]?.eventId;
+
+      if (eventId) {
+        await db.insert(sentEmails).values({
+          id: nanoid(),
+          eventId,
+          emailAddress: toEmail,
+          subject: sendOptions.subject as string,
+          type: "Ticket sent",
+          state: "Delivered",
+          status: "Unopened",
+          resendId: data.data?.id,
+        });
+      }
+    } catch (logErr) {
+      console.error("Failed to log email to db:", logErr);
+    }
 
     return { success: true, data };
   } catch (error) {

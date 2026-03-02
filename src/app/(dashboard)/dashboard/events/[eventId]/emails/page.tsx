@@ -1,49 +1,99 @@
 "use client";
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
+import * as React from "react";
 import { DataTable } from "@/components/shared/data-table";
 import { Button } from "@/components/ui/button";
-import { Plus, Mail } from "lucide-react";
-
+import { Checkbox } from "@/components/ui/checkbox";
+import { Plus, Mail, RefreshCw, Star, Filter, X, LayoutTemplate } from "lucide-react";
 import { use } from "react";
-import { format } from "date-fns";
 import { trpc } from "@/lib/trpc/client";
+import { Input } from "@/components/ui/input";
 
 export default function SentEmailsPage({ params }: { params: Promise<{ eventId: string }> }) {
   const { eventId } = use(params);
 
-  // Re-using the campaigns router as our generalized communications log
-  const { data, isLoading } = trpc.campaigns.list.useQuery({
+  const { data, isLoading } = trpc.sentEmails.list.useQuery({
     eventId,
-    limit: 50,
+    limit: 100,
   });
 
-  const emails = data?.campaigns ?? [];
+  const emails = data?.emails ?? [];
 
   const columns = [
     {
-      accessorKey: "subject",
-      header: "Subject",
-      cell: ({ row }: any) => (
-        <div>
-          <span className="font-semibold block">{row.original.subject || row.original.name}</span>
-          <span className="text-xs text-muted-foreground">{row.original.type}</span>
-        </div>
+      id: "select",
+      header: ({ table }: { table: any }) => (
+        <Checkbox
+          checked={table.getIsAllPageRowsSelected()}
+          onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+          aria-label="Select all"
+        />
+      ),
+      cell: ({ row }: { row: any }) => (
+        <Checkbox
+          checked={row.getIsSelected()}
+          onCheckedChange={(value) => row.toggleSelected(!!value)}
+          aria-label="Select row"
+        />
+      ),
+      enableSorting: false,
+      enableHiding: false,
+    },
+    {
+      accessorKey: "type",
+      header: "Type",
+      cell: ({ row }: { row: any }) => <span className="text-muted-foreground whitespace-nowrap">{row.original.type}</span>
+    },
+    {
+      accessorKey: "state",
+      header: "State",
+      cell: ({ row }: { row: any }) => (
+        <span className="text-green-600 font-medium">{row.original.state}</span>
       )
-    },
-    {
-      accessorKey: "sentCount",
-      header: "Recipients",
-    },
-    {
-      accessorKey: "createdAt",
-      header: "Created Date",
-      cell: ({ row }: any) => <span>{format(new Date(row.original.createdAt), "MMM d, yyyy h:mm a")}</span>
     },
     {
       accessorKey: "status",
       header: "Status",
-      cell: ({ row }: any) => <span className="capitalize">{row.original.status}</span>
+      cell: ({ row }: { row: any }) => (
+        <span>{row.original.status}</span>
+      )
+    },
+    {
+      accessorKey: "emailAddress",
+      header: "Email",
+      cell: ({ row }: { row: any }) => (
+        <a href={`mailto:${row.original.emailAddress}`} className="text-blue-500 hover:underline">
+          {row.original.emailAddress}
+        </a>
+      )
+    },
+    {
+      accessorKey: "subject",
+      header: "Subject",
+      cell: ({ row }: { row: any }) => <span className="text-muted-foreground">{row.original.subject}</span>
+    },
+    {
+      accessorKey: "openCount",
+      header: "Open count",
+    },
+    {
+      accessorKey: "clickCount",
+      header: "Click count",
+    },
+    {
+      accessorKey: "reason",
+      header: "Reason",
+      cell: ({ row }: { row: any }) => <span>{row.original.reason || ""}</span>
+    },
+    {
+      id: "actions",
+      header: "Actions",
+      cell: () => (
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm">View</Button>
+          <Button variant="outline" size="sm">Activity</Button>
+          <Button variant="outline" size="sm">Resend</Button>
+        </div>
+      )
     },
   ];
 
@@ -55,7 +105,7 @@ export default function SentEmailsPage({ params }: { params: Promise<{ eventId: 
             <h1 className="text-2xl font-bold">Sent Emails</h1>
             <p className="text-muted-foreground">Track all automated and manual communications sent to attendees.</p>
           </div>
-          <Button className="gap-2">
+          <Button className="gap-2 bg-blue-600 hover:bg-blue-700">
             <Plus className="h-4 w-4" /> Compose Email
           </Button>
         </div>
@@ -68,33 +118,53 @@ export default function SentEmailsPage({ params }: { params: Promise<{ eventId: 
           <p className="mt-2 text-sm text-muted-foreground max-w-sm">
             Send ticket confirmations, pre-event reminders, or post-event surveys. Sent emails will appear here.
           </p>
-          <Button className="mt-6">Create New Email</Button>
+          <Button className="mt-6 bg-blue-600 hover:bg-blue-700">Create New Email</Button>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Sent Emails</h1>
-          <p className="text-muted-foreground">
-            {emails.length} email{emails.length !== 1 ? "s" : ""} logged
-          </p>
+    <div className="space-y-4">
+      {/* Ghost header matching GuestManager UI */}
+      <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between border-b pb-4">
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="icon" className="h-9 w-9">
+            <RefreshCw className="h-4 w-4" />
+          </Button>
+          <Button variant="outline" size="icon" className="h-9 w-9">
+            <Star className="h-4 w-4" />
+          </Button>
+          <Button variant="outline" className="gap-2 h-9">
+            <Filter className="h-4 w-4" /> Filter
+          </Button>
+          <div className="relative">
+            <Input placeholder="Search by email address..." className="w-64 h-9 pr-8" />
+          </div>
+          <Button variant="ghost" className="h-9 font-normal">
+            <X className="h-4 w-4 mr-2" /> Clear
+          </Button>
         </div>
-        <Button className="gap-2">
-          <Plus className="h-4 w-4" /> Compose Email
-        </Button>
+
+        <div className="flex items-center gap-2">
+          <Button variant="outline" className="h-9">Summary</Button>
+          <Button variant="outline" className="h-9">Select</Button>
+          <Button variant="outline" className="h-9">Actions</Button>
+          <Button variant="outline" className="h-9 gap-2">
+            <LayoutTemplate className="h-4 w-4" /> Columns
+          </Button>
+        </div>
       </div>
 
-      <DataTable
-        columns={columns}
-        data={emails}
-        searchKey="subject"
-        searchPlaceholder="Search email subjects..."
-        isLoading={isLoading}
-      />
+      <div className="bg-white rounded-md border shadow-sm">
+        <DataTable
+          columns={columns}
+          data={emails}
+          searchKey="emailAddress"
+          searchPlaceholder="Search email addresses..."
+          isLoading={isLoading}
+        />
+      </div>
     </div>
   );
 }

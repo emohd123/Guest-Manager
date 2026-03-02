@@ -11,11 +11,12 @@ import React, { type ReactElement } from "react";
 import { createClient } from "@supabase/supabase-js";
 import { format } from "date-fns";
 import { Resend } from "resend";
+import { nanoid } from "nanoid";
 import { generateQRCodeDataUri, generateAndUploadQRCode } from "@/server/utils/qrcode";
 import { TicketPDFDocument } from "@/lib/pdf/TicketPDF";
 import TicketEmail from "@/emails/TicketEmail";
 import { getDb } from "@/server/db";
-import { tickets } from "@/server/db/schema";
+import { tickets, sentEmails } from "@/server/db/schema";
 import { eq } from "drizzle-orm";
 
 const supabaseAdmin = createClient(
@@ -191,8 +192,30 @@ export async function generateAndSendTicket(payload: TicketEmailPayload): Promis
   }
 
   try {
-    await resend.emails.send(sendOptions);
+    const data = await resend.emails.send(sendOptions);
     console.log(`[generateAndSendTicket] Email sent to ${toEmail}`);
+    
+    // Log the sent email to the database
+    try {
+      const db = getDb();
+      const ticketResult = await db.select({ eventId: tickets.eventId }).from(tickets).where(eq(tickets.id, ticketId)).limit(1);
+      const eventId = ticketResult[0]?.eventId;
+
+      if (eventId) {
+        await db.insert(sentEmails).values({
+          id: nanoid(),
+          eventId,
+          emailAddress: toEmail,
+          subject: sendOptions.subject as string,
+          type: "Ticket sent",
+          state: "Delivered", // Ideally driven by webhooks later
+          status: "Unopened",
+          resendId: data.data?.id,
+        });
+      }
+    } catch (logErr) {
+      console.error("[generateAndSendTicket] Failed to log email to db:", logErr);
+    }
   } catch (emailErr) {
     console.error("[generateAndSendTicket] Email send failed:", emailErr);
   }

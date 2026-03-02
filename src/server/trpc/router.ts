@@ -14,6 +14,7 @@ import { ticketsRouter } from "./routers/tickets";
 import { listsRouter } from "./routers/lists";
 import { dataImportsRouter } from "./routers/dataImports";
 import { reportsRouter } from "./routers/reports";
+import { sentEmailsRouter } from "./routers/sentEmails";
 
 export const appRouter = router({
   events: eventsRouter,
@@ -31,6 +32,7 @@ export const appRouter = router({
   lists: listsRouter,
   dataImports: dataImportsRouter,
   reports: reportsRouter,
+  sentEmails: sentEmailsRouter,
 });
 
 export type AppRouter = typeof appRouter;
