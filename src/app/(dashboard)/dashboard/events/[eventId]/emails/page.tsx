@@ -88,12 +88,12 @@ export default function SentEmailsPage({ params }: { params: Promise<{ eventId: 
     },
     {
       id: "actions",
-      header: "Actions",
+      header: () => <div className="text-right w-full pr-4">Actions</div>,
       cell: () => (
-        <div className="flex items-center gap-2 whitespace-nowrap">
-          <Button variant="outline" size="sm" className="h-8 shadow-none">View</Button>
-          <Button variant="outline" size="sm" className="h-8 shadow-none">Activity</Button>
-          <Button variant="outline" size="sm" className="h-8 shadow-none">Resend</Button>
+        <div className="flex items-center justify-end gap-2 w-max ml-auto">
+          <Button variant="outline" size="sm" className="h-8 shadow-none shrink-0 flex-none text-xs px-3">View</Button>
+          <Button variant="outline" size="sm" className="h-8 shadow-none shrink-0 flex-none text-xs px-3">Activity</Button>
+          <Button variant="outline" size="sm" className="h-8 shadow-none shrink-0 flex-none text-xs px-3">Resend</Button>
         </div>
       )
     },
