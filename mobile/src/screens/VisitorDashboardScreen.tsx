@@ -7,6 +7,7 @@ import {
   StyleSheet,
   ActivityIndicator,
   RefreshControl,
+  TouchableOpacity,
 } from "react-native";
 import type {
   VisitorSession,
@@ -15,6 +16,7 @@ import type {
   VisitorNotification,
   AgendaItem,
 } from "../types";
+import type { VisitorMessage } from "../api/mobileClient";
 
 type VisitorTab = "ticket" | "agenda" | "events" | "guests" | "notifications";
 
@@ -22,9 +24,12 @@ interface Props {
   session: VisitorSession;
   onSignOut: () => void;
   onJoinEvent: () => void;
+  onComposeMessage: () => void;
   fetchTicket: (token: string) => Promise<VisitorTicket | null>;
   fetchEvents: (token: string) => Promise<VisitorEvent[]>;
-  fetchNotifications: (token: string) => Promise<VisitorNotification[]>;
+  fetchNotifications: (token: string) => Promise<{ notifications: VisitorNotification[]; unreadCount: number }>;
+  fetchMessages: (token: string) => Promise<VisitorMessage[]>;
+  markNotificationsRead: (token: string) => Promise<void>;
   fetchGuestList: (token: string) => Promise<Array<{ id: string; firstName: string; lastName: string | null }>>;
 }
 
@@ -202,27 +207,80 @@ function GuestsPanel({ guests, refreshing, onRefresh }: {
 }
 
 // ── Notifications Tab ────────────────────────────────────────────────────────
-function NotifsPanel({ notifications, refreshing, onRefresh }: {
+function NotifsPanel({
+  notifications, messages, refreshing, onRefresh, onCompose,
+}: {
   notifications: VisitorNotification[];
+  messages: VisitorMessage[];
   refreshing: boolean;
   onRefresh: () => void;
+  onCompose: () => void;
 }) {
-  if (notifications.length === 0) {
-    return <Empty icon="🔔" title="All clear!" msg="No announcements or updates for your events." />;
-  }
-  const typeIcon: Record<string, string> = { info: "ℹ️", warning: "⚠️", update: "🔄" };
+  const typeIcon: Record<string, string> = {
+    event_update: "📢",
+    agenda_update: "📋",
+    message_reply: "💬",
+    info: "ℹ️",
+    warning: "⚠️",
+    update: "🔄",
+  };
   return (
     <ScrollView style={styles.tabContent} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}>
-      {notifications.map((n) => (
-        <View key={n.id} style={[styles.notifCard, n.type === "warning" && styles.notifWarning]}>
-          <Text style={styles.notifIcon}>{typeIcon[n.type] ?? "📢"}</Text>
-          <View style={styles.notifBody}>
-            <Text style={styles.notifTitle}>{n.title}</Text>
-            <Text style={styles.notifMsg}>{n.message}</Text>
-            <Text style={styles.notifTime}>{fmtDate(n.createdAt)}</Text>
-          </View>
+      {/* Compose button */}
+      <TouchableOpacity style={styles.composeBtn} onPress={onCompose}>
+        <Text style={styles.composeBtnText}>✉️ Message the Organizer</Text>
+      </TouchableOpacity>
+
+      {/* Notifications */}
+      {notifications.length === 0 ? (
+        <View style={styles.empty}>
+          <Text style={styles.emptyIcon}>🔔</Text>
+          <Text style={styles.emptyTitle}>No updates yet</Text>
+          <Text style={styles.emptyMsg}>Event announcements and changes will appear here.</Text>
         </View>
-      ))}
+      ) : (
+        notifications.map((n) => (
+          <View key={n.id} style={[
+            styles.notifCard,
+            !n.isRead && styles.notifUnread,
+            n.type === "agenda_update" && styles.notifAgenda,
+            n.type === "message_reply" && styles.notifReply,
+          ]}>
+            <Text style={styles.notifIcon}>{typeIcon[n.type] ?? "📢"}</Text>
+            <View style={styles.notifBody}>
+              {(n as { eventName?: string }).eventName ? (
+                <Text style={styles.notifEvent}>{(n as { eventName?: string }).eventName}</Text>
+              ) : null}
+              <Text style={styles.notifTitle}>{n.title}</Text>
+              <Text style={styles.notifMsg}>{n.message ?? (n as { body?: string }).body}</Text>
+              <Text style={styles.notifTime}>{fmtDate(n.createdAt)}</Text>
+            </View>
+          </View>
+        ))
+      )}
+
+      {/* Sent messages */}
+      {messages.length > 0 && (
+        <View style={{ marginTop: 20 }}>
+          <Text style={styles.sectionLabel}>YOUR SENT MESSAGES</Text>
+          {messages.map((m) => (
+            <View key={m.id} style={styles.msgCard}>
+              <Text style={styles.msgSubject}>{m.subject ?? "Message"}</Text>
+              {m.eventName ? <Text style={styles.msgEvent}>{m.eventName}</Text> : null}
+              <Text style={styles.msgBody} numberOfLines={2}>{m.body}</Text>
+              {m.adminReply ? (
+                <View style={styles.replyBox}>
+                  <Text style={styles.replyLabel}>Reply from organizer:</Text>
+                  <Text style={styles.replyText}>{m.adminReply}</Text>
+                </View>
+              ) : (
+                <Text style={styles.pendingLabel}>⏳ Awaiting reply</Text>
+              )}
+              <Text style={styles.msgTime}>{fmtDate(m.createdAt)}</Text>
+            </View>
+          ))}
+        </View>
+      )}
     </ScrollView>
   );
 }
@@ -232,33 +290,41 @@ export function VisitorDashboardScreen({
   session,
   onSignOut,
   onJoinEvent,
+  onComposeMessage,
   fetchTicket,
   fetchEvents,
   fetchNotifications,
+  fetchMessages,
+  markNotificationsRead,
   fetchGuestList,
 }: Props) {
   const [tab, setTab] = useState<VisitorTab>("ticket");
   const [ticket, setTicket] = useState<VisitorTicket | null>(null);
   const [events, setEvents] = useState<VisitorEvent[]>([]);
   const [notifications, setNotifications] = useState<VisitorNotification[]>([]);
+  const [messages, setMessages] = useState<VisitorMessage[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
   const [guestList, setGuestList] = useState<Array<{ id: string; firstName: string; lastName: string | null }>>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
-  const unreadNotifs = notifications.filter((n) => n.type === "warning" || n.type === "update").length;
-
   const loadAll = useCallback(async () => {
-    const [t, ev, notifs, g] = await Promise.allSettled([
+    const [t, ev, notifRes, msgs, g] = await Promise.allSettled([
       fetchTicket(session.token),
       fetchEvents(session.token),
       fetchNotifications(session.token),
+      fetchMessages(session.token),
       fetchGuestList(session.token),
     ]);
     if (t.status === "fulfilled") setTicket(t.value);
     if (ev.status === "fulfilled") setEvents(ev.value);
-    if (notifs.status === "fulfilled") setNotifications(notifs.value);
+    if (notifRes.status === "fulfilled") {
+      setNotifications(notifRes.value.notifications);
+      setUnreadCount(notifRes.value.unreadCount);
+    }
+    if (msgs.status === "fulfilled") setMessages(msgs.value);
     if (g.status === "fulfilled") setGuestList(g.value);
-  }, [session.token, fetchTicket, fetchEvents, fetchNotifications, fetchGuestList]);
+  }, [session.token, fetchTicket, fetchEvents, fetchNotifications, fetchMessages, markNotificationsRead, fetchGuestList]);
 
   useEffect(() => {
     let mounted = true;
@@ -315,7 +381,13 @@ export function VisitorDashboardScreen({
           <GuestsPanel guests={guestList} refreshing={refreshing} onRefresh={handleRefresh} />
         )}
         {tab === "notifications" && (
-          <NotifsPanel notifications={notifications} refreshing={refreshing} onRefresh={handleRefresh} />
+          <NotifsPanel
+            notifications={notifications}
+            messages={messages}
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            onCompose={onComposeMessage}
+          />
         )}
       </View>
 
@@ -325,7 +397,7 @@ export function VisitorDashboardScreen({
         <TabBtn icon="📋" label="Agenda"   active={tab === "agenda"}        onPress={() => setTab("agenda")} />
         <TabBtn icon="📅" label="Events"   active={tab === "events"}        onPress={() => setTab("events")} />
         <TabBtn icon="👥" label="Guests"   active={tab === "guests"}        onPress={() => setTab("guests")} />
-        <TabBtn icon="🔔" label="Updates"  active={tab === "notifications"} badge={unreadNotifs} onPress={() => setTab("notifications")} />
+        <TabBtn icon="🔔" label="Updates"  active={tab === "notifications"} badge={unreadCount} onPress={() => { setTab("notifications"); markNotificationsRead(session.token).catch(() => {}); setUnreadCount(0); }} />
       </View>
     </View>
   );
@@ -429,14 +501,36 @@ const styles = StyleSheet.create({
   avatarText: { fontSize: 16, fontWeight: "800", color: "#4338ca" },
   guestName: { fontSize: 14, fontWeight: "600", color: "#0f172a" },
   // Notifications
+  composeBtn: {
+    backgroundColor: "#eef2ff", borderRadius: 14, paddingVertical: 12,
+    alignItems: "center", borderWidth: 1, borderColor: "#c7d2fe", marginBottom: 16,
+  },
+  composeBtnText: { color: "#4338ca", fontWeight: "800", fontSize: 14 },
   notifCard: {
     flexDirection: "row", gap: 12, backgroundColor: "#fff", borderRadius: 14, padding: 14,
     marginBottom: 10, borderWidth: 1, borderColor: "#e2e8f0", alignItems: "flex-start",
   },
+  notifUnread: { borderColor: "#a5b4fc", backgroundColor: "#eef2ff" },
+  notifAgenda: { borderColor: "#bbf7d0", backgroundColor: "#f0fdf4" },
+  notifReply: { borderColor: "#c4b5fd", backgroundColor: "#faf5ff" },
   notifWarning: { borderColor: "#fef08a", backgroundColor: "#fffbeb" },
   notifIcon: { fontSize: 22 },
   notifBody: { flex: 1 },
+  notifEvent: { fontSize: 10, color: "#6366f1", fontWeight: "700", textTransform: "uppercase", marginBottom: 2 },
   notifTitle: { fontSize: 14, fontWeight: "700", color: "#0f172a" },
   notifMsg: { fontSize: 13, color: "#334155", marginTop: 3, lineHeight: 18 },
   notifTime: { fontSize: 11, color: "#94a3b8", marginTop: 6 },
+  // Messages
+  msgCard: {
+    backgroundColor: "#fff", borderRadius: 14, padding: 14,
+    marginBottom: 10, borderWidth: 1, borderColor: "#e2e8f0",
+  },
+  msgSubject: { fontSize: 14, fontWeight: "700", color: "#0f172a" },
+  msgEvent: { fontSize: 11, color: "#6366f1", fontWeight: "600", marginTop: 2 },
+  msgBody: { fontSize: 13, color: "#64748b", marginTop: 4, lineHeight: 18 },
+  replyBox: { backgroundColor: "#f0fdf4", borderRadius: 10, padding: 10, marginTop: 8, borderWidth: 1, borderColor: "#bbf7d0" },
+  replyLabel: { fontSize: 11, color: "#16a34a", fontWeight: "700", marginBottom: 3 },
+  replyText: { fontSize: 13, color: "#166534", lineHeight: 18 },
+  pendingLabel: { fontSize: 11, color: "#94a3b8", marginTop: 6 },
+  msgTime: { fontSize: 11, color: "#94a3b8", marginTop: 6 },
 });

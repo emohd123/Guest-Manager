@@ -220,9 +220,50 @@ export async function fetchVisitorEvents(token: string) {
 }
 
 export async function fetchVisitorNotifications(token: string) {
-  return apiRequest<{ notifications: import("../types").VisitorNotification[] }>(
+  return apiRequest<{
+    notifications: import("../types").VisitorNotification[];
+    unreadCount: number;
+  }>(
     "/api/mobile/v1/visitor/me/notifications",
     { method: "GET" },
+    token
+  );
+}
+
+export async function markNotificationsRead(token: string) {
+  return apiRequest<{ success: boolean }>(
+    "/api/mobile/v1/visitor/me/notifications",
+    { method: "POST", body: JSON.stringify({}) },
+    token
+  );
+}
+
+export interface VisitorMessage {
+  id: string;
+  eventId: string;
+  eventName: string | null;
+  subject: string | null;
+  body: string;
+  adminReply: string | null;
+  repliedAt: string | null;
+  createdAt: string;
+}
+
+export async function fetchVisitorMessages(token: string) {
+  return apiRequest<{ messages: VisitorMessage[] }>(
+    "/api/mobile/v1/visitor/me/messages",
+    { method: "GET" },
+    token
+  );
+}
+
+export async function sendVisitorMessage(
+  token: string,
+  payload: { eventCode: string; subject: string; body: string }
+) {
+  return apiRequest<{ success: boolean; message: string }>(
+    "/api/mobile/v1/visitor/send-message",
+    { method: "POST", body: JSON.stringify(payload) },
     token
   );
 }

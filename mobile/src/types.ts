@@ -63,6 +63,7 @@ export type VisitorTicket = {
     startsAt: string;
     endsAt: string | null;
     location: string | null;
+    visitorCode?: string | null;
   };
   agenda?: AgendaItem[] | null;
   agendaTitle?: string | null;
@@ -87,8 +88,14 @@ export type VisitorEvent = {
 
 export type VisitorNotification = {
   id: string;
+  eventId: string;
+  eventName?: string | null;
   title: string;
-  message: string;
+  /** Body text from the DB */
+  body?: string;
+  /** Legacy field — same as body, kept for backwards compat */
+  message?: string;
   createdAt: string;
-  type: "info" | "warning" | "update";
+  type: "info" | "warning" | "update" | "event_update" | "agenda_update" | "message_reply";
+  isRead: boolean;
 };

@@ -16,9 +16,11 @@ import {
   fetchSummary,
   fetchVisitorEvents,
   fetchVisitorGuestList,
+  fetchVisitorMessages,
   fetchVisitorNotifications,
   fetchVisitorTicket,
   joinEventByCode,
+  markNotificationsRead,
   pairByCodePin,
   pairByQrToken,
   pairByStaffToken,
@@ -36,6 +38,7 @@ import { VisitorLoginScreen } from "./src/screens/VisitorLoginScreen";
 import { VisitorSignupScreen } from "./src/screens/VisitorSignupScreen";
 import { VisitorDashboardScreen } from "./src/screens/VisitorDashboardScreen";
 import { JoinEventScreen } from "./src/screens/JoinEventScreen";
+import { ComposeMessageScreen } from "./src/screens/ComposeMessageScreen";
 import { EventHomeScreen } from "./src/screens/EventHomeScreen";
 import { GuestsScreen } from "./src/screens/GuestsScreen";
 import { ScanScreen } from "./src/screens/ScanScreen";
@@ -65,7 +68,8 @@ type AuthStep =
   | "staff"
   | "visitor_login"
   | "visitor_signup"
-  | "visitor_join";
+  | "visitor_join"
+  | "visitor_compose";
 
 type Tab = "home" | "guests" | "scan" | "walkup" | "activity";
 
@@ -331,9 +335,16 @@ export default function App() {
     const res = await fetchVisitorEvents(token);
     return res.events;
   }
-  async function loadVisitorNotifications(token: string): Promise<VisitorNotification[]> {
+  async function loadVisitorNotifications(token: string) {
     const res = await fetchVisitorNotifications(token);
-    return res.notifications;
+    return { notifications: res.notifications, unreadCount: res.unreadCount };
+  }
+  async function loadVisitorMessages(token: string) {
+    const res = await fetchVisitorMessages(token);
+    return res.messages;
+  }
+  async function handleMarkNotificationsRead(token: string) {
+    await markNotificationsRead(token).catch(() => {});
   }
   async function loadVisitorGuests(token: string) {
     const res = await fetchVisitorGuestList(token);
@@ -351,7 +362,19 @@ export default function App() {
 
   // ── Visitor is logged in ──────────────────────────────────────────────────
   if (visitorSession) {
-    // Visitor is joining via code — show join screen over dashboard
+    // Compose message screen
+    if (authStep === "visitor_compose") {
+      return (
+        <SafeAreaView style={styles.full}>
+          <ComposeMessageScreen
+            token={visitorSession.token}
+            onBack={() => setAuthStep("role_choice")}
+            onSent={() => setAuthStep("role_choice")}
+          />
+        </SafeAreaView>
+      );
+    }
+    // Join event screen
     if (authStep === "visitor_join") {
       return (
         <SafeAreaView style={styles.full}>
@@ -368,9 +391,12 @@ export default function App() {
           session={visitorSession}
           onSignOut={visitorSignOut}
           onJoinEvent={() => setAuthStep("visitor_join")}
+          onComposeMessage={() => setAuthStep("visitor_compose")}
           fetchTicket={loadVisitorTicket}
           fetchEvents={loadVisitorEvents}
           fetchNotifications={loadVisitorNotifications}
+          fetchMessages={loadVisitorMessages}
+          markNotificationsRead={handleMarkNotificationsRead}
           fetchGuestList={loadVisitorGuests}
         />
       </SafeAreaView>

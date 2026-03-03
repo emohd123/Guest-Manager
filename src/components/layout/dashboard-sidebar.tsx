@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import {
   CalendarDays,
@@ -18,6 +19,7 @@ import {
   ScanLine,
   Megaphone,
   FileText,
+  MessageSquare,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -64,12 +66,18 @@ const navigation = [
   {
     label: "Form Responses",
     href: "/dashboard/form-responses",
-    icon: FileText, // Make sure to import FileText
+    icon: FileText,
   },
   {
     label: "Reports",
     href: "/dashboard/reports",
     icon: BarChart3,
+  },
+  {
+    label: "Messages",
+    href: "/dashboard/messages",
+    icon: MessageSquare,
+    badge: true, // show unread count badge
   },
 ];
 
@@ -89,6 +97,22 @@ interface DashboardSidebarProps {
 export function DashboardSidebar({ collapsed, onToggle }: DashboardSidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
+  const [messagesUnread, setMessagesUnread] = useState(0);
+
+  useEffect(() => {
+    let cancelled = false;
+    const fetchUnread = async () => {
+      try {
+        const res = await fetch("/api/dashboard/messages");
+        if (!res.ok) return;
+        const data = await res.json() as { unreadCount?: number };
+        if (!cancelled) setMessagesUnread(data.unreadCount ?? 0);
+      } catch { /* ignore */ }
+    };
+    fetchUnread();
+    const interval = setInterval(fetchUnread, 60_000);
+    return () => { cancelled = true; clearInterval(interval); };
+  }, []);
 
   const handleSignOut = async () => {
     const supabase = createClient();
@@ -134,12 +158,13 @@ export function DashboardSidebar({ collapsed, onToggle }: DashboardSidebarProps)
           {navigation.map((item) => {
             const isActive =
               pathname === item.href || pathname.startsWith(item.href + "/");
+            const showBadge = (item as { badge?: boolean }).badge && !isActive && messagesUnread > 0;
             return (
               <Link
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                  "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors relative",
                   isActive
                     ? "bg-sidebar-accent text-sidebar-primary"
                     : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground"
@@ -148,6 +173,14 @@ export function DashboardSidebar({ collapsed, onToggle }: DashboardSidebarProps)
               >
                 <item.icon className="h-5 w-5 shrink-0" />
                 {!collapsed && <span>{item.label}</span>}
+                {showBadge && (
+                  <span className={cn(
+                    "ml-auto text-[10px] font-bold bg-violet-500 text-white rounded-full px-1.5 py-0.5 leading-none",
+                    collapsed && "absolute -top-1 -right-1 px-1"
+                  )}>
+                    {messagesUnread > 9 ? "9+" : messagesUnread}
+                  </span>
+                )}
               </Link>
             );
           })}
