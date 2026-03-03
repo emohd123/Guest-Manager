@@ -324,12 +324,16 @@ export function VisitorDashboardScreen({
     }
     if (msgs.status === "fulfilled") setMessages(msgs.value);
     if (g.status === "fulfilled") setGuestList(g.value);
-  }, [session.token, fetchTicket, fetchEvents, fetchNotifications, fetchMessages, markNotificationsRead, fetchGuestList]);
+  }, [session.token, fetchTicket, fetchEvents, fetchNotifications, fetchMessages, fetchGuestList]);
 
   useEffect(() => {
     let mounted = true;
-    setLoading(true);
-    loadAll().finally(() => { if (mounted) setLoading(false); });
+    async function run() {
+      if (mounted) setLoading(true);
+      await loadAll();
+      if (mounted) setLoading(false);
+    }
+    run();
     return () => { mounted = false; };
   }, [loadAll]);
 

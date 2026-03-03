@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Platform,
@@ -56,7 +56,6 @@ import type {
   VisitorSession,
   VisitorTicket,
   VisitorEvent,
-  VisitorNotification,
 } from "./src/types";
 
 // ── Auth flow state ──────────────────────────────────────────────────────────
@@ -121,7 +120,7 @@ export default function App() {
   // Visitor session
   const [visitorSession, setVisitorSession] = useState<VisitorSession | null>(null);
 
-  const queueCount = useMemo(() => listQueuedMutations().length, [syncing, lastSyncAt, guests.length]);
+  const queueCount = listQueuedMutations().length;
 
   // ── Boot: restore either session ──────────────────────────────────────────
   useEffect(() => {

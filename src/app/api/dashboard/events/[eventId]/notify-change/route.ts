@@ -1,8 +1,15 @@
 export const dynamic = "force-dynamic";
 
 import { NextRequest } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { createClient } from "@/lib/supabase/server";
+import { getDb } from "@/server/db";
+import { users, events as eventsTable } from "@/server/db/schema";
+import { eq, and } from "drizzle-orm";
 import { createEventNotifications, type NotificationType } from "@/server/actions/createEventNotifications";
+
+interface RouteParams {
+  params: Promise<{ eventId: string }>;
+}
 
 /**
  * POST /api/dashboard/events/[eventId]/notify-change
@@ -11,24 +18,41 @@ import { createEventNotifications, type NotificationType } from "@/server/action
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: { eventId: string } }
+  { params }: RouteParams
 ) {
   try {
-    // Auth check via cookie/Authorization header
-    const authHeader = request.headers.get("authorization") ?? "";
-    const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : null;
-
-    if (!token) {
+    // Use cookie-based auth (dashboard uses SSR session cookies)
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
       return Response.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
+    const db = getDb();
 
-    const { data: { user } } = await supabase.auth.getUser(token);
-    if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
+    // Get companyId for this user
+    const [dbUser] = await db
+      .select({ companyId: users.companyId })
+      .from(users)
+      .where(eq(users.id, user.id))
+      .limit(1);
+
+    if (!dbUser?.companyId) {
+      return Response.json({ error: "Unauthorized" }, { status: 403 });
+    }
+
+    const { eventId } = await params;
+
+    // Verify the event belongs to this company
+    const [event] = await db
+      .select({ id: eventsTable.id })
+      .from(eventsTable)
+      .where(and(eq(eventsTable.id, eventId), eq(eventsTable.companyId, dbUser.companyId)))
+      .limit(1);
+
+    if (!event) {
+      return Response.json({ error: "Event not found" }, { status: 404 });
+    }
 
     const { type, title, body } = (await request.json()) as {
       type?: NotificationType;
@@ -40,12 +64,7 @@ export async function POST(
       return Response.json({ error: "Missing fields" }, { status: 400 });
     }
 
-    await createEventNotifications({
-      eventId: params.eventId,
-      title,
-      body,
-      type,
-    });
+    await createEventNotifications({ eventId, title, body, type });
 
     return Response.json({ success: true });
   } catch (error) {

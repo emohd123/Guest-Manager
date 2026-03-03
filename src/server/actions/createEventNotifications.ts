@@ -7,10 +7,6 @@
 import { getDb } from "@/server/db";
 import { guests as guestsTable, tickets as ticketsTable } from "@/server/db/schema";
 import { eq, and, isNotNull } from "drizzle-orm";
-import { nanoid } from "nanoid";
-
-/** Raw DB insert — Drizzle schema for visitor_notifications isn't generated yet,
- *  so we use a raw SQL approach via pg pool */
 import { sql } from "drizzle-orm";
 
 export type NotificationType = "event_update" | "agenda_update" | "message_reply";

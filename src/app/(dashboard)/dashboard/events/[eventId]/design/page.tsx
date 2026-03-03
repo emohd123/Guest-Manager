@@ -26,7 +26,6 @@ import { EmailDesignEditor } from "@/components/emails/EmailDesignEditor";
 import type { EmailDesignState } from "@/components/emails/EmailDesignEditor";
 import { AgendaEditor } from "@/components/agenda/AgendaEditor";
 import type { AgendaSettings } from "@/components/agenda/AgendaEditor";
-import { createClient } from "@/lib/supabase/client";
 
 export default function DesignSetupPage({
   params,
@@ -73,7 +72,6 @@ export default function DesignSetupPage({
   const [isSaving, setIsSaving] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (event && !isInitialized) {
       setTimeout(() => {
@@ -104,25 +102,20 @@ export default function DesignSetupPage({
       utils.events.get.invalidate({ id: eventId });
       setIsSaving(false);
 
-      // Fire event change notifications to all attendees
+      // Fire event change notifications to all attendees (cookie auth, non-fatal)
       try {
-        const supabase = createClient();
-        const { data: { session } } = await supabase.auth.getSession();
-        const token = session?.access_token;
-        if (token) {
-          const agendaStr = JSON.stringify(agendaSettings);
-          const agendaChanged = prevAgendaRef.current && prevAgendaRef.current !== agendaStr;
-          prevAgendaRef.current = agendaStr;
-          await fetch(`/api/dashboard/events/${eventId}/notify-change`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-            body: JSON.stringify(
-              agendaChanged
-                ? { type: "agenda_update", title: "Schedule updated", body: "The event agenda has been updated. Check the latest schedule." }
-                : { type: "event_update", title: "Event details updated", body: "The event organizer has updated the event details. Tap to view the latest information." }
-            ),
-          }).catch(() => {}); // non-fatal
-        }
+        const agendaStr = JSON.stringify(agendaSettings);
+        const agendaChanged = prevAgendaRef.current && prevAgendaRef.current !== agendaStr;
+        prevAgendaRef.current = agendaStr;
+        fetch(`/api/dashboard/events/${eventId}/notify-change`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(
+            agendaChanged
+              ? { type: "agenda_update", title: "Schedule updated", body: "The event agenda has been updated. Check the latest schedule." }
+              : { type: "event_update", title: "Event details updated", body: "The event organizer has updated the event details. Tap to view the latest information." }
+          ),
+        }).catch(() => {}); // non-fatal, fire-and-forget
       } catch { /* non-fatal */ }
     },
     onError: (err) => {

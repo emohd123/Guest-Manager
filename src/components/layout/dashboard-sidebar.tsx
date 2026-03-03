@@ -6,10 +6,8 @@ import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import {
   CalendarDays,
-  Users,
   Ticket,
   ShoppingCart,
-  Mail,
   BarChart3,
   Settings,
   ChevronLeft,

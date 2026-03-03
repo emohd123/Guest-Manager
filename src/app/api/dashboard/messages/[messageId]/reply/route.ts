@@ -1,12 +1,15 @@
 export const dynamic = "force-dynamic";
 
 import { NextRequest } from "next/server";
+import { createClient } from "@/lib/supabase/server";
 import { getDb } from "@/server/db";
+import { users } from "@/server/db/schema";
+import { eq } from "drizzle-orm";
 import { sql } from "drizzle-orm";
 import { createEventNotifications } from "@/server/actions/createEventNotifications";
 
 interface RouteParams {
-  params: { messageId: string };
+  params: Promise<{ messageId: string }>;
 }
 
 /**
@@ -16,19 +19,40 @@ interface RouteParams {
  */
 export async function POST(request: NextRequest, { params }: RouteParams) {
   try {
+    // Auth check via cookie session
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      return Response.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const db = getDb();
+
+    // Verify user has a companyId
+    const [dbUser] = await db
+      .select({ companyId: users.companyId })
+      .from(users)
+      .where(eq(users.id, user.id))
+      .limit(1);
+
+    if (!dbUser?.companyId) {
+      return Response.json({ error: "Unauthorized" }, { status: 403 });
+    }
+
     const { reply } = (await request.json()) as { reply?: string };
     if (!reply?.trim()) {
       return Response.json({ error: "Reply cannot be empty" }, { status: 400 });
     }
 
-    const db = getDb();
-    const { messageId } = params;
+    const { messageId } = await params;
 
-    // Fetch the message
+    // Fetch the message — ensure it belongs to this company
     const msgRows = (await db.execute(sql`
-      SELECT id, event_id, guest_email, guest_name, subject
-      FROM visitor_messages
-      WHERE id = ${messageId}
+      SELECT m.id, m.event_id, m.guest_email, m.guest_name, m.subject
+      FROM visitor_messages m
+      JOIN events e ON e.id = m.event_id
+      WHERE m.id = ${messageId}
+        AND e.company_id = ${dbUser.companyId}
       LIMIT 1
     `)) as Array<{
       id: string;
@@ -44,7 +68,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 
     const msg = msgRows[0];
 
-    // Write reply to the message row
+    // Write reply
     await db.execute(sql`
       UPDATE visitor_messages
       SET admin_reply = ${reply.trim()},
@@ -54,10 +78,14 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     `);
 
     // Create in-app notification for the guest
+    const replyPreview = reply.trim().length > 200
+      ? reply.trim().slice(0, 200) + "…"
+      : reply.trim();
+
     await createEventNotifications({
       eventId: msg.event_id,
       title: "Reply from event organizer",
-      body: reply.trim().slice(0, 200) + (reply.trim().length > 200 ? "…" : ""),
+      body: replyPreview,
       type: "message_reply",
       recipientEmail: msg.guest_email,
     });

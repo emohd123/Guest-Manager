@@ -1,47 +1,39 @@
 export const dynamic = "force-dynamic";
 
-import { NextRequest } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { createClient } from "@/lib/supabase/server";
 import { getDb } from "@/server/db";
+import { users } from "@/server/db/schema";
+import { eq } from "drizzle-orm";
 import { sql } from "drizzle-orm";
-
-function getAuthHeader(req: NextRequest) {
-  return req.headers.get("authorization") ?? "";
-}
 
 /**
  * GET /api/dashboard/messages
- * Returns all visitor messages for the authenticated admin/company.
+ * Returns all visitor messages for the authenticated admin's company.
  */
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
-    const token = getAuthHeader(request).replace("Bearer ", "");
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
+    // Use cookie-based auth (dashboard uses SSR session cookies)
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
 
-    // For cookie-based auth (dashboard), get user from session cookie
-    const { data: { user } } = token
-      ? await supabase.auth.getUser(token)
-      : { data: { user: null } };
-
-    // If no bearer, try getting session from cookies (dashboard SSR)
     if (!user) {
-      // Allow request to proceed with service role for dashboard pages
-      // that use cookie-based auth — check company via query param or session
+      return Response.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const db = getDb();
 
-    // Get company_id from user's company membership
-    let companyId: string | null = null;
-    if (user) {
-      const membership = (await db.execute(sql`
-        SELECT company_id FROM company_members WHERE user_id = ${user.id} LIMIT 1
-      `)) as Array<{ company_id: string }>;
-      companyId = membership[0]?.company_id ?? null;
+    // Get companyId from the users table (same pattern as tRPC context)
+    const [dbUser] = await db
+      .select({ companyId: users.companyId })
+      .from(users)
+      .where(eq(users.id, user.id))
+      .limit(1);
+
+    if (!dbUser?.companyId) {
+      return Response.json({ messages: [], unreadCount: 0 });
     }
+
+    const companyId = dbUser.companyId;
 
     const rows = (await db.execute(sql`
       SELECT m.id, m.event_id, e.title AS event_title,
@@ -49,7 +41,7 @@ export async function GET(request: NextRequest) {
              m.is_read, m.admin_reply, m.replied_at, m.created_at
       FROM visitor_messages m
       JOIN events e ON e.id = m.event_id
-      ${companyId ? sql`WHERE e.company_id = ${companyId}` : sql``}
+      WHERE e.company_id = ${companyId}
       ORDER BY m.created_at DESC
       LIMIT 200
     `)) as Array<{
@@ -80,7 +72,7 @@ export async function GET(request: NextRequest) {
       createdAt: r.created_at,
     }));
 
-    const unreadCount = messages.filter((m) => !m.isRead).length;
+    const unreadCount = messages.filter((m) => !m.isRead && !m.adminReply).length;
 
     return Response.json({ messages, unreadCount });
   } catch (error) {

@@ -57,6 +57,8 @@ export const sentEmailsRouter = router({
       const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
       const ticketUrl = `${baseUrl}/api/tickets/${ticketData.id}/pdf`;
 
+      if (!guestData.email) throw new Error("Guest has no email address. Cannot resend.");
+
       const result = await sendTicketEmail({
         toEmail: guestData.email,
         eventName: eventData?.title || "Event",

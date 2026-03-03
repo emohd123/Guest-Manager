@@ -5,7 +5,7 @@ import { jsonError } from "../../../utils";
 import { createClient } from "@supabase/supabase-js";
 import { getDb } from "@/server/db";
 import { tickets as ticketsTable } from "@/server/db/schema";
-import { eq, and, isNotNull, or } from "drizzle-orm";
+import { eq, and, isNotNull } from "drizzle-orm";
 import { sql } from "drizzle-orm";
 
 function getBearerToken(req: NextRequest) {
@@ -16,8 +16,6 @@ function getBearerToken(req: NextRequest) {
 /**
  * GET /api/mobile/v1/visitor/me/notifications
  * Returns in-app notifications for the logged-in visitor.
- * Reads from visitor_notifications where recipient_email = visitor's email
- * OR broadcast rows (recipient_email IS NULL) for events the visitor has a ticket for.
  */
 export async function GET(request: NextRequest) {
   try {
@@ -48,39 +46,52 @@ export async function GET(request: NextRequest) {
         )
       );
 
-    const eventIds = ticketRows.map((t) => t.eventId).filter(Boolean);
+    const eventIds = ticketRows.map((t) => t.eventId).filter(Boolean) as string[];
 
-    // Fetch targeted notifications for this email (all events)
-    // Plus: fetch broadcast notifications for events they have tickets for
-    const rows = await db.execute<{
+    let rows: Array<{
       id: string;
       event_id: string;
+      event_title: string | null;
       recipient_email: string | null;
       title: string;
       body: string;
       type: string;
       is_read: boolean;
-      created_at: Date;
-    }>(sql`
-      SELECT n.id, n.event_id, n.recipient_email, n.title, n.body, n.type, n.is_read, n.created_at,
-             e.title AS event_title
-      FROM visitor_notifications n
-      LEFT JOIN events e ON e.id = n.event_id
-      WHERE n.recipient_email = ${email}
-         OR (n.recipient_email IS NULL AND n.event_id = ANY(ARRAY[${sql.raw(
-           eventIds.length ? eventIds.map(id => `'${id}'`).join(',') : 'null'
-         )}]::uuid[]))
-      ORDER BY n.created_at DESC
-      LIMIT 50
-    `);
+      created_at: string;
+    }>;
 
-    const notifications = rows.rows.map((r) => ({
+    if (eventIds.length > 0) {
+      // Fetch targeted + broadcast notifications for events the visitor has tickets for
+      rows = (await db.execute(sql`
+        SELECT n.id, n.event_id, n.recipient_email, n.title, n.body, n.type, n.is_read, n.created_at,
+               e.title AS event_title
+        FROM visitor_notifications n
+        LEFT JOIN events e ON e.id = n.event_id
+        WHERE n.recipient_email = ${email}
+           OR (n.recipient_email IS NULL AND n.event_id = ANY(${eventIds}::uuid[]))
+        ORDER BY n.created_at DESC
+        LIMIT 50
+      `)) as typeof rows;
+    } else {
+      // Only targeted notifications (no ticket-based events found)
+      rows = (await db.execute(sql`
+        SELECT n.id, n.event_id, n.recipient_email, n.title, n.body, n.type, n.is_read, n.created_at,
+               e.title AS event_title
+        FROM visitor_notifications n
+        LEFT JOIN events e ON e.id = n.event_id
+        WHERE n.recipient_email = ${email}
+        ORDER BY n.created_at DESC
+        LIMIT 50
+      `)) as typeof rows;
+    }
+
+    const notifications = rows.map((r) => ({
       id: r.id,
       eventId: r.event_id,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      eventName: (r as any).event_title ?? null,
+      eventName: r.event_title ?? null,
       title: r.title,
       body: r.body,
+      message: r.body, // backwards compat
       type: r.type,
       isRead: r.is_read,
       createdAt: r.created_at,

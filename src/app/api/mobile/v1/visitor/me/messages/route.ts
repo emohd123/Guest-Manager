@@ -4,8 +4,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { jsonError } from "../../../utils";
 import { createClient } from "@supabase/supabase-js";
 import { getDb } from "@/server/db";
-import { tickets as ticketsTable } from "@/server/db/schema";
-import { eq, and, isNotNull } from "drizzle-orm";
 import { sql } from "drizzle-orm";
 
 function getBearerToken(req: NextRequest) {
