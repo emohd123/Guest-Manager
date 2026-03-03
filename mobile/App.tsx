@@ -18,6 +18,7 @@ import {
   fetchVisitorGuestList,
   fetchVisitorNotifications,
   fetchVisitorTicket,
+  joinEventByCode,
   pairByCodePin,
   pairByQrToken,
   pairByStaffToken,
@@ -34,6 +35,7 @@ import { PairStaffScreen } from "./src/screens/PairStaffScreen";
 import { VisitorLoginScreen } from "./src/screens/VisitorLoginScreen";
 import { VisitorSignupScreen } from "./src/screens/VisitorSignupScreen";
 import { VisitorDashboardScreen } from "./src/screens/VisitorDashboardScreen";
+import { JoinEventScreen } from "./src/screens/JoinEventScreen";
 import { EventHomeScreen } from "./src/screens/EventHomeScreen";
 import { GuestsScreen } from "./src/screens/GuestsScreen";
 import { ScanScreen } from "./src/screens/ScanScreen";
@@ -62,7 +64,8 @@ type AuthStep =
   | "qr"
   | "staff"
   | "visitor_login"
-  | "visitor_signup";
+  | "visitor_signup"
+  | "visitor_join";
 
 type Tab = "home" | "guests" | "scan" | "walkup" | "activity";
 
@@ -306,6 +309,13 @@ export default function App() {
     setVisitorSession(vs);
   }
 
+  async function handleJoinEvent(code: string): Promise<string> {
+    if (!visitorSession) throw new Error("Not logged in");
+    const result = await joinEventByCode(visitorSession.token, code);
+    // Refresh ticket/events in dashboard after joining
+    return result.message;
+  }
+
   async function visitorSignOut() {
     await clearVisitorSession();
     setVisitorSession(null);
@@ -341,11 +351,23 @@ export default function App() {
 
   // ── Visitor is logged in ──────────────────────────────────────────────────
   if (visitorSession) {
+    // Visitor is joining via code — show join screen over dashboard
+    if (authStep === "visitor_join") {
+      return (
+        <SafeAreaView style={styles.full}>
+          <JoinEventScreen
+            onBack={() => setAuthStep("role_choice")}
+            onSubmit={handleJoinEvent}
+          />
+        </SafeAreaView>
+      );
+    }
     return (
       <SafeAreaView style={styles.full}>
         <VisitorDashboardScreen
           session={visitorSession}
           onSignOut={visitorSignOut}
+          onJoinEvent={() => setAuthStep("visitor_join")}
           fetchTicket={loadVisitorTicket}
           fetchEvents={loadVisitorEvents}
           fetchNotifications={loadVisitorNotifications}

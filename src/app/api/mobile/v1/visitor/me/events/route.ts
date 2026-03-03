@@ -33,7 +33,6 @@ export async function GET(request: NextRequest) {
     // 1. Find guest by email
     const guestRows = await db.select().from(guests).where(eq(guests.email, email)).limit(1);
     if (!guestRows.length) return NextResponse.json({ events: [] });
-
     const guestId = guestRows[0].id;
 
     // 2. Get all tickets for this guest
@@ -47,16 +46,10 @@ export async function GET(request: NextRequest) {
 
     // 3. Fetch event details for each unique eventId
     const eventIds = [...new Set(guestTickets.map((t) => t.eventId))];
-    const eventRows = await db
-      .select({ id: eventsTable.id, name: eventsTable.name, startsAt: eventsTable.startsAt })
-      .from(eventsTable)
-      .where(eq(eventsTable.id, eventIds[0])); // base query – we'll expand
-
-    // For multiple events, use a map
-    const eventMap = new Map<string, { id: string; name: string; startsAt: Date }>();
+    const eventMap = new Map<string, { id: string; title: string; startsAt: Date }>();
     for (const evId of eventIds) {
       const rows = await db
-        .select({ id: eventsTable.id, name: eventsTable.name, startsAt: eventsTable.startsAt })
+        .select({ id: eventsTable.id, title: eventsTable.title, startsAt: eventsTable.startsAt })
         .from(eventsTable)
         .where(eq(eventsTable.id, evId))
         .limit(1);
@@ -69,7 +62,7 @@ export async function GET(request: NextRequest) {
         if (!ev) return null;
         return {
           eventId: ev.id,
-          eventName: ev.name,
+          eventName: ev.title,
           startsAt: ev.startsAt,
           ticketStatus: t.status ?? "valid",
           attendanceState: t.checkedIn ? "checked_in" : null,

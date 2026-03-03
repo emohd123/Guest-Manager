@@ -236,3 +236,18 @@ export async function fetchVisitorGuestList(token: string) {
     token
   );
 }
+
+export async function joinEventByCode(token: string, eventCode: string) {
+  return apiRequest<{
+    event: { id: string; name: string; startsAt: Date; visitorCode: string | null };
+    guestFound: boolean;
+    message: string;
+  }>(
+    "/api/mobile/v1/visitor/join-event",
+    {
+      method: "POST",
+      body: JSON.stringify({ eventCode: eventCode.trim().toUpperCase() }),
+    },
+    token
+  );
+}

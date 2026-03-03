@@ -42,6 +42,8 @@ export const events = pgTable(
     settings: jsonb("settings").default({}),
     customFields: jsonb("custom_fields").default([]),
     metadata: jsonb("metadata").default({}),
+    /** Unique short code attendees use to connect in the Visitor Portal app */
+    visitorCode: varchar("visitor_code", { length: 10 }).unique(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
     deletedAt: timestamp("deleted_at"),

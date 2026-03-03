@@ -21,6 +21,7 @@ type VisitorTab = "ticket" | "agenda" | "events" | "guests" | "notifications";
 interface Props {
   session: VisitorSession;
   onSignOut: () => void;
+  onJoinEvent: () => void;
   fetchTicket: (token: string) => Promise<VisitorTicket | null>;
   fetchEvents: (token: string) => Promise<VisitorEvent[]>;
   fetchNotifications: (token: string) => Promise<VisitorNotification[]>;
@@ -91,6 +92,14 @@ function TicketPanel({ ticket, refreshing, onRefresh }: {
           <Text style={styles.barcode}>{ticket.barcode}</Text>
           <Text style={styles.barcodeHint}>Show this to door staff for check-in</Text>
         </View>
+        {/* Visitor Code */}
+        {ticket.event.visitorCode ? (
+          <View style={styles.visitorCodeBox}>
+            <Text style={styles.visitorCodeLabel}>🔗 VISITOR PORTAL CODE</Text>
+            <Text style={styles.visitorCodeValue}>{ticket.event.visitorCode}</Text>
+            <Text style={styles.visitorCodeHint}>Use this code in the app to follow event updates</Text>
+          </View>
+        ) : null}
       </View>
     </ScrollView>
   );
@@ -127,16 +136,27 @@ function AgendaPanel({ items, agendaTitle, refreshing, onRefresh }: {
 }
 
 // ── Events Tab ───────────────────────────────────────────────────────────────
-function EventsPanel({ events, refreshing, onRefresh }: {
+function EventsPanel({ events, refreshing, onRefresh, onJoin }: {
   events: VisitorEvent[];
   refreshing: boolean;
   onRefresh: () => void;
+  onJoin: () => void;
 }) {
   if (events.length === 0) {
-    return <Empty icon="📅" title="No events yet" msg="Events you are registered for will appear here." />;
+    return (
+      <View style={styles.tabContent}>
+        <Empty icon="📅" title="No events yet" msg="Events you are registered for will appear here." />
+        <Pressable style={styles.joinBtn} onPress={onJoin}>
+          <Text style={styles.joinBtnText}>+ Join with Event Code</Text>
+        </Pressable>
+      </View>
+    );
   }
   return (
     <ScrollView style={styles.tabContent} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}>
+      <Pressable style={styles.joinBtn} onPress={onJoin}>
+        <Text style={styles.joinBtnText}>+ Join with Event Code</Text>
+      </Pressable>
       {events.map((ev) => (
         <View key={ev.eventId} style={styles.eventRow}>
           <View style={styles.eventDot} />
@@ -211,6 +231,7 @@ function NotifsPanel({ notifications, refreshing, onRefresh }: {
 export function VisitorDashboardScreen({
   session,
   onSignOut,
+  onJoinEvent,
   fetchTicket,
   fetchEvents,
   fetchNotifications,
@@ -288,7 +309,7 @@ export function VisitorDashboardScreen({
           />
         )}
         {tab === "events" && (
-          <EventsPanel events={events} refreshing={refreshing} onRefresh={handleRefresh} />
+          <EventsPanel events={events} refreshing={refreshing} onRefresh={handleRefresh} onJoin={onJoinEvent} />
         )}
         {tab === "guests" && (
           <GuestsPanel guests={guestList} refreshing={refreshing} onRefresh={handleRefresh} />
@@ -365,6 +386,19 @@ const styles = StyleSheet.create({
   barcodeLabel: { fontSize: 11, color: "#94a3b8", fontWeight: "700", textTransform: "uppercase" },
   barcode: { fontSize: 18, fontWeight: "800", color: "#0f172a", letterSpacing: 3 },
   barcodeHint: { fontSize: 11, color: "#94a3b8", textAlign: "center" },
+  visitorCodeBox: {
+    backgroundColor: "#eef2ff", borderRadius: 14, padding: 14,
+    alignItems: "center", borderWidth: 1, borderColor: "#c7d2fe", gap: 4, marginTop: 4,
+  },
+  visitorCodeLabel: { fontSize: 10, color: "#6366f1", fontWeight: "800", textTransform: "uppercase", letterSpacing: 1 },
+  visitorCodeValue: { fontSize: 22, fontWeight: "800", color: "#4338ca", letterSpacing: 5, fontVariant: ["tabular-nums"] },
+  visitorCodeHint: { fontSize: 11, color: "#6366f1", textAlign: "center" },
+  // Events
+  joinBtn: {
+    backgroundColor: "#eef2ff", borderRadius: 14, paddingVertical: 12,
+    alignItems: "center", borderWidth: 1, borderColor: "#c7d2fe", marginBottom: 12,
+  },
+  joinBtnText: { color: "#4338ca", fontWeight: "800", fontSize: 14 },
   // Agenda
   agendaTitle: { fontSize: 18, fontWeight: "800", color: "#0f172a", marginBottom: 16 },
   agendaItem: { flexDirection: "row", gap: 14, marginBottom: 14 },

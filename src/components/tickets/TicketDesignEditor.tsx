@@ -7,6 +7,8 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { TicketPreview, TicketDesignSettings } from "@/components/tickets/TicketPreview";
 import { Separator } from "@/components/ui/separator";
+import { Copy, Check } from "lucide-react";
+import { useState } from "react";
 
 interface TicketDesignEditorProps {
   design: TicketDesignSettings;
@@ -14,6 +16,10 @@ interface TicketDesignEditorProps {
   eventName?: string;
   venue?: string;
   startDate?: string;
+  /** The unique visitor code for this event, shown below the field toggles */
+  visitorCode?: string;
+  /** App download URL — rendered as a QR code next to the visitor code in the preview */
+  appDownloadUrl?: string;
 }
 
 const FIELD_TOGGLES: { key: keyof NonNullable<TicketDesignSettings["visibleFields"]>; label: string }[] = [
@@ -44,15 +50,25 @@ const DEFAULT_VISIBLE = {
   email: false,
 };
 
-export function TicketDesignEditor({ design, onChange, eventName, venue, startDate }: TicketDesignEditorProps) {
+export function TicketDesignEditor({ design, onChange, eventName, venue, startDate, visitorCode, appDownloadUrl }: TicketDesignEditorProps) {
+  const [copied, setCopied] = useState(false);
   // Always merge DEFAULT_VISIBLE with saved settings so no field is accidentally undefined
   const visible = { ...DEFAULT_VISIBLE, ...(design.visibleFields ?? {}) };
+  const showVisitorCode = (design as { showVisitorCode?: boolean }).showVisitorCode ?? true;
 
   const update = (patch: Partial<TicketDesignSettings>) => onChange({ ...design, ...patch });
 
   const toggleField = (key: keyof typeof DEFAULT_VISIBLE, value: boolean) => {
     onChange({ ...design, visibleFields: { ...visible, [key]: value } });
   };
+
+  function copyCode() {
+    if (!visitorCode) return;
+    navigator.clipboard.writeText(visitorCode).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  }
 
   return (
     <div className="grid lg:grid-cols-2 gap-8 items-start">
@@ -147,8 +163,41 @@ export function TicketDesignEditor({ design, onChange, eventName, venue, startDa
                 />
               </div>
             ))}
+            {/* Visitor Code toggle */}
+            <div className="flex items-center justify-between px-4 py-3 rounded-2xl bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-200 dark:border-indigo-800">
+              <div>
+                <span className="text-sm font-medium">Event Visitor Code</span>
+                <p className="text-xs text-muted-foreground mt-0.5">Shows the unique code on the ticket so attendees can link the event in the Visitor Portal app</p>
+              </div>
+              <Switch
+                checked={showVisitorCode}
+                onCheckedChange={(v) => onChange({ ...design, showVisitorCode: v } as TicketDesignSettings)}
+              />
+            </div>
           </div>
         </div>
+
+        <Separator />
+
+        {/* Visitor Code Display */}
+        {visitorCode && (
+          <div className="space-y-3">
+            <Label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Event Visitor Code</Label>
+            <div className="flex items-center gap-3 bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-200 dark:border-indigo-800 rounded-2xl px-5 py-4">
+              <div className="flex-1">
+                <p className="font-black text-2xl tracking-widest font-mono text-indigo-700 dark:text-indigo-300">{visitorCode}</p>
+                <p className="text-xs text-muted-foreground mt-1">Send this code to attendees so they can connect in the Visitor Portal app</p>
+              </div>
+              <button
+                onClick={copyCode}
+                className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-bold bg-white dark:bg-zinc-900 border border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900 transition-colors"
+              >
+                {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                {copied ? "Copied!" : "Copy"}
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Right: Live Preview */}
@@ -160,6 +209,8 @@ export function TicketDesignEditor({ design, onChange, eventName, venue, startDa
           eventName={eventName}
           venue={venue}
           startDate={startDate}
+          visitorCode={showVisitorCode ? visitorCode : undefined}
+          appDownloadUrl={showVisitorCode && visitorCode ? (appDownloadUrl ?? "http://localhost:8081") : undefined}
         />
         <p className="text-xs text-muted-foreground text-center">
           Preview uses sample data — real ticket will show attendee information.

@@ -20,25 +20,27 @@ export function RoleChoiceScreen({
       <Text style={styles.subtitle}>Check-In & Events App</Text>
 
       <View style={styles.cards}>
+        {/* Staff Login Card */}
         <Pressable style={styles.staffCard} onPress={onSelectStaff}>
-          <Text style={styles.cardIcon}>🔐</Text>
-          <Text style={styles.cardTitle}>Staff Login</Text>
-          <Text style={styles.cardDescription}>
+          <Text style={styles.staffCardIcon}>🔐</Text>
+          <Text style={styles.staffCardTitle}>Staff Login</Text>
+          <Text style={styles.staffCardDescription}>
             Pair this device to an event and start scanning tickets
           </Text>
-          <View style={styles.cardArrow}>
-            <Text style={styles.cardArrowText}>→</Text>
+          <View style={styles.staffArrow}>
+            <Text style={styles.staffArrowText}>→</Text>
           </View>
         </Pressable>
 
+        {/* Visitor Portal Card */}
         <Pressable style={styles.visitorCard} onPress={onSelectVisitor}>
-          <Text style={styles.cardIcon}>🎟️</Text>
-          <Text style={styles.cardTitle}>Visitor Portal</Text>
-          <Text style={styles.cardDescription}>
+          <Text style={styles.visitorCardIcon}>🎫</Text>
+          <Text style={styles.visitorCardTitle}>Visitor Portal</Text>
+          <Text style={styles.visitorCardDescription}>
             View your tickets, agenda, events & notifications
           </Text>
-          <View style={[styles.cardArrow, styles.cardArrowVisitor]}>
-            <Text style={[styles.cardArrowText, styles.cardArrowTextVisitor]}>→</Text>
+          <View style={styles.visitorArrow}>
+            <Text style={styles.visitorArrowText}>→</Text>
           </View>
         </Pressable>
       </View>
@@ -92,6 +94,8 @@ const styles = StyleSheet.create({
     width: "100%",
     gap: 14,
   },
+
+  // ── Staff Card (dark blue) ───────────────────────────────────────────────
   staffCard: {
     backgroundColor: "#4338ca",
     borderRadius: 18,
@@ -103,30 +107,22 @@ const styles = StyleSheet.create({
     shadowRadius: 14,
     elevation: 4,
   },
-  visitorCard: {
-    backgroundColor: "#ffffff",
-    borderRadius: 18,
-    padding: 22,
-    borderWidth: 1.5,
-    borderColor: "#e2e8f0",
-    position: "relative",
-  },
-  cardIcon: {
+  staffCardIcon: {
     fontSize: 28,
     marginBottom: 8,
   },
-  cardTitle: {
+  staffCardTitle: {
     fontSize: 18,
     fontWeight: "800",
-    color: "#fff",
+    color: "#ffffff",
     marginBottom: 4,
   },
-  cardDescription: {
+  staffCardDescription: {
     fontSize: 13,
-    color: "rgba(255,255,255,0.75)",
+    color: "rgba(255,255,255,0.80)",
     lineHeight: 18,
   },
-  cardArrow: {
+  staffArrow: {
     position: "absolute",
     top: 22,
     right: 22,
@@ -137,17 +133,58 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  cardArrowVisitor: {
-    backgroundColor: "#f1f5f9",
-  },
-  cardArrowText: {
-    color: "#fff",
+  staffArrowText: {
+    color: "#ffffff",
     fontWeight: "700",
     fontSize: 16,
   },
-  cardArrowTextVisitor: {
-    color: "#4338ca",
+
+  // ── Visitor Card (white with border) ─────────────────────────────────────
+  visitorCard: {
+    backgroundColor: "#ffffff",
+    borderRadius: 18,
+    padding: 22,
+    borderWidth: 1.5,
+    borderColor: "#c7d2fe",
+    position: "relative",
+    shadowColor: "#4338ca",
+    shadowOpacity: 0.08,
+    shadowOffset: { width: 0, height: 3 },
+    shadowRadius: 8,
+    elevation: 2,
   },
+  visitorCardIcon: {
+    fontSize: 28,
+    marginBottom: 8,
+  },
+  visitorCardTitle: {
+    fontSize: 18,
+    fontWeight: "800",
+    color: "#0f172a",      // ← dark text on white background
+    marginBottom: 4,
+  },
+  visitorCardDescription: {
+    fontSize: 13,
+    color: "#64748b",      // ← slate gray text on white background
+    lineHeight: 18,
+  },
+  visitorArrow: {
+    position: "absolute",
+    top: 22,
+    right: 22,
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: "#eef2ff",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  visitorArrowText: {
+    color: "#4338ca",
+    fontWeight: "700",
+    fontSize: 16,
+  },
+
   footer: {
     marginTop: 28,
     fontSize: 11,

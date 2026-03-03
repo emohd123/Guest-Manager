@@ -271,6 +271,8 @@ export default function DesignSetupPage({
                 eventName={event?.title}
                 venue={undefined}
                 startDate={event?.startsAt ? new Date(event.startsAt).toISOString() : undefined}
+                visitorCode={(event as { visitorCode?: string })?.visitorCode}
+                appDownloadUrl={process.env.NEXT_PUBLIC_APP_DOWNLOAD_URL ?? "http://localhost:8081"}
               />
             </CardContent>
           </Card>

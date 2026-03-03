@@ -40,6 +40,8 @@ export interface TicketEmailPayload {
   // From event.settings
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   eventSettings?: any;
+  /** Unique visitor code for this event (shown on ticket when showVisitorCode is enabled) */
+  visitorCode?: string;
 }
 
 export async function generateAndSendTicket(payload: TicketEmailPayload): Promise<void> {
@@ -55,6 +57,7 @@ export async function generateAndSendTicket(payload: TicketEmailPayload): Promis
     eventLocation,
     appBaseUrl,
     eventSettings,
+    visitorCode,
   } = payload;
 
   const settings = eventSettings ?? {};
@@ -68,10 +71,16 @@ export async function generateAndSendTicket(payload: TicketEmailPayload): Promis
   const formattedTime = format(eventStartsAt, "h:mm a");
   const formattedDateTime = format(eventStartsAt, "MMM d, yyyy • h:mm a");
 
-  // 1. Generate QR code — hosted URL for email, data URI for PDF (PDF renderer supports data URIs)
-  const [qrCodePublicUrl, qrCodeDataUri] = await Promise.all([
+  // App download URL for QR code (shown next to visitor code on ticket)
+  const appDownloadUrl = process.env.NEXT_PUBLIC_APP_DOWNLOAD_URL || "http://localhost:8081";
+
+  // 1. Generate QR codes — ticket barcode + app download link
+  const [qrCodePublicUrl, qrCodeDataUri, appDownloadQrUri] = await Promise.all([
     generateAndUploadQRCode(barcode),
     generateQRCodeDataUri(barcode),
+    ticketDesign.showVisitorCode !== false && visitorCode
+      ? generateQRCodeDataUri(appDownloadUrl)
+      : Promise.resolve(undefined),
   ]);
 
   // 2. Generate PDF
@@ -89,11 +98,14 @@ export async function generateAndSendTicket(payload: TicketEmailPayload): Promis
         attendeeName,
         orderNumber,
         qrCodeDataUri,
+        visitorCode: ticketDesign.showVisitorCode !== false ? visitorCode : undefined,
+        appDownloadQrUri: appDownloadQrUri ?? undefined,
         design: {
           backgroundImageUrl: ticketDesign.backgroundImageUrl,
           labelColor: ticketDesign.labelColor ?? "#2563EB",
           textColor: ticketDesign.textColor ?? "#111111",
           visibleFields: ticketDesign.visibleFields,
+          showVisitorCode: ticketDesign.showVisitorCode ?? true,
         },
       },
     }) as ReactElement<DocumentProps>;

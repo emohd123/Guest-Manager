@@ -136,6 +136,7 @@ export const ticketsRouter = router({
         eventStartsAt: event?.startsAt ?? new Date(),
         appBaseUrl,
         eventSettings: event?.settings,
+        visitorCode: event?.visitorCode ?? undefined,
       });
 
       return { success: true };

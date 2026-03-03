@@ -16,9 +16,10 @@ export interface TicketPDFDesign {
   backgroundImageUrl?: string;
   labelColor?: string;
   textColor?: string;
-  imagePositionX?: number; // 0–100
+  imagePositionX?: number;
   imagePositionY?: number;
   imageScale?: number;
+  showVisitorCode?: boolean;
   visibleFields?: {
     eventName?: boolean;
     ticketType?: boolean;
@@ -41,6 +42,10 @@ export interface TicketPDFData {
   orderNumber: string;
   qrCodeDataUri: string;
   design: TicketPDFDesign;
+  /** Unique event code shown at the bottom of the ticket (when enabled in design settings) */
+  visitorCode?: string;
+  /** QR code data URI pointing to the app download page, shown next to the visitor code */
+  appDownloadQrUri?: string;
 }
 
 // Ticket is landscape credit-card size: 3.375" × 2.125" → 243 × 153 pt
@@ -169,6 +174,42 @@ export function TicketPDFDocument({ data }: { data: TicketPDFData }) {
             {visible.attendeeName && renderField("ATTENDEE", data.attendeeName)}
             {visible.price && data.price && renderField("PRICE", data.price)}
             {visible.orderNumber && renderField("ORDER #", data.orderNumber)}
+            {/* Visitor Portal Code + App Download QR — side by side */}
+            {data.design.showVisitorCode !== false && data.visitorCode ? (
+              <View style={[
+                styles.fieldItem,
+                {
+                  borderTopWidth: 1,
+                  borderTopColor: accentColor,
+                  paddingTop: 4,
+                  marginTop: 2,
+                  minWidth: 160,
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: 8,
+                }
+              ]}>
+                {/* Left: code text */}
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.fieldLabel, { color: accentColor, letterSpacing: 1.5 }]}>
+                    VISITOR CODE
+                  </Text>
+                  <Text style={[styles.fieldValue, { fontSize: 11, letterSpacing: 3, color: accentColor, fontFamily: "Helvetica-Bold" }]}>
+                    {data.visitorCode}
+                  </Text>
+                  <Text style={{ fontSize: 5, color: "#6b7280", marginTop: 1 }}>
+                    Use in Visitor Portal app
+                  </Text>
+                </View>
+                {/* Right: app download QR */}
+                {data.appDownloadQrUri ? (
+                  <View style={{ alignItems: "center", gap: 2 }}>
+                    <Image src={data.appDownloadQrUri} style={{ width: 36, height: 36, backgroundColor: "#fff" }} />
+                    <Text style={{ fontSize: 4.5, color: "#6b7280", textAlign: "center" }}>Download App</Text>
+                  </View>
+                ) : null}
+              </View>
+            ) : null}
           </View>
 
           {/* QR Code */}

@@ -10,10 +10,11 @@ export interface TicketDesignSettings {
   labelColor?: string;
   textColor?: string;
   dateFormat?: string;
-  // Image placement — offset from center in % of container, scale multiplier
-  imagePositionX?: number; // default 0 (centered)
-  imagePositionY?: number; // default 0 (centered)
-  imageScale?: number;     // default 1.0
+  imagePositionX?: number;
+  imagePositionY?: number;
+  imageScale?: number;
+  /** When true, the visitor portal code is shown on the ticket */
+  showVisitorCode?: boolean;
   visibleFields?: {
     eventName?: boolean;
     ticketType?: boolean;
@@ -39,6 +40,10 @@ interface TicketPreviewProps {
   attendeeName?: string;
   price?: string;
   orderNumber?: string;
+  /** If provided and showVisitorCode is on, shows below the ticket fields */
+  visitorCode?: string;
+  /** URL to app download page — will be rendered as a scannable QR next to visitor code */
+  appDownloadUrl?: string;
 }
 
 export function TicketPreview({
@@ -51,8 +56,11 @@ export function TicketPreview({
   attendeeName = "John Doe",
   price = "Free",
   orderNumber = "1000000001",
+  visitorCode,
+  appDownloadUrl,
 }: TicketPreviewProps) {
   const [qrDataUrl, setQrDataUrl] = useState<string>("");
+  const [appQrDataUrl, setAppQrDataUrl] = useState<string>("");
   const [isDragging, setIsDragging] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -100,6 +108,11 @@ export function TicketPreview({
   useEffect(() => {
     QRCode.toDataURL(orderNumber, { width: 100, margin: 1 }).then(setQrDataUrl).catch(() => {});
   }, [orderNumber]);
+
+  useEffect(() => {
+    if (!appDownloadUrl) return;
+    QRCode.toDataURL(appDownloadUrl, { width: 80, margin: 1 }).then(setAppQrDataUrl).catch(() => {});
+  }, [appDownloadUrl]);
 
   // ── Drag handlers ──────────────────────────────────────────────────────────
   const onMouseDown = useCallback(
@@ -266,6 +279,25 @@ export function TicketPreview({
                 <div>
                   <div className="text-[9px] font-black uppercase tracking-[0.15em]" style={{ color: labelColor }}>ORDER</div>
                   <div className="text-xs font-bold font-mono leading-tight mt-0.5 text-zinc-900">#{orderNumber}</div>
+                </div>
+              )}
+              {/* Visitor Code + App Download QR */}
+              {design.showVisitorCode !== false && visitorCode && (
+                <div className="col-span-3 border-t pt-2 mt-1 flex items-center gap-4" style={{ borderColor: labelColor }}>
+                  <div className="flex-1">
+                    <div className="text-[9px] font-black uppercase tracking-[0.15em]" style={{ color: labelColor }}>Visitor Portal Code</div>
+                    <div className="text-sm font-black font-mono tracking-[0.3em] mt-0.5" style={{ color: labelColor }}>
+                      {visitorCode}
+                    </div>
+                    <div className="text-[8px] text-zinc-400 mt-0.5">Use in Visitor Portal app to follow event updates</div>
+                  </div>
+                  {/* App Download QR */}
+                  {appDownloadUrl && appQrDataUrl && (
+                    <div className="flex flex-col items-center gap-0.5 shrink-0">
+                      <img src={appQrDataUrl} alt="Download App" className="w-10 h-10" />
+                      <div className="text-[7px] text-zinc-500 font-medium">Download App</div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
