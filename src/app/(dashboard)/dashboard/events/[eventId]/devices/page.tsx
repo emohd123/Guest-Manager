@@ -263,8 +263,12 @@ export default function DevicesPage({ params }: { params: Promise<{ eventId: str
             <div className="rounded border p-3">
               <div className="text-muted-foreground">PIN</div>
               <div className="mt-1 flex items-center justify-between">
-                <span className="font-mono text-lg">{pairingAccess?.pin ?? "Rotate to reveal new PIN"}</span>
-                {pairingAccess?.pin ? (
+                <span className="font-mono text-lg">
+                  {pairingAccess?.pin === "HIDDEN"
+                    ? "****"
+                    : (pairingAccess?.pin ?? "Rotate to reveal new PIN")}
+                </span>
+                {pairingAccess?.pin && pairingAccess.pin !== "HIDDEN" ? (
                   <Button
                     size="icon"
                     variant="ghost"

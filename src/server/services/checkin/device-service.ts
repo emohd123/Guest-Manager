@@ -44,13 +44,13 @@ export async function listEventDevices(db: Db, eventId: string, companyId: strin
 }
 
 export async function getDeviceStats(db: Db, eventId: string, companyId: string) {
-  const cutoff = getOnlineCutoff();
+  const cutoff = getOnlineCutoff().toISOString();
 
   const [deviceCounts] = await db
     .select({
-      total: sql<number>`count(*)`,
-      online: sql<number>`count(*) filter (where ${devices.lastReportAt} is not null and ${devices.lastReportAt} > ${cutoff})`,
-      lowBattery: sql<number>`count(*) filter (where coalesce(${devices.battery}, 100) <= 20 or coalesce(${devices.scannerBattery}, 100) <= 20)`,
+      total: sql<number>`count(*)`.mapWith(Number),
+      online: sql<number>`count(*) filter (where ${devices.lastReportAt} is not null and ${devices.lastReportAt} > ${cutoff}::timestamp)`.mapWith(Number),
+      lowBattery: sql<number>`count(*) filter (where coalesce(${devices.battery}, 100) <= 20 or coalesce(${devices.scannerBattery}, 100) <= 20)`.mapWith(Number),
     })
     .from(devices)
     .where(
@@ -63,17 +63,17 @@ export async function getDeviceStats(db: Db, eventId: string, companyId: string)
 
   const [scanCounts] = await db
     .select({
-      successfulScans: sql<number>`count(*) filter (where ${scans.scanType} <> 'invalid')`,
-      unsuccessfulScans: sql<number>`count(*) filter (where ${scans.scanType} = 'invalid')`,
+      successfulScans: sql<number>`count(*) filter (where ${scans.scanType} <> 'invalid')`.mapWith(Number),
+      unsuccessfulScans: sql<number>`count(*) filter (where ${scans.scanType} = 'invalid')`.mapWith(Number),
     })
     .from(scans)
     .where(and(eq(scans.eventId, eventId), eq(scans.companyId, companyId)));
 
   const [attendanceCounts] = await db
     .select({
-      noShow: sql<number>`count(*) filter (where ${guests.status} = 'no_show')`,
-      checkedIn: sql<number>`count(*) filter (where ${guests.attendanceState} = 'checked_in')`,
-      checkedOut: sql<number>`count(*) filter (where ${guests.attendanceState} = 'checked_out')`,
+      noShow: sql<number>`count(*) filter (where ${guests.status} = 'no_show')`.mapWith(Number),
+      checkedIn: sql<number>`count(*) filter (where ${guests.attendanceState} = 'checked_in')`.mapWith(Number),
+      checkedOut: sql<number>`count(*) filter (where ${guests.attendanceState} = 'checked_out')`.mapWith(Number),
     })
     .from(guests)
     .where(and(eq(guests.eventId, eventId), eq(guests.companyId, companyId)));

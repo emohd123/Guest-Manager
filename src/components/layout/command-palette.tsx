@@ -36,6 +36,12 @@ export function CommandPalette() {
   const router = useRouter();
   const { setTheme, theme } = useTheme();
 
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
       if (e.key === "k" && (e.metaKey || e.ctrlKey)) {
@@ -46,6 +52,8 @@ export function CommandPalette() {
     document.addEventListener("keydown", down);
     return () => document.removeEventListener("keydown", down);
   }, []);
+
+  if (!mounted) return null;
 
   const navigate = (path: string) => {
     setOpen(false);

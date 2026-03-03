@@ -14,7 +14,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { ImagePlus, Paintbrush, ExternalLink, Loader2, Check, Ticket, Mail } from "lucide-react";
+import { ImagePlus, Paintbrush, ExternalLink, Loader2, Check, Ticket, Mail, CalendarDays } from "lucide-react";
 import { trpc } from "@/lib/trpc/client";
 import { ImageUpload } from "@/components/shared/ImageUpload";
 import { toast } from "sonner";
@@ -24,6 +24,8 @@ import { TicketDesignEditor } from "@/components/tickets/TicketDesignEditor";
 import type { TicketDesignSettings } from "@/components/tickets/TicketPreview";
 import { EmailDesignEditor } from "@/components/emails/EmailDesignEditor";
 import type { EmailDesignState } from "@/components/emails/EmailDesignEditor";
+import { AgendaEditor } from "@/components/agenda/AgendaEditor";
+import type { AgendaSettings } from "@/components/agenda/AgendaEditor";
 
 export default function DesignSetupPage({
   params,
@@ -60,6 +62,13 @@ export default function DesignSetupPage({
   // ---------- Email design tab state ----------
   const [emailDesigns, setEmailDesigns] = useState<EmailDesignState>({});
 
+  // ---------- Agenda tab state ----------
+  const [agendaSettings, setAgendaSettings] = useState<AgendaSettings>({
+    items: [],
+    attachToEmail: false,
+    agendaTitle: "",
+  });
+
   const [isSaving, setIsSaving] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
 
@@ -71,6 +80,7 @@ export default function DesignSetupPage({
         const settings = (event.settings as DesignSettings & {
           ticketDesign?: TicketDesignSettings;
           emailDesigns?: EmailDesignState;
+          agenda?: AgendaSettings;
         }) || {};
         setLogoUrl(settings.logoUrl || "");
         setPrimaryColor(settings.primaryColor || "#2563EB");
@@ -78,6 +88,7 @@ export default function DesignSetupPage({
         setCustomCss(settings.customCss || "");
         if (settings.ticketDesign) setTicketDesign(settings.ticketDesign);
         if (settings.emailDesigns) setEmailDesigns(settings.emailDesigns);
+        if (settings.agenda) setAgendaSettings(settings.agenda);
         setIsInitialized(true);
       }, 0);
     }
@@ -107,6 +118,7 @@ export default function DesignSetupPage({
         customCss,
         ticketDesign,
         emailDesigns,
+        agenda: agendaSettings,
       },
     });
   };
@@ -156,6 +168,9 @@ export default function DesignSetupPage({
           </TabsTrigger>
           <TabsTrigger value="email" className="rounded-xl text-sm font-bold px-5 py-2.5 data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-800 data-[state=active]:shadow gap-2">
             <Mail className="h-4 w-4" /> Email Design
+          </TabsTrigger>
+          <TabsTrigger value="agenda" className="rounded-xl text-sm font-bold px-5 py-2.5 data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-800 data-[state=active]:shadow gap-2">
+            <CalendarDays className="h-4 w-4" /> Agenda
           </TabsTrigger>
         </TabsList>
 
@@ -283,6 +298,29 @@ export default function DesignSetupPage({
                 ticketDesign={ticketDesign}
                 venue={undefined}
                 startDate={event?.startsAt ? new Date(event.startsAt).toISOString() : undefined}
+              />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* ========================= AGENDA TAB ========================= */}
+        <TabsContent value="agenda" className="mt-0">
+          <Card className="rounded-[2.5rem] border-none shadow-xl shadow-zinc-200/50 dark:shadow-none bg-white dark:bg-zinc-950">
+            <CardHeader className="p-8 pb-4">
+              <CardTitle className="flex items-center gap-3 text-xl font-bold">
+                <div className="h-10 w-10 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
+                  <CalendarDays className="h-5 w-5" />
+                </div>
+                Event Agenda
+              </CardTitle>
+              <CardDescription className="text-md">
+                Build your event schedule. Toggle the switch to attach the agenda PDF to every ticket email sent to attendees.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="p-8 pt-4">
+              <AgendaEditor
+                settings={agendaSettings}
+                onChange={setAgendaSettings}
               />
             </CardContent>
           </Card>

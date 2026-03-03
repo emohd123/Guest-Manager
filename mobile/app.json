@@ -16,7 +16,7 @@
     },
     "web": {},
     "extra": {
-      "apiBaseUrl": "http://192.168.100.136:3000",
+      "apiBaseUrl": "http://localhost:3000",
       "appVersion": "0.1.0"
     },
     "plugins": [

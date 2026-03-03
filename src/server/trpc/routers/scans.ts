@@ -54,7 +54,7 @@ export const scansRouter = router({
         .offset(input.offset);
 
       const [countResult] = await ctx.db
-        .select({ count: sql<number>`count(*)` })
+        .select({ count: sql<number>`count(*)`.mapWith(Number) })
         .from(scans)
         .where(and(...filters));
 

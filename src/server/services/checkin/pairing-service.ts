@@ -118,7 +118,7 @@ export async function getPairingAccess(db: Db, eventId: string, createdBy?: stri
     return {
       eventId,
       accessCode: existing.accessCode,
-      pin: lastIssuedPinByEvent.get(eventId) ?? null,
+      pin: lastIssuedPinByEvent.get(eventId) ?? (existing.pinHash ? "HIDDEN" : null),
       isEnabled: existing.isEnabled,
       lastRotatedAt: existing.lastRotatedAt,
     };

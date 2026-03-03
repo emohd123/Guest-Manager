@@ -1,7 +1,7 @@
 import Constants from "expo-constants";
 import type { MobileGuest, PairingSession, SummaryMetrics } from "../types";
 
-const fallbackBaseUrl = "http://192.168.100.136:3000";
+const fallbackBaseUrl = "http://localhost:3000";
 const extra = (Constants.expoConfig?.extra ?? {}) as Record<string, string | undefined>;
 const baseUrl = process.env.EXPO_PUBLIC_API_URL || extra.apiBaseUrl || fallbackBaseUrl;
 
@@ -174,3 +174,65 @@ export async function fetchSummary(session: PairingSession) {
   );
 }
 
+// ── Visitor / Attendee API ────────────────────────────────────────────────────
+
+export async function visitorLogin(email: string, password: string) {
+  return apiRequest<{ token: string; userId: string; email: string; name: string }>(
+    "/api/mobile/v1/visitor/login",
+    {
+      method: "POST",
+      body: JSON.stringify({ email, password }),
+    }
+  );
+}
+
+export async function visitorRegister(data: {
+  firstName: string;
+  lastName: string;
+  email: string;
+  password: string;
+}) {
+  return apiRequest<{ token: string; userId: string; email: string; name: string }>(
+    "/api/mobile/v1/visitor/register",
+    {
+      method: "POST",
+      body: JSON.stringify(data),
+    }
+  );
+}
+
+export async function fetchVisitorTicket(token: string) {
+  return apiRequest<{
+    ticket: import("../types").VisitorTicket | null;
+  }>(
+    "/api/mobile/v1/visitor/me/ticket",
+    { method: "GET" },
+    token
+  );
+}
+
+export async function fetchVisitorEvents(token: string) {
+  return apiRequest<{ events: import("../types").VisitorEvent[] }>(
+    "/api/mobile/v1/visitor/me/events",
+    { method: "GET" },
+    token
+  );
+}
+
+export async function fetchVisitorNotifications(token: string) {
+  return apiRequest<{ notifications: import("../types").VisitorNotification[] }>(
+    "/api/mobile/v1/visitor/me/notifications",
+    { method: "GET" },
+    token
+  );
+}
+
+export async function fetchVisitorGuestList(token: string) {
+  return apiRequest<{
+    guests: Array<{ id: string; firstName: string; lastName: string | null }>;
+  }>(
+    "/api/mobile/v1/visitor/me/guests",
+    { method: "GET" },
+    token
+  );
+}

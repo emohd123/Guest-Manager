@@ -9,6 +9,7 @@ export function ScanScreen({
 }) {
   const [permission, requestPermission] = useCameraPermissions();
   const [cameraMode, setCameraMode] = useState(false);
+  const [facing, setFacing] = useState<"back" | "front">("back");
   const [barcodeInput, setBarcodeInput] = useState("");
   const [lastMessage, setLastMessage] = useState("");
   const [locked, setLocked] = useState(false);
@@ -46,14 +47,23 @@ export function ScanScreen({
         Use camera scanning or enter barcode manually.
       </Text>
 
-      <Pressable style={styles.toggle} onPress={toggleCamera}>
-        <Text style={styles.toggleText}>{cameraMode ? "Hide Camera" : "Use Camera"}</Text>
-      </Pressable>
+      <View style={styles.controls}>
+        <Pressable style={styles.toggle} onPress={toggleCamera}>
+          <Text style={styles.toggleText}>{cameraMode ? "Hide Camera" : "Use Camera"}</Text>
+        </Pressable>
+
+        {cameraMode && hasPermission ? (
+          <Pressable style={styles.toggle} onPress={() => setFacing((f) => (f === "back" ? "front" : "back"))}>
+            <Text style={styles.toggleText}>Switch to {facing === "back" ? "Front" : "Back"}</Text>
+          </Pressable>
+        ) : null}
+      </View>
 
       {cameraMode && hasPermission ? (
         <View style={styles.cameraWrap}>
           <CameraView
             style={StyleSheet.absoluteFillObject}
+            facing={facing}
             barcodeScannerSettings={{
               barcodeTypes: ["qr", "code128", "code39", "ean13", "ean8", "upc_a", "upc_e"],
             }}
@@ -92,8 +102,11 @@ const styles = StyleSheet.create({
   description: {
     color: "#64748b",
   },
+  controls: {
+    flexDirection: "row",
+    gap: 8,
+  },
   toggle: {
-    alignSelf: "flex-start",
     borderWidth: 1,
     borderColor: "#94a3b8",
     borderRadius: 10,

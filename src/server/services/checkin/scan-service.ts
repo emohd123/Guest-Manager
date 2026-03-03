@@ -231,7 +231,7 @@ export async function processScanWorkflow(db: Db, input: ScanWorkflowInput): Pro
       };
     }
 
-    if (ticket.status !== "valid") {
+    if (ticket.status !== "valid" && ticket.status !== "used") {
       const scanId = await writeScanLog(tx, {
         actor: input.actor,
         eventId: input.eventId,
@@ -781,7 +781,7 @@ export async function getArrivals(
     .offset(input.offset ?? 0);
 
   const [countRow] = await db
-    .select({ count: sql<number>`count(*)` })
+    .select({ count: sql<number>`count(*)`.mapWith(Number) })
     .from(scans)
     .leftJoin(tickets, eq(scans.ticketId, tickets.id))
     .leftJoin(guests, eq(tickets.guestId, guests.id))
@@ -799,22 +799,60 @@ export async function getCheckinSummary(
 ) {
   const [guestCounts] = await db
     .select({
-      totalGuests: sql<number>`count(*)`,
-      checkedIn: sql<number>`count(*) filter (where ${guests.attendanceState} = 'checked_in')`,
-      checkedOut: sql<number>`count(*) filter (where ${guests.attendanceState} = 'checked_out')`,
-      noShow: sql<number>`count(*) filter (where ${guests.status} = 'no_show')`,
+      totalGuests: sql<number>`count(*)`.mapWith(Number),
+      checkedIn: sql<number>`count(*) filter (where ${guests.attendanceState} = 'checked_in')`.mapWith(Number),
+      checkedOut: sql<number>`count(*) filter (where ${guests.attendanceState} = 'checked_out')`.mapWith(Number),
+      noShow: sql<number>`count(*) filter (where ${guests.status} = 'no_show')`.mapWith(Number),
     })
     .from(guests)
     .where(and(eq(guests.eventId, input.eventId), eq(guests.companyId, input.companyId)));
 
   const [scanCounts] = await db
     .select({
-      successfulScans: sql<number>`count(*) filter (where ${scans.scanType} <> 'invalid')`,
-      unsuccessfulScans: sql<number>`count(*) filter (where ${scans.scanType} = 'invalid')`,
-      totalScans: sql<number>`count(*)`,
+      successfulScans: sql<number>`count(*) filter (where ${scans.scanType} <> 'invalid')`.mapWith(Number),
+      unsuccessfulScans: sql<number>`count(*) filter (where ${scans.scanType} = 'invalid')`.mapWith(Number),
+      totalScans: sql<number>`count(*)`.mapWith(Number),
     })
     .from(scans)
     .where(and(eq(scans.eventId, input.eventId), eq(scans.companyId, input.companyId)));
+
+  const checkinsByTicketTypeRows = await db
+    .select({
+      id: ticketTypes.id,
+      name: ticketTypes.name,
+      checkedIn: sql<number>`count(${tickets.id}) filter (where ${guests.attendanceState} = 'checked_in')`.mapWith(Number),
+      checkedOut: sql<number>`count(${tickets.id}) filter (where ${guests.attendanceState} = 'checked_out')`.mapWith(Number),
+      noShow: sql<number>`count(${tickets.id}) filter (where ${guests.status} = 'no_show')`.mapWith(Number),
+      total: sql<number>`count(${tickets.id})`.mapWith(Number),
+    })
+    .from(ticketTypes)
+    .leftJoin(tickets, eq(ticketTypes.id, tickets.ticketTypeId))
+    .leftJoin(guests, eq(tickets.guestId, guests.id))
+    .where(and(eq(ticketTypes.eventId, input.eventId), eq(ticketTypes.companyId, input.companyId)))
+    .groupBy(ticketTypes.id, ticketTypes.name)
+    .orderBy(ticketTypes.name);
+
+  const checkinsByTicketType = checkinsByTicketTypeRows.map(row => ({
+    ...row,
+    arrivedPct: row.total > 0 ? Math.round((row.checkedIn / row.total) * 100) : 0,
+  }));
+
+  const rawTimeSeries = await db.execute(sql`
+    SELECT 
+      date_trunc('hour', scanned_at) as "hour",
+      count(*) filter (where scan_type <> 'invalid') as "success",
+      count(*) filter (where scan_type = 'invalid') as "failure"
+    FROM scans
+    WHERE event_id = ${input.eventId} AND company_id = ${input.companyId}
+    GROUP BY 1
+    ORDER BY 1 ASC
+  `);
+
+  const arrivalsTimeSeries = (rawTimeSeries as Record<string, unknown>[]).map((r) => ({
+    hour: r.hour as string | null,
+    success: Number(r.success || 0),
+    failure: Number(r.failure || 0),
+  }));
 
   return {
     totalGuests: Number(guestCounts?.totalGuests ?? 0),
@@ -824,6 +862,8 @@ export async function getCheckinSummary(
     successfulScans: Number(scanCounts?.successfulScans ?? 0),
     unsuccessfulScans: Number(scanCounts?.unsuccessfulScans ?? 0),
     totalScans: Number(scanCounts?.totalScans ?? 0),
+    checkinsByTicketType,
+    arrivalsTimeSeries,
   };
 }
 

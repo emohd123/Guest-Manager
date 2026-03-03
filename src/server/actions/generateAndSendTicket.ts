@@ -15,6 +15,7 @@ import { render } from "@react-email/components";
 import { nanoid } from "nanoid";
 import { generateQRCodeDataUri, generateAndUploadQRCode } from "@/server/utils/qrcode";
 import { TicketPDFDocument } from "@/lib/pdf/TicketPDF";
+import { AgendaPDFDocument } from "@/lib/pdf/AgendaPDF";
 import TicketEmail from "@/emails/TicketEmail";
 import { getDb } from "@/server/db";
 import { tickets, sentEmails } from "@/server/db/schema";
@@ -61,6 +62,7 @@ export async function generateAndSendTicket(payload: TicketEmailPayload): Promis
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const emailDesigns = settings.emailDesigns ?? {} as any;
   const ticketSentEmail = emailDesigns.ticket_sent ?? {};
+  const agendaSettings = settings.agenda ?? { items: [], attachToEmail: false };
 
   const formattedDate = format(eventStartsAt, "MMM d, yyyy");
   const formattedTime = format(eventStartsAt, "h:mm a");
@@ -132,6 +134,42 @@ export async function generateAndSendTicket(payload: TicketEmailPayload): Promis
     }
   }
 
+  // 3b. Optionally generate/fetch agenda PDF
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let agendaBuffer: any = null;
+  if (agendaSettings.attachToEmail) {
+    const agendaMode = agendaSettings.mode ?? "design";
+
+    if (agendaMode === "upload" && agendaSettings.uploadedPdfUrl) {
+      // Fetch the already-uploaded PDF and attach it as buffer
+      try {
+        const res = await fetch(agendaSettings.uploadedPdfUrl);
+        if (res.ok) {
+          const arrayBuffer = await res.arrayBuffer();
+          agendaBuffer = Buffer.from(arrayBuffer);
+          console.log("[generateAndSendTicket] Agenda fetched from uploaded URL");
+        } else {
+          console.error("[generateAndSendTicket] Failed to fetch uploaded agenda PDF:", res.status);
+        }
+      } catch (fetchErr) {
+        console.error("[generateAndSendTicket] Agenda fetch exception:", fetchErr);
+      }
+    } else if (agendaMode === "design" && agendaSettings.items?.length > 0) {
+      // Generate agenda PDF from the designed schedule
+      try {
+        const agendaElement = React.createElement(AgendaPDFDocument, {
+          title: agendaSettings.agendaTitle,
+          eventName,
+          items: agendaSettings.items,
+        }) as ReactElement<DocumentProps>;
+        agendaBuffer = await renderToBuffer(agendaElement);
+        console.log("[generateAndSendTicket] Agenda PDF generated from schedule");
+      } catch (agendaErr) {
+        console.error("[generateAndSendTicket] Agenda PDF render failed:", agendaErr);
+      }
+    }
+  }
+
   // 4. Send ticket email
   const resendApiKey = process.env.RESEND_API_KEY;
   if (!resendApiKey) {
@@ -179,15 +217,26 @@ export async function generateAndSendTicket(payload: TicketEmailPayload): Promis
     to: [toEmail],
     subject: `Your ticket for ${eventName}`,
     html: emailHtmlRaw,
-    attachments: pdfBuffer
-      ? [
-          {
-            filename: `ticket-${orderNumber}.pdf`,
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            content: (pdfBuffer as any).toString("base64") as string,
-          },
-        ]
-      : undefined,
+    attachments: [
+      ...(pdfBuffer
+        ? [
+            {
+              filename: `ticket-${orderNumber}.pdf`,
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              content: (pdfBuffer as any).toString("base64") as string,
+            },
+          ]
+        : []),
+      ...(agendaBuffer
+        ? [
+            {
+              filename: `agenda-${eventName.replace(/[^a-z0-9]/gi, "-").toLowerCase()}.pdf`,
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              content: (agendaBuffer as any).toString("base64") as string,
+            },
+          ]
+        : []),
+    ],
   };
 
   if (ticketSentEmail.replyTo) {

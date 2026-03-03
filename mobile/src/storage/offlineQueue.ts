@@ -1,12 +1,18 @@
 import { Platform } from "react-native";
 import type { QueueItem } from "../types";
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 let db: any = null;
+const memoryQueue: QueueItem[] = [];
+
 if (Platform.OS !== "web") {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   const SQLite = require("expo-sqlite");
   db = SQLite.openDatabaseSync("guest-manager-mobile-v2.db");
 }
+
 function ensureQueueTable() {
+  if (Platform.OS === "web") return;
   if (!db) return;
   db.execSync(`
     CREATE TABLE IF NOT EXISTS mobile_mutation_queue (
@@ -36,6 +42,10 @@ export function initOfflineQueue() {
 }
 
 export function enqueueMutation(item: QueueItem) {
+  if (Platform.OS === "web") {
+    memoryQueue.push(item);
+    return;
+  }
   if (!db) return;
   ensureQueueTable();
   const row = toRow(item);
@@ -47,6 +57,9 @@ export function enqueueMutation(item: QueueItem) {
 }
 
 export function listQueuedMutations(): QueueItem[] {
+  if (Platform.OS === "web") {
+    return [...memoryQueue];
+  }
   if (!db) return [];
   ensureQueueTable();
   const rows = db.getAllSync(
@@ -73,6 +86,11 @@ export function listQueuedMutations(): QueueItem[] {
 }
 
 export function removeQueuedMutation(id: string) {
+  if (Platform.OS === "web") {
+    const idx = memoryQueue.findIndex((q) => q.id === id);
+    if (idx !== -1) memoryQueue.splice(idx, 1);
+    return;
+  }
   if (!db) return;
   ensureQueueTable();
   db.runSync(`DELETE FROM mobile_mutation_queue WHERE id = ?`, [id]);

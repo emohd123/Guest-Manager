@@ -1,11 +1,13 @@
 "use client";
 
-import { use, useMemo, type ReactNode } from "react";
-import { Download, CheckCircle, XCircle, Users, LogOut } from "lucide-react";
-import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { use, useMemo } from "react";
+import { format } from "date-fns";
+import { Download } from "lucide-react";
+import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis, Legend } from "recharts";
 import { trpc } from "@/lib/trpc/client";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
 
 const checkinV2Enabled = process.env.NEXT_PUBLIC_CHECKIN_APP_V2_ENABLED !== "false";
@@ -26,15 +28,13 @@ export default function ReportsPage({ params }: { params: Promise<{ eventId: str
     { enabled: false }
   );
 
-  const chartData = useMemo(
-    () => [
-      { metric: "Check-ins", value: data?.checkedIn ?? 0 },
-      { metric: "Check-outs", value: data?.checkedOut ?? 0 },
-      { metric: "No-show", value: data?.noShow ?? 0 },
-      { metric: "Invalid", value: data?.unsuccessfulScans ?? 0 },
-    ],
-    [data]
-  );
+  const timeSeriesData = useMemo(() => {
+    return (data?.arrivalsTimeSeries ?? []).map((pt) => ({
+      time: pt.hour ? format(new Date(String(pt.hour)), "h:mm a") : "",
+      Success: pt.success,
+      Failure: pt.failure,
+    }));
+  }, [data]);
 
   if (!checkinV2Enabled) {
     return (
@@ -80,56 +80,139 @@ export default function ReportsPage({ params }: { params: Promise<{ eventId: str
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Check-in Report</h1>
-          <p className="text-sm text-muted-foreground">Live summary and CSV exports for this event.</p>
+      <div className="flex flex-col gap-8 lg:flex-row lg:items-start lg:justify-between">
+        <div className="space-y-4 flex-1">
+          <div>
+            <h1 className="text-4xl font-bold tracking-tight text-red-500 mb-1">Report</h1>
+            <h2 className="text-3xl font-light text-slate-400">Activity & Arrivals</h2>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" className="gap-2 text-muted-foreground shadow-sm" onClick={() => downloadCsv("checkins")}>
+              <Download className="h-4 w-4" />
+              Export checkins
+            </Button>
+            <Button variant="outline" className="gap-2 text-muted-foreground shadow-sm" onClick={() => downloadCsv("noShows")}>
+              <Download className="h-4 w-4" />
+              Export no shows
+            </Button>
+            <Button variant="outline" className="gap-2 text-muted-foreground shadow-sm" onClick={() => downloadCsv("arrivals")}>
+              <Download className="h-4 w-4" />
+              Export Arrivals
+            </Button>
+          </div>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <Button variant="outline" className="gap-2" onClick={() => downloadCsv("checkins")}>
-            <Download className="h-4 w-4" />
-            Export check-ins
-          </Button>
-          <Button variant="outline" className="gap-2" onClick={() => downloadCsv("noShows")}>
-            <Download className="h-4 w-4" />
-            Export no-shows
-          </Button>
-          <Button variant="outline" className="gap-2" onClick={() => downloadCsv("arrivals")}>
-            <Download className="h-4 w-4" />
-            Export arrivals
-          </Button>
+
+        <div className="flex items-center gap-0 lg:ml-auto shrink-0 bg-white border border-slate-100 shadow-sm rounded-md overflow-hidden">
+          <Metric title="Checkins" value={data?.checkedIn ?? 0} valueColor="text-[#2eb85c]" />
+          <div className="w-px h-16 bg-slate-100" />
+          <Metric title="No show" value={data?.noShow ?? 0} valueColor="text-[#e55353]" />
+          <div className="w-px h-16 bg-slate-100" />
+          <Metric title="Total" value={data?.totalGuests ?? 0} valueColor="text-slate-700" />
         </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-4">
-        <Metric title="Checked In" value={data?.checkedIn ?? 0} icon={<CheckCircle className="h-4 w-4 text-green-600" />} />
-        <Metric title="Checked Out" value={data?.checkedOut ?? 0} icon={<LogOut className="h-4 w-4 text-blue-600" />} />
-        <Metric title="No Show" value={data?.noShow ?? 0} icon={<XCircle className="h-4 w-4 text-red-600" />} />
-        <Metric title="Total Guests" value={data?.totalGuests ?? 0} icon={<Users className="h-4 w-4 text-muted-foreground" />} />
+      <div className="mt-12 space-y-4">
+        <h3 className="text-xl font-bold text-slate-500">Checkins by ticket type</h3>
+        <Card className="shadow-sm border-slate-100 rounded-md overflow-hidden">
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-slate-50/80 hover:bg-slate-50/80">
+                <TableHead className="font-bold text-slate-600 h-12">Ticket Type</TableHead>
+                <TableHead className="font-bold text-slate-600 text-right h-12">Checked In</TableHead>
+                <TableHead className="font-bold text-slate-600 text-right h-12">Checked Out</TableHead>
+                <TableHead className="font-bold text-slate-600 text-right h-12">No show</TableHead>
+                <TableHead className="font-bold text-slate-600 text-right h-12">Total</TableHead>
+                <TableHead className="font-bold text-slate-600 text-right h-12">Arrived</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {data?.checkinsByTicketType?.map((row) => (
+                <TableRow key={row.id} className="border-b-slate-100">
+                  <TableCell className="text-slate-500">{row.name}</TableCell>
+                  <TableCell className={`text-right font-medium ${row.checkedIn > 0 ? "text-[#2eb85c]" : "text-slate-400"}`}>
+                    {row.checkedIn}
+                  </TableCell>
+                  <TableCell className="text-right text-slate-400">{row.checkedOut}</TableCell>
+                  <TableCell className={`text-right font-medium ${row.noShow > 0 ? "text-[#e55353]" : "text-slate-400"}`}>
+                    {row.noShow}
+                  </TableCell>
+                  <TableCell className="text-right text-slate-500">{row.total}</TableCell>
+                  <TableCell className="text-right text-slate-500">{row.arrivedPct}%</TableCell>
+                </TableRow>
+              ))}
+              <TableRow className="bg-slate-50 border-t-2 border-slate-200 hover:bg-slate-50">
+                <TableCell className="font-bold text-slate-600">Totals</TableCell>
+                <TableCell className="text-right font-bold text-[#2eb85c]">
+                  {data?.checkinsByTicketType?.reduce((acc, r) => acc + r.checkedIn, 0) ?? 0}
+                </TableCell>
+                <TableCell className="text-right font-bold text-slate-600">
+                  {data?.checkinsByTicketType?.reduce((acc, r) => acc + r.checkedOut, 0) ?? 0}
+                </TableCell>
+                <TableCell className="text-right font-bold text-[#e55353]">
+                  {data?.checkinsByTicketType?.reduce((acc, r) => acc + r.noShow, 0) ?? 0}
+                </TableCell>
+                <TableCell className="text-right font-bold text-slate-600">
+                  {data?.checkinsByTicketType?.reduce((acc, r) => acc + r.total, 0) ?? 0}
+                </TableCell>
+                <TableCell className="text-right font-bold text-slate-600">
+                  {data?.totalGuests ? Math.round(((data?.checkedIn ?? 0) / (data?.totalGuests ?? 1)) * 100) : 0}%
+                </TableCell>
+              </TableRow>
+            </TableBody>
+          </Table>
+        </Card>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Scan Outcomes</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="text-sm text-muted-foreground">Loading report…</div>
-          ) : (
-            <div className="h-[320px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={chartData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="metric" />
-                  <YAxis />
-                  <Tooltip />
-                  <Bar dataKey="value" fill="hsl(var(--primary))" radius={[6, 6, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      <div className="mt-12">
+        <Card className="shadow-sm border-slate-100 rounded-md">
+          <div className="px-6 py-4 text-xs font-semibold text-slate-500 border-b border-slate-50">
+            Arrivals by result
+          </div>
+          <CardContent className="pt-6">
+            {isLoading ? (
+              <div className="text-sm text-slate-400 p-10 text-center">Loading chart...</div>
+            ) : timeSeriesData.length === 0 ? (
+              <div className="text-sm text-slate-400 p-10 text-center">No arrivals recorded yet</div>
+            ) : (
+              <div className="h-[280px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={timeSeriesData} margin={{ top: 20, right: 0, left: -20, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="0" vertical={false} stroke="#f1f5f9" />
+                    <XAxis 
+                      dataKey="time" 
+                      axisLine={false} 
+                      tickLine={false} 
+                      tickMargin={12} 
+                      tick={{ fill: "#94a3b8", fontSize: 11 }}
+                    />
+                    <YAxis 
+                      axisLine={false} 
+                      tickLine={false} 
+                      tickMargin={12} 
+                      allowDecimals={false}
+                      tick={{ fill: "#94a3b8", fontSize: 11 }}
+                    />
+                    <Tooltip cursor={{ fill: "#f8fafc" }} />
+                    <Legend iconType="rect" iconSize={12} wrapperStyle={{ fontSize: "11px", color: "#64748b", marginTop: "-30px", marginBottom: "30px" }} verticalAlign="top" />
+                    <Bar dataKey="Success" fill="#82ca9d" radius={[0, 0, 0, 0]} maxBarSize={150} />
+                    <Bar dataKey="Failure" fill="#ff7f7f" radius={[0, 0, 0, 0]} maxBarSize={150} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="mt-12 space-y-2">
+        <h3 className="text-xl font-bold text-slate-500">Tallies</h3>
+        <p className="text-xs text-slate-400 italic">Not configured</p>
+      </div>
+      
+      <div className="mt-8 space-y-2">
+        <h3 className="text-xl font-bold text-slate-500">Product pickups</h3>
+        <p className="text-xs text-slate-400 italic">Not configured</p>
+      </div>
     </div>
   );
 }
@@ -137,21 +220,16 @@ export default function ReportsPage({ params }: { params: Promise<{ eventId: str
 function Metric({
   title,
   value,
-  icon,
+  valueColor
 }: {
   title: string;
   value: number;
-  icon: ReactNode;
+  valueColor: string;
 }) {
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between pb-2">
-        <CardTitle className="text-sm font-medium">{title}</CardTitle>
-        {icon}
-      </CardHeader>
-      <CardContent>
-        <div className="text-2xl font-semibold">{value}</div>
-      </CardContent>
-    </Card>
+    <div className="px-8 py-5 flex flex-col items-center justify-center min-w[140px] bg-transparent">
+      <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-2">{title}</div>
+      <div className={`text-3xl font-bold ${valueColor}`}>{value.toLocaleString()}</div>
+    </div>
   );
 }
