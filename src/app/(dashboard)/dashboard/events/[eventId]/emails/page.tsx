@@ -40,6 +40,18 @@ export default function SentEmailsPage({ params }: { params: Promise<{ eventId: 
     }
   });
 
+  const syncMutation = trpc.sentEmails.syncStatus.useMutation({
+    onSuccess: (result) => {
+      utils.sentEmails.list.invalidate();
+      if (result.synced === 0) {
+        alert("No emails with a Resend ID found to sync (emails may not have a resendId stored).");
+      }
+    },
+    onError: (err) => {
+      alert("Sync failed: " + err.message);
+    },
+  });
+
   const emails = data?.emails ?? [];
 
   const columns = [
@@ -63,61 +75,51 @@ export default function SentEmailsPage({ params }: { params: Promise<{ eventId: 
       enableHiding: false,
     },
     {
-      accessorKey: "type",
-      header: "Type",
-      cell: ({ row }: { row: any }) => <span className="text-muted-foreground whitespace-nowrap">{row.original.type}</span>
-    },
-    {
       accessorKey: "state",
       header: "State",
       cell: ({ row }: { row: any }) => (
-        <span className="text-green-600 font-medium">{row.original.state}</span>
+        <span className="text-green-600 font-medium text-xs">{row.original.state}</span>
       )
     },
     {
       accessorKey: "status",
       header: "Status",
       cell: ({ row }: { row: any }) => (
-        <span>{row.original.status}</span>
+        <span className="text-xs">{row.original.status}</span>
       )
     },
     {
       accessorKey: "emailAddress",
       header: "Email",
       cell: ({ row }: { row: any }) => (
-        <a href={`mailto:${row.original.emailAddress}`} className="text-blue-500 hover:underline max-w-[250px] truncate inline-block">
+        <a href={`mailto:${row.original.emailAddress}`} className="text-blue-500 hover:underline max-w-[180px] truncate inline-block text-xs">
           {row.original.emailAddress}
         </a>
       )
     },
     {
-      accessorKey: "subject",
-      header: "Subject",
-      cell: ({ row }: { row: any }) => <div className="text-muted-foreground max-w-[200px] truncate">{row.original.subject}</div>
-    },
-    {
       accessorKey: "openCount",
-      header: () => <div className="whitespace-nowrap">Open count</div>,
-      cell: ({ row }: { row: any }) => <div className="whitespace-nowrap text-center">{row.original.openCount}</div>
+      header: () => <div className="text-center">Opens</div>,
+      cell: ({ row }: { row: any }) => <div className="text-center">{row.original.openCount}</div>
     },
     {
       accessorKey: "clickCount",
-      header: () => <div className="whitespace-nowrap">Click count</div>,
-      cell: ({ row }: { row: any }) => <div className="whitespace-nowrap text-center">{row.original.clickCount}</div>
+      header: () => <div className="text-center">Clicks</div>,
+      cell: ({ row }: { row: any }) => <div className="text-center">{row.original.clickCount}</div>
     },
     {
       accessorKey: "reason",
       header: "Reason",
-      cell: ({ row }: { row: any }) => <span>{row.original.reason || ""}</span>
+      cell: ({ row }: { row: any }) => <span className="text-xs text-muted-foreground">{row.original.reason || "—"}</span>
     },
     {
       id: "actions",
-      header: () => <div className="text-right w-full pr-4">Actions</div>,
+      header: () => <div className="text-right w-full pr-2">Actions</div>,
       cell: ({ row }: { row: any }) => (
-        <div className="flex items-center justify-end gap-2 w-max ml-auto">
-          <Button variant="outline" size="sm" className="h-8 shadow-none shrink-0 flex-none text-xs px-3" onClick={() => setViewingEmail(row.original)}>View</Button>
-          <Button variant="outline" size="sm" className="h-8 shadow-none shrink-0 flex-none text-xs px-3" onClick={() => setActivityEmail(row.original)}>Activity</Button>
-          <Button variant="outline" size="sm" className="h-8 shadow-none shrink-0 flex-none text-xs px-3" onClick={() => setResendingEmail(row.original)}>Resend</Button>
+        <div className="flex items-center justify-end gap-1">
+          <Button variant="outline" size="sm" className="h-7 shadow-none text-xs px-2" onClick={() => setViewingEmail(row.original)}>View</Button>
+          <Button variant="outline" size="sm" className="h-7 shadow-none text-xs px-2" onClick={() => setActivityEmail(row.original)}>Activity</Button>
+          <Button variant="outline" size="sm" className="h-7 shadow-none text-xs px-2" onClick={() => setResendingEmail(row.original)}>Resend</Button>
         </div>
       )
     },
@@ -155,8 +157,15 @@ export default function SentEmailsPage({ params }: { params: Promise<{ eventId: 
       {/* Ghost header matching GuestManager UI */}
       <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between border-b pb-4">
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="icon" className="h-9 w-9">
-            <RefreshCw className="h-4 w-4" />
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-9 w-9"
+            disabled={syncMutation.isPending}
+            onClick={() => syncMutation.mutate({ eventId })}
+            title="Sync email statuses from Resend"
+          >
+            <RefreshCw className={`h-4 w-4 ${syncMutation.isPending ? "animate-spin" : ""}`} />
           </Button>
           <Button variant="outline" size="icon" className="h-9 w-9">
             <Star className="h-4 w-4" />
@@ -186,8 +195,6 @@ export default function SentEmailsPage({ params }: { params: Promise<{ eventId: 
         <DataTable
           columns={columns}
           data={emails}
-          searchKey="emailAddress"
-          searchPlaceholder="Search email addresses..."
           isLoading={isLoading}
         />
       </div>
@@ -267,16 +274,20 @@ export default function SentEmailsPage({ params }: { params: Promise<{ eventId: 
           <DialogHeader>
             <DialogTitle>Resend Email</DialogTitle>
             <DialogDescription>
-              Are you sure you want to resend this "{resendingEmail?.type}" to {resendingEmail?.emailAddress}?
+              Are you sure you want to resend this &quot;{resendingEmail?.type}&quot; to {resendingEmail?.emailAddress}?
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="mt-6">
             <Button variant="outline" onClick={() => setResendingEmail(null)}>Cancel</Button>
             <Button 
-              disabled={resendMutation.isLoading}
-              onClick={() => resendMutation.mutate({ emailAddress: resendingEmail.emailAddress, eventId })}
+              disabled={resendMutation.isPending}
+              onClick={() => {
+                if (resendingEmail) {
+                  resendMutation.mutate({ emailAddress: resendingEmail.emailAddress, eventId });
+                }
+              }}
             >
-              {resendMutation.isLoading ? "Sending..." : "Confirm & Send"}
+              {resendMutation.isPending ? "Sending..." : "Confirm & Send"}
             </Button>
           </DialogFooter>
         </DialogContent>

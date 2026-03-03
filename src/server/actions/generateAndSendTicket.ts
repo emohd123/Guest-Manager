@@ -211,7 +211,7 @@ export async function generateAndSendTicket(payload: TicketEmailPayload): Promis
           emailAddress: toEmail,
           subject: sendOptions.subject as string,
           type: "Ticket sent",
-          state: "Delivered", // Ideally driven by webhooks later
+          state: "Sending",
           status: "Unopened",
           resendId: data.data?.id,
         });

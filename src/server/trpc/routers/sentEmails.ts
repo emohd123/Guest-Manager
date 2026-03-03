@@ -2,9 +2,10 @@ import { router, protectedProcedure } from "../index";
 import { z } from "zod";
 import { sentEmails } from "../../db/schema/sent-emails";
 import { guests, events, tickets, ticketTypes } from "../../db/schema";
-import { eq, desc, and } from "drizzle-orm";
+import { eq, desc, and, isNotNull } from "drizzle-orm";
 import { format } from "date-fns";
 import { sendTicketEmail } from "../../actions/email";
+import { Resend } from "resend";
 
 export const sentEmailsRouter = router({
   list: protectedProcedure
@@ -77,5 +78,72 @@ export const sentEmailsRouter = router({
          throw new Error("Failed to send email");
       }
       return { success: true };
+    }),
+
+  syncStatus: protectedProcedure
+    .input(z.object({ eventId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const resendApiKey = process.env.RESEND_API_KEY;
+      if (!resendApiKey) throw new Error("RESEND_API_KEY not configured.");
+
+      const resend = new Resend(resendApiKey);
+
+      // Get all sent emails for this event that have a resendId
+      const rows = await ctx.db
+        .select()
+        .from(sentEmails)
+        .where(and(eq(sentEmails.eventId, input.eventId), isNotNull(sentEmails.resendId)));
+
+      let synced = 0;
+      for (const row of rows) {
+        try {
+          const { data, error } = await resend.emails.get(row.resendId!);
+          if (error || !data) continue;
+
+          const lastEvent = (data as any).last_event as string | undefined;
+          if (!lastEvent) continue;
+
+          const updates: Record<string, unknown> = { updatedAt: new Date() };
+
+          switch (lastEvent) {
+            case "sent":
+              updates.state = "Sending";
+              break;
+            case "delivered":
+              updates.state = "Delivered";
+              break;
+            case "bounced":
+            case "failed":
+              updates.state = "Bounced";
+              updates.reason = lastEvent;
+              break;
+            case "opened":
+              updates.state = "Delivered";
+              updates.status = "Opened";
+              // Increment openCount only if it hasn't been set yet
+              if ((row.openCount ?? 0) === 0) updates.openCount = 1;
+              break;
+            case "clicked":
+              updates.state = "Delivered";
+              updates.status = "Clicked";
+              if ((row.clickCount ?? 0) === 0) updates.clickCount = 1;
+              break;
+            case "complained":
+              updates.state = "Spam Complaint";
+              break;
+          }
+
+          await ctx.db
+            .update(sentEmails)
+            .set(updates)
+            .where(eq(sentEmails.id, row.id));
+
+          synced++;
+        } catch (e) {
+          console.error(`[syncStatus] Failed to sync email ${row.id}:`, e);
+        }
+      }
+
+      return { synced };
     }),
 });

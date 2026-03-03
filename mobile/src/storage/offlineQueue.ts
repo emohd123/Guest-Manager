@@ -1,11 +1,13 @@
-import * as SQLite from "expo-sqlite";
+import { Platform } from "react-native";
 import type { QueueItem } from "../types";
 
-const db = SQLite.openDatabaseSync("guest-manager-mobile-v2.db");
-let queueTableReady = false;
-
+let db: any = null;
+if (Platform.OS !== "web") {
+  const SQLite = require("expo-sqlite");
+  db = SQLite.openDatabaseSync("guest-manager-mobile-v2.db");
+}
 function ensureQueueTable() {
-  if (queueTableReady) return;
+  if (!db) return;
   db.execSync(`
     CREATE TABLE IF NOT EXISTS mobile_mutation_queue (
       id TEXT PRIMARY KEY NOT NULL,
@@ -16,7 +18,6 @@ function ensureQueueTable() {
       created_at TEXT NOT NULL
     );
   `);
-  queueTableReady = true;
 }
 
 function toRow(item: QueueItem) {
@@ -35,6 +36,7 @@ export function initOfflineQueue() {
 }
 
 export function enqueueMutation(item: QueueItem) {
+  if (!db) return;
   ensureQueueTable();
   const row = toRow(item);
   db.runSync(
@@ -45,19 +47,20 @@ export function enqueueMutation(item: QueueItem) {
 }
 
 export function listQueuedMutations(): QueueItem[] {
+  if (!db) return [];
   ensureQueueTable();
-  const rows = db.getAllSync<{
+  const rows = db.getAllSync(
+    `SELECT id, endpoint, method, payload_json, event_id, created_at
+     FROM mobile_mutation_queue
+     ORDER BY created_at ASC`
+  ) as Array<{
     id: string;
     endpoint: string;
     method: "POST";
     payload_json: string;
     event_id: string;
     created_at: string;
-  }>(
-    `SELECT id, endpoint, method, payload_json, event_id, created_at
-     FROM mobile_mutation_queue
-     ORDER BY created_at ASC`
-  );
+  }>;
 
   return rows.map((row) => ({
     id: row.id,
@@ -70,6 +73,7 @@ export function listQueuedMutations(): QueueItem[] {
 }
 
 export function removeQueuedMutation(id: string) {
+  if (!db) return;
   ensureQueueTable();
   db.runSync(`DELETE FROM mobile_mutation_queue WHERE id = ?`, [id]);
 }

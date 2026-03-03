@@ -168,7 +168,7 @@ export async function sendTicketEmail({
           emailAddress: toEmail,
           subject: sendOptions.subject as string,
           type: "Ticket sent",
-          state: "Delivered",
+          state: "Sending",
           status: "Unopened",
           resendId: data.data?.id,
         });

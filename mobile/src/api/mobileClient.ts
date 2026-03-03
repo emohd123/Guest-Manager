@@ -1,9 +1,9 @@
 import Constants from "expo-constants";
 import type { MobileGuest, PairingSession, SummaryMetrics } from "../types";
 
-const fallbackBaseUrl = "http://localhost:3000";
+const fallbackBaseUrl = "http://192.168.100.136:3000";
 const extra = (Constants.expoConfig?.extra ?? {}) as Record<string, string | undefined>;
-const baseUrl = extra.apiBaseUrl ?? fallbackBaseUrl;
+const baseUrl = process.env.EXPO_PUBLIC_API_URL || extra.apiBaseUrl || fallbackBaseUrl;
 
 type DeviceInfo = {
   name: string;
