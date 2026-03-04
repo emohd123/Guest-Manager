@@ -61,8 +61,6 @@ export default function FormResponsesPage() {
       <DataTable
         columns={columns}
         data={responses}
-        searchKey="id"
-        searchPlaceholder="Search Responses..."
         isLoading={isLoading}
       />
     </div>

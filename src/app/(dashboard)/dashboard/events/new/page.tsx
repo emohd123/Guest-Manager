@@ -37,7 +37,7 @@ const eventSchema = z.object({
   startsAt: z.string().min(1, "Start date is required"),
   endsAt: z.string().optional(),
   timezone: z.string().optional(),
-  maxCapacity: z.number().int().positive().optional().or(z.literal("")),
+  maxCapacity: z.number().int().positive().optional(),
   registrationEnabled: z.boolean().optional().default(false),
 });
 
@@ -59,6 +59,7 @@ export default function NewEventPage() {
     formState: { errors },
     watch,
     setValue,
+    trigger,
   } = useForm<EventFormData>({
     resolver: zodResolver(eventSchema),
     defaultValues: {
@@ -91,7 +92,16 @@ export default function NewEventPage() {
     });
   };
 
-  const nextStep = () => setStep((s) => Math.min(s + 1, steps.length - 1));
+  const nextStep = async () => {
+    let fieldsToValidate: (keyof EventFormData)[] = [];
+    if (step === 0) fieldsToValidate = ["title", "shortDescription", "description"];
+    else if (step === 1) fieldsToValidate = ["eventType", "startsAt", "endsAt", "timezone"];
+    
+    const isValid = await trigger(fieldsToValidate);
+    if (isValid) {
+      setStep((s) => Math.min(s + 1, steps.length - 1));
+    }
+  };
   const prevStep = () => setStep((s) => Math.max(s - 1, 0));
 
   return (
@@ -283,8 +293,13 @@ export default function NewEventPage() {
                   id="maxCapacity"
                   type="number"
                   placeholder="Leave empty for unlimited"
-                  {...register("maxCapacity", { valueAsNumber: true })}
+                  {...register("maxCapacity", { 
+                    setValueAs: (v) => v === "" || Number.isNaN(parseInt(v, 10)) ? undefined : parseInt(v, 10) 
+                  })}
                 />
+                {errors.maxCapacity && (
+                  <p className="text-xs text-destructive">{errors.maxCapacity.message}</p>
+                )}
                 <p className="text-xs text-muted-foreground">
                   Leave empty for unlimited attendees.
                 </p>

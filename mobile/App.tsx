@@ -407,27 +407,31 @@ export default function App() {
     return (
       <SafeAreaView style={styles.full}>
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>Guest Manager V2</Text>
+          <Text style={styles.headerTitle}>Guest Manager Pro</Text>
           <Text style={styles.headerMeta}>Device: {session.deviceName}</Text>
-          <Pressable onPress={staffSignOut}>
-            <Text style={styles.signOut}>Unpair</Text>
+          <Pressable onPress={staffSignOut} style={styles.signOutBtn}>
+            <Text style={styles.signOutText}>Unpair</Text>
           </Pressable>
         </View>
         <View style={styles.main}>
-          {tab === "home" && <EventHomeScreen summary={summary} refreshing={refreshing} onRefresh={refreshDashboardData} />}
-          {tab === "guests" && (
-            <GuestsScreen guests={guests} onQuickCheckIn={handleQuickCheckIn} onQuickCheckOut={handleQuickCheckOut} busyGuestId={busyGuestId} />
-          )}
-          {tab === "scan" && <ScanScreen onSubmitBarcode={manualScan} />}
-          {tab === "walkup" && <WalkupScreen onSubmit={submitWalkup} />}
-          {tab === "activity" && (
-            <ActivityScreen queueCount={queueCount} lastSyncAt={lastSyncAt} onSyncNow={syncNow} onHeartbeat={() => sendHeartbeat(session, { appVersion: "0.1.0" }).then(() => setLastSyncAt(new Date().toISOString()))} syncing={syncing} />
-          )}
+          <View style={styles.whiteCard}>
+            {tab === "home" && <EventHomeScreen summary={summary} refreshing={refreshing} onRefresh={refreshDashboardData} />}
+            {tab === "guests" && (
+              <GuestsScreen guests={guests} onQuickCheckIn={handleQuickCheckIn} onQuickCheckOut={handleQuickCheckOut} busyGuestId={busyGuestId} />
+            )}
+            {tab === "scan" && <ScanScreen onSubmitBarcode={manualScan} />}
+            {tab === "walkup" && <WalkupScreen onSubmit={submitWalkup} />}
+            {tab === "activity" && (
+              <ActivityScreen queueCount={queueCount} lastSyncAt={lastSyncAt} onSyncNow={syncNow} onHeartbeat={() => sendHeartbeat(session, { appVersion: "0.1.0" }).then(() => setLastSyncAt(new Date().toISOString()))} syncing={syncing} />
+            )}
+          </View>
         </View>
-        <View style={styles.tabBar}>
-          {(["home", "guests", "scan", "walkup", "activity"] as Tab[]).map((t) => (
-            <TabButton key={t} label={t.charAt(0).toUpperCase() + t.slice(1)} active={tab === t} onPress={() => setTab(t)} />
-          ))}
+        <View style={styles.floatingTabBarContainer}>
+          <View style={styles.floatingTabBar}>
+            {(["home", "guests", "scan", "walkup", "activity"] as Tab[]).map((t) => (
+              <TabButton key={t} label={t.charAt(0).toUpperCase() + t.slice(1)} active={tab === t} onPress={() => setTab(t)} />
+            ))}
+          </View>
         </View>
       </SafeAreaView>
     );
@@ -508,16 +512,59 @@ function TabButton({ label, active, onPress }: { label: string; active: boolean;
 }
 
 const styles = StyleSheet.create({
-  full: { flex: 1, backgroundColor: "#f8fafc" },
-  centered: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: "#f8fafc" },
-  header: { paddingHorizontal: 14, paddingVertical: 10, borderBottomWidth: 1, borderColor: "#e2e8f0", backgroundColor: "#ffffff" },
-  headerTitle: { fontWeight: "700", color: "#0f172a", fontSize: 16 },
-  headerMeta: { color: "#64748b", fontSize: 12 },
-  signOut: { marginTop: 4, color: "#dc2626", fontWeight: "600", fontSize: 12 },
-  main: { flex: 1 },
-  tabBar: { flexDirection: "row", borderTopWidth: 1, borderColor: "#e2e8f0", backgroundColor: "#ffffff" },
-  tabButton: { flex: 1, alignItems: "center", paddingVertical: 12 },
-  tabButtonActive: { backgroundColor: "#e0e7ff" },
-  tabText: { color: "#475569", fontSize: 12, fontWeight: "600" },
-  tabTextActive: { color: "#312e81" },
+  full: { flex: 1, backgroundColor: "#1A1C30" }, // Deep Navy
+  centered: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: "#1A1C30" },
+  
+  header: { 
+    paddingHorizontal: 24, 
+    paddingVertical: 20, 
+    backgroundColor: "#1A1C30",
+  },
+  headerTitle: { fontWeight: "800", color: "#FFFFFF", fontSize: 22, marginBottom: 4 },
+  headerMeta: { color: "rgba(255,255,255,0.6)", fontSize: 13 },
+  signOutBtn: { 
+    position: "absolute", right: 24, top: 24,
+    paddingHorizontal: 12, paddingVertical: 6, 
+    backgroundColor: "rgba(255,91,106,0.1)", // Coral tint
+    borderRadius: 8,
+  },
+  signOutText: { color: "#FF5B6A", fontWeight: "700", fontSize: 13 },
+  
+  main: { flex: 1, backgroundColor: "#1A1C30" },
+  whiteCard: {
+    flex: 1,
+    backgroundColor: "#EFF2F7", // Very light gray content area
+    borderTopLeftRadius: 60,
+    overflow: "hidden",
+  },
+
+  // Floating Tab Bar
+  floatingTabBarContainer: {
+    position: "absolute",
+    bottom: 30, // Lifted from bottom
+    left: 20,
+    right: 20,
+    alignItems: "center",
+  },
+  floatingTabBar: {
+    flexDirection: "row", 
+    backgroundColor: "#242742", // Slightly lighter navy than background
+    borderRadius: 40,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    shadowColor: "#000",
+    shadowOpacity: 0.3,
+    shadowOffset: { width: 0, height: 10 },
+    shadowRadius: 20,
+    elevation: 10,
+  },
+  tabButton: { 
+    flex: 1, 
+    alignItems: "center", 
+    paddingVertical: 10,
+    borderRadius: 24,
+  },
+  tabButtonActive: { backgroundColor: "#1A1C30" }, // Indent active tab
+  tabText: { color: "#8E94A3", fontSize: 11, fontWeight: "600", marginTop: 2 },
+  tabTextActive: { color: "#FF5B6A" }, // Coral Active Text
 });

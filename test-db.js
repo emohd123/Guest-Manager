@@ -5,8 +5,8 @@ dotenv.config({ path: '.env.local' });
 
 async function testConnection() {
   // Try pooler port 6543
-  const poolerUrl = 'postgresql://postgres.zworeyksseoicmpthycv:yAKSR32MoeZ6dgZC@aws-0-ap-southeast-1.pooler.supabase.com:6543/postgres?sslmode=require';
-  console.log('Testing pooler connection to port 6543');
+  const poolerUrl = 'postgresql://postgres:yAKSR32MoeZ6dgZC@aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres?options=project%3Dzworeyksseoicmpthycv';
+  console.log('Testing pooler connection with options=project');
   
   const sql = postgres(poolerUrl, {
     prepare: false,

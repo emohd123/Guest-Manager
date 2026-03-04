@@ -8,6 +8,8 @@ import {
   ActivityIndicator,
   RefreshControl,
   TouchableOpacity,
+  Animated,
+  Image,
 } from "react-native";
 import type {
   VisitorSession,
@@ -42,18 +44,37 @@ function fmtDate(iso: string) {
   } catch { return iso; }
 }
 
+import { Platform } from "react-native";
+
 // ── Tab button ───────────────────────────────────────────────────────────────
 function TabBtn({
   label, icon, active, badge, onPress,
 }: {
   label: string; icon: string; active: boolean; badge?: number; onPress: () => void;
 }) {
+  const pulseAnim = React.useRef(new Animated.Value(1));
+
+  React.useEffect(() => {
+    if (badge && badge > 0) {
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(pulseAnim.current, { toValue: 1.15, duration: 500, useNativeDriver: true }),
+          Animated.timing(pulseAnim.current, { toValue: 1, duration: 500, useNativeDriver: true }),
+        ])
+      ).start();
+    } else {
+      pulseAnim.current.setValue(1);
+    }
+  }, [badge, pulseAnim]);
+
   return (
     <Pressable style={[styles.tabBtn, active && styles.tabBtnActive]} onPress={onPress}>
       <Text style={styles.tabIcon}>{icon}</Text>
       <Text style={[styles.tabLabel, active && styles.tabLabelActive]}>{label}</Text>
       {badge && badge > 0 ? (
-        <View style={styles.badge}><Text style={styles.badgeText}>{badge > 9 ? "9+" : badge}</Text></View>
+        <Animated.View style={[styles.badge, { transform: [{ scale: pulseAnim.current }] }]}>
+          <Text style={styles.badgeText}>{badge > 9 ? "9+" : badge}</Text>
+        </Animated.View>
       ) : null}
     </Pressable>
   );
@@ -343,6 +364,18 @@ export function VisitorDashboardScreen({
     setRefreshing(false);
   }
 
+  const fadeAnim = React.useRef(new Animated.Value(0));
+  const slideAnim = React.useRef(new Animated.Value(20));
+
+  useEffect(() => {
+    if (!loading) {
+      Animated.parallel([
+        Animated.timing(fadeAnim.current, { toValue: 1, duration: 600, useNativeDriver: true }),
+        Animated.spring(slideAnim.current, { toValue: 0, tension: 50, friction: 8, useNativeDriver: true })
+      ]).start();
+    }
+  }, [loading, fadeAnim, slideAnim]);
+
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -355,18 +388,20 @@ export function VisitorDashboardScreen({
   return (
     <View style={styles.screen}>
       {/* Header */}
-      <View style={styles.header}>
-        <View>
-          <Text style={styles.headerGreeting}>Hello, {session.name.split(" ")[0]} 👋</Text>
-          <Text style={styles.headerEmail}>{session.email}</Text>
+      <View style={styles.headerArea}>
+        <View style={styles.headerAreaInner}>
+          <View>
+            <Text style={styles.headerGreeting}>Hello, {session.name.split(" ")[0]}</Text>
+            <Text style={styles.headerEmail}>{session.email}</Text>
+          </View>
+          <Pressable onPress={onSignOut} style={styles.signOutBtn}>
+            <Text style={styles.signOutText}>Sign out</Text>
+          </Pressable>
         </View>
-        <Pressable onPress={onSignOut} style={styles.signOutBtn}>
-          <Text style={styles.signOutText}>Sign out</Text>
-        </Pressable>
       </View>
 
       {/* Content */}
-      <View style={styles.content}>
+      <Animated.View style={[styles.content, { opacity: fadeAnim.current, transform: [{ translateY: slideAnim.current }] }]}>
         {tab === "ticket" && (
           <TicketPanel ticket={ticket} refreshing={refreshing} onRefresh={handleRefresh} />
         )}
@@ -393,148 +428,219 @@ export function VisitorDashboardScreen({
             onCompose={onComposeMessage}
           />
         )}
-      </View>
+      </Animated.View>
 
-      {/* Tab Bar */}
-      <View style={styles.tabBar}>
-        <TabBtn icon="🎫" label="Ticket"   active={tab === "ticket"}        onPress={() => setTab("ticket")} />
-        <TabBtn icon="📋" label="Agenda"   active={tab === "agenda"}        onPress={() => setTab("agenda")} />
-        <TabBtn icon="📅" label="Events"   active={tab === "events"}        onPress={() => setTab("events")} />
-        <TabBtn icon="👥" label="Guests"   active={tab === "guests"}        onPress={() => setTab("guests")} />
-        <TabBtn icon="🔔" label="Updates"  active={tab === "notifications"} badge={unreadCount} onPress={() => { setTab("notifications"); markNotificationsRead(session.token).catch(() => {}); setUnreadCount(0); }} />
+      {/* Floating Tab Bar */}
+      <View style={styles.floatingTabBarContainer}>
+        <View style={styles.floatingTabBar}>
+          <TabBtn icon="🎫" label="Ticket"   active={tab === "ticket"}        onPress={() => setTab("ticket")} />
+          <TabBtn icon="📋" label="Agenda"   active={tab === "agenda"}        onPress={() => setTab("agenda")} />
+          <TabBtn icon="📅" label="Events"   active={tab === "events"}        onPress={() => setTab("events")} />
+          <TabBtn icon="👥" label="Guests"   active={tab === "guests"}        onPress={() => setTab("guests")} />
+          <TabBtn icon="🔔" label="Updates"  active={tab === "notifications"} badge={unreadCount} onPress={() => { setTab("notifications"); markNotificationsRead(session.token).catch(() => {}); setUnreadCount(0); }} />
+        </View>
       </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: "#f8fafc" },
-  loadingContainer: { flex: 1, alignItems: "center", justifyContent: "center", gap: 12 },
-  loadingText: { color: "#64748b", fontSize: 14 },
-  header: {
+  screen: { flex: 1, backgroundColor: "#EFF2F7" }, // Main background is light
+  loadingContainer: { flex: 1, alignItems: "center", justifyContent: "center", gap: 12, backgroundColor: "#1A1C30" },
+  loadingText: { color: "#8E94A3", fontSize: 14 },
+  
+  // Header with massive wavy corner
+  headerArea: {
+    backgroundColor: "#1A1C30",
+    borderBottomRightRadius: 60,
+    borderBottomLeftRadius: 60,
+    paddingHorizontal: 28, 
+    paddingTop: Platform.OS === "ios" ? 60 : 40,
+    paddingBottom: 32,
+    shadowColor: "#1A1C30",
+    shadowOpacity: 0.15,
+    shadowOffset: { width: 0, height: 10 },
+    shadowRadius: 20,
+    elevation: 8,
+    zIndex: 10,
+  },
+  headerAreaInner: {
     flexDirection: "row", alignItems: "center", justifyContent: "space-between",
-    paddingHorizontal: 18, paddingVertical: 14,
-    backgroundColor: "#ffffff", borderBottomWidth: 1, borderColor: "#e2e8f0",
   },
-  headerGreeting: { fontSize: 16, fontWeight: "800", color: "#0f172a" },
-  headerEmail: { fontSize: 12, color: "#64748b", marginTop: 1 },
+  headerGreeting: { fontSize: 24, fontWeight: "800", color: "#FFFFFF", letterSpacing: -0.5 },
+  headerEmail: { fontSize: 14, color: "rgba(255,255,255,0.6)", marginTop: 4, fontWeight: "500" },
   signOutBtn: {
-    paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8,
-    backgroundColor: "#fef2f2", borderWidth: 1, borderColor: "#fecaca",
+    paddingHorizontal: 16, paddingVertical: 10, borderRadius: 16,
+    backgroundColor: "rgba(255,91,106,0.15)", // Coral Tint
   },
-  signOutText: { color: "#dc2626", fontSize: 12, fontWeight: "700" },
+  signOutText: { color: "#FF5B6A", fontSize: 13, fontWeight: "800" },
+  
   content: { flex: 1 },
-  tabContent: { flex: 1, padding: 16 },
-  tabBar: { flexDirection: "row", borderTopWidth: 1, borderColor: "#e2e8f0", backgroundColor: "#ffffff" },
-  tabBtn: { flex: 1, alignItems: "center", paddingVertical: 10, position: "relative" },
-  tabBtnActive: { borderTopWidth: 2, borderTopColor: "#4338ca" },
-  tabIcon: { fontSize: 18, marginBottom: 2 },
-  tabLabel: { fontSize: 10, color: "#94a3b8", fontWeight: "600" },
-  tabLabelActive: { color: "#4338ca" },
+  tabContent: { flex: 1, padding: 24, paddingBottom: 100 }, // Padding for floating nav
+  
+  // Floating Tab Bar
+  floatingTabBarContainer: {
+    position: "absolute",
+    bottom: 30, // Lifted from bottom
+    left: 20,
+    right: 20,
+    alignItems: "center",
+  },
+  floatingTabBar: {
+    flexDirection: "row", 
+    backgroundColor: "#1A1C30", // Deep Navy
+    borderRadius: 40,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    shadowColor: "#000",
+    shadowOpacity: 0.25,
+    shadowOffset: { width: 0, height: 10 },
+    shadowRadius: 20,
+    elevation: 10,
+  },
+  tabBtn: { flex: 1, alignItems: "center", justifyContent: "center", position: "relative" },
+  tabBtnActive: { opacity: 1 },
+  tabIcon: { fontSize: 22, opacity: 0.4 },
+  tabIconActive: { opacity: 1 },
+  tabLabel: { fontSize: 10, alignSelf: "center", height: 0, overflow: "hidden" }, // Hide text for clean pill, rely on icons
+  tabLabelActive: { height: "auto", color: "#FF5B6A", fontWeight: "800", marginTop: 4 },
+  
   badge: {
-    position: "absolute", top: 6, right: "10%",
-    backgroundColor: "#dc2626", borderRadius: 9, minWidth: 18, height: 18,
+    position: "absolute", top: -4, right: "12%",
+    backgroundColor: "#FF5B6A", borderRadius: 10, minWidth: 20, height: 20,
     alignItems: "center", justifyContent: "center", paddingHorizontal: 4,
+    borderWidth: 2, borderColor: "#1A1C30",
   },
   badgeText: { color: "#fff", fontSize: 10, fontWeight: "800" },
-  empty: { flex: 1, alignItems: "center", justifyContent: "center", gap: 10, padding: 32 },
-  emptyIcon: { fontSize: 48 },
-  emptyTitle: { fontSize: 18, fontWeight: "800", color: "#0f172a" },
-  emptyMsg: { fontSize: 13, color: "#64748b", textAlign: "center", lineHeight: 20 },
+  empty: { flex: 1, alignItems: "center", justifyContent: "center", gap: 16, padding: 40 },
+  emptyIcon: { fontSize: 56, opacity: 0.9 },
+  emptyTitle: { fontSize: 20, fontWeight: "800", color: "#0f172a", letterSpacing: -0.5 },
+  emptyMsg: { fontSize: 14, color: "#64748b", textAlign: "center", lineHeight: 22 },
   // Ticket
   ticketCard: {
-    backgroundColor: "#ffffff", borderRadius: 20, padding: 22,
-    borderWidth: 1, borderColor: "#e2e8f0", gap: 8,
-    shadowColor: "#000", shadowOpacity: 0.05, shadowOffset: { width: 0, height: 3 }, shadowRadius: 8, elevation: 2,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 32,
+    padding: 24,
+    gap: 12,
+    shadowColor: "#1A1C30",
+    shadowOpacity: 0.08,
+    shadowOffset: { width: 0, height: 12 },
+    shadowRadius: 24,
+    elevation: 8,
+    marginVertical: 12,
   },
-  ticketBadge: { alignSelf: "flex-start", backgroundColor: "#d1fae5", borderRadius: 8, paddingHorizontal: 10, paddingVertical: 3 },
-  ticketBadgeText: { color: "#065f46", fontSize: 11, fontWeight: "800" },
-  ticketEvent: { fontSize: 20, fontWeight: "800", color: "#0f172a" },
-  ticketDate: { fontSize: 13, color: "#64748b" },
-  ticketLocation: { fontSize: 13, color: "#64748b" },
-  divider: { height: 1, backgroundColor: "#f1f5f9", marginVertical: 4 },
-  ticketTypeLabel: { fontSize: 11, color: "#94a3b8", fontWeight: "700", textTransform: "uppercase" },
-  ticketType: { fontSize: 15, fontWeight: "700", color: "#334155" },
+  ticketBadge: { 
+    alignSelf: "flex-start", 
+    backgroundColor: "rgba(255,91,106,0.1)", // Coral Tint
+    borderRadius: 12, 
+    paddingHorizontal: 12, 
+    paddingVertical: 6 
+  },
+  ticketBadgeText: { color: "#FF5B6A", fontSize: 12, fontWeight: "800", letterSpacing: 0.5 },
+  ticketEvent: { fontSize: 26, fontWeight: "900", color: "#1A1C30", letterSpacing: -1 },
+  ticketDate: { fontSize: 15, color: "#8E94A3", fontWeight: "600" },
+  ticketLocation: { fontSize: 14, color: "#8E94A3", fontWeight: "500", marginTop: -4 },
+  divider: { height: 1.5, backgroundColor: "#EBEFF5", marginVertical: 12, borderStyle: "dashed" },
+  ticketTypeLabel: { fontSize: 12, color: "#A0A5B1", fontWeight: "800", textTransform: "uppercase", letterSpacing: 1 },
+  ticketType: { fontSize: 18, fontWeight: "800", color: "#1A1C30" },
+  
   barcodeBox: {
-    backgroundColor: "#f8fafc", borderRadius: 14, padding: 16,
-    alignItems: "center", borderWidth: 1, borderColor: "#e2e8f0", gap: 6,
+    backgroundColor: "#F8F9FB",
+    borderRadius: 24,
+    padding: 24,
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#EBEFF5",
+    gap: 8,
+    marginTop: 8,
   },
-  barcodeLabel: { fontSize: 11, color: "#94a3b8", fontWeight: "700", textTransform: "uppercase" },
-  barcode: { fontSize: 18, fontWeight: "800", color: "#0f172a", letterSpacing: 3 },
-  barcodeHint: { fontSize: 11, color: "#94a3b8", textAlign: "center" },
+  barcodeLabel: { fontSize: 12, color: "#A0A5B1", fontWeight: "800", textTransform: "uppercase", letterSpacing: 1.5 },
+  barcode: { fontSize: 24, fontWeight: "900", color: "#1A1C30", letterSpacing: 6 },
+  barcodeHint: { fontSize: 12, color: "#8E94A3", textAlign: "center", fontWeight: "500" },
+  
   visitorCodeBox: {
-    backgroundColor: "#eef2ff", borderRadius: 14, padding: 14,
-    alignItems: "center", borderWidth: 1, borderColor: "#c7d2fe", gap: 4, marginTop: 4,
+    backgroundColor: "rgba(255,91,106,0.05)",
+    borderRadius: 24,
+    padding: 16,
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "rgba(255,91,106,0.2)",
+    gap: 6,
+    marginTop: 8,
   },
-  visitorCodeLabel: { fontSize: 10, color: "#6366f1", fontWeight: "800", textTransform: "uppercase", letterSpacing: 1 },
-  visitorCodeValue: { fontSize: 22, fontWeight: "800", color: "#4338ca", letterSpacing: 5, fontVariant: ["tabular-nums"] },
-  visitorCodeHint: { fontSize: 11, color: "#6366f1", textAlign: "center" },
+  visitorCodeLabel: { fontSize: 11, color: "#FF5B6A", fontWeight: "800", textTransform: "uppercase", letterSpacing: 1.5 },
+  visitorCodeValue: { fontSize: 24, fontWeight: "900", color: "#FF5B6A", letterSpacing: 8, fontVariant: ["tabular-nums"] },
+  visitorCodeHint: { fontSize: 12, color: "rgba(255,91,106,0.8)", textAlign: "center", fontWeight: "500" },
   // Events
   joinBtn: {
-    backgroundColor: "#eef2ff", borderRadius: 14, paddingVertical: 12,
-    alignItems: "center", borderWidth: 1, borderColor: "#c7d2fe", marginBottom: 12,
+    backgroundColor: "#FF5B6A", borderRadius: 24, paddingVertical: 18,
+    alignItems: "center", marginBottom: 16,
+    shadowColor: "#FF5B6A", shadowOpacity: 0.3, shadowOffset: { width: 0, height: 6 }, shadowRadius: 10, elevation: 6,
   },
-  joinBtnText: { color: "#4338ca", fontWeight: "800", fontSize: 14 },
+  joinBtnText: { color: "#FFFFFF", fontWeight: "800", fontSize: 16, letterSpacing: 0.5 },
   // Agenda
-  agendaTitle: { fontSize: 18, fontWeight: "800", color: "#0f172a", marginBottom: 16 },
-  agendaItem: { flexDirection: "row", gap: 14, marginBottom: 14 },
-  agendaTime: { width: 56, backgroundColor: "#eef2ff", borderRadius: 10, alignItems: "center", justifyContent: "center", padding: 8 },
-  agendaTimeText: { fontSize: 12, fontWeight: "800", color: "#4338ca" },
-  agendaBody: { flex: 1 },
-  agendaItemTitle: { fontSize: 14, fontWeight: "700", color: "#0f172a" },
-  agendaMeta: { fontSize: 12, color: "#64748b", marginTop: 2 },
-  agendaDesc: { fontSize: 12, color: "#64748b", marginTop: 4, lineHeight: 17 },
-  // Events
+  agendaTitle: { fontSize: 22, fontWeight: "900", color: "#1A1C30", marginBottom: 20, letterSpacing: -0.5 },
+  agendaItem: { flexDirection: "row", gap: 16, marginBottom: 20 },
+  agendaTime: { width: 64, backgroundColor: "#FFFFFF", borderRadius: 20, alignItems: "center", justifyContent: "center", padding: 10, shadowColor: "#000", shadowOpacity: 0.04, shadowOffset: {width:0, height:4}, shadowRadius: 8, elevation: 2 },
+  agendaTimeText: { fontSize: 13, fontWeight: "800", color: "#1A1C30" },
+  agendaBody: { flex: 1, paddingVertical: 2 },
+  agendaItemTitle: { fontSize: 16, fontWeight: "800", color: "#1A1C30" },
+  agendaMeta: { fontSize: 13, color: "#8E94A3", marginTop: 4, fontWeight: "500" },
+  agendaDesc: { fontSize: 14, color: "#8E94A3", marginTop: 6, lineHeight: 22 },
+  // Events list
   eventRow: {
-    flexDirection: "row", alignItems: "flex-start", gap: 14,
-    backgroundColor: "#fff", borderRadius: 14, padding: 14,
-    marginBottom: 10, borderWidth: 1, borderColor: "#e2e8f0",
+    flexDirection: "row", alignItems: "flex-start", gap: 16,
+    backgroundColor: "#FFFFFF", borderRadius: 24, padding: 20,
+    marginBottom: 16,
+    shadowColor: "#1A1C30", shadowOpacity: 0.04, shadowOffset: { width: 0, height: 8 }, shadowRadius: 16, elevation: 4,
   },
-  eventDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: "#4338ca", marginTop: 5 },
+  eventDot: { width: 12, height: 12, borderRadius: 6, backgroundColor: "#4f46e5", marginTop: 6 },
   eventInfo: { flex: 1 },
-  eventName: { fontSize: 14, fontWeight: "700", color: "#0f172a" },
-  eventMeta: { fontSize: 12, color: "#64748b", marginTop: 2 },
-  statusPillRow: { marginTop: 6 },
-  statusPill: { alignSelf: "flex-start", backgroundColor: "#f1f5f9", borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3 },
-  pillGreen: { backgroundColor: "#d1fae5" },
-  statusPillText: { fontSize: 11, fontWeight: "700", color: "#334155" },
+  eventName: { fontSize: 16, fontWeight: "800", color: "#0f172a" },
+  eventMeta: { fontSize: 13, color: "#64748b", marginTop: 4, fontWeight: "500" },
+  statusPillRow: { marginTop: 10 },
+  statusPill: { alignSelf: "flex-start", backgroundColor: "#f1f5f9", borderRadius: 10, paddingHorizontal: 10, paddingVertical: 4 },
+  pillGreen: { backgroundColor: "#dcfce7" },
+  statusPillText: { fontSize: 12, fontWeight: "800", color: "#166534" },
   // Guests
-  sectionLabel: { fontSize: 11, color: "#94a3b8", fontWeight: "700", marginBottom: 12 },
-  guestRow: { flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 10, borderBottomWidth: 1, borderColor: "#f1f5f9" },
-  avatar: { width: 38, height: 38, borderRadius: 19, backgroundColor: "#eef2ff", alignItems: "center", justifyContent: "center" },
-  avatarText: { fontSize: 16, fontWeight: "800", color: "#4338ca" },
-  guestName: { fontSize: 14, fontWeight: "600", color: "#0f172a" },
+  sectionLabel: { fontSize: 12, color: "#94a3b8", fontWeight: "800", marginBottom: 16, textTransform: "uppercase", letterSpacing: 1 },
+  guestRow: { flexDirection: "row", alignItems: "center", gap: 14, paddingVertical: 12, borderBottomWidth: 1, borderColor: "rgba(0,0,0,0.05)" },
+  avatar: { width: 44, height: 44, borderRadius: 22, backgroundColor: "#eef2ff", alignItems: "center", justifyContent: "center" },
+  avatarText: { fontSize: 18, fontWeight: "800", color: "#4f46e5" },
+  guestName: { fontSize: 16, fontWeight: "700", color: "#0f172a" },
   // Notifications
   composeBtn: {
-    backgroundColor: "#eef2ff", borderRadius: 14, paddingVertical: 12,
-    alignItems: "center", borderWidth: 1, borderColor: "#c7d2fe", marginBottom: 16,
+    backgroundColor: "#eef2ff", borderRadius: 16, paddingVertical: 16,
+    alignItems: "center", borderWidth: 1, borderColor: "#c7d2fe", marginBottom: 20,
   },
-  composeBtnText: { color: "#4338ca", fontWeight: "800", fontSize: 14 },
+  composeBtnText: { color: "#4f46e5", fontWeight: "800", fontSize: 15, letterSpacing: 0.5 },
   notifCard: {
-    flexDirection: "row", gap: 12, backgroundColor: "#fff", borderRadius: 14, padding: 14,
-    marginBottom: 10, borderWidth: 1, borderColor: "#e2e8f0", alignItems: "flex-start",
+    flexDirection: "row", gap: 14, backgroundColor: "#fff", borderRadius: 16, padding: 16,
+    marginBottom: 12, borderWidth: 1, borderColor: "rgba(0,0,0,0.05)", alignItems: "flex-start",
+    shadowColor: "#000", shadowOpacity: 0.03, shadowOffset: { width: 0, height: 4 }, shadowRadius: 8, elevation: 1,
   },
-  notifUnread: { borderColor: "#a5b4fc", backgroundColor: "#eef2ff" },
+  notifUnread: { borderColor: "#c7d2fe", backgroundColor: "#f5f8ff" },
   notifAgenda: { borderColor: "#bbf7d0", backgroundColor: "#f0fdf4" },
-  notifReply: { borderColor: "#c4b5fd", backgroundColor: "#faf5ff" },
+  notifReply: { borderColor: "#e9d5ff", backgroundColor: "#faf5ff" },
   notifWarning: { borderColor: "#fef08a", backgroundColor: "#fffbeb" },
-  notifIcon: { fontSize: 22 },
+  notifIcon: { fontSize: 26 },
   notifBody: { flex: 1 },
-  notifEvent: { fontSize: 10, color: "#6366f1", fontWeight: "700", textTransform: "uppercase", marginBottom: 2 },
-  notifTitle: { fontSize: 14, fontWeight: "700", color: "#0f172a" },
-  notifMsg: { fontSize: 13, color: "#334155", marginTop: 3, lineHeight: 18 },
-  notifTime: { fontSize: 11, color: "#94a3b8", marginTop: 6 },
+  notifEvent: { fontSize: 11, color: "#6366f1", fontWeight: "800", textTransform: "uppercase", marginBottom: 4, letterSpacing: 0.5 },
+  notifTitle: { fontSize: 15, fontWeight: "800", color: "#0f172a" },
+  notifMsg: { fontSize: 14, color: "#475569", marginTop: 4, lineHeight: 20 },
+  notifTime: { fontSize: 12, color: "#94a3b8", marginTop: 8, fontWeight: "500" },
   // Messages
   msgCard: {
-    backgroundColor: "#fff", borderRadius: 14, padding: 14,
-    marginBottom: 10, borderWidth: 1, borderColor: "#e2e8f0",
+    backgroundColor: "#fff", borderRadius: 16, padding: 16,
+    marginBottom: 12, borderWidth: 1, borderColor: "rgba(0,0,0,0.05)",
+    shadowColor: "#000", shadowOpacity: 0.03, shadowOffset: { width: 0, height: 4 }, shadowRadius: 8, elevation: 1,
   },
-  msgSubject: { fontSize: 14, fontWeight: "700", color: "#0f172a" },
-  msgEvent: { fontSize: 11, color: "#6366f1", fontWeight: "600", marginTop: 2 },
-  msgBody: { fontSize: 13, color: "#64748b", marginTop: 4, lineHeight: 18 },
-  replyBox: { backgroundColor: "#f0fdf4", borderRadius: 10, padding: 10, marginTop: 8, borderWidth: 1, borderColor: "#bbf7d0" },
-  replyLabel: { fontSize: 11, color: "#16a34a", fontWeight: "700", marginBottom: 3 },
-  replyText: { fontSize: 13, color: "#166534", lineHeight: 18 },
-  pendingLabel: { fontSize: 11, color: "#94a3b8", marginTop: 6 },
-  msgTime: { fontSize: 11, color: "#94a3b8", marginTop: 6 },
+  msgSubject: { fontSize: 15, fontWeight: "800", color: "#0f172a" },
+  msgEvent: { fontSize: 12, color: "#6366f1", fontWeight: "700", marginTop: 2 },
+  msgBody: { fontSize: 14, color: "#64748b", marginTop: 6, lineHeight: 20 },
+  replyBox: { backgroundColor: "#f0fdf4", borderRadius: 12, padding: 12, marginTop: 10, borderWidth: 1, borderColor: "#bbf7d0" },
+  replyLabel: { fontSize: 12, color: "#16a34a", fontWeight: "800", marginBottom: 4 },
+  replyText: { fontSize: 14, color: "#15803d", lineHeight: 20 },
+  pendingLabel: { fontSize: 12, color: "#94a3b8", marginTop: 8, fontWeight: "600" },
+  msgTime: { fontSize: 12, color: "#94a3b8", marginTop: 8, fontWeight: "500" },
 });

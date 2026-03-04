@@ -9,7 +9,9 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  Animated,
 } from "react-native";
+import { useEffect, useRef } from "react";
 
 export function VisitorLoginScreen({
   onSubmit,
@@ -41,19 +43,26 @@ export function VisitorLoginScreen({
     }
   }
 
-  return (
-    <KeyboardAvoidingView
-      style={{ flex: 1 }}
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
-    >
-      <ScrollView
-        contentContainerStyle={styles.container}
-        keyboardShouldPersistTaps="handled"
-      >
-        <Pressable style={styles.backBtn} onPress={onBack}>
-          <Text style={styles.backText}>← Back</Text>
-        </Pressable>
+  // Animations
+  const slideAnim = useRef(new Animated.Value(50)).current;
+  const fadeAnim = useRef(new Animated.Value(0)).current;
 
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, { toValue: 1, duration: 500, useNativeDriver: true }),
+      Animated.timing(slideAnim, { toValue: 0, duration: 500, useNativeDriver: true })
+    ]).start();
+  }, []);
+
+  return (
+    <View style={styles.root}>
+      {/* Top Navy Section */}
+      <View style={styles.navyTop}>
+        <View style={styles.headerNav}>
+          <Pressable style={styles.backBtn} onPress={onBack}>
+            <Text style={styles.backText}>← Back</Text>
+          </Pressable>
+        </View>
         <View style={styles.header}>
           <Text style={styles.icon}>🎟️</Text>
           <Text style={styles.heading}>Visitor Login</Text>
@@ -61,6 +70,17 @@ export function VisitorLoginScreen({
             Sign in to view your tickets, agenda and notifications
           </Text>
         </View>
+      </View>
+
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+      >
+        <Animated.ScrollView
+          contentContainerStyle={styles.container}
+          keyboardShouldPersistTaps="handled"
+          style={[ { flex: 1 }, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] } ]}
+        >
 
         <View style={styles.form}>
           <View style={styles.field}>
@@ -110,64 +130,82 @@ export function VisitorLoginScreen({
             <Text style={styles.footerLink}>Create one</Text>
           </Pressable>
         </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+      </Animated.ScrollView>
+      </KeyboardAvoidingView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  root: { flex: 1, backgroundColor: "#1A1C30" }, // Deep Navy behind everything
+  navyTop: {
+    paddingTop: Platform.OS === "ios" ? 60 : 40,
+    paddingHorizontal: 24,
+    paddingBottom: 40,
+    backgroundColor: "#1A1C30",
+  },
+  headerNav: { flexDirection: "row", marginBottom: 20 },
+  backBtn: { paddingVertical: 8, paddingRight: 16 },
+  backText: { color: "#FFFFFF", fontWeight: "700", fontSize: 14 },
+  header: { alignItems: "center" },
+  icon: { fontSize: 44, marginBottom: 16 },
+  heading: { fontSize: 26, fontWeight: "900", color: "#FFFFFF", marginBottom: 8, letterSpacing: -0.5 },
+  subheading: { fontSize: 15, color: "rgba(255,255,255,0.7)", textAlign: "center", lineHeight: 22 },
+  
   container: {
     flexGrow: 1,
-    padding: 24,
-    backgroundColor: "#f8fafc",
+    padding: 32,
+    backgroundColor: "#EFF2F7", // Very light gray content wrapper
+    borderTopLeftRadius: 60,
+    borderTopRightRadius: 60,
   },
-  backBtn: { marginBottom: 20 },
-  backText: { color: "#4338ca", fontWeight: "600", fontSize: 14 },
-  header: { marginBottom: 28, alignItems: "center" },
-  icon: { fontSize: 44, marginBottom: 10 },
-  heading: { fontSize: 24, fontWeight: "800", color: "#0f172a", marginBottom: 6 },
-  subheading: { fontSize: 14, color: "#64748b", textAlign: "center", lineHeight: 20 },
-  form: { gap: 14 },
-  field: { gap: 5 },
-  label: { fontSize: 13, fontWeight: "600", color: "#334155" },
+  form: { gap: 20 },
+  field: { gap: 8 },
+  label: { fontSize: 12, fontWeight: "800", color: "#A0A5B1", textTransform: "uppercase", letterSpacing: 1 },
   input: {
-    borderWidth: 1.5,
-    borderColor: "#e2e8f0",
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    backgroundColor: "#ffffff",
-    fontSize: 15,
-    color: "#0f172a",
-  },
-  error: {
-    color: "#dc2626",
-    fontSize: 13,
-    backgroundColor: "#fef2f2",
-    padding: 10,
-    borderRadius: 10,
     borderWidth: 1,
-    borderColor: "#fecaca",
-  },
-  submitBtn: {
-    marginTop: 6,
-    backgroundColor: "#4338ca",
-    borderRadius: 12,
-    paddingVertical: 15,
-    alignItems: "center",
-    shadowColor: "#4338ca",
-    shadowOpacity: 0.3,
+    borderColor: "#EBEFF5",
+    borderRadius: 20,
+    paddingHorizontal: 20,
+    paddingVertical: 18,
+    backgroundColor: "#FFFFFF",
+    fontSize: 16,
+    color: "#1A1C30",
+    shadowColor: "#000",
+    shadowOpacity: 0.03,
     shadowOffset: { width: 0, height: 4 },
     shadowRadius: 10,
-    elevation: 3,
+    elevation: 2,
   },
-  submitDisabled: { opacity: 0.7 },
-  submitText: { color: "#fff", fontWeight: "700", fontSize: 15 },
+  error: {
+    color: "#FF5B6A",
+    fontSize: 13,
+    backgroundColor: "rgba(255,91,106,0.1)",
+    padding: 14,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "rgba(255,91,106,0.3)",
+    fontWeight: "600"
+  },
+  submitBtn: {
+    marginTop: 12,
+    backgroundColor: "#FF5B6A", // Coral
+    borderRadius: 24,
+    paddingVertical: 20,
+    alignItems: "center",
+    shadowColor: "#FF5B6A",
+    shadowOpacity: 0.3,
+    shadowOffset: { width: 0, height: 6 },
+    shadowRadius: 12,
+    elevation: 6,
+  },
+  submitDisabled: { opacity: 0.6, shadowOpacity: 0 },
+  submitText: { color: "#fff", fontWeight: "800", fontSize: 16, letterSpacing: 0.5 },
   footer: {
     flexDirection: "row",
     justifyContent: "center",
-    marginTop: 28,
+    marginTop: 32,
   },
-  footerText: { color: "#64748b", fontSize: 14 },
-  footerLink: { color: "#4338ca", fontWeight: "700", fontSize: 14 },
+  footerText: { color: "#8E94A3", fontSize: 14, fontWeight: "500" },
+  footerLink: { color: "#1A1C30", fontWeight: "800", fontSize: 14 },
 });

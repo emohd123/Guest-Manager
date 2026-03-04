@@ -1,5 +1,5 @@
-import React, { useMemo, useState } from "react";
-import { FlatList, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import React, { useMemo, useState, useEffect } from "react";
+import { FlatList, Pressable, StyleSheet, Text, TextInput, View, Animated } from "react-native";
 import type { MobileGuest } from "../types";
 
 export function GuestsScreen({
@@ -28,12 +28,24 @@ export function GuestsScreen({
     });
   }, [guests, search]);
 
+  const [slideAnim] = useState(() => new Animated.Value(30));
+  const [fadeAnim] = useState(() => new Animated.Value(0));
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, { toValue: 1, duration: 400, useNativeDriver: true }),
+      Animated.timing(slideAnim, { toValue: 0, duration: 400, useNativeDriver: true })
+    ]).start();
+  }, [fadeAnim, slideAnim]);
+
   return (
-    <View style={styles.container}>
+    <Animated.View style={[styles.container, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
+      <Text style={styles.title}>Guest List</Text>
       <TextInput
         value={search}
         onChangeText={setSearch}
-        placeholder="Search guests"
+        placeholder="Search guests by name, email, or ticket"
+        placeholderTextColor="#A0A5B1"
         style={styles.search}
       />
 
@@ -57,7 +69,7 @@ export function GuestsScreen({
                   disabled={loading}
                   onPress={() => onQuickCheckOut(item)}
                 >
-                  <Text style={styles.actionText}>{loading ? "..." : "Check Out"}</Text>
+                  <Text style={[styles.actionText, { color: "#1A1C30" }]}>{loading ? "..." : "Check Out"}</Text>
                 </Pressable>
               ) : (
                 <Pressable
@@ -65,78 +77,107 @@ export function GuestsScreen({
                   disabled={loading}
                   onPress={() => onQuickCheckIn(item)}
                 >
-                  <Text style={styles.actionText}>{loading ? "..." : "Check In"}</Text>
+                  <Text style={[styles.actionText, { color: "#FFFFFF" }]}>{loading ? "..." : "Check In"}</Text>
                 </Pressable>
               )}
             </View>
           );
         }}
         ListEmptyComponent={<Text style={styles.empty}>No guests found.</Text>}
+        contentContainerStyle={styles.listContent}
       />
-    </View>
+    </Animated.View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f8fafc",
-    padding: 12,
+    backgroundColor: "transparent",
+    padding: 24,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: "900",
+    marginBottom: 16,
+    color: "#1A1C30",
+    letterSpacing: -0.5,
   },
   search: {
     borderWidth: 1,
-    borderColor: "#cbd5e1",
-    borderRadius: 10,
-    backgroundColor: "#fff",
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    marginBottom: 10,
+    borderColor: "#EBEFF5",
+    borderRadius: 30, // massive pill
+    backgroundColor: "#ffffff",
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+    marginBottom: 20,
+    fontSize: 15,
+    color: "#1A1C30",
+    shadowColor: "#000",
+    shadowOpacity: 0.03,
+    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 10,
+    elevation: 2,
+  },
+  listContent: {
+    paddingBottom: 100, // Space for floating tab bar
   },
   row: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     borderWidth: 1,
-    borderColor: "#e2e8f0",
-    backgroundColor: "#fff",
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 8,
+    borderColor: "#EBEFF5",
+    backgroundColor: "#ffffff",
+    borderRadius: 20,
+    padding: 16,
+    marginBottom: 12,
+    shadowColor: "#000",
+    shadowOpacity: 0.03,
+    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 10,
+    elevation: 2,
   },
   rowMain: {
     flex: 1,
-    marginRight: 12,
+    marginRight: 16,
   },
   name: {
-    fontSize: 15,
-    fontWeight: "600",
-    color: "#0f172a",
+    fontSize: 16,
+    fontWeight: "800",
+    color: "#1A1C30",
   },
   meta: {
-    marginTop: 2,
-    color: "#64748b",
-    fontSize: 12,
+    marginTop: 4,
+    color: "#8E94A3",
+    fontSize: 13,
+    fontWeight: "500",
   },
   action: {
-    borderRadius: 8,
-    paddingVertical: 8,
-    paddingHorizontal: 10,
+    borderRadius: 14,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    justifyContent: "center",
+    alignItems: "center",
   },
   checkin: {
-    backgroundColor: "#16a34a",
+    backgroundColor: "#FF5B6A", // Coral action
   },
   checkout: {
-    backgroundColor: "#2563eb",
+    backgroundColor: "rgba(26,28,48,0.05)", // Subdued gray/navy instead of bright blue
   },
   actionText: {
-    color: "#fff",
-    fontWeight: "600",
+    fontWeight: "800",
     fontSize: 12,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
   },
   empty: {
     textAlign: "center",
-    marginTop: 30,
-    color: "#64748b",
+    marginTop: 40,
+    color: "#8E94A3",
+    fontSize: 15,
+    fontWeight: "500",
   },
 });
 

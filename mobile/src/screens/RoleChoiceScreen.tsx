@@ -1,5 +1,5 @@
-import React from "react";
-import { View, Text, Pressable, StyleSheet } from "react-native";
+import React, { useEffect, useRef } from "react";
+import { View, Text, Pressable, StyleSheet, Animated } from "react-native";
 
 /**
  * Entry point screen — choose Staff or Visitor mode.
@@ -11,41 +11,60 @@ export function RoleChoiceScreen({
   onSelectStaff: () => void;
   onSelectVisitor: () => void;
 }) {
+  const fadeAnim = useRef(new Animated.Value(0));
+  const slideAnim = useRef(new Animated.Value(30));
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim.current, { toValue: 1, duration: 800, useNativeDriver: true }),
+      Animated.spring(slideAnim.current, { toValue: 0, tension: 40, friction: 8, useNativeDriver: true }),
+    ]).start();
+  }, [fadeAnim, slideAnim]);
+
   return (
     <View style={styles.container}>
-      <View style={styles.logo}>
-        <Text style={styles.logoText}>GM</Text>
-      </View>
-      <Text style={styles.title}>Guest Manager</Text>
-      <Text style={styles.subtitle}>Check-In & Events App</Text>
+      <View style={styles.navyBackground} />
+      
+      <Animated.View style={[styles.inner, { opacity: fadeAnim.current, transform: [{ translateY: slideAnim.current }] }]}>
+        <View style={styles.headerArea}>
+          <Text style={styles.title}>Welcome back</Text>
+          <Text style={styles.subtitle}>Select your connection mode to start</Text>
+        </View>
 
-      <View style={styles.cards}>
-        {/* Staff Login Card */}
-        <Pressable style={styles.staffCard} onPress={onSelectStaff}>
-          <Text style={styles.staffCardIcon}>🔐</Text>
-          <Text style={styles.staffCardTitle}>Staff Login</Text>
-          <Text style={styles.staffCardDescription}>
-            Pair this device to an event and start scanning tickets
-          </Text>
-          <View style={styles.staffArrow}>
-            <Text style={styles.staffArrowText}>→</Text>
+        <View style={styles.whiteCard}>
+          <View style={styles.cards}>
+            {/* Staff Card */}
+            <Pressable style={styles.staffCard} onPress={onSelectStaff}>
+              <View style={styles.cardHeader}>
+                <Text style={styles.staffCardIcon}>🔐</Text>
+                <View style={styles.staffArrow}>
+                  <Text style={styles.staffArrowText}>→</Text>
+                </View>
+              </View>
+              <Text style={styles.staffCardTitle}>Staff Login</Text>
+              <Text style={styles.staffCardDescription}>
+                Pair to an event and start scanning tickets
+              </Text>
+            </Pressable>
+
+            {/* Visitor Card */}
+            <Pressable style={styles.visitorCard} onPress={onSelectVisitor}>
+              <View style={styles.cardHeader}>
+                <Text style={styles.visitorCardIcon}>🎫</Text>
+                <View style={styles.visitorArrow}>
+                  <Text style={styles.visitorArrowText}>→</Text>
+                </View>
+              </View>
+              <Text style={styles.visitorCardTitle}>Visitor Portal</Text>
+              <Text style={styles.visitorCardDescription}>
+                View your tickets, agenda & events
+              </Text>
+            </Pressable>
           </View>
-        </Pressable>
-
-        {/* Visitor Portal Card */}
-        <Pressable style={styles.visitorCard} onPress={onSelectVisitor}>
-          <Text style={styles.visitorCardIcon}>🎫</Text>
-          <Text style={styles.visitorCardTitle}>Visitor Portal</Text>
-          <Text style={styles.visitorCardDescription}>
-            View your tickets, agenda, events & notifications
-          </Text>
-          <View style={styles.visitorArrow}>
-            <Text style={styles.visitorArrowText}>→</Text>
-          </View>
-        </Pressable>
-      </View>
-
-      <Text style={styles.footer}>Guest Manager · Event Check-In Platform</Text>
+          
+          <Text style={styles.footer}>Guest Manager · Experience Platform</Text>
+        </View>
+      </Animated.View>
     </View>
   );
 }
@@ -53,141 +72,123 @@ export function RoleChoiceScreen({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 28,
-    backgroundColor: "#f8fafc",
-    gap: 8,
+    backgroundColor: "#1A1C30", // Deep Navy
   },
-  logo: {
-    width: 64,
-    height: 64,
-    borderRadius: 18,
-    backgroundColor: "#4338ca",
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 8,
-    shadowColor: "#4338ca",
-    shadowOpacity: 0.35,
-    shadowOffset: { width: 0, height: 6 },
-    shadowRadius: 14,
-    elevation: 6,
+  navyBackground: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "#1A1C30",
   },
-  logoText: {
-    color: "#fff",
-    fontWeight: "800",
-    fontSize: 24,
-    letterSpacing: 1,
+  inner: {
+    flex: 1,
+  },
+  headerArea: {
+    flex: 0.45,
+    justifyContent: "center",
+    paddingHorizontal: 40,
+    backgroundColor: "#1A1C30",
   },
   title: {
-    fontSize: 28,
+    fontSize: 32,
     fontWeight: "800",
-    color: "#0f172a",
+    color: "#FFFFFF",
     letterSpacing: -0.5,
+    marginBottom: 8,
   },
   subtitle: {
-    fontSize: 14,
-    color: "#64748b",
-    marginBottom: 20,
+    fontSize: 15,
+    color: "rgba(255,255,255,0.7)",
+    lineHeight: 22,
+  },
+  whiteCard: {
+    flex: 0.55,
+    backgroundColor: "#EFF2F7", // Very light gray/white background for the cards area
+    borderTopLeftRadius: 60,
+    paddingHorizontal: 32,
+    paddingTop: 48,
+    paddingBottom: 24,
+    alignItems: "center",
+    justifyContent: "space-between",
   },
   cards: {
     width: "100%",
-    gap: 14,
+    gap: 20,
   },
-
-  // ── Staff Card (dark blue) ───────────────────────────────────────────────
+  cardHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    marginBottom: 16,
+  },
+  
+  // ── Staff Card (Dark Navy inside light area) ──────────────────────────────
   staffCard: {
-    backgroundColor: "#4338ca",
-    borderRadius: 18,
-    padding: 22,
-    position: "relative",
-    shadowColor: "#4338ca",
-    shadowOpacity: 0.3,
-    shadowOffset: { width: 0, height: 6 },
-    shadowRadius: 14,
-    elevation: 4,
+    backgroundColor: "#1A1C30",
+    borderRadius: 32,
+    padding: 24,
+    shadowColor: "#1A1C30",
+    shadowOpacity: 0.15,
+    shadowOffset: { width: 0, height: 10 },
+    shadowRadius: 20,
+    elevation: 8,
   },
-  staffCardIcon: {
-    fontSize: 28,
-    marginBottom: 8,
-  },
+  staffCardIcon: { fontSize: 24 },
   staffCardTitle: {
-    fontSize: 18,
-    fontWeight: "800",
-    color: "#ffffff",
-    marginBottom: 4,
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#FFFFFF",
+    marginBottom: 6,
   },
   staffCardDescription: {
-    fontSize: 13,
-    color: "rgba(255,255,255,0.80)",
-    lineHeight: 18,
+    fontSize: 14,
+    color: "rgba(255,255,255,0.6)",
+    lineHeight: 20,
   },
   staffArrow: {
-    position: "absolute",
-    top: 22,
-    right: 22,
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    backgroundColor: "rgba(255,255,255,0.2)",
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "#FF5B6A", // Coral Accent
     alignItems: "center",
     justifyContent: "center",
   },
-  staffArrowText: {
-    color: "#ffffff",
-    fontWeight: "700",
-    fontSize: 16,
-  },
+  staffArrowText: { color: "#ffffff", fontWeight: "700", fontSize: 16 },
 
-  // ── Visitor Card (white with border) ─────────────────────────────────────
+  // ── Visitor Card (White inside light area) ──────────────────────────────
   visitorCard: {
-    backgroundColor: "#ffffff",
-    borderRadius: 18,
-    padding: 22,
-    borderWidth: 1.5,
-    borderColor: "#c7d2fe",
-    position: "relative",
-    shadowColor: "#4338ca",
-    shadowOpacity: 0.08,
-    shadowOffset: { width: 0, height: 3 },
-    shadowRadius: 8,
-    elevation: 2,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 32,
+    padding: 24,
+    shadowColor: "#000",
+    shadowOpacity: 0.05,
+    shadowOffset: { width: 0, height: 8 },
+    shadowRadius: 16,
+    elevation: 4,
   },
-  visitorCardIcon: {
-    fontSize: 28,
-    marginBottom: 8,
-  },
+  visitorCardIcon: { fontSize: 24 },
   visitorCardTitle: {
-    fontSize: 18,
-    fontWeight: "800",
-    color: "#0f172a",      // ← dark text on white background
-    marginBottom: 4,
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#1A1C30",
+    marginBottom: 6,
   },
   visitorCardDescription: {
-    fontSize: 13,
-    color: "#64748b",      // ← slate gray text on white background
-    lineHeight: 18,
+    fontSize: 14,
+    color: "#8E94A3",
+    lineHeight: 20,
   },
   visitorArrow: {
-    position: "absolute",
-    top: 22,
-    right: 22,
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    backgroundColor: "#eef2ff",
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "#F0F2F5",
     alignItems: "center",
     justifyContent: "center",
   },
-  visitorArrowText: {
-    color: "#4338ca",
-    fontWeight: "700",
-    fontSize: 16,
-  },
+  visitorArrowText: { color: "#1A1C30", fontWeight: "700", fontSize: 16 },
 
   footer: {
-    marginTop: 28,
-    fontSize: 11,
-    color: "#94a3b8",
+    fontSize: 12,
+    color: "#A0A5B1",
+    fontWeight: "500",
   },
 });

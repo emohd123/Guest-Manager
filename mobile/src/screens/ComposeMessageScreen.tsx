@@ -52,13 +52,15 @@ export function ComposeMessageScreen({ token, defaultEventCode, onBack, onSent }
       style={styles.root}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={onBack} style={styles.backBtn}>
-          <Text style={styles.backText}>← Back</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Message Organizer</Text>
-        <View style={{ width: 60 }} />
+      {/* Header Area */}
+      <View style={styles.headerArea}>
+        <View style={styles.headerAreaInner}>
+          <TouchableOpacity onPress={onBack} style={styles.backBtn}>
+            <Text style={styles.backText}>← Back</Text>
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Message Organizer</Text>
+          <View style={{ width: 60 }} />
+        </View>
       </View>
 
       <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
@@ -134,60 +136,76 @@ export function ComposeMessageScreen({ token, defaultEventCode, onBack, onSent }
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: "#f8fafc" },
-  header: {
+  root: { flex: 1, backgroundColor: "#EFF2F7" }, // Main background is light
+  
+  // Header with massive wavy corner
+  headerArea: {
+    backgroundColor: "#1A1C30",
+    borderBottomRightRadius: 60,
+    borderBottomLeftRadius: 60,
+    paddingTop: Platform.OS === "android" ? 56 : 60,
+    paddingBottom: 24,
+    shadowColor: "#1A1C30",
+    shadowOpacity: 0.15,
+    shadowOffset: { width: 0, height: 10 },
+    shadowRadius: 20,
+    elevation: 8,
+    zIndex: 10,
+  },
+  headerAreaInner: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingTop: 56,
-    paddingHorizontal: 16,
-    paddingBottom: 16,
-    backgroundColor: "#fff",
-    borderBottomWidth: 1,
-    borderBottomColor: "#f1f5f9",
+    paddingHorizontal: 20,
   },
-  backBtn: { padding: 8 },
-  backText: { color: "#6366f1", fontSize: 15, fontWeight: "600" },
-  headerTitle: { fontSize: 17, fontWeight: "700", color: "#1e293b" },
+  backBtn: { padding: 8, marginLeft: -8, backgroundColor: "rgba(255,255,255,0.1)", borderRadius: 12 },
+  backText: { color: "#FFFFFF", fontSize: 13, fontWeight: "700" },
+  headerTitle: { fontSize: 18, fontWeight: "800", color: "#FFFFFF", letterSpacing: -0.5 },
+  
   scroll: { flex: 1 },
-  scrollContent: { padding: 20, paddingBottom: 60 },
-  intro: { color: "#64748b", fontSize: 14, lineHeight: 20, marginBottom: 24 },
-  field: { marginBottom: 20 },
-  label: { fontSize: 13, fontWeight: "700", color: "#374151", marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.5 },
+  scrollContent: { padding: 32, paddingBottom: 60 },
+  intro: { color: "#8E94A3", fontSize: 15, lineHeight: 22, marginBottom: 32 },
+  field: { marginBottom: 24 },
+  label: { fontSize: 12, fontWeight: "800", color: "#A0A5B1", marginBottom: 8, textTransform: "uppercase", letterSpacing: 1 },
   input: {
-    backgroundColor: "#fff",
-    borderRadius: 12,
-    borderWidth: 1.5,
-    borderColor: "#e5e7eb",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    fontSize: 15,
-    color: "#111827",
-  },
-  textarea: { minHeight: 140, paddingTop: 12 },
-  hint: { fontSize: 12, color: "#9ca3af", marginTop: 4 },
-  charCount: { fontSize: 11, color: "#9ca3af", marginTop: 4, textAlign: "right" },
-  errorBox: {
-    backgroundColor: "#fef2f2",
-    borderRadius: 10,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 20,
     borderWidth: 1,
-    borderColor: "#fecaca",
-    padding: 12,
-    marginBottom: 16,
-  },
-  errorText: { color: "#dc2626", fontSize: 13 },
-  sendBtn: {
-    backgroundColor: "#6366f1",
-    borderRadius: 14,
-    paddingVertical: 16,
-    alignItems: "center",
-    marginTop: 8,
-    shadowColor: "#6366f1",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
+    borderColor: "#EBEFF5",
+    paddingHorizontal: 20,
+    paddingVertical: 18,
+    fontSize: 16,
+    color: "#1A1C30",
+    shadowColor: "#1A1C30",
+    shadowOpacity: 0.04,
+    shadowOffset: { width: 0, height: 8 },
+    shadowRadius: 16,
     elevation: 4,
   },
-  sendBtnDisabled: { opacity: 0.5 },
-  sendBtnText: { color: "#fff", fontSize: 16, fontWeight: "700" },
+  textarea: { minHeight: 160, paddingTop: 20 },
+  hint: { fontSize: 13, color: "#8E94A3", marginTop: 8, fontWeight: "500" },
+  charCount: { fontSize: 12, color: "#A0A5B1", marginTop: 8, textAlign: "right", fontWeight: "600" },
+  errorBox: {
+    backgroundColor: "rgba(255,91,106,0.1)",
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "rgba(255,91,106,0.3)",
+    padding: 16,
+    marginBottom: 20,
+  },
+  errorText: { color: "#FF5B6A", fontSize: 14, fontWeight: "600" },
+  sendBtn: {
+    backgroundColor: "#FF5B6A",
+    borderRadius: 24,
+    paddingVertical: 20,
+    alignItems: "center",
+    marginTop: 12,
+    shadowColor: "#FF5B6A",
+    shadowOpacity: 0.3,
+    shadowOffset: { width: 0, height: 8 },
+    shadowRadius: 16,
+    elevation: 6,
+  },
+  sendBtnDisabled: { opacity: 0.5, shadowOpacity: 0 },
+  sendBtnText: { color: "#fff", fontSize: 16, fontWeight: "800", letterSpacing: 0.5 },
 });

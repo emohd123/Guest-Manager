@@ -1,5 +1,5 @@
-import React from "react";
-import { RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
+import React, { useState, useEffect } from "react";
+import { RefreshControl, StyleSheet, Text, View, Animated } from "react-native";
 import type { SummaryMetrics } from "../types";
 
 export function EventHomeScreen({
@@ -11,11 +11,21 @@ export function EventHomeScreen({
   refreshing: boolean;
   onRefresh: () => Promise<void>;
 }) {
+  const [slideAnim] = useState(() => new Animated.Value(30));
+  const [fadeAnim] = useState(() => new Animated.Value(0));
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, { toValue: 1, duration: 400, useNativeDriver: true }),
+      Animated.timing(slideAnim, { toValue: 0, duration: 400, useNativeDriver: true })
+    ]).start();
+  }, [fadeAnim, slideAnim]);
+
   return (
-    <ScrollView
-      style={styles.container}
+    <Animated.ScrollView
+      style={[styles.container, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}
       contentContainerStyle={styles.content}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#1A1C30" />}
     >
       <Text style={styles.title}>Event Overview</Text>
       <View style={styles.grid}>
@@ -26,7 +36,7 @@ export function EventHomeScreen({
         <StatCard label="Successful Scans" value={summary?.successfulScans ?? 0} />
         <StatCard label="Invalid Scans" value={summary?.unsuccessfulScans ?? 0} />
       </View>
-    </ScrollView>
+    </Animated.ScrollView>
   );
 }
 
@@ -42,36 +52,47 @@ function StatCard({ label, value }: { label: string; value: number }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f8fafc",
+    backgroundColor: "transparent",
   },
   content: {
-    padding: 16,
+    padding: 24,
+    paddingBottom: 100, // Room for floating tab bar
   },
   title: {
-    fontSize: 22,
-    fontWeight: "700",
-    marginBottom: 12,
-    color: "#0f172a",
+    fontSize: 24,
+    fontWeight: "900",
+    marginBottom: 20,
+    color: "#1A1C30",
+    letterSpacing: -0.5,
   },
   grid: {
-    gap: 10,
+    gap: 16,
   },
   card: {
     borderWidth: 1,
-    borderColor: "#e2e8f0",
-    backgroundColor: "#fff",
-    borderRadius: 12,
-    padding: 14,
+    borderColor: "#EBEFF5",
+    backgroundColor: "#ffffff",
+    borderRadius: 24,
+    padding: 24,
+    shadowColor: "#000",
+    shadowOpacity: 0.04,
+    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 12,
+    elevation: 2,
   },
   cardLabel: {
-    color: "#64748b",
+    color: "#A0A5B1",
     fontSize: 12,
+    fontWeight: "800",
+    textTransform: "uppercase",
+    letterSpacing: 1,
   },
   cardValue: {
-    marginTop: 6,
-    fontSize: 26,
-    fontWeight: "700",
-    color: "#111827",
+    marginTop: 8,
+    fontSize: 32,
+    fontWeight: "900",
+    color: "#1A1C30",
+    letterSpacing: -1,
   },
 });
 

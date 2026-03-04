@@ -1,19 +1,23 @@
-const { Client } = require('pg');
-
-const client = new Client({
-  connectionString: 'postgresql://postgres.zworeyksseoicmpthycv:yAKSR32MoeZ6dgZC@aws-0-ap-southeast-1.pooler.supabase.com:6543/postgres?sslmode=require',
-  ssl: { rejectUnauthorized: false }
-});
+require('dotenv').config({ path: '.env.local' });
+require('dotenv').config({ path: '.env.local' });
+const postgres = require('postgres');
 
 async function run() {
+  const connectionString = process.env.DATABASE_URL;
+  const sql = postgres(connectionString, {
+    prepare: false,
+    connect_timeout: 15,
+    ssl: { rejectUnauthorized: false },
+  });
+  
   try {
-    await client.connect();
-    const res = await client.query('SELECT 1');
-    console.log("SUCCESS PG:", res.rows[0]);
+    console.log("Adding company_id column...");
+    await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS company_id uuid REFERENCES companies(id);`;
+    console.log("Successfully added company_id column.");
   } catch (err) {
-    console.error('Connection error', err);
+    console.error("Failed to add column:", err);
   } finally {
-    await client.end();
+    await sql.end();
   }
 }
 

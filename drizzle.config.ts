@@ -8,6 +8,6 @@ export default defineConfig({
   schema: "./src/server/db/schema/index.ts",
   dialect: "postgresql",
   dbCredentials: {
-    url: process.env.DATABASE_URL!,
+    url: "postgresql://postgres:yAKSR32MoeZ6dgZC@[2406:da18:243:7423:87a6:df5f:bd5c:b49e]:5432/postgres",
   },
 });
