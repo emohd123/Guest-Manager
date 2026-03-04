@@ -5,6 +5,7 @@ import { trpc } from "@/lib/trpc/client";
 import { DataTable } from "@/components/shared/data-table";
 import { Button } from "@/components/ui/button";
 import { Plus, Megaphone } from "lucide-react";
+import { motion } from "framer-motion";
 
 export default function CampaignsPage() {
   const { data, isLoading } = trpc.campaigns.list.useQuery({});
@@ -13,69 +14,73 @@ export default function CampaignsPage() {
     {
       accessorKey: "name",
       header: "Campaign Name",
+      cell: ({ row }: any) => <span className="font-black italic text-white">{row.original.name}</span>
     },
     {
       accessorKey: "type",
       header: "Type",
-      cell: ({ row }: any) => <span className="uppercase text-xs font-bold">{row.original.type}</span>
+      cell: ({ row }: any) => <span className="uppercase text-[10px] font-black text-white/40 tracking-widest">{row.original.type}</span>
     },
     {
       accessorKey: "status",
       header: "Status",
-      cell: ({ row }: any) => <span className="capitalize">{row.original.status}</span>
+      cell: ({ row }: any) => <span className="capitalize font-bold text-primary">{row.original.status}</span>
     },
   ];
 
   const campaigns = data?.campaigns ?? [];
 
-  if (!isLoading && campaigns.length === 0) {
-    return (
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold">Campaigns</h1>
-            <p className="text-muted-foreground">Manage your Email and SMS marketing blasts.</p>
-          </div>
-          <Button className="gap-2">
-            <Plus className="h-4 w-4" /> New Campaign
-          </Button>
-        </div>
-
-        <div className="flex flex-col items-center justify-center rounded-lg border border-dashed p-12 text-center">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
-            <Megaphone className="h-8 w-8 text-primary" />
-          </div>
-          <h3 className="mt-4 text-lg font-semibold">No campaigns yet</h3>
-          <p className="mt-2 max-w-sm text-sm text-muted-foreground">
-            Get started by launching your first marketing campaign to your contacts.
-          </p>
-          <Button className="mt-6">Create Campaign</Button>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Campaigns</h1>
-          <p className="text-muted-foreground">
-            {data?.total ?? 0} campaign{(data?.total ?? 0) !== 1 ? "s" : ""}
+    <div className="space-y-12 pb-20 px-2">
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+        <motion.div
+           initial={{ x: -20, opacity: 0 }}
+           animate={{ x: 0, opacity: 1 }}
+        >
+          <h1 className="text-4xl font-black text-white italic tracking-tighter uppercase">Broadcasting</h1>
+          <p className="text-white/40 font-bold uppercase tracking-[0.2em] text-[10px] mt-2">
+            Multi-channel marketing relay
           </p>
-        </div>
-        <Button className="gap-2">
-          <Plus className="h-4 w-4" /> New Campaign
+        </motion.div>
+        <Button className="h-14 px-8 rounded-2xl bg-primary text-white font-black text-base shadow-2xl shadow-primary/20 transition-all hover:scale-[1.05] active:scale-95 italic flex gap-3">
+          <Plus className="h-6 w-6" />
+          New Campaign
         </Button>
       </div>
 
-      <DataTable
-        columns={columns}
-        data={campaigns}
-        searchKey="name"
-        searchPlaceholder="Search campaigns..."
-        isLoading={isLoading}
-      />
+      {!isLoading && campaigns.length === 0 ? (
+        <motion.div 
+          initial={{ scale: 0.95, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          className="flex flex-col items-center justify-center rounded-[40px] bg-white/5 border border-white/10 p-20 text-center space-y-8"
+        >
+          <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-[32px] bg-primary/10 text-primary rotate-12 group-hover:rotate-0 transition-transform">
+            <Megaphone className="h-10 w-10 -rotate-12" />
+          </div>
+          <div className="space-y-2">
+            <h3 className="text-2xl font-black text-white italic tracking-tighter uppercase">Silence Detected</h3>
+            <p className="max-w-sm text-[10px] font-bold text-white/20 uppercase tracking-widest">
+              Awaiting your first broadcast transmission to the operational grid.
+            </p>
+          </div>
+          <Button className="h-14 px-10 rounded-2xl bg-white/10 hover:bg-white/15 text-white font-black italic uppercase tracking-widest transition-all">
+            Initialize Payload
+          </Button>
+        </motion.div>
+      ) : (
+        <motion.div
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+        >
+           <DataTable
+            columns={columns}
+            data={campaigns}
+            searchKey="name"
+            searchPlaceholder="Search campaigns..."
+            isLoading={isLoading}
+          />
+        </motion.div>
+      )}
     </div>
   );
 }

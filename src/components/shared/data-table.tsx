@@ -102,13 +102,13 @@ export function DataTable<TData, TValue>({
   });
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Toolbar */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex flex-1 items-center gap-2">
+      <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between px-2">
+        <div className="flex flex-1 items-center gap-4">
           {searchKey && (
-            <div className="relative max-w-sm">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <div className="relative group lg:w-[400px]">
+              <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-white/30 transition-colors group-focus-within:text-primary" />
               <Input
                 placeholder={searchPlaceholder}
                 value={
@@ -117,32 +117,30 @@ export function DataTable<TData, TValue>({
                 onChange={(e) =>
                   table.getColumn(searchKey)?.setFilterValue(e.target.value)
                 }
-                className="pl-9 h-9 w-[250px] lg:w-[350px]"
+                className="pl-12 h-12 bg-white/5 border-white/10 rounded-2xl text-white placeholder:text-white/20 focus-visible:ring-primary focus-visible:border-primary transition-all pr-4"
               />
             </div>
           )}
           {toolbar}
         </div>
 
-        <div className="flex items-center gap-2">
-          {/* Export Button */}
+        <div className="flex items-center gap-3">
           <Button
-            variant="outline"
+            variant="ghost"
             size="sm"
-            className="h-9 gap-2 hidden sm:flex"
+            className="h-10 px-4 rounded-xl bg-white/5 border border-white/10 text-white/60 hover:bg-white/10 hover:text-white hidden sm:flex gap-2"
           >
             <Download className="h-4 w-4" /> Export
           </Button>
 
-          {/* View Options (Column Visibility) */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="h-9 gap-2">
+              <Button variant="ghost" size="sm" className="h-10 px-4 rounded-xl bg-white/5 border border-white/10 text-white/60 hover:bg-white/10 hover:text-white gap-2">
                 <Settings2 className="h-4 w-4" />
                 View
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-[150px]">
+            <DropdownMenuContent align="end" className="w-[180px] p-2 rounded-2xl bg-[#1A1C30] border-white/10 text-white">
               {table
                 .getAllColumns()
                 .filter(
@@ -154,7 +152,7 @@ export function DataTable<TData, TValue>({
                   return (
                     <DropdownMenuCheckboxItem
                       key={column.id}
-                      className="capitalize"
+                      className="capitalize rounded-lg focus:bg-white/10 focus:text-white"
                       checked={column.getIsVisible()}
                       onCheckedChange={(value) =>
                         column.toggleVisibility(!!value)
@@ -169,128 +167,131 @@ export function DataTable<TData, TValue>({
         </div>
       </div>
 
-      {/* Table */}
-      <div className="rounded-xl glass-panel border-glow overflow-hidden relative">
-        <Table>
-          <TableHeader className="bg-muted/30">
-            {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id} className="border-white/5 hover:bg-transparent">
-                {headerGroup.headers.map((header) => (
-                  <TableHead key={header.id} className="text-muted-foreground font-medium">
-                    {header.isPlaceholder
-                      ? null
-                      : flexRender(
-                          header.column.columnDef.header,
-                          header.getContext(),
-                        )}
-                  </TableHead>
-                ))}
-              </TableRow>
-            ))}
-          </TableHeader>
-          <TableBody>
-            {isLoading ? (
-              <TableRow>
-                <TableCell
-                  colSpan={columns.length}
-                  className="h-24 text-center"
-                >
-                  <div className="flex items-center justify-center gap-2 text-primary font-medium text-glow">
-                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent shadow-[0_0_10px_rgba(99,102,241,0.5)]" />
-                    Loading...
-                  </div>
-                </TableCell>
-              </TableRow>
-            ) : table.getRowModel().rows?.length ? (
-              table.getRowModel().rows.map((row) => (
-                <TableRow
-                  key={row.id}
-                  data-state={row.getIsSelected() && "selected"}
-                  className="border-white/5 transition-all duration-300 hover:bg-white/3 data-[state=selected]:bg-primary/10 data-[state=selected]:text-glow"
-                >
-                  {row.getVisibleCells().map((cell) => (
-                     <TableCell key={cell.id} className="py-3">
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext(),
-                      )}
-                    </TableCell>
+      {/* Table Container */}
+      <div className="rounded-[40px] bg-white/5 border border-white/10 shadow-2xl overflow-hidden backdrop-blur-3xl">
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader className="bg-white/5 border-b border-white/10">
+              {table.getHeaderGroups().map((headerGroup) => (
+                <TableRow key={headerGroup.id} className="border-none hover:bg-transparent">
+                  {headerGroup.headers.map((header) => (
+                    <TableHead key={header.id} className="text-white/40 h-14 first:pl-8 last:pr-8 font-bold text-xs uppercase tracking-widest">
+                      {header.isPlaceholder
+                        ? null
+                        : flexRender(
+                            header.column.columnDef.header,
+                            header.getContext(),
+                          )}
+                    </TableHead>
                   ))}
                 </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell
-                  colSpan={columns.length}
-                  className="h-32 text-center text-muted-foreground"
-                >
-                  <div className="flex flex-col items-center justify-center">
-                    <Search className="h-6 w-6 mb-2 text-muted-foreground/50" />
-                    <p>No results found.</p>
-                  </div>
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
+              ))}
+            </TableHeader>
+            <TableBody>
+              {isLoading ? (
+                <TableRow>
+                  <TableCell
+                    colSpan={columns.length}
+                    className="h-64 text-center"
+                  >
+                    <div className="flex flex-col items-center justify-center gap-4">
+                      <div className="h-10 w-10 animate-spin rounded-full border-4 border-primary border-t-transparent shadow-[0_0_20px_rgba(255,91,106,0.5)]" />
+                      <p className="text-white/40 font-bold uppercase tracking-widest text-[10px]">Loading Data...</p>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ) : table.getRowModel().rows?.length ? (
+                table.getRowModel().rows.map((row) => (
+                  <TableRow
+                    key={row.id}
+                    data-state={row.getIsSelected() && "selected"}
+                    className="border-b border-white/5 last:border-0 group transition-all duration-300 hover:bg-white/5 data-[state=selected]:bg-primary/10"
+                  >
+                    {row.getVisibleCells().map((cell) => (
+                       <TableCell key={cell.id} className="py-5 first:pl-8 last:pr-8 text-white/80 group-hover:text-white font-medium">
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext(),
+                        )}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell
+                    colSpan={columns.length}
+                    className="h-64 text-center text-white/20"
+                  >
+                    <div className="flex flex-col items-center justify-center gap-2">
+                      <div className="p-4 rounded-full bg-white/5 mb-2">
+                        <Search className="h-8 w-8 text-white/10" />
+                      </div>
+                      <p className="font-bold uppercase tracking-widest text-xs">No entries found</p>
+                      <p className="text-[10px] text-white/5 lowercase">Try adjusting your filters</p>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </div>
       </div>
 
-      {/* Pagination & Selection Info */}
-      <div className="flex items-center justify-between px-2">
-        <div className="flex-1 text-sm text-muted-foreground">
-          {table.getFilteredSelectedRowModel().rows.length > 0 ? (
-            <span>
-              {table.getFilteredSelectedRowModel().rows.length} of{" "}
-              {table.getFilteredRowModel().rows.length} row(s) selected.
-            </span>
-          ) : (
-            <span>{table.getFilteredRowModel().rows.length} row(s) total.</span>
-          )}
+      {/* Pagination Container */}
+      <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between px-4">
+        <div className="flex items-center gap-4 bg-white/5 p-1 rounded-2xl">
+          <div className="px-4 py-2 text-xs font-black uppercase text-white/30 tracking-tighter">
+            {table.getFilteredSelectedRowModel().rows.length > 0 ? (
+              <span className="text-primary font-black">
+                {table.getFilteredSelectedRowModel().rows.length} / {table.getFilteredRowModel().rows.length} SELECTED
+              </span>
+            ) : (
+              <span>{table.getFilteredRowModel().rows.length} TOTAL ROWS</span>
+            )}
+          </div>
         </div>
-        <div className="flex items-center space-x-6 lg:space-x-8">
-          <div className="flex items-center space-x-2">
-            <p className="text-sm font-medium">Rows per page</p>
+
+        <div className="flex items-center gap-6 lg:gap-8">
+          <div className="flex items-center gap-3">
+            <span className="text-[10px] font-black uppercase text-white/20 tracking-widest">Rows per page</span>
             <Select
               value={`${table.getState().pagination.pageSize}`}
               onValueChange={(value) => table.setPageSize(Number(value))}
             >
-              <SelectTrigger className="h-8 w-[70px]">
-                <SelectValue
-                  placeholder={table.getState().pagination.pageSize}
-                />
+              <SelectTrigger className="h-10 w-20 rounded-xl bg-white/5 border-white/10 text-white font-bold transition-all hover:bg-white/10">
+                <SelectValue placeholder={table.getState().pagination.pageSize} />
               </SelectTrigger>
-              <SelectContent side="top">
+              <SelectContent side="top" className="bg-[#1A1C30] border-white/10 text-white rounded-xl">
                 {[10, 20, 30, 50, 100].map((size) => (
-                  <SelectItem key={size} value={`${size}`}>
+                  <SelectItem key={size} value={`${size}`} className="rounded-lg focus:bg-white/10 focus:text-white font-bold">
                     {size}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
-          <div className="flex items-center space-x-2">
-            <span className="text-sm font-medium">
-              Page {table.getState().pagination.pageIndex + 1} of{" "}
-              {Math.max(1, table.getPageCount())}
+
+          <div className="flex items-center gap-4">
+            <span className="text-[10px] font-black uppercase text-white/20 tracking-widest">
+              Page {table.getState().pagination.pageIndex + 1} of {Math.max(1, table.getPageCount())}
             </span>
-            <div className="flex items-center space-x-1">
+            <div className="flex items-center gap-2">
               <Button
                 variant="outline"
-                className="h-8 w-8 p-0"
+                className="h-10 w-10 p-0 rounded-xl bg-white/5 border-white/10 text-white/60 hover:bg-white/10 hover:text-white disabled:opacity-20"
                 onClick={() => table.previousPage()}
                 disabled={!table.getCanPreviousPage()}
               >
-                <span className="sr-only">Go to previous page</span>
-                <ChevronLeft className="h-4 w-4" />
+                <ChevronLeft className="h-5 w-5" />
               </Button>
               <Button
                 variant="outline"
-                className="h-8 w-8 p-0"
+                className="h-10 w-10 p-0 rounded-xl bg-white/5 border-white/10 text-white/60 hover:bg-white/10 hover:text-white disabled:opacity-20"
                 onClick={() => table.nextPage()}
                 disabled={!table.getCanNextPage()}
               >
-                <span className="sr-only">Go to next page</span>
-                <ChevronRight className="h-4 w-4" />
+                <ChevronRight className="h-5 w-5" />
               </Button>
             </div>
           </div>

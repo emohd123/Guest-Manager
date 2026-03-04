@@ -7,14 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { ImagePlus, Paintbrush, ExternalLink, Loader2, Check, Ticket, Mail, CalendarDays } from "lucide-react";
+import { ImagePlus, Paintbrush, ExternalLink, Loader2, Check, Ticket, Mail, CalendarDays, Activity, Zap, ShieldCheck } from "lucide-react";
 import { trpc } from "@/lib/trpc/client";
 import { ImageUpload } from "@/components/shared/ImageUpload";
 import { toast } from "sonner";
@@ -26,6 +19,8 @@ import { EmailDesignEditor } from "@/components/emails/EmailDesignEditor";
 import type { EmailDesignState } from "@/components/emails/EmailDesignEditor";
 import { AgendaEditor } from "@/components/agenda/AgendaEditor";
 import type { AgendaSettings } from "@/components/agenda/AgendaEditor";
+import { motion, AnimatePresence } from "framer-motion";
+import { cn } from "@/lib/utils";
 
 export default function DesignSetupPage({
   params,
@@ -93,16 +88,14 @@ export default function DesignSetupPage({
     }
   }, [event, isInitialized]);
 
-  // Track previous agenda to detect changes
   const prevAgendaRef = useRef<string>("");
 
   const updateMutation = trpc.events.update.useMutation({
     onSuccess: async () => {
-      toast.success("Design settings saved successfully");
+      toast.success("MISSION PARAMETERS SYNCHRONIZED");
       utils.events.get.invalidate({ id: eventId });
       setIsSaving(false);
 
-      // Fire event change notifications to all attendees (cookie auth, non-fatal)
       try {
         const agendaStr = JSON.stringify(agendaSettings);
         const agendaChanged = prevAgendaRef.current && prevAgendaRef.current !== agendaStr;
@@ -115,7 +108,7 @@ export default function DesignSetupPage({
               ? { type: "agenda_update", title: "Schedule updated", body: "The event agenda has been updated. Check the latest schedule." }
               : { type: "event_update", title: "Event details updated", body: "The event organizer has updated the event details. Tap to view the latest information." }
           ),
-        }).catch(() => {}); // non-fatal, fire-and-forget
+        }).catch(() => {});
       } catch { /* non-fatal */ }
     },
     onError: (err) => {
@@ -144,145 +137,139 @@ export default function DesignSetupPage({
   if (isLoading) {
     return (
       <div className="flex h-[50vh] items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <Loader2 className="h-10 w-10 animate-spin text-primary" />
       </div>
     );
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const companySlug = (event as any)?.companySlug;
 
   return (
-    <div className="space-y-6 max-w-6xl mx-auto pb-20">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-black tracking-tight">Design and Setup</h1>
-          <p className="text-muted-foreground">Customize your event branding, ticket layout, and email templates.</p>
-        </div>
-        <div className="flex items-center gap-3">
-          <Button className="gap-2 rounded-2xl h-12 font-bold" variant="outline" asChild>
+    <div className="space-y-12 max-w-7xl mx-auto pb-20 px-2">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-8">
+        <motion.div initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }}>
+          <h1 className="text-4xl font-black text-white italic tracking-tighter uppercase leading-none">Studio</h1>
+          <p className="text-white/40 font-bold uppercase tracking-[0.2em] text-[10px] mt-2 italic flex items-center gap-2">
+             <Activity className="h-3 w-3 text-primary animate-pulse" />
+             Strategic Branding & Deployment Interface
+          </p>
+        </motion.div>
+        
+        <div className="flex flex-wrap gap-3">
+          <Button variant="outline" className="h-14 px-8 rounded-2xl bg-white/5 border-white/10 text-white/60 hover:text-white font-black italic uppercase tracking-widest text-[10px] transition-all flex gap-3" asChild>
             <Link href={`/e/${companySlug}/${event?.slug}`} target="_blank">
-              <ExternalLink className="h-4 w-4" /> Preview
+              <ExternalLink className="h-5 w-5" /> Live Preview
             </Link>
           </Button>
           <Button
-            className="gap-2 rounded-2xl h-12 px-8 font-black shadow-xl shadow-primary/20"
+            className="h-14 px-10 rounded-2xl bg-primary text-white shadow-2xl shadow-primary/20 font-black italic uppercase tracking-widest text-[11px] flex gap-3 transition-all hover:scale-105 active:scale-95 disabled:opacity-20"
             onClick={handleSave}
             disabled={isSaving}
           >
-            {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
-            Save Changes
+            {isSaving ? <Loader2 className="h-5 w-5 animate-spin" /> : <ShieldCheck className="h-5 w-5" />}
+            Save Configuration
           </Button>
         </div>
       </div>
 
-      <Tabs defaultValue="branding" className="space-y-6">
-        <TabsList className="h-auto gap-1 bg-zinc-100 dark:bg-zinc-900 p-1 rounded-2xl">
-          <TabsTrigger value="branding" className="rounded-xl text-sm font-bold px-5 py-2.5 data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-800 data-[state=active]:shadow gap-2">
-            <ImagePlus className="h-4 w-4" /> Branding
-          </TabsTrigger>
-          <TabsTrigger value="ticket" className="rounded-xl text-sm font-bold px-5 py-2.5 data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-800 data-[state=active]:shadow gap-2">
-            <Ticket className="h-4 w-4" /> Ticket Design
-          </TabsTrigger>
-          <TabsTrigger value="email" className="rounded-xl text-sm font-bold px-5 py-2.5 data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-800 data-[state=active]:shadow gap-2">
-            <Mail className="h-4 w-4" /> Email Design
-          </TabsTrigger>
-          <TabsTrigger value="agenda" className="rounded-xl text-sm font-bold px-5 py-2.5 data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-800 data-[state=active]:shadow gap-2">
-            <CalendarDays className="h-4 w-4" /> Agenda
-          </TabsTrigger>
+      <Tabs defaultValue="branding" className="space-y-12">
+        <TabsList className="h-auto gap-4 bg-white/5 p-2 rounded-[32px] border border-white/10 backdrop-blur-xl">
+          {[
+            { value: "branding", label: "Branding", icon: ImagePlus },
+            { value: "ticket", label: "Tickets", icon: Ticket },
+            { value: "email", label: "Comms", icon: Mail },
+            { value: "agenda", label: "Agenda", icon: CalendarDays }
+          ].map((tab) => (
+            <TabsTrigger 
+              key={tab.value}
+              value={tab.value} 
+              className="group rounded-2xl px-8 py-4 data-[state=active]:bg-primary data-[state=active]:text-white text-white/20 font-black italic uppercase tracking-widest text-[10px] transition-all flex gap-3"
+            >
+              <tab.icon className="h-4 w-4 transition-transform group-hover:scale-110" /> 
+              {tab.label}
+            </TabsTrigger>
+          ))}
         </TabsList>
 
-        {/* ========================= BRANDING TAB ========================= */}
-        <TabsContent value="branding" className="mt-0">
-          <div className="grid gap-8 md:grid-cols-2">
-            <Card className="rounded-[2.5rem] border-none shadow-xl shadow-zinc-200/50 dark:shadow-none bg-white dark:bg-zinc-950">
-              <CardHeader className="p-8 pb-4">
-                <CardTitle className="flex items-center gap-3 text-xl font-bold">
-                  <div className="h-10 w-10 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
-                    <ImagePlus className="h-5 w-5" />
-                  </div>
-                  Event Branding
-                </CardTitle>
-                <CardDescription className="text-md">Upload logos and banner images for your public event page.</CardDescription>
-              </CardHeader>
-              <CardContent className="p-8 pt-4 space-y-10">
-                <ImageUpload
-                  label="Cover Image"
-                  description="A beautiful banner image that appears at the top of your landing page."
-                  value={coverImageUrl}
-                  onChange={setCoverImageUrl}
-                  onRemove={() => setCoverImageUrl("")}
-                  aspectRatio="video"
-                />
-                <Separator className="bg-zinc-100 dark:bg-zinc-800" />
-                <ImageUpload
-                  label="Event Logo"
-                  description="A square logo used in the header and email communications."
-                  value={logoUrl}
-                  onChange={setLogoUrl}
-                  onRemove={() => setLogoUrl("")}
-                  aspectRatio="square"
-                />
-              </CardContent>
-            </Card>
+        <AnimatePresence mode="wait">
+          <TabsContent value="branding" className="mt-0 outline-none">
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="grid gap-10 md:grid-cols-2">
+              <div className="rounded-[40px] bg-white/5 border border-white/10 p-10 md:p-12 space-y-10 shadow-2xl">
+                 <div className="space-y-2">
+                    <p className="text-[10px] font-black text-primary uppercase tracking-[0.4em] italic leading-none">Visual Protocol</p>
+                    <h2 className="text-2xl font-black text-white italic uppercase tracking-tighter">Event Imaging</h2>
+                 </div>
+                 
+                 <div className="space-y-12">
+                    <ImageUpload
+                      label="MISSION COVER IMAGE"
+                      description="Primary operational banner for the landing sequence."
+                      value={coverImageUrl}
+                      onChange={setCoverImageUrl}
+                      onRemove={() => setCoverImageUrl("")}
+                      aspectRatio="video"
+                      className="rounded-[32px] border-white/5 bg-white/2"
+                    />
+                    <Separator className="bg-white/5" />
+                    <ImageUpload
+                      label="OPERATIONAL LOGO"
+                      description="Unit identifier for headers and comms streams."
+                      value={logoUrl}
+                      onChange={setLogoUrl}
+                      onRemove={() => setLogoUrl("")}
+                      aspectRatio="square"
+                      className="rounded-[32px] border-white/5 bg-white/2"
+                    />
+                 </div>
+              </div>
 
-            <Card className="rounded-[2.5rem] border-none shadow-xl shadow-zinc-200/50 dark:shadow-none bg-white dark:bg-zinc-950">
-              <CardHeader className="p-8 pb-4">
-                <CardTitle className="flex items-center gap-3 text-xl font-bold">
-                  <div className="h-10 w-10 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
-                    <Paintbrush className="h-5 w-5" />
-                  </div>
-                  Theme Colors
-                </CardTitle>
-                <CardDescription className="text-md">Select colors that match your brand identity.</CardDescription>
-              </CardHeader>
-              <CardContent className="p-8 pt-4 space-y-8">
-                <div className="grid gap-6 sm:grid-cols-2">
-                  <div className="space-y-3">
-                    <Label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Primary Color</Label>
-                    <div className="flex items-center gap-3 bg-zinc-50 dark:bg-zinc-900 p-2 rounded-2xl border border-zinc-100 dark:border-zinc-800">
-                      <div className="h-10 w-10 rounded-xl border border-white/20 shadow-inner" style={{ backgroundColor: primaryColor }} />
-                      <Input value={primaryColor} onChange={(e) => setPrimaryColor(e.target.value)} className="border-none bg-transparent font-mono text-sm focus-visible:ring-0 h-8" />
-                    </div>
-                  </div>
-                  <div className="space-y-3">
-                    <Label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Background Color</Label>
-                    <div className="flex items-center gap-3 bg-zinc-50 dark:bg-zinc-900 p-2 rounded-2xl border border-zinc-100 dark:border-zinc-800">
-                      <div className="h-10 w-10 rounded-xl border border-zinc-200 dark:border-zinc-700 shadow-inner" style={{ backgroundColor: backgroundColor }} />
-                      <Input value={backgroundColor} onChange={(e) => setBackgroundColor(e.target.value)} className="border-none bg-transparent font-mono text-sm focus-visible:ring-0 h-8" />
-                    </div>
-                  </div>
-                </div>
-                <Separator className="bg-zinc-100 dark:bg-zinc-800" />
-                <div className="space-y-3">
-                  <Label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Custom CSS</Label>
-                  <Textarea
-                    placeholder="/* Advanced customization only (e.g., .event-header { ... }) */"
-                    value={customCss}
-                    onChange={(e) => setCustomCss(e.target.value)}
-                    className="font-mono text-xs min-h-[160px] rounded-[2rem] bg-zinc-50 dark:bg-zinc-900 border-zinc-100 dark:border-zinc-800 p-6 focus-visible:ring-primary"
-                  />
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
+              <div className="rounded-[40px] bg-white/5 border border-white/10 p-10 md:p-12 space-y-10 shadow-2xl">
+                 <div className="space-y-2">
+                    <p className="text-[10px] font-black text-primary uppercase tracking-[0.4em] italic leading-none">Chromatic Logic</p>
+                    <h2 className="text-2xl font-black text-white italic uppercase tracking-tighter">Theme Spectrum</h2>
+                 </div>
 
-        {/* ========================= TICKET DESIGN TAB ========================= */}
-        <TabsContent value="ticket" className="mt-0">
-          <Card className="rounded-[2.5rem] border-none shadow-xl shadow-zinc-200/50 dark:shadow-none bg-white dark:bg-zinc-950">
-            <CardHeader className="p-8 pb-4">
-              <CardTitle className="flex items-center gap-3 text-xl font-bold">
-                <div className="h-10 w-10 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
-                  <Ticket className="h-5 w-5" />
-                </div>
-                Custom Ticket Design
-              </CardTitle>
-              <CardDescription className="text-md">
-                Customize the layout and appearance of PDF tickets sent to attendees.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="p-8 pt-4">
+                 <div className="space-y-10">
+                    <div className="grid gap-8 sm:grid-cols-2">
+                      <div className="space-y-4">
+                        <Label className="text-[9px] font-black uppercase tracking-[0.3em] text-white/40 italic">PRIMARY FREQUENCY</Label>
+                        <div className="flex items-center gap-4 bg-white/3 p-3 rounded-2xl border border-white/5">
+                          <div className="h-12 w-12 rounded-xl border border-white/10 shadow-2xl" style={{ backgroundColor: primaryColor }} />
+                          <Input value={primaryColor} onChange={(e) => setPrimaryColor(e.target.value)} className="border-none bg-transparent font-black text-[11px] uppercase tracking-widest text-white italic focus-visible:ring-0 h-10" />
+                        </div>
+                      </div>
+                      <div className="space-y-4">
+                        <Label className="text-[9px] font-black uppercase tracking-[0.3em] text-white/40 italic">BACKGROUND OFFSET</Label>
+                        <div className="flex items-center gap-4 bg-white/3 p-3 rounded-2xl border border-white/5">
+                          <div className="h-12 w-12 rounded-xl border border-white/10 shadow-2xl" style={{ backgroundColor: backgroundColor }} />
+                          <Input value={backgroundColor} onChange={(e) => setBackgroundColor(e.target.value)} className="border-none bg-transparent font-black text-[11px] uppercase tracking-widest text-white italic focus-visible:ring-0 h-10" />
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <Separator className="bg-white/5" />
+                    
+                    <div className="space-y-4">
+                      <Label className="text-[9px] font-black uppercase tracking-[0.3em] text-white/40 italic">TACTICAL CSS OVERRIDE</Label>
+                      <Textarea
+                        placeholder="/* ADVANCED INJECTION ONLY... */"
+                        value={customCss}
+                        onChange={(e) => setCustomCss(e.target.value)}
+                        className="font-mono text-[10px] min-h-[220px] rounded-[32px] bg-white/3 border-white/5 p-8 focus:ring-primary text-white/60 selection:bg-primary/20 resize-none"
+                      />
+                    </div>
+                 </div>
+              </div>
+            </motion.div>
+          </TabsContent>
+
+          <TabsContent value="ticket" className="mt-0 outline-none">
+            <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="rounded-[40px] bg-white/5 border border-white/10 p-10 md:p-12 shadow-2xl">
+              <div className="mb-12">
+                <p className="text-[10px] font-black text-primary uppercase tracking-[0.4em] italic mb-2 leading-none">Secure Issuance</p>
+                <h2 className="text-3xl font-black text-white italic uppercase tracking-tighter">PDF Ticket Schematic</h2>
+              </div>
               <TicketDesignEditor
                 design={ticketDesign}
                 onChange={setTicketDesign}
@@ -292,25 +279,15 @@ export default function DesignSetupPage({
                 visitorCode={(event as { visitorCode?: string })?.visitorCode}
                 appDownloadUrl={process.env.NEXT_PUBLIC_APP_DOWNLOAD_URL ?? "http://localhost:8081"}
               />
-            </CardContent>
-          </Card>
-        </TabsContent>
+            </motion.div>
+          </TabsContent>
 
-        {/* ========================= EMAIL DESIGN TAB ========================= */}
-        <TabsContent value="email" className="mt-0">
-          <Card className="rounded-[2.5rem] border-none shadow-xl shadow-zinc-200/50 dark:shadow-none bg-white dark:bg-zinc-950">
-            <CardHeader className="p-8 pb-4">
-              <CardTitle className="flex items-center gap-3 text-xl font-bold">
-                <div className="h-10 w-10 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
-                  <Mail className="h-5 w-5" />
-                </div>
-                Email Templates
-              </CardTitle>
-              <CardDescription className="text-md">
-                Customize the emails sent to attendees for different event actions.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="p-8 pt-4">
+          <TabsContent value="email" className="mt-0 outline-none">
+            <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="rounded-[40px] bg-white/5 border border-white/10 p-10 md:p-12 shadow-2xl">
+               <div className="mb-12">
+                  <p className="text-[10px] font-black text-primary uppercase tracking-[0.4em] italic mb-2 leading-none">Relay Protocols</p>
+                  <h2 className="text-3xl font-black text-white italic uppercase tracking-tighter">Email Transmissions</h2>
+               </div>
               <EmailDesignEditor
                 designs={emailDesigns}
                 onChange={setEmailDesigns}
@@ -319,32 +296,22 @@ export default function DesignSetupPage({
                 venue={undefined}
                 startDate={event?.startsAt ? new Date(event.startsAt).toISOString() : undefined}
               />
-            </CardContent>
-          </Card>
-        </TabsContent>
+            </motion.div>
+          </TabsContent>
 
-        {/* ========================= AGENDA TAB ========================= */}
-        <TabsContent value="agenda" className="mt-0">
-          <Card className="rounded-[2.5rem] border-none shadow-xl shadow-zinc-200/50 dark:shadow-none bg-white dark:bg-zinc-950">
-            <CardHeader className="p-8 pb-4">
-              <CardTitle className="flex items-center gap-3 text-xl font-bold">
-                <div className="h-10 w-10 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
-                  <CalendarDays className="h-5 w-5" />
-                </div>
-                Event Agenda
-              </CardTitle>
-              <CardDescription className="text-md">
-                Build your event schedule. Toggle the switch to attach the agenda PDF to every ticket email sent to attendees.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="p-8 pt-4">
+          <TabsContent value="agenda" className="mt-0 outline-none">
+            <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="rounded-[40px] bg-white/5 border border-white/10 p-10 md:p-12 shadow-2xl">
+               <div className="mb-12">
+                  <p className="text-[10px] font-black text-primary uppercase tracking-[0.4em] italic mb-2 leading-none">Mission Flow</p>
+                  <h2 className="text-3xl font-black text-white italic uppercase tracking-tighter">Event Agenda Flow</h2>
+               </div>
               <AgendaEditor
                 settings={agendaSettings}
                 onChange={setAgendaSettings}
               />
-            </CardContent>
-          </Card>
-        </TabsContent>
+            </motion.div>
+          </TabsContent>
+        </AnimatePresence>
       </Tabs>
     </div>
   );

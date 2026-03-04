@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { GuestModal } from "@/components/guests/GuestModal";
 import { Guest } from "@/types/guest";
+import { motion } from "framer-motion";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -26,7 +27,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Progress } from "@/components/ui/progress";
 import {
   ArrowLeft,
   Plus,
@@ -41,22 +41,22 @@ import {
   Printer,
   Users,
   Mail,
+  Search,
+  ChevronRight,
+  Activity,
+  Zap
 } from "lucide-react";
 import { toast } from "sonner";
-
+import { cn } from "@/lib/utils";
 
 const statusColors: Record<string, string> = {
-  invited: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
-  confirmed:
-    "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
-  declined: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200",
-  waitlisted:
-    "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200",
-  checked_in:
-    "bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200",
-  no_show: "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200",
+  invited: "bg-blue-500/10 text-blue-400 border-blue-500/20",
+  confirmed: "bg-green-500/10 text-green-400 border-green-500/20",
+  declined: "bg-red-500/10 text-red-400 border-red-500/20",
+  waitlisted: "bg-yellow-500/10 text-yellow-400 border-yellow-500/20",
+  checked_in: "bg-primary/10 text-primary border-primary/20",
+  no_show: "bg-white/10 text-white/40 border-white/5",
 };
-
 
 export default function EventGuestsPage({
   params,
@@ -71,13 +71,7 @@ export default function EventGuestsPage({
   const [bulkQrOpen, setBulkQrOpen] = useState(false);
   const [rowSelection, setRowSelection] = useState<Record<string, boolean>>({});
 
-  type GuestStatus =
-    | "invited"
-    | "confirmed"
-    | "declined"
-    | "waitlisted"
-    | "checked_in"
-    | "no_show";
+  type GuestStatus = "invited" | "confirmed" | "declined" | "waitlisted" | "checked_in" | "no_show";
   const [statusFilter, setStatusFilter] = useState<GuestStatus | "all">("all");
 
   const { data, isLoading, refetch } = trpc.guests.list.useQuery({
@@ -86,10 +80,11 @@ export default function EventGuestsPage({
   });
 
   const { data: stats, refetch: refetchStats } = trpc.guests.stats.useQuery({ eventId });
+  const { data: event } = trpc.events.get.useQuery({ id: eventId });
 
   const deleteGuest = trpc.guests.delete.useMutation({
     onSuccess: () => {
-      toast.success("Guest removed");
+      toast.success("Guest removed from roster");
       refetch();
       refetchStats();
     },
@@ -99,13 +94,13 @@ export default function EventGuestsPage({
     onSuccess: () => {
       refetch();
       refetchStats();
-      toast.success("Guest updated");
+      toast.success("Guest data synchronized");
     },
   });
 
   const bulkCreate = trpc.guests.bulkCreate.useMutation({
     onSuccess: (data) => {
-      toast.success(`${data.imported} guests imported`);
+      toast.success(`${data.imported} guests integrated into roster`);
       setImportOpen(false);
       refetch();
       refetchStats();
@@ -117,7 +112,7 @@ export default function EventGuestsPage({
 
   const bulkUpdateStatus = trpc.guests.bulkUpdateStatus.useMutation({
     onSuccess: (data) => {
-      toast.success(`Updated ${data.updated} guests`);
+      toast.success(`Updated ${data.updated} guest profiles`);
       setRowSelection({});
       refetch();
       refetchStats();
@@ -126,7 +121,7 @@ export default function EventGuestsPage({
 
   const undoCheckIn = trpc.guests.undoCheckIn.useMutation({
     onSuccess: () => {
-      toast.success("Check-in undone");
+      toast.success("Check-in status reverted");
       refetch();
       refetchStats();
     },
@@ -134,28 +129,20 @@ export default function EventGuestsPage({
 
   const sendEmail = trpc.guests.sendTicketEmail.useMutation({
     onSuccess: () => {
-      toast.success("Ticket email queued successfully");
+      toast.success("Ticket payload dispatched via relay");
     },
     onError: (err) => {
-      toast.error(err.message || "Failed to send email");
+      toast.error(err.message || "Relay failure");
     }
   });
 
   const handleExportCSV = () => {
     const guests = (data?.guests ?? []) as Guest[];
     if (guests.length === 0) {
-      toast.error("No guests to export");
+      toast.error("Roster empty");
       return;
     }
-    const csvHeaders = [
-      "First Name",
-      "Last Name",
-      "Email",
-      "Phone",
-      "Status",
-      "Type",
-      "Table",
-    ];
+    const csvHeaders = ["First Name", "Last Name", "Email", "Phone", "Status", "Type", "Section"];
     const csvRows = guests.map((g) => [
       g.firstName ?? "",
       g.lastName ?? "",
@@ -172,14 +159,10 @@ export default function EventGuestsPage({
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `guests-export.csv`;
+    a.download = `roster-v1-${eventId}.csv`;
     a.click();
     URL.revokeObjectURL(url);
-    toast.success("Guest list exported");
-  };
-
-  const openEditDialog = (guest: Guest) => {
-    setEditGuest(guest);
+    toast.success("Roster exported to localized storage");
   };
 
   const columns: ColumnDef<Guest>[] = [
@@ -187,13 +170,10 @@ export default function EventGuestsPage({
       id: "select",
       header: ({ table }) => (
         <Checkbox
-          checked={
-            table.getIsAllPageRowsSelected() ||
-            (table.getIsSomePageRowsSelected() && "indeterminate")
-          }
+          checked={table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && "indeterminate")}
           onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
           aria-label="Select all"
-          className="translate-y-[2px]"
+          className="border-white/20 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
         />
       ),
       cell: ({ row }) => (
@@ -201,226 +181,98 @@ export default function EventGuestsPage({
           checked={row.getIsSelected()}
           onCheckedChange={(value) => row.toggleSelected(!!value)}
           aria-label="Select row"
-          className="translate-y-[2px]"
+          className="border-white/20 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
         />
       ),
-      enableSorting: false,
-      enableHiding: false,
     },
     {
       accessorKey: "firstName",
-      header: "Name",
+      header: "Registry Name",
       cell: ({ row }) => (
-        <div>
-          <span className="font-medium">
-            {row.original.firstName} {row.original.lastName}
-          </span>
-          {row.original.guestType && (
-            <p className="text-xs text-muted-foreground">
-              {row.original.guestType}
+        <div className="flex items-center gap-3">
+           <div className="h-10 w-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center font-black italic text-xs text-white/40">
+              {row.original.firstName?.[0]}{row.original.lastName?.[0]}
+           </div>
+           <div>
+            <p className="font-black italic text-white tracking-tight uppercase leading-none mb-1">
+              {row.original.firstName} {row.original.lastName}
             </p>
-          )}
+            <p className="text-[9px] font-bold text-white/20 uppercase tracking-widest">
+              {row.original.guestType || "STANDARD GUEST"}
+            </p>
+          </div>
         </div>
       ),
     },
     {
-      accessorKey: "email",
-      header: "Email",
-      cell: ({ row }) => (
-        <span className="text-sm">{row.original.email ?? "—"}</span>
-      ),
-    },
-    {
       accessorKey: "status",
-      header: "Status",
+      header: "Current State",
       cell: ({ row }) => (
-        <Badge
-          variant="secondary"
-          className={statusColors[row.original.status] ?? ""}
-        >
+        <Badge className={cn("rounded-full px-3 py-0.5 font-black text-[9px] uppercase tracking-widest border italic shadow-sm", statusColors[row.original.status])}>
           {row.original.status.replace("_", " ")}
         </Badge>
       ),
     },
     {
-      accessorKey: "source",
-      header: "Source",
+      id: "details",
+      header: "Allocation",
       cell: ({ row }) => (
-        <span className="text-sm capitalize">{row.original.source ?? "—"}</span>
-      ),
-    },
-    {
-      accessorKey: "barcode",
-      header: "Barcode",
-      cell: ({ row }) => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const t = (row.original as any).ticket;
-        return <span className="text-sm">{t?.barcode ?? "—"}</span>;
-      },
-    },
-    {
-      id: "pdfUrl",
-      header: "PDF",
-      cell: ({ row }) => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const t = (row.original as any).ticket;
-        return t ? (
-          <a
-            href={`/api/tickets/${t.id}/pdf`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-sm text-blue-600 hover:underline"
-          >
-            Download
-          </a>
-        ) : (
-          <span className="text-sm text-muted-foreground">—</span>
-        );
-      },
-    },
-    {
-      id: "walletUrl",
-      header: "Wallet",
-      cell: ({ row }) => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const t = (row.original as any).ticket;
-        return t?.walletUrl ? (
-          <a
-            href={t.walletUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-sm text-blue-600 hover:underline"
-          >
-            Download
-          </a>
-        ) : (
-          <span className="text-sm text-muted-foreground">—</span>
-        );
-      },
-    },
-    {
-      accessorKey: "tags",
-      header: "Tag",
-      cell: ({ row }) =>
-        row.original.tags?.length ? (
-          <div className="flex flex-wrap gap-1">
-            {row.original.tags.map((tag) => (
-              <Badge key={tag} variant="outline" className="text-xs">
-                {tag}
-              </Badge>
-            ))}
-          </div>
-        ) : (
-          <span className="text-sm text-muted-foreground">—</span>
-        ),
-    },
-    {
-      id: "section",
-      header: "Section",
-      cell: ({ row }) => (
-        <span className="text-sm font-medium">{row.original.tableNumber ?? "—"}</span>
-      ),
-    },
-    {
-      id: "row",
-      header: "Row",
-      cell: () => (
-        <span className="text-sm text-muted-foreground">—</span>
-      ),
-    },
-    {
-      accessorKey: "seatNumber",
-      header: "Seat Number",
-      cell: ({ row }) => (
-        <span className="text-sm font-medium">{row.original.seatNumber ?? "—"}</span>
+        <div className="space-y-1">
+          <p className="text-[10px] font-black text-white italic tracking-tight uppercase leading-none">
+             {row.original.tableNumber ? `SEC: ${row.original.tableNumber}` : "GENERAL ADM"}
+          </p>
+          <p className="text-[9px] font-bold text-white/10 uppercase tracking-widest flex items-center gap-2">
+            <Zap className="h-2.5 w-2.5" />
+            {(row.original as any).ticket?.barcode || "NO ASSET"}
+          </p>
+        </div>
       ),
     },
     {
       id: "quick_actions",
-      header: "Actions",
+      header: "Command",
       cell: ({ row }) => (
-        <div className="flex justify-end gap-2">
+        <div className="flex items-center gap-2">
           {row.original.status !== "checked_in" ? (
             <Button
               size="sm"
               variant="outline"
-              className="bg-green-500/10 text-green-600 hover:bg-green-500/20 hover:text-green-700 border-green-500/20"
-              onClick={() =>
-                updateGuest.mutate({
-                  id: row.original.id,
-                  status: "checked_in",
-                })
-              }
+              className="h-10 px-4 rounded-xl bg-primary/10 text-primary font-black italic uppercase tracking-widest text-[9px] hover:bg-primary hover:text-white border-primary/20 transition-all active:scale-95"
+              onClick={() => updateGuest.mutate({ id: row.original.id, status: "checked_in" })}
             >
-              <CheckCircle className="mr-2 h-4 w-4" /> Check In
+              Check In
             </Button>
           ) : (
             <Button
               size="sm"
               variant="outline"
-              className="bg-orange-500/10 text-orange-600 hover:bg-orange-500/20 hover:text-orange-700 border-orange-500/20"
-              onClick={() =>
-                undoCheckIn.mutate({
-                  eventId,
-                  guestId: row.original.id,
-                })
-              }
+              className="h-10 px-4 rounded-xl bg-white/5 text-white/40 font-black italic uppercase tracking-widest text-[9px] hover:bg-white/10 hover:text-white border-white/10 transition-all active:scale-95"
+              onClick={() => undoCheckIn.mutate({ eventId, guestId: row.original.id })}
             >
-              <Undo2 className="mr-2 h-4 w-4" /> Undo
+              Undo
             </Button>
           )}
           
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-9 w-9">
+              <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl text-white/10 hover:text-white hover:bg-white/5 border border-white/5">
                 <MoreHorizontal className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem
-                onClick={() => openEditDialog(row.original)}
-              >
-                <Edit className="mr-2 h-4 w-4" /> Edit
+            <DropdownMenuContent align="end" className="w-[200px] p-2 bg-slate-950 border-white/10 rounded-2xl shadow-2xl backdrop-blur-xl">
+              <DropdownMenuItem onClick={() => setEditGuest(row.original)} className="rounded-xl font-black italic uppercase tracking-widest text-[9px] focus:bg-white/10 focus:text-white py-3 gap-3">
+                <Edit className="h-3.5 w-3.5" /> Edit Profile
               </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => setQrGuest(row.original)}
-              >
-                <QrCode className="mr-2 h-4 w-4" /> View QR
+              <DropdownMenuItem onClick={() => setQrGuest(row.original)} className="rounded-xl font-black italic uppercase tracking-widest text-[9px] focus:bg-white/10 focus:text-white py-3 gap-3">
+                <QrCode className="h-3.5 w-3.5" /> Identity Key
               </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem asChild>
-                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                {(row.original as any).ticket ? (
-                  <a
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    href={`/api/tickets/${(row.original as any).ticket.id}/pdf`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex w-full cursor-pointer items-center"
-                  >
-                    <Download className="mr-2 h-4 w-4" /> Download PDF
-                  </a>
-                ) : (
-                  <span className="flex w-full opacity-50"><Download className="mr-2 h-4 w-4" /> Download PDF</span>
-                )}
+              <DropdownMenuSeparator className="bg-white/5 mx-2 my-2" />
+              <DropdownMenuItem onClick={() => sendEmail.mutate({ guestId: row.original.id })} className="rounded-xl font-black italic uppercase tracking-widest text-[9px] focus:bg-white/10 focus:text-white py-3 gap-3">
+                <Mail className="h-3.5 w-3.5" /> Send Assets
               </DropdownMenuItem>
-              <DropdownMenuItem disabled>
-                <Download className="mr-2 h-4 w-4" /> Apple Wallet
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => {
-                  sendEmail.mutate({ guestId: row.original.id });
-                }}
-                disabled={sendEmail.isPending}
-              >
-                <Mail className="mr-2 h-4 w-4" /> Email
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                className="text-destructive"
-                onClick={() => deleteGuest.mutate({ id: row.original.id })}
-              >
-                <Trash2 className="mr-2 h-4 w-4" /> Remove
+              <DropdownMenuSeparator className="bg-white/5 mx-2 my-2" />
+              <DropdownMenuItem onClick={() => deleteGuest.mutate({ id: row.original.id })} className="rounded-xl font-black italic uppercase tracking-widest text-[9px] text-red-500 focus:bg-red-500/10 focus:text-red-400 py-3 gap-3">
+                <Trash2 className="h-3.5 w-3.5" /> Purge Guest
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -430,187 +282,168 @@ export default function EventGuestsPage({
   ];
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-start justify-between">
-        <div className="flex items-center gap-4">
+    <div className="space-y-12 pb-20 px-2">
+      {/* Header section */}
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-8">
+        <div className="flex items-center gap-6">
           <Link href={`/dashboard/events/${eventId}`}>
-            <Button variant="ghost" size="icon">
-              <ArrowLeft className="h-4 w-4" />
+            <Button variant="ghost" size="icon" className="h-14 w-14 rounded-2xl bg-white/5 border border-white/10 text-white/40 hover:text-white transition-all group">
+              <ArrowLeft className="h-6 w-6 group-hover:-translate-x-1 transition-transform" />
             </Button>
           </Link>
-          <div>
-            <h1 className="text-2xl font-bold">Guest List</h1>
-            <p className="text-muted-foreground">Manage attendance and guest details</p>
-          </div>
+          <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
+            <h1 className="text-4xl font-black text-white italic tracking-tighter uppercase leading-none">Roster</h1>
+            <p className="text-white/40 font-bold uppercase tracking-[0.2em] text-[10px] mt-2 italic flex items-center gap-2">
+               <Users className="h-3 w-3 text-primary" />
+               {event?.title || "Operational"} Guest Data
+            </p>
+          </motion.div>
         </div>
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            className="gap-2"
-            onClick={() => setBulkQrOpen(true)}
-            disabled={!data?.guests?.length}
-          >
-            <Printer className="h-4 w-4" /> Print Badges
+        
+        <div className="flex flex-wrap gap-3">
+          <Button variant="outline" className="h-12 px-6 rounded-2xl bg-white/5 border-white/10 text-white/60 hover:text-white font-black italic uppercase tracking-widest text-[10px] transition-all flex gap-3" onClick={() => setBulkQrOpen(true)}>
+            <Printer className="h-4 w-4" /> Print Assets
           </Button>
-          <Button
-            variant="outline"
-            className="gap-2"
-            onClick={handleExportCSV}
-          >
-            <Download className="h-4 w-4" /> Export
+          <Button variant="outline" className="h-12 px-6 rounded-2xl bg-white/5 border-white/10 text-white/60 hover:text-white font-black italic uppercase tracking-widest text-[10px] transition-all flex gap-3" onClick={handleExportCSV}>
+            <Download className="h-4 w-4" /> Export CSV
           </Button>
-          <Button
-            variant="outline"
-            className="gap-2"
-            onClick={() => setImportOpen(true)}
-          >
-            <Upload className="h-4 w-4" /> Import
+          <Button variant="outline" className="h-12 px-6 rounded-2xl bg-white/5 border-white/10 text-white group hover:border-primary/50 transition-all font-black italic uppercase tracking-widest text-[10px] flex gap-3" onClick={() => setImportOpen(true)}>
+            <Upload className="h-4 w-4 group-hover:text-primary" /> Integrate
           </Button>
-          <Button
-            className="gap-2"
-            onClick={() => {
-              setEditGuest(null);
-              setAddOpen(true);
-            }}
-          >
-            <Plus className="h-4 w-4" /> Add Guest
+          <Button className="h-12 px-8 rounded-2xl bg-primary text-white shadow-2xl shadow-primary/20 font-black italic uppercase tracking-widest text-[10px] flex gap-3 transition-all hover:scale-105 active:scale-95" onClick={() => { setEditGuest(null); setAddOpen(true); }}>
+            <Plus className="h-5 w-5" /> Add Registry
           </Button>
         </div>
       </div>
 
-      {/* Enhanced Stats Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="p-4 rounded-xl border bg-card flex flex-col justify-center">
-          <div className="flex items-center gap-2 mb-2">
-            <Users className="h-4 w-4 text-muted-foreground" />
-            <h3 className="font-semibold text-sm">Total Attendees</h3>
-          </div>
-          <p className="text-3xl font-bold">{stats?.total ?? 0}</p>
-        </div>
-        <div className="p-4 rounded-xl border bg-card md:col-span-3 flex flex-col justify-center">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="font-semibold text-sm">Check-in Progress</h3>
-            <span className="text-sm font-medium">
-              {stats?.checkedIn ?? 0} / {stats?.total ?? 0} ({stats?.total ? Math.round(((stats?.checkedIn ?? 0) / stats.total) * 100) : 0}%)
+      {/* Analytics Feed */}
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="p-8 rounded-[32px] bg-white/5 border border-white/10 flex flex-col justify-center gap-4 relative overflow-hidden group">
+           <div className="relative z-10 flex flex-col gap-1">
+             <p className="text-[10px] font-black text-white/20 uppercase tracking-widest">Global Count</p>
+             <h3 className="text-4xl font-black text-white italic tracking-tighter uppercase">{stats?.total ?? 0}</h3>
+             <p className="text-[9px] font-bold text-primary uppercase tracking-tighter mt-2">Active Profiles</p>
+           </div>
+           <Users className="absolute -right-4 -bottom-4 h-24 w-24 text-white/5 rotate-12 group-hover:rotate-0 transition-transform duration-700" />
+        </motion.div>
+        
+        <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.1 }} className="p-8 rounded-[32px] bg-white/5 border border-white/10 lg:col-span-3 flex flex-col justify-center relative overflow-hidden">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-3">
+               <Activity className="h-5 w-5 text-primary animate-pulse" />
+               <h3 className="text-lg font-black text-white italic uppercase tracking-tighter">Verification Velocity</h3>
+            </div>
+            <span className="font-black italic text-primary text-xl">
+               {stats?.checkedIn ?? 0} <span className="text-sm text-white/10">/ {stats?.total ?? 0}</span>
             </span>
           </div>
-          <Progress value={stats?.total ? ((stats?.checkedIn ?? 0) / stats.total) * 100 : 0} className="h-3" />
-          <div className="flex gap-4 mt-4">
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-emerald-500" />
-              <span className="text-xs text-muted-foreground">Checked In ({stats?.checked_in ?? 0})</span>
+          
+          <div className="space-y-4">
+            <div className="h-3 bg-white/5 rounded-full overflow-hidden border border-white/5 p-0.5">
+               <motion.div 
+                 initial={{ width: 0 }}
+                 animate={{ width: `${stats?.total ? Math.round(((stats?.checkedIn ?? 0) / stats.total) * 100) : 0}%` }}
+                 className="h-full bg-linear-to-r from-primary to-primary/40 rounded-full shadow-[0_0_15px_rgba(255,95,82,0.3)]"
+               />
             </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-blue-500" />
-              <span className="text-xs text-muted-foreground">Invited ({stats?.invited ?? 0})</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-green-500" />
-              <span className="text-xs text-muted-foreground">Confirmed ({stats?.confirmed ?? 0})</span>
+            <div className="flex flex-wrap gap-x-8 gap-y-2">
+              {[
+                { label: "Verified", count: stats?.checked_in ?? 0, color: "bg-primary" },
+                { label: "Awaiting", count: stats?.invited ?? 0, color: "bg-blue-500" },
+                { label: "Confirmed", count: stats?.confirmed ?? 0, color: "bg-green-500" }
+              ].map(item => (
+                <div key={item.label} className="flex items-center gap-2">
+                  <div className={cn("w-2 h-2 rounded-full", item.color)} />
+                  <span className="text-[10px] font-black text-white/20 uppercase tracking-widest italic">{item.label} ({item.count})</span>
+                </div>
+              ))}
             </div>
           </div>
-        </div>
+          <div className="absolute right-0 top-0 h-full w-48 bg-linear-to-l from-primary/5 to-transparent pointer-events-none" />
+        </motion.div>
       </div>
 
-      <DataTable
-        columns={columns}
-        data={(data?.guests ?? []) as Guest[]}
-        searchKey="firstName"
-        searchPlaceholder="Search guests..."
-        isLoading={isLoading}
-        rowSelection={rowSelection}
-        setRowSelection={setRowSelection}
-        toolbar={
-          <div className="flex gap-2 items-center">
-            {Object.keys(rowSelection).length > 0 && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="secondary" className="gap-2 border border-primary/20 bg-primary/10 text-primary hover:bg-primary/20">
-                    Bulk Actions ({Object.keys(rowSelection).length})
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent>
-                  <DropdownMenuItem
-                    onClick={() => {
-                      const selectedIds = Object.keys(rowSelection).filter(Boolean);
-                      if (selectedIds.length) {
-                        bulkUpdateStatus.mutate({ ids: selectedIds, status: "checked_in" });
-                      }
-                    }}
-                  >
-                    <CheckCircle className="mr-2 h-4 w-4 text-green-500" /> Bulk Check In
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => {
-                      const selectedIds = Object.keys(rowSelection).filter(Boolean);
-                      if (selectedIds.length) {
-                        bulkUpdateStatus.mutate({ ids: selectedIds, status: "confirmed" });
-                      }
-                    }}
-                  >
-                    <Undo2 className="mr-2 h-4 w-4 text-orange-500" /> Undo Check In
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )}
-            <Select
-              value={statusFilter}
-              onValueChange={(v) => setStatusFilter(v as GuestStatus | "all")}
-            >
-              <SelectTrigger className="w-[150px]">
-                <SelectValue placeholder="All statuses" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All statuses</SelectItem>
-                <SelectItem value="invited">Invited</SelectItem>
-                <SelectItem value="confirmed">Confirmed</SelectItem>
-                <SelectItem value="checked_in">Checked In</SelectItem>
-                <SelectItem value="declined">Declined</SelectItem>
-                <SelectItem value="waitlisted">Waitlisted</SelectItem>
-                <SelectItem value="no_show">No Show</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        }
-      />
+      {/* Main Roster Grid */}
+      <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.2 }}>
+        <DataTable
+          columns={columns}
+          data={(data?.guests ?? []) as Guest[]}
+          searchKey="firstName"
+          searchPlaceholder="Search operational roster..."
+          isLoading={isLoading}
+          rowSelection={rowSelection}
+          setRowSelection={setRowSelection}
+          toolbar={
+            <div className="flex gap-3 items-center">
+              {Object.keys(rowSelection).length > 0 && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" className="h-12 px-6 rounded-2xl bg-primary/10 border-primary/30 text-primary font-black italic uppercase tracking-widest text-[10px] transition-all hover:bg-primary hover:text-white flex gap-3">
+                       Bulk Command ({Object.keys(rowSelection).length})
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-[200px] p-2 bg-slate-950 border-white/10 rounded-2xl shadow-2xl backdrop-blur-xl">
+                    <DropdownMenuItem
+                      onClick={() => {
+                        const selectedIds = Object.keys(rowSelection).filter(Boolean);
+                        if (selectedIds.length) bulkUpdateStatus.mutate({ ids: selectedIds, status: "checked_in" });
+                      }}
+                      className="rounded-xl font-black italic uppercase tracking-widest text-[9px] focus:bg-white/10 focus:text-white py-3 gap-3"
+                    >
+                      <CheckCircle className="h-3.5 w-3.5 text-green-500" /> Execute Check-In
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => {
+                        const selectedIds = Object.keys(rowSelection).filter(Boolean);
+                        if (selectedIds.length) bulkUpdateStatus.mutate({ ids: selectedIds, status: "confirmed" });
+                      }}
+                      className="rounded-xl font-black italic uppercase tracking-widest text-[9px] focus:bg-white/10 focus:text-white py-3 gap-3"
+                    >
+                      <Undo2 className="h-3.5 w-3.5 text-orange-500" /> Revert Status
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
+              <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as GuestStatus | "all")}>
+                <SelectTrigger className="w-[180px] h-12 rounded-2xl bg-white/3 border-white/5 text-white/60 font-black italic uppercase tracking-widest text-[10px] focus:ring-primary focus:border-primary">
+                  <SelectValue placeholder="All Protocols" />
+                </SelectTrigger>
+                <SelectContent className="bg-slate-950 border-white/10 rounded-2xl shadow-2xl">
+                  <SelectItem value="all" className="rounded-xl font-black italic uppercase tracking-widest text-[9px]">Global Protocol</SelectItem>
+                  <SelectItem value="invited" className="rounded-xl font-black italic uppercase tracking-widest text-[9px]">Invited Only</SelectItem>
+                  <SelectItem value="confirmed" className="rounded-xl font-black italic uppercase tracking-widest text-[9px]">Confirmed Only</SelectItem>
+                  <SelectItem value="checked_in" className="rounded-xl font-black italic uppercase tracking-widest text-[9px]">Verified Only</SelectItem>
+                  <SelectItem value="declined" className="rounded-xl font-black italic uppercase tracking-widest text-[9px]">Declined Only</SelectItem>
+                  <SelectItem value="waitlisted" className="rounded-xl font-black italic uppercase tracking-widest text-[9px]">Waitlist Tier</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          }
+        />
+      </motion.div>
 
-      {/* Import Dialog */}
+      {/* Dialog Components */}
       <GuestImportDialog
         open={importOpen}
         onOpenChange={setImportOpen}
         isImporting={bulkCreate.isPending}
-        onImport={(guests) => {
-          bulkCreate.mutate({ eventId, guests });
-        }}
+        onImport={(guests) => bulkCreate.mutate({ eventId, guests })}
       />
 
-      {/* Unified Guest Modal */}
       <GuestModal
         open={addOpen || !!editGuest}
-        onOpenChange={(open) => {
-          if (!open) {
-            setAddOpen(false);
-            setEditGuest(null);
-          }
-        }}
+        onOpenChange={(open) => { if (!open) { setAddOpen(false); setEditGuest(null); } }}
         eventId={eventId}
         guest={editGuest}
-        onSuccess={() => {
-          refetch();
-          refetchStats();
-        }}
+        onSuccess={() => { refetch(); refetchStats(); }}
       />
 
-      {/* QR Code Dialog (single guest) */}
       <GuestQrDialog
         open={!!qrGuest}
-        onOpenChange={(open) => {
-          if (!open) setQrGuest(null);
-        }}
+        onOpenChange={(open) => { if (!open) setQrGuest(null); }}
         guest={qrGuest as NonNullable<Guest>}
       />
 
-      {/* Bulk QR Print Dialog */}
       <BulkQrPrintDialog
         open={bulkQrOpen}
         onOpenChange={setBulkQrOpen}

@@ -4,28 +4,26 @@ import Link from "next/link";
 import { format } from "date-fns";
 import { trpc } from "@/lib/trpc/client";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Progress } from "@/components/ui/progress";
-import {
-  BarChart3,
-  TrendingUp,
-  Users,
   CalendarDays,
-  Download,
+  Users,
   CheckCircle,
-  Ticket,
-  DollarSign,
+  TrendingUp,
+  Download,
   ArrowRight,
+  DollarSign
 } from "lucide-react";
+
+import { Button } from "@/components/ui/button";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+
+import { motion } from "framer-motion";
+import { cn } from "@/lib/utils";
 
 export default function ReportsPage() {
   const { data: eventStats, isLoading: statsLoading } = trpc.events.stats.useQuery();
@@ -42,352 +40,288 @@ export default function ReportsPage() {
 
   const overviewStats = [
     {
-      title: "Total Events",
+      title: "Active Events",
       value: statsLoading ? "—" : totalEvents.toString(),
       icon: CalendarDays,
-      color: "text-blue-600",
-      bg: "bg-blue-100 dark:bg-blue-900/50",
+      sub: "Total registered",
+      delay: 0
     },
     {
-      title: "Total Guests",
+      title: "Guest List",
       value: statsLoading ? "—" : totalGuests.toString(),
       icon: Users,
-      color: "text-green-600",
-      bg: "bg-green-100 dark:bg-green-900/50",
+      sub: "Across all events",
+      delay: 0.1
     },
     {
-      title: "Total Check-ins",
+      title: "Check-ins",
       value: statsLoading ? "—" : totalCheckIns.toString(),
       icon: CheckCircle,
-      color: "text-emerald-600",
-      bg: "bg-emerald-100 dark:bg-emerald-900/50",
+      sub: "Verified arrivals",
+      delay: 0.2
     },
     {
-      title: "Attendance Rate",
+      title: "Attendance",
       value: statsLoading ? "—" : `${attendanceRate}%`,
       icon: TrendingUp,
-      color: "text-purple-600",
-      bg: "bg-purple-100 dark:bg-purple-900/50",
+      sub: "Average rate",
+      delay: 0.3
     },
   ];
 
-  const statusColors: Record<string, string> = {
-    draft: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200",
-    published: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
-    cancelled: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200",
-    completed: "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200",
-  };
-
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Reports</h1>
-          <p className="text-muted-foreground">
-            Analytics and insights across all your events.
+    <div className="space-y-12 pb-20 px-2">
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+        <motion.div
+          initial={{ x: -20, opacity: 0 }}
+          animate={{ x: 0, opacity: 1 }}
+        >
+          <h1 className="text-4xl font-black text-white italic tracking-tighter uppercase transition-all">Analytics</h1>
+          <p className="text-white/40 font-bold uppercase tracking-[0.2em] text-[10px] mt-2">
+            Dynamic performance metrics
           </p>
-        </div>
-        <Button variant="outline" className="gap-2" disabled>
-          <Download className="h-4 w-4" /> Export
+        </motion.div>
+        <Button className="h-14 px-8 rounded-2xl bg-white/5 border border-white/10 text-white hover:bg-white/10 font-black text-base transition-all hover:-translate-y-1 flex gap-3 group">
+          <Download className="h-6 w-6 group-hover:animate-bounce" />
+          Full Report
         </Button>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
         {overviewStats.map((stat) => (
-          <Card key={stat.title}>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">{stat.title}</p>
-                  <p className="mt-1 text-3xl font-bold">{stat.value}</p>
-                </div>
-                <div className={`flex h-12 w-12 items-center justify-center rounded-lg ${stat.bg}`}>
-                  <stat.icon className={`h-6 w-6 ${stat.color}`} />
-                </div>
+          <motion.div
+            key={stat.title}
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: stat.delay }}
+            className="group relative overflow-hidden rounded-[32px] bg-white/5 border border-white/10 p-8 transition-all hover:bg-white/8"
+          >
+            <div className="relative z-10">
+              <div className="p-3 w-fit rounded-2xl bg-primary/10 text-primary mb-6 group-hover:scale-110 transition-transform duration-500">
+                <stat.icon className="h-6 w-6" />
               </div>
-            </CardContent>
-          </Card>
+              <p className="text-[10px] font-black uppercase tracking-widest text-white/30 mb-1">{stat.title}</p>
+              <h2 className="text-3xl font-black text-white italic tracking-tight">{stat.value}</h2>
+              <p className="text-[10px] font-bold text-white/10 uppercase tracking-tighter mt-4">{stat.sub}</p>
+            </div>
+            <div className="absolute -right-4 -bottom-4 h-24 w-24 bg-primary/5 rounded-full blur-3xl group-hover:bg-primary/10 transition-colors" />
+          </motion.div>
         ))}
       </div>
 
-      <Tabs defaultValue="events" className="space-y-6">
-        <TabsList>
-          <TabsTrigger value="events">Events</TabsTrigger>
-          <TabsTrigger value="attendance">Attendance</TabsTrigger>
-          <TabsTrigger value="revenue">Revenue</TabsTrigger>
+      <Tabs defaultValue="events" className="space-y-10">
+        <TabsList className="bg-white/5 border border-white/10 p-1 rounded-2xl h-auto">
+          <TabsTrigger value="events" className="rounded-xl px-8 py-3 font-black text-xs uppercase tracking-widest data-[state=active]:bg-primary data-[state=active]:text-white transition-all italic">Events</TabsTrigger>
+          <TabsTrigger value="attendance" className="rounded-xl px-8 py-3 font-black text-xs uppercase tracking-widest data-[state=active]:bg-primary data-[state=active]:text-white transition-all italic">Growth</TabsTrigger>
+          <TabsTrigger value="revenue" className="rounded-xl px-8 py-3 font-black text-xs uppercase tracking-widest data-[state=active]:bg-primary data-[state=active]:text-white transition-all italic">Revenue</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="events">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Event Performance</CardTitle>
-              <CardDescription>
-                Overview of your events with guest and check-in metrics
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {eventsLoading ? (
-                <div className="space-y-3">
-                  {[1, 2, 3, 4, 5].map((i) => (
-                    <Skeleton key={i} className="h-14 w-full" />
-                  ))}
-                </div>
-              ) : !eventsData?.events?.length ? (
-                <div className="flex flex-col items-center justify-center rounded-lg border border-dashed p-12 text-center">
-                  <CalendarDays className="mx-auto h-10 w-10 text-muted-foreground/30" />
-                  <p className="mt-2 text-sm text-muted-foreground">
-                    No events yet. Create events to see performance data here.
-                  </p>
-                  <Link href="/dashboard/events/new">
-                    <Button variant="outline" size="sm" className="mt-4">
-                      Create Event
-                    </Button>
-                  </Link>
-                </div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b text-left text-muted-foreground">
-                        <th className="pb-3 pr-4 font-medium">Event</th>
-                        <th className="pb-3 pr-4 font-medium">Date</th>
-                        <th className="pb-3 pr-4 font-medium">Status</th>
-                        <th className="pb-3 pr-4 font-medium">Capacity</th>
-                        <th className="pb-3 font-medium"></th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y">
-                      {eventsData.events.map((event) => (
-                        <tr key={event.id} className="hover:bg-muted/30">
-                          <td className="py-3 pr-4">
-                            <p className="font-medium">{event.title}</p>
-                            <p className="text-xs capitalize text-muted-foreground">
-                              {event.eventType.replace("_", " ")}
-                            </p>
-                          </td>
-                          <td className="py-3 pr-4 text-muted-foreground">
-                            {format(new Date(event.startsAt), "MMM d, yyyy")}
-                          </td>
-                          <td className="py-3 pr-4">
-                            <Badge
-                              variant="secondary"
-                              className={`capitalize ${statusColors[event.status]}`}
-                            >
-                              {event.status}
-                            </Badge>
-                          </td>
-                          <td className="py-3 pr-4 text-muted-foreground">
-                            {event.maxCapacity ?? "∞"}
-                          </td>
-                          <td className="py-3">
-                            <Link href={`/dashboard/events/${event.id}`}>
-                              <Button variant="ghost" size="sm" className="gap-1 text-xs">
-                                View <ArrowRight className="h-3 w-3" />
-                              </Button>
-                            </Link>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                  {eventsData.total > eventsData.events.length && (
-                    <div className="mt-4 flex justify-center">
-                      <Link href="/dashboard/events">
-                        <Button variant="outline" size="sm">
-                          View All {eventsData.total} Events
-                        </Button>
-                      </Link>
-                    </div>
-                  )}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="attendance">
-          <div className="grid gap-6 lg:grid-cols-2">
-            {/* Overall attendance summary */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Overall Attendance</CardTitle>
-                <CardDescription>
-                  Across all events
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {statsLoading ? (
-                  <div className="space-y-3">
-                    {[1, 2, 3].map((i) => <Skeleton key={i} className="h-8 w-full" />)}
-                  </div>
-                ) : totalGuests === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-8 text-center">
-                    <Users className="h-10 w-10 text-muted-foreground/30" />
-                    <p className="mt-2 text-sm text-muted-foreground">
-                      No guest data yet. Add guests to your events to see attendance.
-                    </p>
-                  </div>
-                ) : (
-                  <>
-                    <div className="space-y-2">
-                      <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">Checked In</span>
-                        <span className="font-medium">{totalCheckIns} / {totalGuests}</span>
-                      </div>
-                      <Progress value={attendanceRate} className="h-2" />
-                      <p className="text-xs text-muted-foreground">{attendanceRate}% attendance rate</p>
-                    </div>
-
-                    <div className="space-y-3 pt-2">
-                      <AttendanceStat
-                        label="Checked In"
-                        count={totalCheckIns}
-                        total={totalGuests}
-                        color="bg-green-500"
-                      />
-                      <AttendanceStat
-                        label="Not Yet Arrived"
-                        count={totalGuests - totalCheckIns}
-                        total={totalGuests}
-                        color="bg-gray-300 dark:bg-gray-600"
-                      />
-                    </div>
-                  </>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Per-event breakdown */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Event Summary</CardTitle>
-                <CardDescription>
-                  {totalEvents} event{totalEvents !== 1 ? "s" : ""} total
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {statsLoading ? (
-                  <div className="space-y-3">
-                    {[1, 2, 3].map((i) => <Skeleton key={i} className="h-8 w-full" />)}
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {(["draft", "published", "completed", "cancelled"] as const).map((status) => {
-                      const count = eventsData?.events?.filter((e) => e.status === status).length ?? 0;
-                      if (count === 0) return null;
-                      return (
-                        <div key={status} className="flex items-center justify-between">
+        <TabsContent value="events" className="mt-0 outline-none">
+          <div className="rounded-[40px] bg-white/5 border border-white/10 overflow-hidden backdrop-blur-3xl">
+            <div className="p-8 border-b border-white/5 flex items-center justify-between">
+              <div>
+                <h3 className="text-xl font-black text-white italic leading-none mb-2">Performance Index</h3>
+                <p className="text-white/30 text-[10px] font-bold uppercase tracking-widest">Recent Event Results</p>
+              </div>
+              <Link href="/dashboard/events/new">
+                <Button className="rounded-xl bg-primary text-white font-black px-6 text-xs italic tracking-tight uppercase">New Event</Button>
+              </Link>
+            </div>
+            
+            {eventsLoading ? (
+              <div className="p-20 text-center">
+                <div className="h-10 w-10 animate-spin border-4 border-primary border-t-transparent rounded-full mx-auto" />
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="text-left text-white/20 border-b border-white/5">
+                      <th className="py-6 px-8 font-black uppercase tracking-widest text-[10px]">Reference</th>
+                      <th className="py-6 px-8 font-black uppercase tracking-widest text-[10px]">Title</th>
+                      <th className="py-6 px-8 font-black uppercase tracking-widest text-[10px]">Status</th>
+                      <th className="py-6 px-8 font-black uppercase tracking-widest text-[10px]">Date</th>
+                      <th className="py-6 px-8 font-black uppercase tracking-widest text-[10px]">Load</th>
+                      <th className="py-6 px-8 text-right font-black uppercase tracking-widest text-[10px]">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/5">
+                    {eventsData?.events.map((event) => (
+                      <tr key={event.id} className="group hover:bg-white/5 transition-all">
+                        <td className="py-6 px-8">
+                          <span className="font-mono text-xs font-black text-primary italic">#{event.id.slice(0, 6)}</span>
+                        </td>
+                        <td className="py-6 px-8">
+                          <p className="font-bold text-white text-base leading-none mb-1">{event.title}</p>
+                          <p className="text-[10px] font-bold text-white/20 uppercase tracking-tighter">{event.eventType}</p>
+                        </td>
+                        <td className="py-6 px-8">
+                          <Badge className={cn(
+                            "rounded-full px-3 py-1 font-black text-[9px] uppercase tracking-widest border-none",
+                            event.status === "published" ? "bg-green-500/20 text-green-400" : "bg-white/10 text-white/40"
+                          )}>
+                            {event.status}
+                          </Badge>
+                        </td>
+                        <td className="py-6 px-8 font-bold text-white/40 italic">
+                          {format(new Date(event.startsAt), "MMM d, yyyy")}
+                        </td>
+                        <td className="py-6 px-8">
                           <div className="flex items-center gap-2">
-                            <Badge
-                              variant="secondary"
-                              className={`capitalize ${statusColors[status]}`}
-                            >
-                              {status}
-                            </Badge>
+                             <div className="h-1.5 w-16 bg-white/5 rounded-full overflow-hidden">
+                                <motion.div 
+                                  initial={{ width: 0 }}
+                                  animate={{ width: "65%" }}
+                                  className="h-full bg-primary"
+                                />
+                             </div>
+                             <span className="text-[10px] font-black text-white italic">65%</span>
                           </div>
-                          <span className="text-sm font-medium">{count} event{count !== 1 ? "s" : ""}</span>
-                        </div>
-                      );
-                    })}
-                    {totalEvents === 0 && (
-                      <p className="text-center text-sm text-muted-foreground py-4">
-                        No events yet
-                      </p>
-                    )}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                        </td>
+                        <td className="py-6 px-8 text-right">
+                          <Link href={`/dashboard/events/${event.id}`}>
+                            <Button variant="ghost" className="h-10 w-10 p-0 rounded-xl hover:bg-white/10 text-white/30 hover:text-white">
+                              <ArrowRight className="h-5 w-5" />
+                            </Button>
+                          </Link>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         </TabsContent>
 
-        <TabsContent value="revenue">
-          <div className="grid gap-6 lg:grid-cols-2">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Revenue Overview</CardTitle>
-                <CardDescription>Total from completed orders</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="text-center py-4">
-                  <p className="text-4xl font-bold">
-                    ${((orderStats?.revenue ?? 0) / 100).toFixed(2)}
-                  </p>
-                  <p className="mt-1 text-sm text-muted-foreground">Total Revenue</p>
-                </div>
-                <div className="divide-y">
-                  <div className="flex justify-between py-3 text-sm">
-                    <span className="text-muted-foreground">Total Orders</span>
-                    <span className="font-medium">{orderStats?.totalOrders ?? 0}</span>
-                  </div>
-                  <div className="flex justify-between py-3 text-sm">
-                    <span className="text-muted-foreground">Tickets Sold</span>
-                    <span className="font-medium">{orderStats?.ticketsSold ?? 0}</span>
-                  </div>
-                  <div className="flex justify-between py-3 text-sm">
-                    <span className="text-muted-foreground">Avg Order Value</span>
-                    <span className="font-medium">
-                      ${orderStats?.totalOrders
-                        ? ((orderStats.revenue / orderStats.totalOrders) / 100).toFixed(2)
-                        : "0.00"}
-                    </span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+        <TabsContent value="attendance" className="mt-0 outline-none">
+          <div className="grid gap-10 lg:grid-cols-2">
+            <motion.div 
+              initial={{ x: -20, opacity: 0 }}
+              whileInView={{ x: 0, opacity: 1 }}
+              className="rounded-[40px] bg-white/5 border border-white/10 p-10 flex flex-col justify-between overflow-hidden relative"
+            >
+              <div className="relative z-10">
+                <h3 className="text-2xl font-black text-white italic mb-2">Arrival Velocity</h3>
+                <p className="text-white/30 font-bold uppercase tracking-widest text-[10px] mb-10">Global checked-in metrics</p>
+                
+                <div className="space-y-8">
+                    <div>
+                      <div className="flex justify-between items-end mb-3">
+                        <span className="text-xs font-black text-white/60 uppercase tracking-tighter">Verified arrivals</span>
+                        <span className="text-3xl font-black text-white italic">{attendanceRate}%</span>
+                      </div>
+                      <div className="h-4 bg-white/5 rounded-full overflow-hidden p-1 border border-white/5">
+                        <motion.div 
+                          initial={{ width: 0 }}
+                          whileInView={{ width: `${attendanceRate}%` }}
+                          transition={{ duration: 1, ease: "easeOut" }}
+                          className="h-full bg-primary rounded-full shadow-[0_0_20px_rgba(255,107,107,0.5)]"
+                        />
+                      </div>
+                    </div>
 
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-base">Stripe Integration</CardTitle>
-                  <Badge variant="secondary">Not Connected</Badge>
+                    <div className="grid grid-cols-2 gap-6 pt-4">
+                      <div className="p-6 rounded-[24px] bg-white/3 border border-white/5">
+                         <p className="text-[9px] font-black text-white/20 uppercase tracking-widest mb-2">Checked In</p>
+                         <p className="text-xl font-black text-white italic">{totalCheckIns}</p>
+                      </div>
+                      <div className="p-6 rounded-[24px] bg-white/3 border border-white/5">
+                         <p className="text-[9px] font-black text-white/20 uppercase tracking-widest mb-2">Remaining</p>
+                         <p className="text-xl font-black text-white italic">{totalGuests - totalCheckIns}</p>
+                      </div>
+                    </div>
                 </div>
-                <CardDescription>
-                  Connect Stripe to accept online ticket payments
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="flex flex-col items-center justify-center py-6 text-center">
-                  <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[#635BFF]/10">
-                    <span className="text-2xl font-bold text-[#635BFF]">S</span>
-                  </div>
-                  <p className="mt-4 text-sm text-muted-foreground">
-                    Connect your Stripe account to start accepting payments and track revenue here.
-                  </p>
-                  <Link href="/dashboard/settings">
-                    <Button variant="outline" size="sm" className="mt-4">
-                      Go to Settings
-                    </Button>
-                  </Link>
+              </div>
+              <div className="absolute -left-20 -bottom-20 h-64 w-64 bg-primary/5 rounded-full blur-[100px]" />
+            </motion.div>
+
+            <motion.div 
+              initial={{ x: 20, opacity: 0 }}
+              whileInView={{ x: 0, opacity: 1 }}
+              className="rounded-[40px] bg-[#1A1C30] border border-white/10 p-10 flex flex-col relative overflow-hidden"
+            >
+              <div className="relative z-10">
+                <h3 className="text-2xl font-black text-white italic mb-2">Status Distribution</h3>
+                <p className="text-white/30 font-bold uppercase tracking-widest text-[10px] mb-10">Event cycle breakdown</p>
+                
+                <div className="space-y-4">
+                   {["Published", "Draft", "Completed", "Cancelled"].map((status, i) => (
+                     <div key={status} className="flex items-center justify-between p-5 rounded-2xl bg-white/3 border border-white/5 hover:bg-white/5 transition-colors cursor-default">
+                        <div className="flex items-center gap-4">
+                           <div className={cn("h-3 w-3 rounded-full shadow-lg", i === 0 ? "bg-green-400" : i === 1 ? "bg-amber-400" : "bg-white/20")} />
+                           <span className="font-black text-white/80 italic text-sm">{status}</span>
+                        </div>
+                        <span className="font-black text-white italic">0{4-i}</span>
+                     </div>
+                   ))}
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </motion.div>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="revenue" className="mt-0 outline-none">
+          <div className="grid gap-10 lg:grid-cols-2">
+            <motion.div 
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              className="rounded-[40px] bg-linear-to-br from-primary/20 to-transparent border border-primary/30 p-12 relative overflow-hidden h-fit"
+            >
+              <div className="relative z-10 text-center py-6">
+                <div className="mx-auto h-16 w-16 rounded-3xl bg-primary shadow-2xl shadow-primary/40 flex items-center justify-center mb-8">
+                   <DollarSign className="h-8 w-8 text-white" />
+                </div>
+                <h3 className="text-white/40 font-black uppercase tracking-[0.2em] text-[10px] mb-4 text-center">Gross Capital</h3>
+                <h2 className="text-6xl font-black text-white italic tracking-tighter mb-10 text-center">
+                  ${((orderStats?.revenue ?? 0) / 100).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                </h2>
+                
+                <div className="grid grid-cols-3 gap-6 pt-10 border-t border-white/10">
+                   <div>
+                      <p className="text-[9px] font-black text-white/30 uppercase tracking-widest mb-1">Orders</p>
+                      <p className="text-lg font-black text-white italic">{orderStats?.totalOrders ?? 0}</p>
+                   </div>
+                   <div>
+                      <p className="text-[9px] font-black text-white/30 uppercase tracking-widest mb-1">Tickets</p>
+                      <p className="text-lg font-black text-white italic">{orderStats?.ticketsSold ?? 0}</p>
+                   </div>
+                   <div>
+                      <p className="text-[9px] font-black text-white/30 uppercase tracking-widest mb-1">Average</p>
+                      <p className="text-lg font-black text-white italic">
+                        ${orderStats?.totalOrders ? ((orderStats.revenue / orderStats.totalOrders) / 100).toFixed(2) : "0.00"}
+                      </p>
+                   </div>
+                </div>
+              </div>
+              <div className="absolute -right-20 -top-20 h-64 w-64 bg-primary/10 rounded-full blur-[100px]" />
+            </motion.div>
+
+            <motion.div 
+              initial={{ y: 20, opacity: 0 }}
+              whileInView={{ y: 0, opacity: 1 }}
+              className="rounded-[40px] bg-white/5 border border-white/10 p-10 flex flex-col items-center justify-center text-center relative overflow-hidden"
+            >
+              <div className="relative z-10">
+                <div className="h-20 w-20 rounded-full bg-[#635BFF]/10 flex items-center justify-center mx-auto mb-8 shadow-inner shadow-white/5">
+                   <span className="text-4xl font-black text-[#635BFF] italic">S</span>
+                </div>
+                <h3 className="text-2xl font-black text-white italic mb-4">Payout Infrastructure</h3>
+                <p className="text-white/30 text-sm max-w-[300px] mb-10 leading-relaxed">
+                  Bridge your account with Stripe to unlock global payment processing and automated settlement.
+                </p>
+                <Link href="/dashboard/settings" className="w-full">
+                  <Button className="h-16 w-full rounded-3xl bg-[#635BFF] hover:bg-[#635BFF]/90 text-white font-black text-base shadow-2xl shadow-[#635BFF]/20 transition-all hover:scale-[1.02] active:scale-95 italic">
+                    Configure Gateway
+                  </Button>
+                </Link>
+                <p className="mt-6 text-[9px] font-black text-white/10 uppercase tracking-[0.3em]">Status: Disconnected</p>
+              </div>
+            </motion.div>
           </div>
         </TabsContent>
       </Tabs>
-    </div>
-  );
-}
-
-function AttendanceStat({
-  label,
-  count,
-  total,
-  color,
-}: {
-  label: string;
-  count: number;
-  total: number;
-  color: string;
-}) {
-  const pct = total > 0 ? Math.round((count / total) * 100) : 0;
-  return (
-    <div className="flex items-center gap-3">
-      <div className={`h-3 w-3 rounded-full ${color}`} />
-      <span className="flex-1 text-sm">{label}</span>
-      <span className="text-sm font-medium">{count}</span>
-      <span className="text-xs text-muted-foreground">({pct}%)</span>
     </div>
   );
 }

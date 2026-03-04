@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 import { DashboardSidebar } from "@/components/layout/dashboard-sidebar";
 import { DashboardTopbar } from "@/components/layout/dashboard-topbar";
 import { CommandPalette } from "@/components/layout/command-palette";
-import { Sheet, SheetContent } from "@/components/ui/sheet";
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function DashboardLayout({
   children,
@@ -16,7 +16,7 @@ export default function DashboardLayout({
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
-    <div className="flex h-screen relative overflow-hidden bg-background">
+    <div className="flex h-screen relative overflow-hidden bg-modychat">
       <CommandPalette />
 
       {/* Desktop sidebar - Absolute to let background show through the glass */}
@@ -29,7 +29,7 @@ export default function DashboardLayout({
 
       {/* Mobile sidebar */}
       <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
-        <SheetContent side="left" className="w-64 p-0 border-r-white/5 glass-panel">
+        <SheetContent side="left" className="w-64 p-0 border-r-white/5 bg-[#1A1C30]">
           <DashboardSidebar
             collapsed={false}
             onToggle={() => setMobileOpen(false)}
@@ -46,9 +46,17 @@ export default function DashboardLayout({
       >
         <DashboardTopbar onMenuClick={() => setMobileOpen(true)} />
         <main className="flex-1 overflow-y-auto p-4 lg:p-8 pb-24 relative z-0">
-          {/* Subtle background glow effect behind the main content area */}
-          <div className="pointer-events-none absolute inset-0 bg-linear-to-br from-primary/5 via-transparent to-transparent" />
-          {children}
+          <AnimatePresence mode="wait">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.4, ease: "easeOut" }}
+              className="h-full"
+            >
+              {children}
+            </motion.div>
+          </AnimatePresence>
         </main>
       </div>
     </div>

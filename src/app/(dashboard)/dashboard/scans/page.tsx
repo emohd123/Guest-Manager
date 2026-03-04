@@ -3,8 +3,9 @@
 
 import { trpc } from "@/lib/trpc/client";
 import { DataTable } from "@/components/shared/data-table";
-import { ScanLine } from "lucide-react";
+import { ScanLine, Activity } from "lucide-react";
 import { format } from "date-fns";
+import { motion } from "framer-motion";
 
 export default function ScansPage() {
   const { data, isLoading } = trpc.scans.list.useQuery({});
@@ -12,63 +13,77 @@ export default function ScansPage() {
   const columns = [
     {
       accessorKey: "scanType",
-      header: "Type",
-      cell: ({ row }: any) => <span className="capitalize">{row.original.scanType.replace("_", " ")}</span>
+      header: "Operation Type",
+      cell: ({ row }: any) => <span className="font-black italic text-primary uppercase text-[10px] tracking-widest leading-none">{row.original.scanType.replace("_", " ")}</span>
     },
     {
       accessorKey: "barcode",
-      header: "Barcode",
+      header: "Asset ID",
+      cell: ({ row }: any) => <span className="font-mono text-[10px] font-bold text-white/40 uppercase tracking-widest">{row.original.barcode}</span>
     },
     {
       accessorKey: "scannedAt",
-      header: "Scanned At",
-      cell: ({ row }: any) => format(new Date(row.original.scannedAt), "MMM d, yyyy h:mm a"),
+      header: "Protocol Time",
+      cell: ({ row }: any) => (
+        <div className="flex flex-col">
+          <span className="font-black italic text-white uppercase tracking-tight leading-none mb-1">
+            {format(new Date(row.original.scannedAt), "HH:mm:ss")}
+          </span>
+          <span className="text-[9px] font-bold text-white/20 uppercase tracking-widest">
+            {format(new Date(row.original.scannedAt), "MMM d, yyyy")}
+          </span>
+        </div>
+      ),
     },
   ];
 
   const scans = data?.scans ?? [];
 
-  if (!isLoading && scans.length === 0) {
-    return (
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold">Scans (Audit Log)</h1>
-            <p className="text-muted-foreground">Real-time check-in and checkout scan logs.</p>
-          </div>
-        </div>
-
-        <div className="flex flex-col items-center justify-center rounded-lg border border-dashed p-12 text-center">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
-            <ScanLine className="h-8 w-8 text-primary" />
-          </div>
-          <h3 className="mt-4 text-lg font-semibold">No scans recorded</h3>
-          <p className="mt-2 max-w-sm text-sm text-muted-foreground">
-            Ticket scanning logs will appear here when guests are checked in.
-          </p>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Scans (Audit Log)</h1>
-          <p className="text-muted-foreground">
-            {data?.total ?? 0} scan{(data?.total ?? 0) !== 1 ? "s" : ""}
+    <div className="space-y-12 pb-20 px-2">
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+        <motion.div
+           initial={{ x: -20, opacity: 0 }}
+           animate={{ x: 0, opacity: 1 }}
+        >
+          <h1 className="text-4xl font-black text-white italic tracking-tighter uppercase leading-none">Audit</h1>
+          <p className="text-white/40 font-bold uppercase tracking-[0.2em] text-[10px] mt-2 italic flex items-center gap-2">
+             <Activity className="h-3 w-3 text-primary animate-pulse" />
+             Universal Scan Activity Log
           </p>
-        </div>
+        </motion.div>
       </div>
 
-      <DataTable
-        columns={columns}
-        data={scans}
-        searchKey="barcode"
-        searchPlaceholder="Search barcodes..."
-        isLoading={isLoading}
-      />
+      {!isLoading && scans.length === 0 ? (
+        <motion.div 
+          initial={{ scale: 0.95, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          className="flex flex-col items-center justify-center rounded-[40px] bg-white/5 border border-white/10 p-20 text-center space-y-8"
+        >
+          <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-[32px] bg-primary/10 text-primary rotate-12 group-hover:rotate-0 transition-transform">
+            <ScanLine className="h-10 w-10 -rotate-12" />
+          </div>
+          <div className="space-y-2">
+            <h3 className="text-2xl font-black text-white italic tracking-tighter uppercase leading-none">Zero Log Density</h3>
+            <p className="max-w-xs mx-auto text-[10px] font-bold text-white/20 uppercase tracking-[0.2em] leading-relaxed">
+              No ticket scan strings have been recorded. Verify hardware synchronization.
+            </p>
+          </div>
+        </motion.div>
+      ) : (
+        <motion.div
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+        >
+           <DataTable
+            columns={columns}
+            data={scans}
+            searchKey="barcode"
+            searchPlaceholder="Filter asset identifiers..."
+            isLoading={isLoading}
+          />
+        </motion.div>
+      )}
     </div>
   );
 }

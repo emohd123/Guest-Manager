@@ -2,17 +2,7 @@
 
 import Link from "next/link";
 import { trpc } from "@/lib/trpc/client";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Skeleton } from "@/components/ui/skeleton";
+import { motion } from "framer-motion";
 import {
   Ticket,
   Plus,
@@ -24,37 +14,15 @@ import {
   DollarSign,
   Hash,
   ExternalLink,
+  ChevronRight,
+  Zap
 } from "lucide-react";
+import { cn } from "@/lib/utils";
 
-const statusColors: Record<string, string> = {
-  active: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
-  paused: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200",
-  sold_out: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200",
-  archived: "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200",
-};
-
-const templatePreviews = [
-  {
-    name: "Elegant Minimal",
-    description: "Clean design with QR code",
-    style: "bg-gradient-to-br from-slate-900 to-slate-700 text-white",
-  },
-  {
-    name: "Bold Color",
-    description: "Vibrant gradient with large barcode",
-    style: "bg-gradient-to-br from-primary to-blue-600 text-white",
-  },
-  {
-    name: "Classic Formal",
-    description: "Traditional ticket with border",
-    style: "bg-gradient-to-br from-amber-50 to-amber-100 text-amber-900 border-2 border-amber-300",
-  },
-  {
-    name: "Modern Event",
-    description: "Dark theme with accent colors",
-    style: "bg-gradient-to-br from-gray-900 to-gray-800 text-white",
-  },
-];
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function TicketsPage() {
   const { data, isLoading } = trpc.ticketTypes.listAll.useQuery();
@@ -65,267 +33,274 @@ export default function TicketsPage() {
   const totalSold = orderStats?.ticketsSold ?? 0;
 
   const quickStats = [
+    { label: "Protocol Types", value: isLoading ? "—" : totalTypes.toString(), icon: Ticket, sub: "Defined tiers", delay: 0 },
+    { label: "Blueprints", value: "4", icon: Palette, sub: "Dynamic templates", delay: 0.1 },
+    { label: "Issued Items", value: isLoading ? "—" : totalSold.toString(), icon: Hash, sub: "Verification success", delay: 0.2 },
+    { label: "Live Scans", value: "0", icon: ScanLine, sub: "Entry velocity", delay: 0.3 },
+  ];
+
+  const templatePreviews = [
     {
-      label: "Ticket Types",
-      value: isLoading ? "—" : totalTypes.toString(),
-      icon: Ticket,
-      color: "text-blue-600",
+      name: "NEON MINIMAL",
+      description: "Sleek glassmorphism with high contrast",
+      style: "bg-linear-to-br from-slate-950 to-slate-900 border-white/5",
     },
     {
-      label: "Templates",
-      value: "4",
-      icon: Palette,
-      color: "text-purple-600",
+      name: "CORAL STRIKE",
+      description: "Primary brand identity with glow",
+      style: "bg-linear-to-br from-primary to-primary/80 border-primary/20 shadow-2xl shadow-primary/20",
     },
     {
-      label: "Sold",
-      value: isLoading ? "—" : totalSold.toString(),
-      icon: Hash,
-      color: "text-green-600",
+      name: "LUXE GOLD",
+      description: "Premium VIP aesthetic with border",
+      style: "bg-linear-to-br from-amber-400/20 to-transparent border-amber-400/30",
     },
     {
-      label: "Scanned",
-      value: "0",
-      icon: ScanLine,
-      color: "text-orange-600",
+      name: "CYBER DARK",
+      description: "Low-light optimized entry key",
+      style: "bg-linear-to-br from-black to-slate-900 border-white/10",
     },
   ];
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Ticket Studio</h1>
-          <p className="text-muted-foreground">
-            Design, distribute, and scan branded tickets for your events.
+    <div className="space-y-12 pb-20 px-2">
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+        <motion.div
+           initial={{ x: -20, opacity: 0 }}
+           animate={{ x: 0, opacity: 1 }}
+        >
+          <h1 className="text-4xl font-black text-white italic tracking-tighter uppercase">Studio</h1>
+          <p className="text-white/40 font-bold uppercase tracking-[0.2em] text-[10px] mt-2">
+            Asset Engineering & Distribution
           </p>
-        </div>
+        </motion.div>
         <Link href="/dashboard/events">
-          <Button className="gap-2">
-            <Plus className="h-4 w-4" /> Add Ticket Type
+          <Button className="h-14 px-8 rounded-2xl bg-primary text-white font-black text-base shadow-2xl shadow-primary/20 transition-all hover:scale-[1.05] active:scale-95 italic flex gap-3">
+            <Plus className="h-6 w-6" />
+            Create Spec
           </Button>
         </Link>
       </div>
 
-      {/* Quick Stats */}
-      <div className="grid gap-4 sm:grid-cols-4">
+      {/* Stats Grid */}
+      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
         {quickStats.map((stat) => (
-          <Card key={stat.label}>
-            <CardContent className="flex items-center gap-4 p-4">
-              <stat.icon className={`h-8 w-8 ${stat.color}`} />
-              <div>
-                <p className="text-2xl font-bold">{stat.value}</p>
-                <p className="text-xs text-muted-foreground">{stat.label}</p>
+          <motion.div
+            key={stat.label}
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: stat.delay }}
+            className="group relative overflow-hidden rounded-[32px] bg-white/5 border border-white/10 p-8 transition-all hover:bg-white/8"
+          >
+            <div className="relative z-10">
+              <div className="p-3 w-fit rounded-2xl bg-primary/10 text-primary mb-6 group-hover:scale-110 transition-transform duration-500">
+                <stat.icon className="h-6 w-6" />
               </div>
-            </CardContent>
-          </Card>
+              <p className="text-[10px] font-black uppercase tracking-widest text-white/30 mb-1">{stat.label}</p>
+              <h2 className="text-3xl font-black text-white italic tracking-tight">{stat.value}</h2>
+              <p className="text-[10px] font-bold text-white/10 uppercase tracking-tighter mt-4">{stat.sub}</p>
+            </div>
+          </motion.div>
         ))}
       </div>
 
-      <Tabs defaultValue="tickets" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="tickets">Ticket Types</TabsTrigger>
-          <TabsTrigger value="templates">Templates</TabsTrigger>
-          <TabsTrigger value="scanner">Scanner</TabsTrigger>
+      <Tabs defaultValue="tickets" className="space-y-10">
+        <TabsList className="bg-white/5 border border-white/10 p-1 rounded-2xl h-auto w-fit">
+          <TabsTrigger value="tickets" className="rounded-xl px-8 py-3 font-black text-xs uppercase tracking-widest data-[state=active]:bg-primary data-[state=active]:text-white transition-all italic">Catalog</TabsTrigger>
+          <TabsTrigger value="templates" className="rounded-xl px-8 py-3 font-black text-xs uppercase tracking-widest data-[state=active]:bg-primary data-[state=active]:text-white transition-all italic">Blueprints</TabsTrigger>
+          <TabsTrigger value="scanner" className="rounded-xl px-8 py-3 font-black text-xs uppercase tracking-widest data-[state=active]:bg-primary data-[state=active]:text-white transition-all italic">Interface</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="tickets">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">All Ticket Types</CardTitle>
-              <CardDescription>
-                Ticket types across all your events
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
+        <TabsContent value="tickets" className="mt-0 outline-none">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.98 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="rounded-[40px] bg-white/5 border border-white/10 overflow-hidden"
+          >
+            <div className="p-8 border-b border-white/5 flex items-center justify-between">
+              <div>
+                <h3 className="text-xl font-black text-white italic leading-none mb-2">Protocol Catalog</h3>
+                <p className="text-white/30 text-[10px] font-bold uppercase tracking-widest">Active admission structures</p>
+              </div>
+            </div>
+            
+            <div className="p-4">
               {isLoading ? (
-                <div className="space-y-3">
-                  {[1, 2, 3].map((i) => (
-                    <Skeleton key={i} className="h-16 w-full" />
-                  ))}
+                <div className="space-y-4 p-4">
+                  {[1, 2, 3].map((i) => <Skeleton key={i} className="h-24 w-full rounded-3xl bg-white/5" />)}
                 </div>
               ) : ticketTypeList.length === 0 ? (
-                <div className="flex flex-col items-center justify-center rounded-lg border border-dashed p-12 text-center">
-                  <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
-                    <Ticket className="h-8 w-8 text-primary" />
+                <div className="p-20 text-center space-y-6">
+                  <div className="h-20 w-20 rounded-[32px] bg-white/5 border border-white/10 flex items-center justify-center mx-auto text-white/10">
+                    <Ticket className="h-10 w-10" />
                   </div>
-                  <h3 className="mt-4 text-lg font-semibold">No ticket types yet</h3>
-                  <p className="mt-2 max-w-sm text-sm text-muted-foreground">
-                    Create ticket types within your events to start designing and
-                    distributing tickets. Each event can have multiple ticket tiers.
-                  </p>
+                  <div className="space-y-2">
+                    <h4 className="text-lg font-black text-white italic uppercase tracking-tighter">No Active Protocols</h4>
+                    <p className="text-white/20 text-[10px] font-bold uppercase tracking-widest">Initialize event tiers to begin</p>
+                  </div>
                   <Link href="/dashboard/events">
-                    <Button className="mt-4 gap-2">
-                      <Plus className="h-4 w-4" /> Go to Events
+                    <Button className="rounded-2xl bg-white/10 hover:bg-primary text-white border border-white/10 font-black italic uppercase tracking-widest px-8 transition-all">
+                      Configure Events
                     </Button>
                   </Link>
                 </div>
               ) : (
-                <div className="divide-y">
-                  {ticketTypeList.map((tt) => (
-                    <div key={tt.id} className="flex items-center justify-between py-4">
-                      <div className="flex items-center gap-4">
-                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10">
-                          <Ticket className="h-5 w-5 text-primary" />
+                <div className="space-y-3">
+                  {ticketTypeList.map((tt, i) => (
+                    <motion.div 
+                      key={tt.id}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: i * 0.05 }}
+                      className="group flex flex-col sm:flex-row items-start sm:items-center justify-between p-6 rounded-[32px] bg-white/3 border border-white/5 hover:bg-white/8 transition-all gap-6"
+                    >
+                      <div className="flex items-center gap-6">
+                        <div className="h-16 w-16 rounded-2xl bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
+                          <Ticket className="h-7 w-7" />
                         </div>
                         <div>
-                          <div className="flex items-center gap-2">
-                            <p className="font-semibold">{tt.name}</p>
-                            <Badge
-                              variant="secondary"
-                              className={statusColors[tt.status ?? "active"]}
-                            >
+                          <div className="flex items-center gap-3 mb-1">
+                            <p className="font-black text-white text-lg italic tracking-tighter leading-none">{tt.name}</p>
+                            <Badge className="bg-white/10 text-white/40 border-none font-black text-[9px] uppercase tracking-widest px-3 italic">
                               {tt.status}
                             </Badge>
                           </div>
-                          <div className="mt-1 flex items-center gap-4 text-sm text-muted-foreground">
+                          <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
                             {tt.eventTitle && (
-                              <span className="font-medium text-foreground/70">{tt.eventTitle}</span>
+                              <span className="text-[10px] font-black text-white/20 uppercase tracking-widest flex items-center gap-2">
+                                <Zap className="h-3 w-3 text-primary" />
+                                {tt.eventTitle}
+                              </span>
                             )}
-                            <span className="flex items-center gap-1">
+                            <span className="text-[10px] font-black text-white/20 uppercase tracking-widest flex items-center gap-2">
                               <DollarSign className="h-3 w-3" />
-                              {(tt.price ?? 0) === 0
-                                ? "Free"
-                                : `$${((tt.price ?? 0) / 100).toFixed(2)} ${tt.currency}`}
+                              {(tt.price ?? 0) === 0 ? "GRATIS" : `$${((tt.price ?? 0) / 100).toFixed(2)}`}
                             </span>
-                            <span className="flex items-center gap-1">
+                            <span className="text-[10px] font-black text-white/20 uppercase tracking-widest flex items-center gap-2">
                               <Hash className="h-3 w-3" />
-                              {tt.quantityTotal != null
-                                ? `${tt.quantitySold ?? 0} / ${tt.quantityTotal} sold`
-                                : `${tt.quantitySold ?? 0} sold · unlimited`}
-                            </span>
-                            <span className="flex items-center gap-1">
-                              <QrCode className="h-3 w-3" />
-                              {tt.barcodeType?.toUpperCase()}
+                              {tt.quantitySold ?? 0} / {tt.quantityTotal ?? "INF"} ISSUED
                             </span>
                           </div>
                         </div>
                       </div>
                       <Link href={`/dashboard/events/${tt.eventId}`}>
-                        <Button variant="ghost" size="sm" className="gap-1 text-xs">
-                          <ExternalLink className="h-3 w-3" /> View Event
+                        <Button variant="ghost" className="h-12 w-12 rounded-2xl p-0 text-white/10 hover:text-white hover:bg-white/5">
+                          <ExternalLink className="h-6 w-6" />
                         </Button>
                       </Link>
-                    </div>
+                    </motion.div>
                   ))}
                 </div>
               )}
-            </CardContent>
-          </Card>
+            </div>
+          </motion.div>
         </TabsContent>
 
-        <TabsContent value="templates">
-          <div className="space-y-6">
-            <div>
-              <h3 className="text-lg font-semibold">Ticket Templates</h3>
-              <p className="text-sm text-muted-foreground">
-                Choose a template and customize it for your events.
-              </p>
+        <TabsContent value="templates" className="mt-0 outline-none">
+          <div className="space-y-10">
+            <div className="flex items-center justify-between px-4">
+              <div>
+                <h3 className="text-2xl font-black text-white italic leading-none mb-2">Visual Blueprints</h3>
+                <p className="text-white/30 text-[10px] font-bold uppercase tracking-widest">Global identity style guides</p>
+              </div>
             </div>
+
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-              {templatePreviews.map((template) => (
-                <Card key={template.name} className="overflow-hidden">
-                  <div className={`flex h-40 flex-col justify-between p-4 ${template.style}`}>
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-medium opacity-80">EVENT NAME</span>
-                      <Ticket className="h-4 w-4 opacity-60" />
+              {templatePreviews.map((template, i) => (
+                <motion.div
+                  key={template.name}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.1 }}
+                  className="group rounded-[40px] bg-white/5 border border-white/10 overflow-hidden hover:bg-white/8 transition-all flex flex-col"
+                >
+                  <div className={cn("m-4 h-48 rounded-[32px] p-6 flex flex-col justify-between border relative overflow-hidden", template.style)}>
+                    <div className="flex items-center justify-between relative z-10">
+                      <span className="text-[8px] font-black uppercase tracking-[0.3em] opacity-50 italic">DEPLOYMENT ALPHA</span>
+                      <Zap className="h-4 w-4 opacity-30" />
                     </div>
-                    <div>
-                      <p className="text-sm font-bold">General Admission</p>
-                      <p className="text-xs opacity-70">Mar 15, 2026</p>
+                    <div className="relative z-10">
+                      <p className="text-sm font-black italic tracking-tighter uppercase line-clamp-1">VERIFIED GUEST</p>
+                      <p className="text-[8px] font-black opacity-50 uppercase tracking-widest">MARCH 2026</p>
                     </div>
-                    <div className="flex items-end justify-between">
-                      <span className="text-xs opacity-60">#001234</span>
-                      <div className="flex h-8 w-8 items-center justify-center rounded bg-white/20">
-                        <QrCode className="h-5 w-5" />
+                    <div className="flex items-end justify-between relative z-10">
+                      <span className="text-[8px] font-mono opacity-40 uppercase tracking-widest">#8A-0001FF</span>
+                      <div className="h-10 w-10 rounded-xl bg-white/10 flex items-center justify-center backdrop-blur-md">
+                        <QrCode className="h-6 w-6" />
                       </div>
                     </div>
+                    <div className="absolute -right-10 -bottom-10 h-32 w-32 bg-white/5 rounded-full blur-3xl" />
                   </div>
-                  <CardContent className="p-4">
-                    <h4 className="font-medium">{template.name}</h4>
-                    <p className="text-xs text-muted-foreground">
+                  <div className="p-8 space-y-4">
+                    <h4 className="text-lg font-black text-white italic tracking-tighter uppercase">{template.name}</h4>
+                    <p className="text-[10px] font-bold text-white/30 uppercase tracking-widest leading-relaxed">
                       {template.description}
                     </p>
-                    <Button variant="outline" size="sm" className="mt-3 w-full">
-                      Use Template
+                    <Button variant="outline" className="h-12 w-full rounded-2xl bg-white/5 border-white/10 text-white hover:bg-white/10 font-black italic uppercase tracking-widest text-[10px] transition-all">
+                      Deploy Protocol
                     </Button>
-                  </CardContent>
-                </Card>
+                  </div>
+                </motion.div>
               ))}
             </div>
 
-            {/* Supported Formats */}
-            <div className="grid gap-4 md:grid-cols-3">
-              <Card>
-                <CardContent className="flex items-start gap-4 p-6">
-                  <FileText className="h-8 w-8 text-red-500" />
-                  <div>
-                    <h4 className="font-medium">PDF Tickets</h4>
-                    <p className="text-sm text-muted-foreground">
-                      High-quality PDF tickets for print or digital delivery via email.
-                    </p>
+            {/* Asset Capabilities */}
+            <div className="grid gap-6 md:grid-cols-3">
+              {[
+                { title: "Vector Matrix", desc: "High-resolution PDF generation with dynamic layering.", icon: FileText, color: "text-red-400" },
+                { title: "Mobile Integration", desc: "Native wallet synchronization for iOS and ecosystem.", icon: Smartphone, color: "text-primary" },
+                { title: "Dual Scanning", desc: "Support for QR, DataMatrix, and high-density barcodes.", icon: QrCode, color: "text-green-400" },
+              ].map((cap, i) => (
+                <motion.div
+                  key={cap.title}
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  whileInView={{ opacity: 1, scale: 1 }}
+                  className="p-8 rounded-[40px] bg-white/5 border border-white/10 group hover:bg-white/8 transition-all"
+                >
+                  <div className="h-12 w-12 rounded-2xl bg-white/5 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                    <cap.icon className={cn("h-6 w-6", cap.color)} />
                   </div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="flex items-start gap-4 p-6">
-                  <Smartphone className="h-8 w-8 text-primary" />
-                  <div>
-                    <h4 className="font-medium">Apple Wallet</h4>
-                    <p className="text-sm text-muted-foreground">
-                      Add-to-wallet passes for iPhone and Apple Watch.
-                    </p>
-                    <Badge variant="secondary" className="mt-2">Coming Soon</Badge>
-                  </div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="flex items-start gap-4 p-6">
-                  <QrCode className="h-8 w-8 text-green-600" />
-                  <div>
-                    <h4 className="font-medium">Barcode Types</h4>
-                    <p className="text-sm text-muted-foreground">
-                      QR Code, PDF417, and Code128 barcode support.
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
+                  <h4 className="text-xl font-black text-white italic tracking-tighter uppercase mb-4">{cap.title}</h4>
+                  <p className="text-[10px] font-bold text-white/30 uppercase tracking-widest leading-relaxed">
+                    {cap.desc}
+                  </p>
+                </motion.div>
+              ))}
             </div>
           </div>
         </TabsContent>
 
-        <TabsContent value="scanner">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Ticket Scanner</CardTitle>
-              <CardDescription>
-                Scan and validate tickets at the door
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-col items-center justify-center rounded-lg border border-dashed p-12 text-center">
-                <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-primary/10">
-                  <ScanLine className="h-10 w-10 text-primary" />
-                </div>
-                <h3 className="mt-4 text-lg font-semibold">
-                  Use Event Check-In
-                </h3>
-                <p className="mt-2 max-w-sm text-sm text-muted-foreground">
-                  Open the check-in page for a specific event to scan QR codes
-                  and verify guest tickets. The scanner is integrated into the
-                  check-in kiosk.
-                </p>
-                <Link href="/dashboard/events">
-                  <Button className="mt-6 gap-2">
-                    <ScanLine className="h-4 w-4" /> Go to Events
-                  </Button>
-                </Link>
-                <p className="mt-3 text-xs text-muted-foreground">
-                  Requires camera permission. Works best in Chrome and Safari.
+        <TabsContent value="scanner" className="mt-0 outline-none">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="rounded-[40px] bg-white/5 border border-white/10 p-16 text-center space-y-10 relative overflow-hidden"
+          >
+            <div className="relative z-10 space-y-6">
+              <div className="h-24 w-24 rounded-[40px] bg-primary/10 flex items-center justify-center mx-auto text-primary shadow-2xl shadow-primary/20 rotate-12">
+                <ScanLine className="h-12 w-12" />
+              </div>
+              <div className="space-y-3">
+                <h3 className="text-3xl font-black text-white italic tracking-tighter uppercase leading-none">Scanning Interface</h3>
+                <p className="max-w-md mx-auto text-[10px] font-bold text-white/30 uppercase tracking-[0.2em] leading-relaxed">
+                  Connect high-velocity capture devices or initialize local camera protocols for real-time validation.
                 </p>
               </div>
-            </CardContent>
-          </Card>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+                <Link href="/dashboard/events">
+                  <Button className="h-16 px-10 rounded-2xl bg-primary text-white font-black italic uppercase tracking-widest shadow-2xl shadow-primary/20 transition-all hover:scale-[1.05] active:scale-95 flex gap-3">
+                    <ScanLine className="h-6 w-6" />
+                    Initialize Kiosk
+                  </Button>
+                </Link>
+                <Button variant="outline" className="h-16 px-10 rounded-2xl bg-white/5 border-white/10 text-white hover:bg-white/10 font-black italic uppercase tracking-widest transition-all">
+                  Configure Peripheral
+                </Button>
+              </div>
+              <p className="text-[9px] font-black text-white/10 uppercase tracking-[0.4em] pt-4">Requires Camera Authorization (v2.0.4)</p>
+            </div>
+            <div className="absolute -left-20 -bottom-20 h-64 w-64 bg-primary/5 rounded-full blur-[100px]" />
+          </motion.div>
         </TabsContent>
       </Tabs>
     </div>

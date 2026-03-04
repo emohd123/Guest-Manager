@@ -122,38 +122,41 @@ export function DashboardSidebar({ collapsed, onToggle }: DashboardSidebarProps)
   return (
     <aside
       className={cn(
-        "flex h-screen flex-col border-r border-r-white/5 glass-panel text-sidebar-foreground transition-all duration-300 relative z-50",
+        "flex h-screen flex-col border-r border-r-white/5 glass-panel text-white transition-all duration-300 relative z-50",
         collapsed ? "w-16" : "w-64"
       )}
     >
       {/* Logo */}
-      <div className="flex h-16 items-center justify-between px-4">
+      <div className="flex h-20 items-center justify-between px-6">
         {!collapsed && (
-          <Link href="/dashboard" className="text-lg font-bold">
-            <span className="text-primary">Guest</span>Manager
+          <Link href="/dashboard" className="text-xl font-bold tracking-tight">
+            <span className="text-primary italic">Guest</span>
+            <span className="text-white">Manager</span>
           </Link>
         )}
         <Button
           variant="ghost"
           size="icon"
           onClick={onToggle}
-          className="h-8 w-8 shrink-0"
+          className="h-8 w-8 shrink-0 hover:bg-white/10 text-white/50 hover:text-white"
         >
           <ChevronLeft
             className={cn(
-              "h-4 w-4 transition-transform",
+              "h-5 w-5 transition-transform duration-500",
               collapsed && "rotate-180"
             )}
           />
         </Button>
       </div>
 
-      <Separator />
+      <div className="px-4 mb-4">
+        <div className="h-px bg-linear-to-r from-transparent via-white/10 to-transparent" />
+      </div>
 
       {/* Navigation */}
-      <ScrollArea className="flex-1 px-2 py-4">
-        <nav className="space-y-1">
-          {navigation.map((item) => {
+      <ScrollArea className="flex-1 px-3 py-2">
+        <nav className="space-y-1.5">
+          {navigation.map((item, idx) => {
             const isActive =
               pathname === item.href || pathname.startsWith(item.href + "/");
             const showBadge = (item as { badge?: boolean }).badge && !isActive && messagesUnread > 0;
@@ -162,22 +165,28 @@ export function DashboardSidebar({ collapsed, onToggle }: DashboardSidebarProps)
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors relative",
+                  "flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold transition-all duration-300 relative group",
                   isActive
-                    ? "bg-sidebar-accent text-sidebar-primary"
-                    : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+                    ? "bg-primary text-white shadow-[0_0_20px_rgba(255,91,106,0.4)]"
+                    : "text-white/60 hover:bg-white/5 hover:text-white"
                 )}
                 title={collapsed ? item.label : undefined}
               >
-                <item.icon className="h-5 w-5 shrink-0" />
+                <item.icon className={cn(
+                  "h-5 w-5 shrink-0 transition-transform duration-300 group-hover:scale-110",
+                  isActive ? "text-white" : "text-white/40 group-hover:text-primary"
+                )} />
                 {!collapsed && <span>{item.label}</span>}
                 {showBadge && (
                   <span className={cn(
-                    "ml-auto text-[10px] font-bold bg-violet-500 text-white rounded-full px-1.5 py-0.5 leading-none",
-                    collapsed && "absolute -top-1 -right-1 px-1"
+                    "ml-auto text-[10px] font-bold bg-primary text-white rounded-full px-1.5 py-0.5 leading-none animate-pulse",
+                    collapsed && "absolute top-2 right-2 px-1"
                   )}>
                     {messagesUnread > 9 ? "9+" : messagesUnread}
                   </span>
+                )}
+                {isActive && !collapsed && (
+                  <div className="absolute right-2 w-1.5 h-1.5 rounded-full bg-white/80" />
                 )}
               </Link>
             );
@@ -185,10 +194,12 @@ export function DashboardSidebar({ collapsed, onToggle }: DashboardSidebarProps)
         </nav>
       </ScrollArea>
 
-      <Separator />
+      <div className="px-4 my-2">
+        <div className="h-px bg-linear-to-r from-transparent via-white/10 to-transparent" />
+      </div>
 
       {/* Bottom navigation */}
-      <div className="space-y-1 px-2 py-4">
+      <div className="space-y-1.5 px-3 py-4">
         {bottomNavigation.map((item) => {
           const isActive =
             pathname === item.href || pathname.startsWith(item.href + "/");
@@ -197,24 +208,24 @@ export function DashboardSidebar({ collapsed, onToggle }: DashboardSidebarProps)
               key={item.href}
               href={item.href}
               className={cn(
-                "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                "flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold transition-all duration-300 group",
                 isActive
-                  ? "bg-sidebar-accent text-sidebar-primary"
-                  : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+                  ? "bg-white/10 text-white"
+                  : "text-white/60 hover:bg-white/5 hover:text-white"
               )}
               title={collapsed ? item.label : undefined}
             >
-              <item.icon className="h-5 w-5 shrink-0" />
+              <item.icon className="h-5 w-5 shrink-0 transition-transform duration-300 group-hover:scale-110" />
               {!collapsed && <span>{item.label}</span>}
             </Link>
           );
         })}
         <button
           onClick={handleSignOut}
-          className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground/70 transition-colors hover:bg-sidebar-accent hover:text-sidebar-foreground"
+          className="flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold text-white/40 transition-all duration-300 hover:bg-red-500/10 hover:text-red-400 group"
           title={collapsed ? "Sign Out" : undefined}
         >
-          <LogOut className="h-5 w-5 shrink-0" />
+          <LogOut className="h-5 w-5 shrink-0 transition-transform duration-300 group-hover:-translate-x-1" />
           {!collapsed && <span>Sign Out</span>}
         </button>
       </div>

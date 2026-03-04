@@ -47,6 +47,8 @@ const statusColors: Record<string, string> = {
   completed: "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200",
 };
 
+import { motion } from "framer-motion";
+
 export default function EventsPage() {
   const router = useRouter();
   type EventStatus = "draft" | "published" | "cancelled" | "completed";
@@ -96,7 +98,7 @@ export default function EventsPage() {
           checked={table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && "indeterminate")}
           onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
           aria-label="Select all"
-          className="translate-y-[2px]"
+          className="translate-y-[2px] border-white/20 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
         />
       ),
       cell: ({ row }) => (
@@ -104,7 +106,7 @@ export default function EventsPage() {
           checked={row.getIsSelected()}
           onCheckedChange={(value) => row.toggleSelected(!!value)}
           aria-label="Select row"
-          className="translate-y-[2px]"
+          className="translate-y-[2px] border-white/20 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
         />
       ),
       enableSorting: false,
@@ -112,52 +114,65 @@ export default function EventsPage() {
     },
     {
       accessorKey: "title",
-      header: "Event",
+      header: "Event Information",
       cell: ({ row }) => (
-        <div>
+        <div className="flex flex-col gap-1">
           <Link
             href={`/dashboard/events/${row.original.id}`}
-            className="font-medium hover:text-primary hover:underline"
+            className="font-bold text-white hover:text-primary transition-colors text-base"
           >
             {row.original.title}
           </Link>
-          <p className="text-xs text-muted-foreground capitalize">
-            {row.original.eventType.replace("_", " ")}
-          </p>
+          <div className="flex items-center gap-2">
+            <Badge variant="outline" className="text-[10px] uppercase font-black tracking-widest bg-white/5 border-white/10 text-white/40">
+              {row.original.eventType.replace("_", " ")}
+            </Badge>
+          </div>
         </div>
       ),
     },
     {
       accessorKey: "startsAt",
-      header: "Date",
+      header: "Schedule",
       cell: ({ row }) => (
-        <div className="text-sm">
-          <p>{format(new Date(row.original.startsAt), "MMM d, yyyy")}</p>
-          <p className="text-xs text-muted-foreground">
+        <div className="flex flex-col">
+          <span className="text-sm font-bold text-white/90">{format(new Date(row.original.startsAt), "EEE, MMM d, yyyy")}</span>
+          <span className="text-xs font-medium text-white/40">
             {format(new Date(row.original.startsAt), "h:mm a")}
-          </p>
+          </span>
         </div>
       ),
     },
     {
       accessorKey: "status",
-      header: "Status",
-      cell: ({ row }) => (
-        <Badge
-          variant="secondary"
-          className={statusColors[row.original.status]}
-        >
-          {row.original.status}
-        </Badge>
-      ),
+      header: "Current Status",
+      cell: ({ row }) => {
+        const status = row.original.status;
+        return (
+          <Badge
+            className={cn(
+              "rounded-full px-3 py-1 font-bold uppercase tracking-widest text-[10px] border-none",
+              status === "published" ? "bg-green-500/20 text-green-400" :
+              status === "draft" ? "bg-amber-500/20 text-amber-400" :
+              status === "cancelled" ? "bg-red-500/20 text-red-400" :
+              "bg-white/10 text-white/40"
+            )}
+          >
+            {status}
+          </Badge>
+        );
+      },
     },
     {
       accessorKey: "maxCapacity",
-      header: "Capacity",
+      header: "Attendance",
       cell: ({ row }) => (
-        <span className="text-sm">
-          {row.original.maxCapacity ?? "Unlimited"}
-        </span>
+        <div className="flex flex-col">
+          <span className="text-sm font-bold text-white">
+            {row.original.maxCapacity ?? "Unlimited"}
+          </span>
+          <span className="text-[10px] text-white/20 uppercase font-black">Capacity</span>
+        </div>
       ),
     },
     {
@@ -165,40 +180,44 @@ export default function EventsPage() {
       cell: ({ row }) => (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-8 w-8">
-              <MoreHorizontal className="h-4 w-4" />
+            <Button variant="ghost" size="icon" className="h-10 w-10 text-white/40 hover:text-white hover:bg-white/10 rounded-xl">
+              <MoreHorizontal className="h-5 w-5" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
+          <DropdownMenuContent align="end" className="w-[180px] p-2 rounded-2xl bg-[#1A1C30] border-white/10 text-white">
             <DropdownMenuItem
+              className="rounded-xl focus:bg-white/10 focus:text-white"
               onClick={() =>
                 router.push(`/dashboard/events/${row.original.id}`)
               }
             >
-              <Eye className="mr-2 h-4 w-4" /> View
+              <Eye className="mr-2 h-4 w-4 text-primary" /> View
             </DropdownMenuItem>
             <DropdownMenuItem
+              className="rounded-xl focus:bg-white/10 focus:text-white"
               onClick={() =>
                 router.push(`/dashboard/events/${row.original.id}/settings`)
               }
             >
-              <Edit className="mr-2 h-4 w-4" /> Edit
+              <Edit className="mr-2 h-4 w-4 text-primary" /> Edit
             </DropdownMenuItem>
             <DropdownMenuItem
+              className="rounded-xl focus:bg-white/10 focus:text-white"
               onClick={() => duplicateEvent.mutate({ id: row.original.id })}
             >
-              <Copy className="mr-2 h-4 w-4" /> Duplicate
+              <Copy className="mr-2 h-4 w-4 text-primary" /> Duplicate
             </DropdownMenuItem>
             {row.original.status !== "completed" && (
               <DropdownMenuItem
+                className="rounded-xl focus:bg-white/10 focus:text-white"
                 onClick={() => archiveEvent.mutate({ id: row.original.id })}
               >
-                <Archive className="mr-2 h-4 w-4" /> Archive
+                <Archive className="mr-2 h-4 w-4 text-primary" /> Archive
               </DropdownMenuItem>
             )}
-            <DropdownMenuSeparator />
+            <DropdownMenuSeparator className="bg-white/5" />
             <DropdownMenuItem
-              className="text-destructive"
+              className="text-red-400 rounded-xl focus:bg-red-500/10 focus:text-red-400"
               onClick={() => deleteEvent.mutate({ id: row.original.id })}
             >
               <Trash2 className="mr-2 h-4 w-4" /> Delete
@@ -213,50 +232,43 @@ export default function EventsPage() {
 
   if (!isLoading && events.length === 0 && statusFilter === "all") {
     return (
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold">Events</h1>
-            <p className="text-muted-foreground">
-              Manage your events, guest lists, and check-ins.
-            </p>
+      <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-8">
+        <motion.div
+          initial={{ scale: 0.9, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          className="p-8 rounded-[40px] bg-white/5 border border-white/10 backdrop-blur-3xl max-w-xl w-full"
+        >
+          <div className="mx-auto flex h-24 w-24 items-center justify-center rounded-full bg-primary/10 mb-6 group">
+            <CalendarDays className="h-12 w-12 text-primary group-hover:scale-110 transition-transform duration-500" />
           </div>
+          <h1 className="text-3xl font-black text-white mb-4 italic tracking-tight">Create Magic</h1>
+          <p className="text-white/40 mb-10 text-lg leading-relaxed">
+            Get started by creating your first event. You can set up check-ins,
+            guest lists, and vibrant ticketing experiences.
+          </p>
           <Link href="/dashboard/events/new">
-            <Button className="gap-2">
-              <Plus className="h-4 w-4" /> New Event
+            <Button size="lg" className="h-14 px-10 rounded-2xl bg-primary hover:bg-primary/90 text-white font-black text-lg shadow-2xl shadow-primary/20 transition-all hover:-translate-y-1">
+              Create Your First Event
             </Button>
           </Link>
-        </div>
-
-        <div className="flex flex-col items-center justify-center rounded-lg border border-dashed p-12 text-center">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
-            <CalendarDays className="h-8 w-8 text-primary" />
-          </div>
-          <h3 className="mt-4 text-lg font-semibold">No events yet</h3>
-          <p className="mt-2 max-w-sm text-sm text-muted-foreground">
-            Get started by creating your first event. You can set up check-in,
-            guest lists, and ticketing.
-          </p>
-          <Link href="/dashboard/events/new" className="mt-6">
-            <Button>Create Your First Event</Button>
-          </Link>
-        </div>
+        </motion.div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="space-y-10 pb-20">
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 px-2">
         <div>
-          <h1 className="text-2xl font-bold">Events</h1>
-          <p className="text-muted-foreground">
-            {data?.total ?? 0} event{(data?.total ?? 0) !== 1 ? "s" : ""} total
+          <h1 className="text-4xl font-black text-white italic tracking-tighter">Events</h1>
+          <p className="text-white/40 font-bold uppercase tracking-[0.2em] text-[10px] mt-2">
+            {data?.total ?? 0} active event{(data?.total ?? 0) !== 1 ? "s" : ""}
           </p>
         </div>
         <Link href="/dashboard/events/new">
-          <Button className="gap-2">
-            <Plus className="h-4 w-4" /> New Event
+          <Button className="h-14 px-8 rounded-2xl bg-white text-[#1A1C30] hover:bg-white/90 font-black text-base shadow-2xl transition-all hover:-translate-y-1 flex gap-3">
+            <Plus className="h-6 w-6" />
+            New Event
           </Button>
         </Link>
       </div>
@@ -265,19 +277,19 @@ export default function EventsPage() {
         columns={columns}
         data={events}
         searchKey="title"
-        searchPlaceholder="Search events..."
+        searchPlaceholder="Find an event..."
         isLoading={isLoading}
         toolbar={
           <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as EventStatus | "all")}>
-            <SelectTrigger className="w-[150px]">
+            <SelectTrigger className="h-12 w-[180px] bg-white/5 border-white/10 rounded-2xl text-white font-bold focus:ring-primary">
               <SelectValue placeholder="All statuses" />
             </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All statuses</SelectItem>
-              <SelectItem value="draft">Draft</SelectItem>
-              <SelectItem value="published">Published</SelectItem>
-              <SelectItem value="cancelled">Cancelled</SelectItem>
-              <SelectItem value="completed">Completed</SelectItem>
+            <SelectContent className="bg-[#1A1C30] border-white/10 text-white rounded-2xl">
+              <SelectItem value="all" className="rounded-xl">All statuses</SelectItem>
+              <SelectItem value="draft" className="rounded-xl">Draft</SelectItem>
+              <SelectItem value="published" className="rounded-xl">Published</SelectItem>
+              <SelectItem value="cancelled" className="rounded-xl">Cancelled</SelectItem>
+              <SelectItem value="completed" className="rounded-xl">Completed</SelectItem>
             </SelectContent>
           </Select>
         }

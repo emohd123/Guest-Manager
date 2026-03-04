@@ -5,7 +5,7 @@ import { trpc } from "@/lib/trpc/client";
 import { DataTable } from "@/components/shared/data-table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Ticket, MoreHorizontal, Edit, Trash, AlertCircle } from "lucide-react";
+import { Plus, Ticket, MoreHorizontal, Edit, Trash, AlertCircle, Activity, Zap, Target } from "lucide-react";
 import { format } from "date-fns";
 import { useState } from "react";
 import { TicketTypeModal } from "@/components/tickets/TicketTypeModal";
@@ -28,6 +28,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { motion, AnimatePresence } from "framer-motion";
+import { cn } from "@/lib/utils";
 
 export default function TicketsPage({ params }: { params: Promise<{ eventId: string }> }) {
   const { eventId } = use(params);
@@ -39,7 +41,7 @@ export default function TicketsPage({ params }: { params: Promise<{ eventId: str
 
   const deleteMutation = trpc.ticketTypes.delete.useMutation({
     onSuccess: () => {
-      toast.success("Ticket type deleted");
+      toast.success("Asset configuration purged");
       refetch();
       setDeleteId(null);
     },
@@ -51,23 +53,23 @@ export default function TicketsPage({ params }: { params: Promise<{ eventId: str
   const columns = [
     {
       accessorKey: "name",
-      header: "Ticket Type",
+      header: "Asset Level",
       cell: ({ row }: { row: { original: TicketType } }) => (
-        <div>
-          <span className="font-semibold">{row.original.name}</span>
+        <div className="flex flex-col gap-1">
+          <span className="font-black italic text-white uppercase tracking-tight">{row.original.name}</span>
           {row.original.description && (
-            <p className="text-xs text-muted-foreground mt-0.5 truncate max-w-[240px]">{row.original.description}</p>
+            <p className="text-[9px] font-bold text-white/20 uppercase tracking-widest truncate max-w-[240px] italic">{row.original.description}</p>
           )}
         </div>
       ),
     },
     {
       accessorKey: "price",
-      header: "Price",
+      header: "Unit Cost",
       cell: ({ row }: { row: { original: TicketType } }) => (
-        <span className="font-mono font-medium">
+        <span className="font-black italic text-primary">
           {row.original.price === 0 || row.original.price === null ? (
-            <Badge variant="secondary">Free</Badge>
+            "FREE_TIER"
           ) : (
             `$${((row.original.price ?? 0) / 100).toFixed(2)}`
           )}
@@ -76,82 +78,65 @@ export default function TicketsPage({ params }: { params: Promise<{ eventId: str
     },
     {
       accessorKey: "quantitySold",
-      header: "Sales",
+      header: "Sales Velocity",
       cell: ({ row }: { row: { original: TicketType } }) => {
         const sold = row.original.quantitySold ?? 0;
         const total = row.original.quantityTotal;
         const pct = total ? Math.round((sold / total) * 100) : null;
         return (
-          <div>
-            <span className="font-medium">{sold}</span>
-            <span className="text-muted-foreground"> / {total ?? "∞"}</span>
+          <div className="flex items-center gap-3">
+            <span className="font-black italic text-white">{sold}</span>
+            <span className="text-[10px] font-black text-white/10 italic">/ {total ?? "∞"}</span>
             {pct !== null && (
-              <span className="ml-2 text-xs text-muted-foreground">({pct}%)</span>
+              <Badge className="bg-white/5 text-white/40 border-white/10 rounded-full px-2 font-black text-[8px] uppercase">{pct}%</Badge>
             )}
           </div>
         );
       },
     },
     {
-      accessorKey: "saleStartsAt",
-      header: "Sale Period",
-      cell: ({ row }: { row: { original: TicketType } }) => {
-        const starts = row.original.saleStartsAt;
-        const ends = row.original.saleEndsAt;
-        if (!starts && !ends) return <span className="text-muted-foreground text-xs">Always on sale</span>;
-        return (
-          <div className="text-xs text-muted-foreground">
-            {starts && <div>From {format(new Date(starts as string), "MMM d")}</div>}
-            {ends && <div>Until {format(new Date(ends as string), "MMM d")}</div>}
-          </div>
-        );
-      },
-    },
-    {
       accessorKey: "status",
-      header: "Status",
+      header: "Current State",
       cell: ({ row }: { row: { original: TicketType } }) => {
         const status = row.original.status as string;
         const variantMap: Record<string, string> = {
-          active: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
-          paused: "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400",
-          sold_out: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
-          archived: "bg-zinc-100 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400",
+          active: "bg-green-500/10 text-green-500 border-green-500/20",
+          paused: "bg-yellow-500/10 text-yellow-500 border-yellow-500/20",
+          sold_out: "bg-red-500/10 text-red-500 border-red-500/20",
+          archived: "bg-white/10 text-white/30 border-white/10",
         };
         return (
-          <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium capitalize ${variantMap[status] ?? ""}`}>
+          <Badge className={cn("rounded-full px-3 py-0.5 font-black text-[9px] uppercase tracking-widest border italic", variantMap[status] || "")}>
             {status.replace("_", " ")}
-          </span>
+          </Badge>
         );
       },
     },
     {
       id: "actions",
+      header: "CMD",
       cell: ({ row }: { row: { original: TicketType } }) => (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <div className="flex justify-end">
-              <Button variant="ghost" className="h-8 w-8 p-0 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800">
+              <Button variant="ghost" className="h-10 w-10 p-0 rounded-xl hover:bg-white/5 border border-white/5 text-white/20 hover:text-white">
                 <MoreHorizontal className="h-4 w-4" />
               </Button>
             </div>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="rounded-xl p-1 bg-white dark:bg-zinc-950 border-zinc-100 dark:border-zinc-800 shadow-xl">
+          <DropdownMenuContent align="end" className="w-[200px] p-2 bg-slate-950 border-white/10 rounded-2xl shadow-2xl backdrop-blur-xl">
             <DropdownMenuItem 
-              onClick={() => {
-                setSelectedTicket(row.original);
-                setIsModalOpen(true);
-              }}
-              className="px-3 py-2 rounded-lg text-sm font-medium flex items-center gap-2 cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-900"
+              onClick={() => { setSelectedTicket(row.original); setIsModalOpen(true); }}
+              className="rounded-xl font-black italic uppercase tracking-widest text-[9px] focus:bg-white/10 focus:text-white py-3 gap-3"
             >
-              <Edit className="h-4 w-4 text-primary" /> Edit Details
+              <Edit className="h-3.5 w-3.5 text-primary" /> Modify Configuration
             </DropdownMenuItem>
-            <DropdownMenuSeparator className="bg-zinc-100 dark:bg-zinc-800 my-1" />
+            <DropdownMenuSeparator className="bg-white/5 mx-2 my-2" />
             <DropdownMenuItem 
               onClick={() => setDeleteId(row.original.id)}
-              className="px-3 py-2 rounded-lg text-sm font-medium flex items-center gap-2 cursor-pointer text-destructive focus:text-destructive hover:bg-destructive/5"
+              className="rounded-xl font-black italic uppercase tracking-widest text-[9px] text-red-500 focus:bg-red-500/10 focus:text-red-400 py-3 gap-3"
             >
-              <Trash className="h-4 w-4" /> Delete Type
+              <Trash className="h-3.5 w-3.5" /> Purge Asset Type
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -159,63 +144,59 @@ export default function TicketsPage({ params }: { params: Promise<{ eventId: str
     },
   ];
 
-  if (!isLoading && tickets.length === 0) {
-    return (
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold">Ticket Types</h1>
-            <p className="text-muted-foreground">Manage pricing tiers and ticket availability.</p>
-          </div>
-          <Button className="gap-2 rounded-2xl px-6 h-11 shadow-xl shadow-primary/20" onClick={() => {
-            setSelectedTicket(null);
-            setIsModalOpen(true);
-          }}>
-            <Plus className="h-4 w-4" /> Create Ticket
-          </Button>
-        </div>
-
-        <div className="flex flex-col items-center justify-center rounded-lg border border-dashed p-12 text-center">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
-            <Ticket className="h-8 w-8 text-primary" />
-          </div>
-          <h3 className="mt-4 text-lg font-semibold">No ticket types created</h3>
-          <p className="mt-2 text-sm text-muted-foreground max-w-sm">
-            Set up different pricing tiers, Early Bird specials, or VIP packages to start selling tickets online.
-          </p>
-          <Button className="mt-6 rounded-2xl px-8 h-12 shadow-xl shadow-primary/20 font-bold" onClick={() => {
-            setSelectedTicket(null);
-            setIsModalOpen(true);
-          }}>Create Ticket Type</Button>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Ticket Types</h1>
-          <p className="text-muted-foreground">
-            {tickets.length} ticket type{tickets.length !== 1 ? "s" : ""}
+    <div className="space-y-12 pb-20 px-2">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-8">
+        <motion.div initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }}>
+          <h1 className="text-4xl font-black text-white italic tracking-tighter uppercase leading-none">Foundry</h1>
+          <p className="text-white/40 font-bold uppercase tracking-[0.2em] text-[10px] mt-2 italic flex items-center gap-2">
+             <Activity className="h-3 w-3 text-primary animate-pulse" />
+             Asset Generation Hub
           </p>
-        </div>
-        <Button className="gap-2 rounded-2xl px-6 h-11 shadow-xl shadow-primary/20" onClick={() => {
-          setSelectedTicket(null);
-          setIsModalOpen(true);
-        }}>
-          <Plus className="h-4 w-4" /> Create Ticket
+        </motion.div>
+        
+        <Button className="h-14 px-8 rounded-2xl bg-primary text-white font-black text-base shadow-2xl shadow-primary/20 transition-all hover:scale-[1.05] active:scale-95 italic flex gap-3" onClick={() => { setSelectedTicket(null); setIsModalOpen(true); }}>
+          <Plus className="h-6 w-6" />
+          Initialize Asset
         </Button>
       </div>
 
-      <DataTable
-        columns={columns}
-        data={tickets}
-        searchKey="name"
-        searchPlaceholder="Search ticket types..."
-        isLoading={isLoading}
-      />
+      {!isLoading && tickets.length === 0 ? (
+        <motion.div 
+          initial={{ scale: 0.95, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          className="flex flex-col items-center justify-center rounded-[40px] bg-white/5 border border-white/10 p-20 text-center space-y-8"
+        >
+          <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-[32px] bg-primary/10 text-primary rotate-12 group-hover:rotate-0 transition-transform">
+            <Ticket className="h-10 w-10 -rotate-12" />
+          </div>
+          <div className="space-y-2">
+            <h3 className="text-2xl font-black text-white italic tracking-tighter uppercase leading-none">Forge Inactive</h3>
+            <p className="max-w-xs mx-auto text-[10px] font-bold text-white/20 uppercase tracking-[0.2em] leading-relaxed">
+              No admission assets defined for this operation. Create tiered tickets to initiate procurement protocols.
+            </p>
+          </div>
+          <Button className="h-14 px-10 rounded-2xl bg-white/10 hover:bg-primary text-white font-black italic uppercase tracking-widest transition-all" onClick={() => { setSelectedTicket(null); setIsModalOpen(true); }}>
+            Initiate Level 01
+          </Button>
+        </motion.div>
+      ) : (
+        <motion.div
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+        >
+           <DataTable
+            columns={columns}
+            data={tickets}
+            searchKey="name"
+            searchPlaceholder="Filter asset categories..."
+            isLoading={isLoading}
+          />
+        </motion.div>
+      )}
+
+      {/* Modals */}
       <TicketTypeModal 
         open={isModalOpen}
         onOpenChange={setIsModalOpen}
@@ -225,25 +206,25 @@ export default function TicketsPage({ params }: { params: Promise<{ eventId: str
       />
 
       <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
-        <AlertDialogContent className="rounded-3xl border-none shadow-2xl p-8 bg-white dark:bg-zinc-950">
-          <AlertDialogHeader className="space-y-4">
-            <div className="h-12 w-12 rounded-2xl bg-destructive/10 flex items-center justify-center text-destructive">
-              <AlertCircle className="h-6 w-6" />
+        <AlertDialogContent className="rounded-[40px] border border-white/10 shadow-2xl p-12 bg-slate-950 max-w-xl">
+          <AlertDialogHeader className="space-y-6">
+            <div className="h-16 w-16 rounded-[28px] bg-red-500/10 flex items-center justify-center text-red-500 shadow-2xl shadow-red-500/10">
+              <AlertCircle className="h-8 w-8" />
             </div>
-            <div className="space-y-1">
-              <AlertDialogTitle className="text-2xl font-bold">Are you absolutely sure?</AlertDialogTitle>
-              <AlertDialogDescription className="text-md">
-                This action cannot be undone. This will permanently delete the ticket type and remove it from all sales channels.
+            <div className="space-y-2">
+              <AlertDialogTitle className="text-3xl font-black text-white italic tracking-tighter uppercase leading-none">Security Override</AlertDialogTitle>
+              <AlertDialogDescription className="text-[10px] font-bold text-white/20 uppercase tracking-widest leading-relaxed">
+                This action will permanently purge the selected asset configuration. This protocol is irreversible and will terminate all active sales threads.
               </AlertDialogDescription>
             </div>
           </AlertDialogHeader>
-          <AlertDialogFooter className="pt-4 flex flex-row items-center justify-end gap-3">
-            <AlertDialogCancel className="h-12 px-6 rounded-2xl border-2 font-bold mt-0">Cancel</AlertDialogCancel>
+          <AlertDialogFooter className="pt-10 flex flex-row items-center justify-end gap-4">
+            <AlertDialogCancel className="h-14 px-8 rounded-2xl border-white/5 bg-white/5 text-white/40 hover:text-white font-black italic uppercase tracking-widest text-xs mt-0 transition-all">ABORT</AlertDialogCancel>
             <AlertDialogAction 
               onClick={() => deleteId && deleteMutation.mutate({ id: deleteId })}
-              className="h-12 px-8 rounded-2xl font-black bg-destructive hover:bg-destructive/90 text-white shadow-xl shadow-destructive/20 min-w-[120px]"
+              className="h-14 px-10 rounded-2xl font-black bg-red-500 hover:bg-red-600 text-white shadow-2xl shadow-red-500/20 italic text-xs transition-all hover:scale-105 active:scale-95"
             >
-              Delete
+              EXECUTE PURGE
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

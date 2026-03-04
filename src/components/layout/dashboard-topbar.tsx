@@ -40,25 +40,26 @@ export function DashboardTopbar({
     .slice(0, 2);
 
   return (
-    <header className="sticky top-0 z-40 flex h-16 items-center justify-between border-b border-b-white/5 glass-panel px-4 lg:px-6">
+    <header className="sticky top-0 z-40 flex h-20 items-center justify-between border-b border-b-white/5 bg-background/40 backdrop-blur-3xl px-6 lg:px-8">
       <div className="flex items-center gap-4">
         <Button
           variant="ghost"
           size="icon"
-          className="lg:hidden"
+          className="lg:hidden text-white"
           onClick={onMenuClick}
         >
-          <Menu className="h-5 w-5" />
+          <Menu className="h-6 w-6" />
         </Button>
-        <div>
-          <p className="text-sm font-medium">{companyName}</p>
+        <div className="flex flex-col">
+          <p className="text-sm font-bold text-white/50 uppercase tracking-widest">{companyName}</p>
+          <h2 className="text-xl font-bold text-white capitalize">{pathname.split('/').pop()?.replace('-', ' ')}</h2>
         </div>
       </div>
 
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-4">
         <Button
-          variant="outline"
-          className="hidden h-9 w-64 justify-start gap-2 text-sm text-muted-foreground md:flex"
+          variant="secondary"
+          className="hidden h-11 w-72 justify-start gap-3 rounded-2xl bg-white/5 border-white/5 text-white/40 hover:bg-white/10 hover:text-white lg:flex"
           onClick={() => {
             document.dispatchEvent(
               new KeyboardEvent("keydown", { key: "k", metaKey: true })
@@ -66,53 +67,56 @@ export function DashboardTopbar({
           }}
         >
           <Search className="h-4 w-4" />
-          <span>Search...</span>
-          <kbd className="pointer-events-none ml-auto inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
+          <span className="font-medium">Search anything...</span>
+          <kbd className="pointer-events-none ml-auto inline-flex h-6 select-none items-center gap-1 rounded-lg border border-white/10 bg-white/5 px-2 font-mono text-[10px] font-bold text-white/40">
             <span className="text-xs">⌘</span>K
           </kbd>
         </Button>
 
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => setTheme(isDark ? "light" : "dark")}
-        >
-          <Sun className="h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-          <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-          <span className="sr-only">Toggle theme</span>
-        </Button>
+        <div className="flex items-center gap-2 bg-white/5 p-1 rounded-2xl">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="rounded-xl text-white/70 hover:bg-white/10 hover:text-white"
+            onClick={() => setTheme(isDark ? "light" : "dark")}
+          >
+            <Sun className="h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+            <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+            <span className="sr-only">Toggle theme</span>
+          </Button>
+        </div>
 
         {/* Global Add Menu */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="default" size="sm" className="hidden md:flex gap-1.5 ml-2 mr-2">
-              <Plus className="h-4 w-4" />
-              <span>Add</span>
+            <Button className="h-11 px-6 rounded-2xl bg-primary hover:bg-primary/90 text-white font-bold shadow-lg shadow-primary/20 gap-2">
+              <Plus className="h-5 w-5" />
+              <span className="hidden sm:inline">Create</span>
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-[200px]">
-            <DropdownMenuItem asChild>
-              <Link href="/dashboard/events/new" className="cursor-pointer">
-                <CalendarDays className="mr-2 h-4 w-4 text-muted-foreground" />
-                <span>New Event</span>
+          <DropdownMenuContent align="end" className="w-[200px] p-2 rounded-2xl bg-[#1A1C30] border-white/10 text-white">
+            <DropdownMenuItem asChild className="rounded-xl focus:bg-white/10 focus:text-white">
+              <Link href="/dashboard/events/new" className="cursor-pointer py-2">
+                <CalendarDays className="mr-2 h-4 w-4 text-primary" />
+                <span className="font-semibold">New Event</span>
               </Link>
             </DropdownMenuItem>
-            <DropdownMenuItem asChild>
-              <Link href="/dashboard/contacts" className="cursor-pointer">
-                <Contact className="mr-2 h-4 w-4 text-muted-foreground" />
-                <span>New Contact</span>
+            <DropdownMenuItem asChild className="rounded-xl focus:bg-white/10 focus:text-white">
+              <Link href="/dashboard/contacts" className="cursor-pointer py-2">
+                <Contact className="mr-2 h-4 w-4 text-primary" />
+                <span className="font-semibold">New Contact</span>
               </Link>
             </DropdownMenuItem>
-            <DropdownMenuItem asChild>
-              <Link href="/dashboard/tickets" className="cursor-pointer">
-                <Ticket className="mr-2 h-4 w-4 text-muted-foreground" />
-                <span>Issue Ticket</span>
+            <DropdownMenuItem asChild className="rounded-xl focus:bg-white/10 focus:text-white">
+              <Link href="/dashboard/tickets" className="cursor-pointer py-2">
+                <Ticket className="mr-2 h-4 w-4 text-primary" />
+                <span className="font-semibold">Issue Ticket</span>
               </Link>
             </DropdownMenuItem>
-            <DropdownMenuItem asChild>
-              <Link href="/dashboard/orders" className="cursor-pointer">
-                <ShoppingCart className="mr-2 h-4 w-4 text-muted-foreground" />
-                <span>Create Order</span>
+            <DropdownMenuItem asChild className="rounded-xl focus:bg-white/10 focus:text-white">
+              <Link href="/dashboard/orders" className="cursor-pointer py-2">
+                <ShoppingCart className="mr-2 h-4 w-4 text-primary" />
+                <span className="font-semibold">Create Order</span>
               </Link>
             </DropdownMenuItem>
           </DropdownMenuContent>
@@ -120,18 +124,27 @@ export function DashboardTopbar({
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="rounded-full">
-              <Avatar className="h-8 w-8">
-                <AvatarFallback className="bg-primary text-primary-foreground text-xs">
+            <Button variant="ghost" className="h-11 rounded-2xl gap-3 pl-1 pr-3 hover:bg-white/5">
+              <Avatar className="h-9 w-9 border-2 border-primary/20">
+                <AvatarFallback className="bg-primary text-white text-xs font-bold">
                   {initials}
                 </AvatarFallback>
               </Avatar>
+              <div className="hidden lg:flex flex-col items-start leading-none gap-1">
+                <span className="text-sm font-bold text-white">{userName}</span>
+                <span className="text-[10px] text-white/40 uppercase font-black tracking-tighter">Admin</span>
+              </div>
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem className="font-medium">{userName}</DropdownMenuItem>
-            <DropdownMenuItem asChild>
-              <a href="/dashboard/settings">Settings</a>
+          <DropdownMenuContent align="end" className="w-[200px] p-2 rounded-2xl bg-[#1A1C30] border-white/10 text-white">
+            <DropdownMenuItem className="font-bold py-3 px-4 border-b border-white/5 mb-2 hover:bg-transparent">
+              <div className="flex flex-col">
+                <span className="text-sm">{userName}</span>
+                <span className="text-xs text-white/40 font-normal">Administrator</span>
+              </div>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild className="rounded-xl focus:bg-white/10 focus:text-white">
+              <Link href="/dashboard/settings" className="cursor-pointer py-2">Settings</Link>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

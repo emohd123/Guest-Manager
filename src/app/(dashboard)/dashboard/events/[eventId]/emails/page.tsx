@@ -3,7 +3,7 @@ import * as React from "react";
 import { DataTable } from "@/components/shared/data-table";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Plus, Mail, RefreshCw, Star, Filter, X, LayoutTemplate } from "lucide-react";
+import { Plus, Mail, RefreshCw, Star, Filter, X, LayoutTemplate, Activity, Zap, Target, Search, ArrowRight } from "lucide-react";
 import { use } from "react";
 import { trpc } from "@/lib/trpc/client";
 import { Input } from "@/components/ui/input";
@@ -16,6 +16,9 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { format } from "date-fns";
+import { motion, AnimatePresence } from "framer-motion";
+import { cn } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
 
 export default function SentEmailsPage({ params }: { params: Promise<{ eventId: string }> }) {
   const { eventId } = use(params);
@@ -36,19 +39,16 @@ export default function SentEmailsPage({ params }: { params: Promise<{ eventId: 
       setResendingEmail(null);
     },
     onError: (err) => {
-      alert("Failed to resend: " + err.message);
+      alert("FAILURE: " + err.message);
     }
   });
 
   const syncMutation = trpc.sentEmails.syncStatus.useMutation({
     onSuccess: (result) => {
       utils.sentEmails.list.invalidate();
-      if (result.synced === 0) {
-        alert("No emails with a Resend ID found to sync (emails may not have a resendId stored).");
-      }
     },
     onError: (err) => {
-      alert("Sync failed: " + err.message);
+      alert("SYNC FAILURE: " + err.message);
     },
   });
 
@@ -56,230 +56,160 @@ export default function SentEmailsPage({ params }: { params: Promise<{ eventId: 
 
   const columns = [
     {
-      id: "select",
-      header: ({ table }: { table: any }) => (
-        <Checkbox
-          checked={table.getIsAllPageRowsSelected()}
-          onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-          aria-label="Select all"
-        />
-      ),
-      cell: ({ row }: { row: any }) => (
-        <Checkbox
-          checked={row.getIsSelected()}
-          onCheckedChange={(value) => row.toggleSelected(!!value)}
-          aria-label="Select row"
-        />
-      ),
-      enableSorting: false,
-      enableHiding: false,
-    },
-    {
       accessorKey: "state",
-      header: "State",
+      header: "Operation State",
       cell: ({ row }: { row: any }) => (
-        <span className="text-green-600 font-medium text-xs">{row.original.state}</span>
+        <Badge className="bg-green-500/10 text-green-500 border-none rounded-full px-3 py-0.5 font-black text-[8px] uppercase tracking-widest italic">{row.original.state}</Badge>
       )
     },
     {
       accessorKey: "status",
-      header: "Status",
+      header: "Registry Status",
       cell: ({ row }: { row: any }) => (
-        <span className="text-xs">{row.original.status}</span>
+        <span className="text-[10px] font-bold text-white/40 uppercase tracking-widest leading-none italic">{row.original.status}</span>
       )
     },
     {
       accessorKey: "emailAddress",
-      header: "Email",
+      header: "Target Node",
       cell: ({ row }: { row: any }) => (
-        <a href={`mailto:${row.original.emailAddress}`} className="text-blue-500 hover:underline max-w-[180px] truncate inline-block text-xs">
-          {row.original.emailAddress}
-        </a>
+        <div className="flex flex-col gap-0.5">
+           <span className="text-[11px] font-black text-white italic truncate uppercase tracking-tight leading-none">{row.original.emailAddress}</span>
+           <span className="text-[9px] font-bold text-white/10 uppercase tracking-widest">ID: {row.original.id.split('-')[0]}</span>
+        </div>
       )
     },
     {
       accessorKey: "openCount",
-      header: () => <div className="text-center">Opens</div>,
-      cell: ({ row }: { row: any }) => <div className="text-center">{row.original.openCount}</div>
+      header: "Interceptions",
+      cell: ({ row }: { row: any }) => <div className="font-black italic text-primary">{row.original.openCount}</div>
     },
     {
       accessorKey: "clickCount",
-      header: () => <div className="text-center">Clicks</div>,
-      cell: ({ row }: { row: any }) => <div className="text-center">{row.original.clickCount}</div>
-    },
-    {
-      accessorKey: "reason",
-      header: "Reason",
-      cell: ({ row }: { row: any }) => <span className="text-xs text-muted-foreground">{row.original.reason || "—"}</span>
+      header: "Propagations",
+      cell: ({ row }: { row: any }) => <div className="font-black italic text-white/40">{row.original.clickCount}</div>
     },
     {
       id: "actions",
-      header: () => <div className="text-right w-full pr-2">Actions</div>,
+      header: "CMD",
       cell: ({ row }: { row: any }) => (
-        <div className="flex items-center justify-end gap-1">
-          <Button variant="outline" size="sm" className="h-7 shadow-none text-xs px-2" onClick={() => setViewingEmail(row.original)}>View</Button>
-          <Button variant="outline" size="sm" className="h-7 shadow-none text-xs px-2" onClick={() => setActivityEmail(row.original)}>Activity</Button>
-          <Button variant="outline" size="sm" className="h-7 shadow-none text-xs px-2" onClick={() => setResendingEmail(row.original)}>Resend</Button>
+        <div className="flex items-center justify-end gap-2">
+           <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl bg-white/5 border border-white/5 text-white/20 hover:text-white transition-all" onClick={() => setViewingEmail(row.original)}><Target className="h-4 w-4" /></Button>
+           <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl bg-white/5 border border-white/5 text-white/20 hover:text-white transition-all" onClick={() => setActivityEmail(row.original)}><Activity className="h-4 w-4" /></Button>
+           <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl bg-white/5 border border-white/5 text-white/20 hover:text-white transition-all" onClick={() => setResendingEmail(row.original)}><RefreshCw className="h-4 w-4" /></Button>
         </div>
       )
     },
   ];
 
-  if (!isLoading && emails.length === 0) {
-    return (
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold">Sent Emails</h1>
-            <p className="text-muted-foreground">Track all automated and manual communications sent to attendees.</p>
-          </div>
-          <Button className="gap-2 bg-blue-600 hover:bg-blue-700">
-            <Plus className="h-4 w-4" /> Compose Email
-          </Button>
-        </div>
-
-        <div className="flex flex-col items-center justify-center rounded-lg border border-dashed p-12 text-center">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
-            <Mail className="h-8 w-8 text-primary" />
-          </div>
-          <h3 className="mt-4 text-lg font-semibold">No emails sent yet</h3>
-          <p className="mt-2 text-sm text-muted-foreground max-w-sm">
-            Send ticket confirmations, pre-event reminders, or post-event surveys. Sent emails will appear here.
-          </p>
-          <Button className="mt-6 bg-blue-600 hover:bg-blue-700">Create New Email</Button>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="space-y-4">
-      {/* Ghost header matching GuestManager UI */}
-      <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between border-b pb-4">
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
+    <div className="space-y-12 pb-20 px-2">
+       {/* Header */}
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-8">
+        <motion.div initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }}>
+          <h1 className="text-4xl font-black text-white italic tracking-tighter uppercase leading-none">Relay</h1>
+          <p className="text-white/40 font-bold uppercase tracking-[0.2em] text-[10px] mt-2 italic flex items-center gap-2">
+             <Activity className="h-3 w-3 text-primary animate-pulse" />
+             Communication Transmission Logs
+          </p>
+        </motion.div>
+        
+        <div className="flex flex-wrap gap-3">
+           <Button
+            variant="ghost"
             size="icon"
-            className="h-9 w-9"
+            className="h-14 w-14 rounded-2xl bg-white/5 border border-white/10 text-white/40 hover:text-white transition-all group"
             disabled={syncMutation.isPending}
             onClick={() => syncMutation.mutate({ eventId })}
-            title="Sync email statuses from Resend"
           >
-            <RefreshCw className={`h-4 w-4 ${syncMutation.isPending ? "animate-spin" : ""}`} />
+            <RefreshCw className={cn("h-6 w-6", syncMutation.isPending && "animate-spin")} />
           </Button>
-          <Button variant="outline" size="icon" className="h-9 w-9">
-            <Star className="h-4 w-4" />
+          <Button className="h-14 px-8 rounded-2xl bg-primary text-white font-black text-base shadow-2xl shadow-primary/20 transition-all hover:scale-[1.05] active:scale-95 italic flex gap-3">
+            <Plus className="h-6 w-6" />
+            Compose Broadcast
           </Button>
-          <Button variant="outline" className="gap-2 h-9">
-            <Filter className="h-4 w-4" /> Filter
-          </Button>
-          <div className="relative">
-            <Input placeholder="Search by email address..." className="w-64 h-9 pr-8" />
+        </div>
+      </div>
+
+       <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="space-y-8">
+          <div className="flex gap-4 items-center">
+             <div className="relative group flex-1 max-w-md">
+                <Search className="absolute left-6 top-1/2 h-4 w-4 -translate-y-1/2 text-white/20 group-focus-within:text-primary transition-colors" />
+                <Input placeholder="Filter target node address..." className="h-12 pl-14 rounded-2xl bg-white/5 border-white/10 text-[10px] font-black italic uppercase tracking-widest text-white/40 placeholder:text-white/10 focus:ring-primary transition-all" />
+             </div>
+             <Button variant="outline" className="h-12 px-6 rounded-2xl bg-white/5 border-white/10 text-white/40 hover:text-white font-black italic uppercase tracking-widest text-[10px]"><Filter className="h-4 w-4 mr-2" /> Filter</Button>
           </div>
-          <Button variant="ghost" className="h-9 font-normal">
-            <X className="h-4 w-4 mr-2" /> Clear
-          </Button>
-        </div>
 
-        <div className="flex items-center gap-2">
-          <Button variant="outline" className="h-9">Summary</Button>
-          <Button variant="outline" className="h-9">Select</Button>
-          <Button variant="outline" className="h-9">Actions</Button>
-          <Button variant="outline" className="h-9 gap-2">
-            <LayoutTemplate className="h-4 w-4" /> Columns
-          </Button>
-        </div>
-      </div>
+          <DataTable
+            columns={columns}
+            data={emails}
+            isLoading={isLoading}
+          />
+       </motion.div>
 
-      <div className="bg-white rounded-md border shadow-sm">
-        <DataTable
-          columns={columns}
-          data={emails}
-          isLoading={isLoading}
-        />
-      </div>
-
-      <Dialog open={!!viewingEmail} onOpenChange={(o) => !o && setViewingEmail(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Email Summary</DialogTitle>
-            <DialogDescription>Details about this message.</DialogDescription>
+       {/* Summaries & Activity Dialogs */}
+       <Dialog open={!!viewingEmail} onOpenChange={(o) => !o && setViewingEmail(null)}>
+        <DialogContent className="rounded-[40px] border border-white/10 bg-slate-950 p-12 max-w-xl shadow-2xl backdrop-blur-3xl">
+          <DialogHeader className="mb-10">
+            <p className="text-[10px] font-black text-primary uppercase tracking-[0.3em] mb-2 italic">Transmission Detail</p>
+            <DialogTitle className="text-3xl font-black text-white italic uppercase tracking-tighter">Signal Summary</DialogTitle>
           </DialogHeader>
-          {viewingEmail && (
-            <div className="space-y-4 text-sm mt-4">
-              <div className="grid grid-cols-4 items-center gap-4">
-                <span className="font-semibold text-right col-span-1 border-r pr-4">Sent to</span>
-                <span className="col-span-3">{viewingEmail.emailAddress}</span>
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <span className="font-semibold text-right col-span-1 border-r pr-4">Subject</span>
-                <span className="col-span-3">{viewingEmail.subject}</span>
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <span className="font-semibold text-right col-span-1 border-r pr-4">Status</span>
-                <span className="col-span-3">{viewingEmail.status} ({viewingEmail.state})</span>
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <span className="font-semibold text-right col-span-1 border-r pr-4">Date</span>
-                <span className="col-span-3">{format(new Date(viewingEmail.createdAt), "PP pp")}</span>
-              </div>
-            </div>
-          )}
+          <div className="space-y-6">
+             {[
+                { label: "Target Node", value: viewingEmail?.emailAddress },
+                { label: "Protocol Type", value: viewingEmail?.subject },
+                { label: "Operation State", value: `${viewingEmail?.status} (${viewingEmail?.state})` },
+                { label: "Transmission Time", value: viewingEmail?.createdAt ? format(new Date(viewingEmail.createdAt), "PP pp").toUpperCase() : "PENDING" }
+             ].map((item, i) => (
+                <div key={i} className="flex flex-col gap-2 p-6 rounded-[24px] bg-white/3 border border-white/5">
+                   <span className="text-[8px] font-black text-white/20 uppercase tracking-[0.4em] italic leading-none">{item.label}</span>
+                   <span className="text-xs font-black text-white uppercase italic tracking-widest leading-none">{item.value}</span>
+                </div>
+             ))}
+          </div>
         </DialogContent>
       </Dialog>
       
       <Dialog open={!!activityEmail} onOpenChange={(o) => !o && setActivityEmail(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Email Activity</DialogTitle>
-            <DialogDescription>Timeline of interactions for ({activityEmail?.emailAddress}).</DialogDescription>
+        <DialogContent className="rounded-[40px] border border-white/10 bg-slate-950 p-12 max-w-xl shadow-2xl backdrop-blur-3xl">
+          <DialogHeader className="mb-10">
+             <p className="text-[10px] font-black text-primary uppercase tracking-[0.3em] mb-2 italic">Propagation Timeline</p>
+            <DialogTitle className="text-3xl font-black text-white italic uppercase tracking-tighter">Signal Activity</DialogTitle>
           </DialogHeader>
-          {activityEmail && (
-            <div className="space-y-6 mt-4 relative border-l-2 border-muted ml-4 pl-6 pb-2">
-              <div className="relative">
-                <div className="absolute -left-[31px] top-1 h-3 w-3 rounded-full bg-blue-500 ring-4 ring-background" />
-                <h4 className="text-sm font-semibold">Message Created</h4>
-                <p className="text-xs text-muted-foreground">{format(new Date(activityEmail.createdAt), "PP pp")}</p>
-              </div>
-              
-              <div className="relative">
-                <div className={`absolute -left-[31px] top-1 h-3 w-3 rounded-full ring-4 ring-background ${activityEmail.state === 'Delivered' ? 'bg-green-500' : 'bg-yellow-500'}`} />
-                <h4 className="text-sm font-semibold">{activityEmail.state === 'Delivered' ? 'Message Delivered' : 'Sending...'}</h4>
-                <p className="text-xs text-muted-foreground">{format(new Date(activityEmail.updatedAt), "PP pp")}</p>
-                {activityEmail.reason && <p className="text-xs text-destructive mt-1">{activityEmail.reason}</p>}
-              </div>
-
-              {activityEmail.openCount > 0 && (
-                <div className="relative">
-                  <div className="absolute -left-[31px] top-1 h-3 w-3 rounded-full bg-purple-500 ring-4 ring-background" />
-                  <h4 className="text-sm font-semibold">Message Opened</h4>
-                  <p className="text-xs text-muted-foreground">{activityEmail.openCount} total {activityEmail.openCount === 1 ? 'open' : 'opens'}</p>
+          <div className="space-y-10 relative border-l-2 border-white/10 ml-6 pl-10">
+             {[
+                { title: "Signal Created", time: activityEmail?.createdAt, icon: Zap, color: "text-white/40", bgColor: "bg-white/10" },
+                { title: activityEmail?.state === 'Delivered' ? 'Signal Delivered' : 'Propagating...', time: activityEmail?.updatedAt, icon: ShieldCheck, color: "text-green-500", bgColor: "bg-green-500/10" },
+                activityEmail?.openCount > 0 && { title: "Signal Intercepted", time: `${activityEmail.openCount} Verified Accesses`, icon: Target, color: "text-primary", bgColor: "bg-primary/10" },
+                activityEmail?.clickCount > 0 && { title: "Protocol Propagation", time: `${activityEmail.clickCount} Recursive Clicks`, icon: Activity, color: "text-orange-500", bgColor: "bg-orange-500/10" }
+             ].filter(Boolean).map((item: any, i) => (
+                <div key={i} className="relative">
+                   <div className={cn("absolute -left-[58px] h-10 w-10 rounded-2xl flex items-center justify-center border border-white/10 transition-transform hover:scale-110", item.bgColor, item.color)}>
+                      <item.icon className="h-5 w-5" />
+                   </div>
+                   <h4 className="text-sm font-black text-white uppercase italic tracking-tighter leading-none mb-2">{item.title}</h4>
+                   <p className="text-[9px] font-bold text-white/20 uppercase tracking-widest leading-none">
+                     {item.time?.includes(':') ? format(new Date(item.time), "PP pp").toUpperCase() : item.time}
+                   </p>
                 </div>
-              )}
-              
-              {activityEmail.clickCount > 0 && (
-                <div className="relative">
-                  <div className="absolute -left-[31px] top-1 h-3 w-3 rounded-full bg-orange-500 ring-4 ring-background" />
-                  <h4 className="text-sm font-semibold">Link Clicked</h4>
-                  <p className="text-xs text-muted-foreground">{activityEmail.clickCount} total {activityEmail.clickCount === 1 ? 'click' : 'clicks'}</p>
-                </div>
-              )}
-            </div>
-          )}
+             ))}
+          </div>
         </DialogContent>
       </Dialog>
 
       <Dialog open={!!resendingEmail} onOpenChange={(o) => !o && setResendingEmail(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Resend Email</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to resend this &quot;{resendingEmail?.type}&quot; to {resendingEmail?.emailAddress}?
+        <DialogContent className="rounded-[40px] border border-white/10 bg-slate-950 p-12 max-w-xl shadow-2xl backdrop-blur-3xl">
+          <DialogHeader className="mb-10">
+             <p className="text-[10px] font-black text-primary uppercase tracking-[0.3em] mb-2 italic">Recursive Action</p>
+             <DialogTitle className="text-3xl font-black text-white italic uppercase tracking-tighter">Confirm Relay</DialogTitle>
+            <DialogDescription className="text-[10px] font-bold text-white/20 uppercase tracking-widest leading-relaxed mt-4">
+               Authorize recursive transmission of &quot;{resendingEmail?.type}&quot; to target node {resendingEmail?.emailAddress}?
             </DialogDescription>
           </DialogHeader>
-          <DialogFooter className="mt-6">
-            <Button variant="outline" onClick={() => setResendingEmail(null)}>Cancel</Button>
+          <div className="flex items-center justify-end gap-4 pt-4">
+            <Button variant="outline" className="h-14 px-8 rounded-2xl bg-white/5 border-white/10 text-white/40 hover:text-white font-black italic uppercase tracking-widest text-xs mt-0 transition-all" onClick={() => setResendingEmail(null)}>ABORT</Button>
             <Button 
+               className="h-14 px-10 rounded-2xl font-black bg-primary text-white shadow-2xl shadow-primary/20 italic text-xs transition-all hover:scale-105 active:scale-95 disabled:opacity-20"
               disabled={resendMutation.isPending}
               onClick={() => {
                 if (resendingEmail) {
@@ -287,9 +217,9 @@ export default function SentEmailsPage({ params }: { params: Promise<{ eventId: 
                 }
               }}
             >
-              {resendMutation.isPending ? "Sending..." : "Confirm & Send"}
+              {resendMutation.isPending ? "RE-TRANSMITTING..." : "EXECUTE RELAY"}
             </Button>
-          </DialogFooter>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

@@ -1,17 +1,29 @@
 "use client";
 
 import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+  Building2,
+  CreditCard,
+  Users,
+  Key,
+  Plus,
+  Mail,
+  Check,
+  Zap,
+  Camera,
+  Trash2,
+  ExternalLink,
+  ChevronRight,
+  Globe
+} from "lucide-react";
+import { toast } from "sonner";
+import { trpc } from "@/lib/trpc/client";
+import { cn } from "@/lib/utils";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -22,64 +34,85 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Building2,
-  CreditCard,
-  Users,
-  Key,
-  Shield,
-  Plus,
-  Mail,
-  Check,
-  Zap,
-} from "lucide-react";
-import { toast } from "sonner";
-import { trpc } from "@/lib/trpc/client";
 
 export default function SettingsPage() {
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">Settings</h1>
-        <p className="text-muted-foreground">
-          Manage your account, billing, team, and integrations.
+    <motion.div 
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="space-y-12 pb-20 px-2"
+    >
+      <div className="flex flex-col gap-2">
+        <h1 className="text-4xl font-black text-white italic tracking-tighter uppercase">Systems</h1>
+        <p className="text-white/40 font-bold uppercase tracking-[0.2em] text-[10px]">
+          Operational control & infrastructure
         </p>
       </div>
 
-      <Tabs defaultValue="account" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4 lg:w-[500px]">
-          <TabsTrigger value="account" className="gap-2">
+      <Tabs defaultValue="account" className="space-y-10">
+        <TabsList className="bg-white/5 border border-white/10 p-1 rounded-2xl h-auto w-fit overflow-x-auto flex-nowrap">
+          <TabsTrigger value="account" className="rounded-xl px-8 py-3 font-black text-xs uppercase tracking-widest data-[state=active]:bg-primary data-[state=active]:text-white transition-all italic flex gap-2">
             <Building2 className="h-4 w-4" />
             <span className="hidden sm:inline">Account</span>
           </TabsTrigger>
-          <TabsTrigger value="billing" className="gap-2">
+          <TabsTrigger value="billing" className="rounded-xl px-8 py-3 font-black text-xs uppercase tracking-widest data-[state=active]:bg-primary data-[state=active]:text-white transition-all italic flex gap-2">
             <CreditCard className="h-4 w-4" />
-            <span className="hidden sm:inline">Billing</span>
+            <span className="hidden sm:inline">Financials</span>
           </TabsTrigger>
-          <TabsTrigger value="team" className="gap-2">
+          <TabsTrigger value="team" className="rounded-xl px-8 py-3 font-black text-xs uppercase tracking-widest data-[state=active]:bg-primary data-[state=active]:text-white transition-all italic flex gap-2">
             <Users className="h-4 w-4" />
-            <span className="hidden sm:inline">Team</span>
+            <span className="hidden sm:inline">Human Resources</span>
           </TabsTrigger>
-          <TabsTrigger value="api" className="gap-2">
+          <TabsTrigger value="api" className="rounded-xl px-8 py-3 font-black text-xs uppercase tracking-widest data-[state=active]:bg-primary data-[state=active]:text-white transition-all italic flex gap-2">
             <Key className="h-4 w-4" />
-            <span className="hidden sm:inline">API</span>
+            <span className="hidden sm:inline">Protocol</span>
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="account">
-          <AccountSettings />
-        </TabsContent>
-        <TabsContent value="billing">
-          <BillingSettings />
-        </TabsContent>
-        <TabsContent value="team">
-          <TeamSettings />
-        </TabsContent>
-        <TabsContent value="api">
-          <ApiSettings />
-        </TabsContent>
+        <AnimatePresence mode="wait">
+          <TabsContent value="account" className="mt-0 outline-none">
+            <motion.div
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 10 }}
+              className="space-y-8"
+            >
+              <AccountSettings />
+            </motion.div>
+          </TabsContent>
+          <TabsContent value="billing" className="mt-0 outline-none">
+            <motion.div
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 10 }}
+              className="space-y-8"
+            >
+              <BillingSettings />
+            </motion.div>
+          </TabsContent>
+          <TabsContent value="team" className="mt-0 outline-none">
+            <motion.div
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 10 }}
+              className="space-y-8"
+            >
+              <TeamSettings />
+            </motion.div>
+          </TabsContent>
+          <TabsContent value="api" className="mt-0 outline-none">
+            <motion.div
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 10 }}
+              className="space-y-8"
+            >
+              <ApiSettings />
+            </motion.div>
+          </TabsContent>
+        </AnimatePresence>
       </Tabs>
-    </div>
+    </motion.div>
   );
 }
 
@@ -117,7 +150,7 @@ function AccountSettings() {
 
   const updateCompany = trpc.settings.updateCompany.useMutation({
     onSuccess: () => {
-      toast.success("Company settings saved");
+      toast.success("Organization saved");
       utils.settings.getCompany.invalidate();
     },
     onError: (err) => toast.error(err.message),
@@ -125,186 +158,194 @@ function AccountSettings() {
 
   const updateUser = trpc.settings.updateUser.useMutation({
     onSuccess: () => {
-      toast.success("Profile updated");
+      toast.success("Identity updated");
       utils.settings.getUser.invalidate();
     },
     onError: (err) => toast.error(err.message),
   });
 
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Company Profile</CardTitle>
-          <CardDescription>
-            Your company information and branding.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center gap-6">
-            <div className="flex h-20 w-20 items-center justify-center rounded-xl border-2 border-dashed bg-muted text-muted-foreground">
-              <Building2 className="h-8 w-8" />
+    <div className="grid gap-8 lg:grid-cols-2">
+      {/* Company Section */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="rounded-[40px] bg-white/5 border border-white/10 p-10 relative overflow-hidden group"
+      >
+        <div className="relative z-10 space-y-8">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-2xl font-black text-white italic leading-none mb-2">Organization</h3>
+              <p className="text-white/30 text-[10px] font-bold uppercase tracking-widest">Global entity profile</p>
             </div>
-            <div className="space-y-1">
-              <Button variant="outline" size="sm" disabled>
-                Upload Logo
-              </Button>
-              <p className="text-xs text-muted-foreground">
-                PNG, JPG up to 2MB. Recommended 200x200px.
-              </p>
+            <div className="h-14 w-14 rounded-2xl bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform duration-500">
+               <Building2 className="h-7 w-7" />
             </div>
           </div>
-          <Separator />
-          {companyLoading ? (
-            <div className="space-y-3">
-              <Skeleton className="h-10 w-full" />
-              <Skeleton className="h-10 w-full" />
-            </div>
-          ) : (
-            <>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="companyName">Company Name</Label>
-                  <Input
-                    id="companyName"
-                    value={companyForm.name}
-                    onChange={(e) =>
-                      setCompanyForm((f) => ({ ...f, name: e.target.value }))
-                    }
-                    placeholder="Acme Events Inc."
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="slug">Company Slug</Label>
-                  <Input
-                    id="slug"
-                    value={companyForm.slug}
-                    onChange={(e) =>
-                      setCompanyForm((f) => ({ ...f, slug: e.target.value }))
-                    }
-                    placeholder="acme-events"
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Used in public event URLs
-                  </p>
-                </div>
-              </div>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="defaultTimezone">Default Timezone</Label>
-                  <Select
-                    value={companyForm.timezone}
-                    onValueChange={(v) =>
-                      setCompanyForm((f) => ({ ...f, timezone: v }))
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="America/New_York">Eastern Time (ET)</SelectItem>
-                      <SelectItem value="America/Chicago">Central Time (CT)</SelectItem>
-                      <SelectItem value="America/Denver">Mountain Time (MT)</SelectItem>
-                      <SelectItem value="America/Los_Angeles">Pacific Time (PT)</SelectItem>
-                      <SelectItem value="Europe/London">London (GMT)</SelectItem>
-                      <SelectItem value="Europe/Paris">Paris (CET)</SelectItem>
-                      <SelectItem value="Asia/Tokyo">Tokyo (JST)</SelectItem>
-                      <SelectItem value="UTC">UTC</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <div className="flex justify-end">
-                <Button
-                  onClick={() => updateCompany.mutate(companyForm)}
-                  disabled={updateCompany.isPending}
-                >
-                  {updateCompany.isPending ? "Saving..." : "Save Changes"}
-                </Button>
-              </div>
-            </>
-          )}
-        </CardContent>
-      </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Personal Information</CardTitle>
-          <CardDescription>Your account details.</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {userLoading ? (
-            <div className="space-y-3">
-              <Skeleton className="h-10 w-full" />
-              <Skeleton className="h-10 w-full" />
+          <div className="flex items-center gap-8 py-4">
+             <div className="relative group/avatar">
+               <div className="h-24 w-24 rounded-[32px] bg-white/5 border border-white/10 flex items-center justify-center text-white/20 group-hover/avatar:bg-white/8 transition-all">
+                  <Building2 className="h-10 w-10" />
+               </div>
+               <button className="absolute -bottom-2 -right-2 h-10 w-10 rounded-xl bg-primary text-white flex items-center justify-center shadow-2xl hover:scale-110 transition-transform">
+                  <Camera className="h-5 w-5" />
+               </button>
+             </div>
+             <div className="space-y-1">
+               <p className="text-sm font-black text-white italic">Asset Identity</p>
+               <p className="text-[10px] font-bold text-white/20 uppercase tracking-tighter">SVG, PNG or WebP · Max 4MB</p>
+             </div>
+          </div>
+
+          {companyLoading ? (
+            <div className="space-y-6">
+              <Skeleton className="h-14 w-full rounded-2xl bg-white/5" />
+              <Skeleton className="h-14 w-full rounded-2xl bg-white/5" />
             </div>
           ) : (
-            <>
+            <div className="space-y-6">
               <div className="space-y-2">
-                <Label htmlFor="name">Full Name</Label>
+                <Label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Entity Name</Label>
                 <Input
-                  id="name"
-                  value={userForm.name}
-                  onChange={(e) =>
-                    setUserForm((f) => ({ ...f, name: e.target.value }))
-                  }
-                  placeholder="John Doe"
+                  value={companyForm.name}
+                  onChange={(e) => setCompanyForm(f => ({ ...f, name: e.target.value }))}
+                  className="h-14 rounded-2xl bg-white/5 border-white/10 text-white font-bold px-6 focus:border-primary transition-all"
+                  placeholder="ACME CORP"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="email">Email Address</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={user?.email ?? ""}
-                  disabled
-                />
-                <p className="text-xs text-muted-foreground">
-                  Contact support to change your email address.
-                </p>
-              </div>
-              <div className="space-y-2">
-                <Label>Role</Label>
-                <div>
-                  <Badge variant="secondary" className="capitalize">
-                    {user?.role ?? "owner"}
-                  </Badge>
+                <Label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Universal Slug</Label>
+                <div className="relative">
+                  <Input
+                    value={companyForm.slug}
+                    onChange={(e) => setCompanyForm(f => ({ ...f, slug: e.target.value }))}
+                    className="h-14 rounded-2xl bg-white/5 border-white/10 text-white font-bold px-6 pl-14 focus:border-primary transition-all"
+                    placeholder="acme-hq"
+                  />
+                  <Globe className="absolute left-6 top-1/2 -translate-y-1/2 h-5 w-5 text-white/20" />
                 </div>
               </div>
-              <div className="flex justify-end">
+              <div className="space-y-2">
+                <Label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Chronological Zone</Label>
+                <Select
+                  value={companyForm.timezone}
+                  onValueChange={(v) => setCompanyForm(f => ({ ...f, timezone: v }))}
+                >
+                  <SelectTrigger className="h-14 rounded-2xl bg-white/5 border-white/10 text-white font-bold px-6 focus:border-primary transition-all">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-[#1A1C30] border-white/10 text-white">
+                    <SelectItem value="America/New_York">Eastern Time (ET)</SelectItem>
+                    <SelectItem value="America/Chicago">Central Time (CT)</SelectItem>
+                    <SelectItem value="America/Denver">Mountain Time (MT)</SelectItem>
+                    <SelectItem value="America/Los_Angeles">Pacific Time (PT)</SelectItem>
+                    <SelectItem value="Europe/London">London (GMT)</SelectItem>
+                    <SelectItem value="Europe/Paris">Paris (CET)</SelectItem>
+                    <SelectItem value="Asia/Tokyo">Tokyo (JST)</SelectItem>
+                    <SelectItem value="UTC">UTC</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <Button
+                onClick={() => updateCompany.mutate(companyForm)}
+                disabled={updateCompany.isPending}
+                className="h-14 w-full rounded-2xl bg-primary text-white font-black italic uppercase tracking-widest shadow-2xl shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all"
+              >
+                {updateCompany.isPending ? "Syncing..." : "Update Infrastructure"}
+              </Button>
+            </div>
+          )}
+        </div>
+        <div className="absolute -right-20 -bottom-20 h-64 w-64 bg-primary/5 rounded-full blur-[100px]" />
+      </motion.div>
+
+      {/* Identity & Danger Section */}
+      <div className="space-y-8">
+        <motion.div
+           initial={{ opacity: 0, y: 10 }}
+           animate={{ opacity: 1, y: 0 }}
+           transition={{ delay: 0.1 }}
+           className="rounded-[40px] bg-white/5 border border-white/10 p-10 relative overflow-hidden"
+        >
+          <div className="relative z-10 space-y-8">
+            <div>
+              <h3 className="text-2xl font-black text-white italic leading-none mb-2">Operator</h3>
+              <p className="text-white/30 text-[10px] font-bold uppercase tracking-widest">Personnel credentials</p>
+            </div>
+
+            {userLoading ? (
+              <div className="space-y-6">
+                <Skeleton className="h-14 w-full rounded-2xl bg-white/5" />
+                <Skeleton className="h-20 w-full rounded-2xl bg-white/5" />
+              </div>
+            ) : (
+              <div className="space-y-6">
+                <div className="space-y-2">
+                  <Label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Alias / Name</Label>
+                  <Input
+                    value={userForm.name}
+                    onChange={(e) => setUserForm(f => ({ ...f, name: e.target.value }))}
+                    className="h-14 rounded-2xl bg-white/5 border-white/10 text-white font-bold px-6 focus:border-primary transition-all"
+                    placeholder="OPERATOR NAME"
+                  />
+                </div>
+                <div className="p-6 rounded-3xl bg-white/3 border border-white/5 space-y-4">
+                  <div className="flex justify-between items-center">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-white/20">Access Privilege</span>
+                    <Badge className="bg-primary/20 text-primary border-none font-black italic uppercase text-[10px] tracking-widest px-3 py-1">
+                      {user?.role ?? "OWNER"}
+                    </Badge>
+                  </div>
+                  <div className="flex justify-between items-center pt-4 border-t border-white/5">
+                    <div className="space-y-1">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-white/20">Comm Channel</p>
+                      <p className="text-sm font-bold text-white/60">{user?.email}</p>
+                    </div>
+                    <Button variant="ghost" className="h-10 px-4 rounded-xl text-white/20 hover:text-white hover:bg-white/5 font-black text-[10px] uppercase tracking-widest">
+                      Edit
+                    </Button>
+                  </div>
+                </div>
                 <Button
                   onClick={() => updateUser.mutate(userForm)}
                   disabled={updateUser.isPending}
+                  className="h-14 w-full rounded-2xl bg-white/10 text-white font-black italic uppercase tracking-widest hover:bg-white/15 transition-all"
                 >
-                  {updateUser.isPending ? "Saving..." : "Update Profile"}
+                  {updateUser.isPending ? "Updating..." : "Confirm Identity"}
                 </Button>
               </div>
-            </>
-          )}
-        </CardContent>
-      </Card>
+            )}
+          </div>
+        </motion.div>
 
-      <Card className="border-destructive/50">
-        <CardHeader>
-          <CardTitle className="text-destructive">Danger Zone</CardTitle>
-          <CardDescription>
-            Irreversible actions for your account.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center justify-between rounded-lg border border-destructive/20 p-4">
-            <div>
-              <p className="font-medium">Delete Account</p>
-              <p className="text-sm text-muted-foreground">
-                Permanently delete your account and all data.
-              </p>
+        <motion.div
+           initial={{ opacity: 0, y: 10 }}
+           animate={{ opacity: 1, y: 0 }}
+           transition={{ delay: 0.2 }}
+           className="rounded-[40px] bg-red-500/5 border border-red-500/20 p-10 relative overflow-hidden group"
+        >
+          <div className="relative z-10 space-y-6">
+            <div className="flex items-center gap-4">
+              <div className="h-10 w-10 rounded-xl bg-red-500/10 flex items-center justify-center text-red-500">
+                <Trash2 className="h-5 w-5" />
+              </div>
+              <div>
+                <h3 className="text-xl font-black text-white italic leading-none mb-1 uppercase tracking-tighter">Terminal Action</h3>
+                <p className="text-red-500/40 text-[10px] font-bold uppercase tracking-widest">Irreversible deletion</p>
+              </div>
             </div>
-            <Button variant="destructive" size="sm" disabled>
-              Delete Account
+            
+            <p className="text-white/30 text-xs leading-relaxed max-w-[300px]">
+              Purge all data clusters and terminate account access permanently. This cannot be undone.
+            </p>
+
+            <Button variant="outline" className="border-red-500/20 text-red-500 hover:bg-red-500 hover:text-white font-black uppercase tracking-widest text-[10px] rounded-2xl h-12 w-full transition-all">
+              Initialize Self-Destruct
             </Button>
           </div>
-        </CardContent>
-      </Card>
+        </motion.div>
+      </div>
     </div>
   );
 }
@@ -375,138 +416,132 @@ function BillingSettings() {
   ];
 
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Current Plan</CardTitle>
-          <CardDescription>
-            Manage your subscription and credits.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center justify-between rounded-lg border p-4">
-            <div className="flex items-center gap-4">
-              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
-                <Zap className="h-6 w-6 text-primary" />
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <p className="text-lg font-bold">Free Plan</p>
-                  <Badge>Current</Badge>
+    <div className="space-y-12">
+      {/* Current Usage Card */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="rounded-[40px] bg-white/5 border border-white/10 p-10 relative overflow-hidden"
+      >
+        <div className="relative z-10 grid gap-10 lg:grid-cols-2 items-center">
+           <div className="space-y-6">
+             <div className="flex items-center gap-4">
+                <div className="h-16 w-16 rounded-[24px] bg-primary flex items-center justify-center text-white shadow-2xl shadow-primary/40">
+                   <Zap className="h-8 w-8" />
                 </div>
-                <p className="text-sm text-muted-foreground">
-                  {creditLimit} credits / month ·{" "}
-                  {company?.name ?? "Your Company"}
-                </p>
-              </div>
-            </div>
-            <div className="text-right">
-              <p className="text-2xl font-bold">$0</p>
-              <p className="text-sm text-muted-foreground">/month</p>
-            </div>
-          </div>
+                <div>
+                   <div className="flex items-center gap-3 mb-1">
+                      <h3 className="text-3xl font-black text-white italic tracking-tighter uppercase">FREE TIER</h3>
+                      <Badge className="bg-green-500/20 text-green-400 border-none font-black text-[9px] uppercase tracking-[0.2em] px-3">ACTIVE</Badge>
+                   </div>
+                   <p className="text-white/30 font-bold uppercase tracking-widest text-[10px]">{company?.name ?? "WORKSPACE"}</p>
+                </div>
+             </div>
+             
+             <div className="space-y-2">
+                <div className="flex justify-between text-[10px] font-black uppercase tracking-widest mb-1">
+                  <span className="text-white/40">Resource Allocation</span>
+                  <span className="text-white italic">{checkInsUsed} / {creditLimit} CREDITS</span>
+                </div>
+                <div className="h-3 bg-white/5 rounded-full overflow-hidden p-1 border border-white/5">
+                  <motion.div 
+                    initial={{ width: 0 }}
+                    animate={{ width: `${(checkInsUsed / creditLimit) * 100}%` }}
+                    className="h-full bg-primary rounded-full"
+                  />
+                </div>
+             </div>
+           </div>
 
-          <div className="flex items-center justify-between rounded-lg bg-muted/50 p-4">
-            <div>
-              <p className="font-medium">Credit Balance</p>
-              <p className="text-sm text-muted-foreground">
-                {checkInsUsed} of {creditLimit} used this month
-              </p>
-            </div>
-            <div className="flex items-center gap-4">
-              <div className="text-right">
-                <p className="text-2xl font-bold text-primary">
-                  {creditsLeft}
-                </p>
-                <p className="text-xs text-muted-foreground">credits left</p>
+           <div className="bg-white/3 rounded-[32px] border border-white/5 p-8 flex items-center justify-between">
+              <div>
+                <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] mb-2">Available Balance</p>
+                <h2 className="text-5xl font-black text-white italic tracking-tighter">{creditsLeft}</h2>
               </div>
-              <Button variant="outline" size="sm" disabled>
+              <Button className="h-16 px-8 rounded-2xl bg-white/10 hover:bg-white/15 text-white font-black italic uppercase tracking-widest transition-all">
                 Buy Credits
               </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+           </div>
+        </div>
+        <div className="absolute -left-20 -top-20 h-64 w-64 bg-primary/5 rounded-full blur-[100px]" />
+      </motion.div>
 
+      {/* Pricing Grid */}
       <div>
-        <h3 className="mb-4 text-lg font-semibold">Available Plans</h3>
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          {plans.map((plan) => (
-            <Card
+        <div className="flex items-center justify-between mb-8 px-4">
+          <div>
+            <h3 className="text-2xl font-black text-white italic leading-none mb-2">Expansion</h3>
+            <p className="text-white/30 text-[10px] font-bold uppercase tracking-widest">Select your operational scale</p>
+          </div>
+        </div>
+        
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+          {plans.map((plan, i) => (
+            <motion.div
               key={plan.name}
-              className={
-                plan.popular
-                  ? "border-primary shadow-md"
-                  : plan.current
-                  ? "border-green-500"
-                  : ""
-              }
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: i * 0.1 }}
+              className={cn(
+                "rounded-[32px] p-8 border relative flex flex-col transition-all group hover:-translate-y-2",
+                plan.popular 
+                  ? "bg-linear-to-br from-primary/20 to-primary/5 border-primary shadow-2xl shadow-primary/10" 
+                  : plan.current 
+                    ? "bg-white/5 border-primary/20" 
+                    : "bg-white/5 border-white/10"
+              )}
             >
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-base">{plan.name}</CardTitle>
-                  {plan.popular && (
-                    <Badge className="bg-primary">Popular</Badge>
-                  )}
-                  {plan.current && (
-                    <Badge
-                      variant="outline"
-                      className="border-green-500 text-green-600"
-                    >
-                      Current
-                    </Badge>
-                  )}
+              {plan.popular && (
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-white text-[9px] font-black uppercase tracking-[0.2em] px-4 py-1.5 rounded-full italic shadow-xl">
+                  Most Popular
                 </div>
-                <div className="flex items-baseline gap-1">
-                  <span className="text-3xl font-bold">${plan.price}</span>
-                  <span className="text-muted-foreground">/mo</span>
+              )}
+              
+              <div className="space-y-6 flex-1">
+                <div>
+                  <h4 className="text-lg font-black text-white uppercase italic tracking-tighter mb-1">{plan.name}</h4>
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-4xl font-black text-white italic tracking-tighter">${plan.price}</span>
+                    <span className="text-[10px] font-bold text-white/20 uppercase">/month</span>
+                  </div>
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  {plan.credits.toLocaleString()} credits/month
-                </p>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <ul className="space-y-2 text-sm">
+
+                <div className="p-4 rounded-2xl bg-white/5 border border-white/5">
+                   <p className="text-[9px] font-black text-white/40 uppercase tracking-widest mb-1">Monthly Load</p>
+                   <p className="text-sm font-black text-white italic">{plan.credits.toLocaleString()} Credits</p>
+                </div>
+
+                <ul className="space-y-4">
                   {plan.features.map((feature) => (
-                    <li key={feature} className="flex items-center gap-2">
-                      <Check className="h-3.5 w-3.5 text-green-500" />
-                      {feature}
+                    <li key={feature} className="flex items-start gap-3 text-xs font-bold text-white/50">
+                      <div className="h-4 w-4 rounded-full bg-primary/10 flex items-center justify-center mt-0.5 shrink-0">
+                         <Check className="h-2.5 w-2.5 text-primary" strokeWidth={4} />
+                      </div>
+                      <span className="leading-tight">{feature}</span>
                     </li>
                   ))}
                 </ul>
-                <Button
-                  className="w-full"
-                  variant={
-                    plan.current
-                      ? "outline"
-                      : plan.popular
-                      ? "default"
-                      : "outline"
-                  }
+              </div>
+
+              <div className="mt-10">
+                <Button 
                   disabled={plan.current}
+                  className={cn(
+                    "h-14 w-full rounded-2xl font-black italic uppercase tracking-widest transition-all",
+                    plan.current 
+                      ? "bg-white/5 text-white/20 border border-white/10" 
+                      : plan.popular 
+                        ? "bg-primary text-white shadow-2xl shadow-primary/20 hover:scale-[1.02]" 
+                        : "bg-white/10 text-white hover:bg-white/15"
+                  )}
                 >
-                  {plan.current ? "Current Plan" : "Upgrade"}
+                  {plan.current ? "ACTIVE" : "UPGRADE"}
                 </Button>
-              </CardContent>
-            </Card>
+              </div>
+            </motion.div>
           ))}
         </div>
       </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Invoice History</CardTitle>
-          <CardDescription>
-            Download past invoices and receipts.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground">
-            No invoices yet. Invoices will appear here once you upgrade to a
-            paid plan.
-          </p>
-        </CardContent>
-      </Card>
     </div>
   );
 }
@@ -516,241 +551,223 @@ function TeamSettings() {
   const { data: members, isLoading } = trpc.settings.getTeamMembers.useQuery();
 
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Invite Team Members</CardTitle>
-          <CardDescription>
-            Add colleagues to help manage your events.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex gap-2">
-            <div className="flex-1">
+    <div className="space-y-12">
+      {/* Invite Card */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="rounded-[40px] bg-white/5 border border-white/10 p-10 relative overflow-hidden"
+      >
+        <div className="relative z-10 space-y-8">
+          <div>
+            <h3 className="text-2xl font-black text-white italic leading-none mb-2">Expansion</h3>
+            <p className="text-white/30 text-[10px] font-bold uppercase tracking-widest">Recruit operational personnel</p>
+          </div>
+
+          <div className="grid gap-4 md:flex items-end">
+            <div className="flex-1 space-y-2">
+              <Label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Email Coordinates</Label>
               <Input
                 type="email"
-                placeholder="colleague@company.com"
+                placeholder="OPERATOR@CORE.SYSTEM"
+                className="h-14 rounded-2xl bg-white/5 border-white/10 text-white font-bold px-6 focus:border-primary transition-all"
                 value={inviteEmail}
                 onChange={(e) => setInviteEmail(e.target.value)}
               />
             </div>
-            <Select defaultValue="manager">
-              <SelectTrigger className="w-[130px]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="admin">Admin</SelectItem>
-                <SelectItem value="manager">Manager</SelectItem>
-                <SelectItem value="staff">Staff</SelectItem>
-              </SelectContent>
-            </Select>
+            <div className="w-full md:w-[180px] space-y-2">
+               <Label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Assigned Role</Label>
+               <Select defaultValue="manager">
+                <SelectTrigger className="h-14 rounded-2xl bg-white/5 border-white/10 text-white font-bold px-6 focus:border-primary">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-[#1A1C30] border-white/10 text-white">
+                  <SelectItem value="admin">ADMINISTRATOR</SelectItem>
+                  <SelectItem value="manager">MANAGER</SelectItem>
+                  <SelectItem value="staff">TECHNICAL STAFF</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
             <Button
-              className="gap-2"
+              className="h-14 px-8 rounded-2xl bg-primary text-white font-black italic uppercase tracking-widest shadow-2xl shadow-primary/20 hover:scale-[1.05] active:scale-95 transition-all flex gap-3"
               onClick={() => {
                 if (inviteEmail) {
-                  toast.success(`Invitation sent to ${inviteEmail}`);
+                  toast.success(`Invitation transmitted to ${inviteEmail}`);
                   setInviteEmail("");
                 }
               }}
             >
-              <Mail className="h-4 w-4" /> Invite
+              <Mail className="h-5 w-5" />
+              Transmit
             </Button>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+        <div className="absolute -right-20 -top-20 h-64 w-64 bg-primary/5 rounded-full blur-[100px]" />
+      </motion.div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Team Members</CardTitle>
-          <CardDescription>
-            People with access to your organization.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="space-y-3">
-              {[1, 2].map((i) => (
-                <Skeleton key={i} className="h-16 w-full" />
-              ))}
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {(members ?? []).map((member) => (
-                <div
-                  key={member.id}
-                  className="flex items-center justify-between rounded-lg border p-4"
-                >
-                  <div className="flex items-center gap-4">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary">
-                      <span className="text-sm font-bold">
-                        {(member.name ?? member.email)?.[0]?.toUpperCase()}
-                      </span>
-                    </div>
-                    <div>
-                      <p className="font-medium">
-                        {member.name ?? member.email}
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        {member.email}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Badge variant="secondary" className="capitalize">
-                      {member.role}
-                    </Badge>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Roles & Permissions</CardTitle>
-          <CardDescription>
-            Understand what each role can do.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-4 md:grid-cols-3">
-            {[
-              {
-                role: "Admin",
-                icon: Shield,
-                permissions: [
-                  "Full account access",
-                  "Manage billing",
-                  "Invite/remove members",
-                  "All event operations",
-                ],
-              },
-              {
-                role: "Manager",
-                icon: Users,
-                permissions: [
-                  "Create/edit events",
-                  "Manage guests",
-                  "Run check-in",
-                  "View reports",
-                ],
-              },
-              {
-                role: "Staff",
-                icon: Check,
-                permissions: [
-                  "Check-in guests",
-                  "View guest lists",
-                  "Scan tickets",
-                  "View assigned events",
-                ],
-              },
-            ].map(({ role, icon: Icon, permissions }) => (
-              <div key={role} className="rounded-lg border p-4">
-                <div className="mb-3 flex items-center gap-2">
-                  <Icon className="h-4 w-4 text-primary" />
-                  <p className="font-medium">{role}</p>
-                </div>
-                <ul className="space-y-1.5 text-sm text-muted-foreground">
-                  {permissions.map((p) => (
-                    <li key={p} className="flex items-center gap-2">
-                      <Check className="h-3 w-3 text-green-500" />
-                      {p}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
+      {/* Team Roster */}
+      <div>
+        <div className="flex items-center justify-between mb-8 px-4">
+          <div>
+            <h3 className="text-2xl font-black text-white italic leading-none mb-2">Personnel Roster</h3>
+            <p className="text-white/30 text-[10px] font-bold uppercase tracking-widest">Active operational units</p>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+
+        <div className="grid gap-4">
+          {isLoading ? (
+            [1, 2, 3].map((i) => <Skeleton key={i} className="h-24 w-full rounded-[32px] bg-white/5" />)
+          ) : (
+            (members ?? []).map((member, i) => (
+              <motion.div
+                key={member.id}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: i * 0.05 }}
+                className="group flex items-center justify-between rounded-[32px] bg-white/5 border border-white/10 hover:bg-white/8 p-6 transition-all"
+              >
+                <div className="flex items-center gap-6">
+                  <div className="h-16 w-16 rounded-2xl bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
+                    <span className="text-2xl font-black italic">
+                      {(member.name ?? member.email)?.[0]?.toUpperCase()}
+                    </span>
+                  </div>
+                  <div>
+                    <h4 className="text-lg font-black text-white italic tracking-tighter leading-none mb-1">
+                      {member.name ?? "UNKNOWN OPERATOR"}
+                    </h4>
+                    <p className="text-[10px] font-bold text-white/20 uppercase tracking-widest leading-none">
+                      {member.email}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-6">
+                   <div className="text-right hidden sm:block">
+                     <p className="text-[9px] font-black text-white/20 uppercase tracking-[0.2em] mb-1">Authorization</p>
+                     <Badge className="bg-white/10 text-white/60 border-none font-black text-[9px] uppercase tracking-widest px-3">
+                        {member.role}
+                     </Badge>
+                   </div>
+                   <Button variant="ghost" className="h-12 w-12 rounded-2xl p-0 text-white/10 hover:text-white hover:bg-white/5">
+                      <ChevronRight className="h-6 w-6" />
+                   </Button>
+                </div>
+              </motion.div>
+            ))
+          )}
+        </div>
+      </div>
     </div>
   );
 }
 
 function ApiSettings() {
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>API Keys</CardTitle>
-          <CardDescription>
-            Manage your API keys for programmatic access.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="rounded-lg border border-dashed p-6 text-center">
-            <Key className="mx-auto h-8 w-8 text-muted-foreground/50" />
-            <p className="mt-2 text-sm text-muted-foreground">
-              No API keys have been generated for this workspace.
-            </p>
-            <p className="mt-1 text-xs text-muted-foreground/70">
-              API key lifecycle management is disabled until secure key storage is configured.
-            </p>
-          </div>
-          <Button variant="outline" className="gap-2" disabled>
-            <Plus className="h-4 w-4" /> Create New Key
-          </Button>
-        </CardContent>
-      </Card>
-      <Card>
-        <CardHeader>
-          <CardTitle>Webhooks</CardTitle>
-          <CardDescription>
-            Receive real-time notifications for events.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="rounded-lg border border-dashed p-6 text-center">
-            <Key className="mx-auto h-8 w-8 text-muted-foreground/50" />
-            <p className="mt-2 text-sm text-muted-foreground">
-              No webhooks configured. Add a webhook endpoint to receive
-              real-time event notifications.
-            </p>
-            <Button variant="outline" className="mt-4 gap-2" disabled>
-              <Plus className="h-4 w-4" /> Add Webhook
+    <div className="space-y-12">
+      <div className="grid gap-8 lg:grid-cols-2">
+        {/* API Infrastructure */}
+        <motion.div
+           initial={{ opacity: 0, y: 10 }}
+           animate={{ opacity: 1, y: 0 }}
+           className="rounded-[40px] bg-white/5 border border-white/10 p-10 relative overflow-hidden h-fit"
+        >
+          <div className="relative z-10 space-y-10">
+            <div>
+              <h3 className="text-2xl font-black text-white italic leading-none mb-2">Protocol Access</h3>
+              <p className="text-white/30 text-[10px] font-bold uppercase tracking-widest">Interface control keys</p>
+            </div>
+
+            <div className="flex flex-col items-center justify-center py-10 text-center space-y-6">
+               <div className="h-24 w-24 rounded-[40px] bg-primary/5 flex items-center justify-center text-primary/20 rotate-12">
+                  <Key className="h-12 w-12" />
+               </div>
+               <div className="space-y-2">
+                 <p className="text-white/60 font-black italic text-lg leading-none">NO ACTIVE PROTOCOLS</p>
+                 <p className="text-[10px] font-bold text-white/20 uppercase tracking-widest">Generate persistent authorization keys</p>
+               </div>
+            </div>
+
+            <Button disabled className="h-16 w-full rounded-3xl bg-white/5 border border-white/10 text-white/20 font-black italic uppercase tracking-widest">
+              LOCKED · STORAGE REQUIRED
             </Button>
           </div>
-        </CardContent>
-      </Card>
-      <Card>
-        <CardHeader>
-          <CardTitle>API Documentation</CardTitle>
-          <CardDescription>
-            Learn how to integrate with the GuestManager API.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-4 md:grid-cols-3">
-            {[
-              {
-                title: "Getting Started",
-                desc: "Authentication, rate limits, and basic usage",
-              },
-              {
-                title: "Events API",
-                desc: "Create, read, update, and delete events",
-              },
-              {
-                title: "Guests API",
-                desc: "Manage guest lists, check-ins, and imports",
-              },
-            ].map((doc) => (
-              <div
-                key={doc.title}
-                className="rounded-lg border p-4 transition-colors hover:bg-accent/50"
-              >
-                <p className="font-medium">{doc.title}</p>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  {doc.desc}
-                </p>
-              </div>
-            ))}
+        </motion.div>
+
+        {/* Webhooks */}
+        <motion.div
+           initial={{ opacity: 0, y: 10 }}
+           animate={{ opacity: 1, y: 0 }}
+           transition={{ delay: 0.1 }}
+           className="rounded-[40px] bg-[#1A1C30] border border-white/10 p-10 relative overflow-hidden"
+        >
+          <div className="relative z-10 space-y-10">
+            <div>
+              <h3 className="text-2xl font-black text-white italic leading-none mb-2">Real-time Callbacks</h3>
+              <p className="text-white/30 text-[10px] font-bold uppercase tracking-widest">Webhook relay system</p>
+            </div>
+
+            <div className="h-64 flex flex-col items-center justify-center border-2 border-dashed border-white/5 rounded-3xl space-y-6">
+               <Zap className="h-10 w-10 text-white/5" />
+               <p className="text-[10px] font-black text-white/20 uppercase tracking-widest">Disconnected</p>
+            </div>
+
+            <Button disabled className="h-16 w-full rounded-3xl bg-primary text-white font-black italic uppercase tracking-widest opacity-20 cursor-not-allowed">
+               <Plus className="h-5 w-5 mr-3" />
+               Add Endpoint
+            </Button>
           </div>
-        </CardContent>
-      </Card>
+        </motion.div>
+      </div>
+
+      {/* Docs Grid */}
+      <div>
+        <div className="flex items-center justify-between mb-8 px-4">
+          <div>
+            <h3 className="text-2xl font-black text-white italic leading-none mb-2">Library</h3>
+            <p className="text-white/30 text-[10px] font-bold uppercase tracking-widest">Integration blueprints</p>
+          </div>
+        </div>
+
+        <div className="grid gap-6 md:grid-cols-3">
+          {[
+            {
+              title: "Initialization",
+              desc: "Authentication & Core Logistics",
+              icon: Zap
+            },
+            {
+              title: "Event Cluster",
+              desc: "Deep-level CRUD Interaction",
+              icon: Building2
+            },
+            {
+              title: "Unit Tracking",
+              desc: "Guest Flow & Analysis",
+              icon: Users
+            },
+          ].map((doc, i) => (
+            <motion.div
+              key={doc.title}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.1 }}
+              className="group rounded-[32px] bg-white/5 border border-white/10 p-8 hover:bg-white/8 transition-all cursor-pointer"
+            >
+              <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary mb-6 group-hover:scale-110 transition-transform">
+                <doc.icon className="h-6 w-6" />
+              </div>
+              <h4 className="text-xl font-black text-white italic mb-2 tracking-tighter uppercase">{doc.title}</h4>
+              <p className="text-xs font-bold text-white/30 uppercase tracking-tighter leading-relaxed mb-6">
+                {doc.desc}
+              </p>
+              <div className="flex items-center gap-2 text-primary font-black italic text-[10px] uppercase tracking-widest">
+                 View Docs
+                 <ExternalLink className="h-3 w-3" />
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }

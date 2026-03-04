@@ -1,10 +1,10 @@
 "use client";
 
-import Link from "next/link";
 import { trpc } from "@/lib/trpc/client";
 import { DataTable } from "@/components/shared/data-table";
 import { Button } from "@/components/ui/button";
-import { Plus, Tag } from "lucide-react";
+import { Plus, Tag, Zap, Activity } from "lucide-react";
+import { motion } from "framer-motion";
 
 export default function PromotionsPage() {
   const { data, isLoading } = trpc.promotions.list.useQuery();
@@ -12,68 +12,75 @@ export default function PromotionsPage() {
   const columns = [
     {
       accessorKey: "code",
-      header: "Code",
+      header: "Protocol Code",
+      cell: ({ row }: any) => <span className="font-black italic text-white uppercase tracking-tight">{row.original.code}</span>
     },
     {
       accessorKey: "discountType",
-      header: "Type",
+      header: "Logic Type",
+      cell: ({ row }: any) => <span className="uppercase text-[10px] font-black text-white/40 tracking-widest">{row.original.discountType}</span>
     },
     {
       accessorKey: "value",
-      header: "Value",
+      header: "Yield Value",
+      cell: ({ row }: any) => <span className="font-black italic text-primary">{row.original.value}</span>
     },
   ];
 
   const promotions = data?.promotions ?? [];
 
-  if (!isLoading && promotions.length === 0) {
-    return (
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold">Promotions</h1>
-            <p className="text-muted-foreground">Manage discount codes and rules.</p>
-          </div>
-          <Button className="gap-2">
-            <Plus className="h-4 w-4" /> New Promotion
-          </Button>
-        </div>
-
-        <div className="flex flex-col items-center justify-center rounded-lg border border-dashed p-12 text-center">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
-            <Tag className="h-8 w-8 text-primary" />
-          </div>
-          <h3 className="mt-4 text-lg font-semibold">No promotions yet</h3>
-          <p className="mt-2 max-w-sm text-sm text-muted-foreground">
-            Get started by creating your first discount code.
-          </p>
-          <Button className="mt-6">Create Promotion</Button>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Promotions</h1>
-          <p className="text-muted-foreground">
-            {data?.total ?? 0} promotion{(data?.total ?? 0) !== 1 ? "s" : ""}
+    <div className="space-y-12 pb-20 px-2">
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+        <motion.div
+           initial={{ x: -20, opacity: 0 }}
+           animate={{ x: 0, opacity: 1 }}
+        >
+          <h1 className="text-4xl font-black text-white italic tracking-tighter uppercase leading-none">Yield</h1>
+          <p className="text-white/40 font-bold uppercase tracking-[0.2em] text-[10px] mt-2 italic flex items-center gap-2">
+             <Activity className="h-3 w-3 text-primary animate-pulse" />
+             Strategic Pricing Control
           </p>
-        </div>
-        <Button className="gap-2">
-          <Plus className="h-4 w-4" /> New Promotion
+        </motion.div>
+        <Button className="h-14 px-8 rounded-2xl bg-primary text-white font-black text-base shadow-2xl shadow-primary/20 transition-all hover:scale-[1.05] active:scale-95 italic flex gap-3">
+          <Plus className="h-6 w-6" />
+          New Protocol
         </Button>
       </div>
 
-      <DataTable
-        columns={columns}
-        data={promotions}
-        searchKey="code"
-        searchPlaceholder="Search codes..."
-        isLoading={isLoading}
-      />
+      {!isLoading && promotions.length === 0 ? (
+        <motion.div 
+          initial={{ scale: 0.95, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          className="flex flex-col items-center justify-center rounded-[40px] bg-white/5 border border-white/10 p-20 text-center space-y-8"
+        >
+          <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-[32px] bg-primary/10 text-primary rotate-12 group-hover:rotate-0 transition-transform">
+            <Tag className="h-10 w-10 -rotate-12" />
+          </div>
+          <div className="space-y-2">
+            <h3 className="text-2xl font-black text-white italic tracking-tighter uppercase leading-none">No Active Yields</h3>
+            <p className="max-w-xs mx-auto text-[10px] font-bold text-white/20 uppercase tracking-[0.2em] leading-relaxed">
+              Define pricing logic and discount protocols to optimize operational revenue.
+            </p>
+          </div>
+          <Button className="h-14 px-10 rounded-2xl bg-white/10 hover:bg-primary text-white font-black italic uppercase tracking-widest transition-all">
+            Initialize Protocol
+          </Button>
+        </motion.div>
+      ) : (
+        <motion.div
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+        >
+           <DataTable
+            columns={columns}
+            data={promotions}
+            searchKey="code"
+            searchPlaceholder="Search active protocols..."
+            isLoading={isLoading}
+          />
+        </motion.div>
+      )}
     </div>
   );
 }

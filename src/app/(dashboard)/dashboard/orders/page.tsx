@@ -1,17 +1,17 @@
 "use client";
 
-import { useState } from "react";
-import { format } from "date-fns";
-import { trpc } from "@/lib/trpc/client";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+  DollarSign,
+  Download,
+  Package,
+  Search,
+  ShoppingCart,
+  TrendingUp,
+} from "lucide-react";
+
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -19,24 +19,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  ShoppingCart,
-  DollarSign,
-  TrendingUp,
-  Package,
-  Download,
-  Search,
-} from "lucide-react";
-import { Input } from "@/components/ui/input";
-import { Skeleton } from "@/components/ui/skeleton";
 
-const statusColors: Record<string, string> = {
-  completed: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
-  pending: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200",
-  cancelled: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200",
-  refunded: "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200",
-  cart: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
-};
+import { cn } from "@/lib/utils";
+import { trpc } from "@/lib/trpc/client";
+import { format } from "date-fns";
+import { motion } from "framer-motion";
+import { useState } from "react";
 
 export default function OrdersPage() {
   const [search, setSearch] = useState("");
@@ -57,194 +45,202 @@ export default function OrdersPage() {
 
   const orderStats = [
     {
+      label: "Gross Revenue",
+      value: `$${totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 2 })}`,
+      icon: DollarSign,
+      trend: "+12.5%",
+      sub: "Last 30 days"
+    },
+    {
       label: "Total Orders",
       value: (statsData?.totalOrders ?? 0).toString(),
       icon: ShoppingCart,
-      color: "text-blue-600",
-      bg: "bg-blue-100 dark:bg-blue-900/50",
-    },
-    {
-      label: "Revenue",
-      value: `$${totalRevenue.toFixed(2)}`,
-      icon: DollarSign,
-      color: "text-green-600",
-      bg: "bg-green-100 dark:bg-green-900/50",
-    },
-    {
-      label: "Avg Order Value",
-      value: `$${avgOrderValue.toFixed(2)}`,
-      icon: TrendingUp,
-      color: "text-purple-600",
-      bg: "bg-purple-100 dark:bg-purple-900/50",
+      trend: "+5.2%",
+      sub: "Active orders"
     },
     {
       label: "Tickets Sold",
       value: (statsData?.ticketsSold ?? 0).toString(),
       icon: Package,
-      color: "text-orange-600",
-      bg: "bg-orange-100 dark:bg-orange-900/50",
+      trend: "+8.1%",
+      sub: "Units sold"
+    },
+    {
+      label: "Avg Order",
+      value: `$${avgOrderValue.toFixed(2)}`,
+      icon: TrendingUp,
+      trend: "-2.4%",
+      sub: "Per customer"
     },
   ];
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="space-y-12 pb-20">
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 px-2">
         <div>
-          <h1 className="text-2xl font-bold">Orders</h1>
-          <p className="text-muted-foreground">
-            View and manage ticket orders, refunds, and payments.
+          <h1 className="text-4xl font-black text-white italic tracking-tighter">Finance</h1>
+          <p className="text-white/40 font-bold uppercase tracking-[0.2em] text-[10px] mt-2">
+            Real-time transaction tracking
           </p>
         </div>
-        <Button variant="outline" className="gap-2" disabled>
-          <Download className="h-4 w-4" /> Export Orders
+        <Button className="h-14 px-8 rounded-2xl bg-white/5 border border-white/10 text-white hover:bg-white/10 font-black text-base transition-all hover:-translate-y-1 flex gap-3">
+          <Download className="h-6 w-6" />
+          Export Data
         </Button>
       </div>
 
-      {/* Stats */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {orderStats.map((stat) => (
-          <Card key={stat.label}>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">{stat.label}</p>
-                  <p className="mt-1 text-3xl font-bold">{stat.value}</p>
+      {/* Stats Cards */}
+      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4 px-2">
+        {orderStats.map((stat, idx) => (
+          <motion.div
+            key={stat.label}
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: idx * 0.1 }}
+            className="group relative overflow-hidden rounded-[32px] bg-white/5 border border-white/10 p-8 transition-all hover:bg-white/8"
+          >
+            <div className="relative z-10 flex flex-col h-full">
+              <div className="flex items-center justify-between mb-6">
+                <div className="p-3 rounded-2xl bg-primary/10 text-primary group-hover:scale-110 transition-transform duration-500">
+                  <stat.icon className="h-6 w-6" />
                 </div>
-                <div className={`flex h-12 w-12 items-center justify-center rounded-lg ${stat.bg}`}>
-                  <stat.icon className={`h-6 w-6 ${stat.color}`} />
-                </div>
+                <Badge className="bg-green-500/20 text-green-400 border-none font-black text-[10px] rounded-full px-2 py-0.5">
+                  {stat.trend}
+                </Badge>
               </div>
-            </CardContent>
-          </Card>
+              <p className="text-[10px] font-black uppercase tracking-widest text-white/30 mb-1">{stat.label}</p>
+              <h2 className="text-3xl font-black text-white italic tracking-tight mb-4">{stat.value}</h2>
+              <p className="text-[10px] font-bold text-white/10 uppercase tracking-tighter mt-auto">{stat.sub}</p>
+            </div>
+            {/* Visual Flare */}
+            <div className="absolute -right-4 -bottom-4 h-24 w-24 bg-primary/5 rounded-full blur-3xl group-hover:bg-primary/10 transition-colors" />
+          </motion.div>
         ))}
       </div>
 
-      {/* Orders Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Order History</CardTitle>
-          <CardDescription>All ticket purchases and transactions</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="mb-6 flex flex-col gap-3 sm:flex-row">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                placeholder="Search by name, email, or order ID..."
-                className="pl-9"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-              />
-            </div>
-            <Select value={status} onValueChange={setStatus}>
-              <SelectTrigger className="w-[150px]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All statuses</SelectItem>
-                <SelectItem value="completed">Completed</SelectItem>
-                <SelectItem value="pending">Pending</SelectItem>
-                <SelectItem value="refunded">Refunded</SelectItem>
-                <SelectItem value="cancelled">Cancelled</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+      {/* History Section */}
+      <div className="space-y-6">
+        <div className="flex items-center gap-4 px-2">
+          <h2 className="text-xl font-black text-white italic">Transaction History</h2>
+          <div className="h-px flex-1 bg-white/5" />
+        </div>
 
-          {isLoading ? (
-            <div className="space-y-3">
-              {[1, 2, 3, 4, 5].map((i) => (
-                <Skeleton key={i} className="h-14 w-full" />
-              ))}
+        <div className="px-2 flex flex-col gap-6 sm:flex-row">
+          <div className="relative group flex-1">
+            <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-white/30 transition-colors group-focus-within:text-primary" />
+            <Input
+              placeholder="Order Number, Name or Email..."
+              className="pl-12 h-14 bg-white/5 border-white/10 rounded-2xl text-white placeholder:text-white/20 focus-visible:ring-primary focus-visible:border-primary transition-all"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
+          <Select value={status} onValueChange={setStatus}>
+            <SelectTrigger className="h-14 w-[200px] bg-white/5 border-white/10 rounded-2xl text-white font-bold focus:ring-primary">
+              <SelectValue placeholder="All Statuses" />
+            </SelectTrigger>
+            <SelectContent className="bg-[#1A1C30] border-white/10 text-white rounded-2xl">
+              <SelectItem value="all" className="rounded-xl">All Statuses</SelectItem>
+              <SelectItem value="completed" className="rounded-xl">Completed</SelectItem>
+              <SelectItem value="pending" className="rounded-xl">Pending</SelectItem>
+              <SelectItem value="refunded" className="rounded-xl">Refunded</SelectItem>
+              <SelectItem value="cancelled" className="rounded-xl">Cancelled</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {isLoading ? (
+          <div className="rounded-[40px] bg-white/5 border border-white/10 p-20 text-center">
+            <div className="h-12 w-12 animate-spin rounded-full border-4 border-primary border-t-transparent mx-auto mb-4" />
+            <p className="text-white/40 font-black uppercase tracking-widest text-xs">Syncing Ledger...</p>
+          </div>
+        ) : !data?.orders?.length ? (
+          <div className="rounded-[40px] bg-white/5 border border-white/10 p-24 text-center">
+            <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-3xl bg-white/3 mb-6">
+              <Package className="h-10 w-10 text-white/10" />
             </div>
-          ) : !data?.orders?.length ? (
-            <div className="flex flex-col items-center justify-center rounded-lg border border-dashed p-12 text-center">
-              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
-                <ShoppingCart className="h-8 w-8 text-primary" />
-              </div>
-              <h3 className="mt-4 text-lg font-semibold">No orders yet</h3>
-              <p className="mt-2 max-w-sm text-sm text-muted-foreground">
-                Orders will appear here when guests purchase tickets through your
-                event registration pages.
-              </p>
-            </div>
-          ) : (
+            <h3 className="text-xl font-black text-white mb-2">No Transactions</h3>
+            <p className="max-w-xs mx-auto text-white/30 text-sm">
+              We couldn&apos;t find any orders matching your current filters.
+            </p>
+          </div>
+        ) : (
+          <div className="rounded-[40px] bg-white/5 border border-white/10 overflow-hidden backdrop-blur-3xl">
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b text-left text-muted-foreground">
-                    <th className="pb-3 pr-4 font-medium">Order</th>
-                    <th className="pb-3 pr-4 font-medium">Customer</th>
-                    <th className="pb-3 pr-4 font-medium">Amount</th>
-                    <th className="pb-3 pr-4 font-medium">Status</th>
-                    <th className="pb-3 font-medium">Date</th>
+                  <tr className="bg-white/5 text-left text-white/40 border-b border-white/5">
+                    <th className="py-6 px-8 font-black uppercase tracking-widest text-[10px]">Reference</th>
+                    <th className="py-6 px-8 font-black uppercase tracking-widest text-[10px]">Client</th>
+                    <th className="py-6 px-8 font-black uppercase tracking-widest text-[10px]">Amount</th>
+                    <th className="py-6 px-8 font-black uppercase tracking-widest text-[10px]">Status</th>
+                    <th className="py-6 px-8 font-black uppercase tracking-widest text-[10px]">Timestamp</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y">
+                <tbody className="divide-y divide-white/5">
                   {data.orders.map((order) => (
-                    <tr key={order.id} className="hover:bg-muted/30">
-                      <td className="py-3 pr-4">
-                        <span className="font-mono font-medium">{order.orderNumber}</span>
+                    <tr key={order.id} className="group hover:bg-white/5 transition-all">
+                      <td className="py-6 px-8">
+                        <span className="font-mono font-black text-primary text-xs tracking-tighter">{order.orderNumber}</span>
                       </td>
-                      <td className="py-3 pr-4">
-                        <div>
-                          <p className="font-medium">{order.name || "—"}</p>
-                          <p className="text-xs text-muted-foreground">{order.email || "—"}</p>
+                      <td className="py-6 px-8">
+                        <div className="flex flex-col">
+                          <p className="font-bold text-white leading-none mb-1">{order.name || "Anonymous"}</p>
+                          <p className="text-[10px] font-medium text-white/40">{order.email}</p>
                         </div>
                       </td>
-                      <td className="py-3 pr-4">
-                        <span className="font-medium">
-                          ${((order.total ?? 0) / 100).toFixed(2)}{" "}
-                          <span className="text-xs text-muted-foreground">{order.currency}</span>
+                      <td className="py-6 px-8">
+                        <span className="font-black text-white italic">
+                          ${((order.total ?? 0) / 100).toFixed(2)}
+                          <span className="text-[10px] opacity-20 ml-1 not-italic">USD</span>
                         </span>
                       </td>
-                      <td className="py-3 pr-4">
+                      <td className="py-6 px-8 text-sm">
                         <Badge
-                          variant="secondary"
-                          className={statusColors[order.status ?? "pending"]}
+                          className={cn(
+                            "rounded-full px-3 py-1 font-bold uppercase tracking-widest text-[10px] border-none shadow-sm",
+                            order.status === "completed" ? "bg-green-500/20 text-green-400" :
+                            order.status === "pending" ? "bg-amber-500/20 text-amber-400" :
+                            "bg-red-500/20 text-red-400"
+                          )}
                         >
                           {order.status}
                         </Badge>
                       </td>
-                      <td className="py-3 text-muted-foreground">
-                        {format(new Date(order.createdAt), "MMM d, yyyy")}
+                      <td className="py-3 px-8 text-white/40 font-bold uppercase tracking-tighter text-[10px]">
+                        {format(new Date(order.createdAt), "MMM d, HH:mm")}
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
-              {data.total > data.orders.length && (
-                <p className="mt-4 text-center text-sm text-muted-foreground">
-                  Showing {data.orders.length} of {data.total} orders
-                </p>
-              )}
             </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Payment Methods */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Payment Methods</CardTitle>
-          <CardDescription>Configure payment processing for ticket sales</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-between rounded-lg border p-4">
-            <div className="flex items-center gap-4">
-              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-[#635BFF]/10">
-                <span className="text-lg font-bold text-[#635BFF]">S</span>
-              </div>
-              <div>
-                <p className="font-medium">Stripe</p>
-                <p className="text-sm text-muted-foreground">
-                  Accept credit cards, Apple Pay, and Google Pay
-                </p>
-              </div>
-            </div>
-            <Badge variant="secondary">Not Connected</Badge>
           </div>
-        </CardContent>
-      </Card>
+        )}
+      </div>
+
+      {/* Stripe Section */}
+      <motion.div
+        initial={{ y: 20, opacity: 0 }}
+        whileInView={{ y: 0, opacity: 1 }}
+        viewport={{ once: true }}
+        className="rounded-[40px] bg-linear-to-br from-[#635BFF]/20 to-transparent border border-[#635BFF]/30 p-10 flex flex-col md:flex-row items-center justify-between gap-8 mx-2"
+      >
+        <div className="flex items-center gap-8">
+          <div className="flex h-20 w-20 items-center justify-center rounded-3xl bg-[#635BFF] shadow-2xl shadow-[#635BFF]/40">
+            <span className="text-4xl font-black text-white italic">S</span>
+          </div>
+          <div>
+            <h3 className="text-2xl font-black text-white italic mb-2 tracking-tight">Stripe Gateway</h3>
+            <p className="text-[#635BFF] font-bold uppercase tracking-widest text-[10px]">
+              Ready for secure global transactions
+            </p>
+          </div>
+        </div>
+        <Button className="h-14 px-10 rounded-2xl bg-[#635BFF] hover:bg-[#635BFF]/90 text-white font-black text-base shadow-2xl shadow-[#635BFF]/20 transition-all hover:-translate-y-1">
+          Connect Stripe
+        </Button>
+      </motion.div>
     </div>
   );
 }

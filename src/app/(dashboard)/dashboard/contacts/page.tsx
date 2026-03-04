@@ -52,6 +52,8 @@ type Contact = {
   createdAt: string;
 };
 
+import { motion } from "framer-motion";
+
 export default function ContactsPage() {
   const router = useRouter();
   const [createOpen, setCreateOpen] = useState(false);
@@ -105,7 +107,7 @@ export default function ContactsPage() {
           checked={table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && "indeterminate")}
           onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
           aria-label="Select all"
-          className="translate-y-[2px]"
+          className="translate-y-[2px] border-white/20 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
         />
       ),
       cell: ({ row }) => (
@@ -113,7 +115,7 @@ export default function ContactsPage() {
           checked={row.getIsSelected()}
           onCheckedChange={(value) => row.toggleSelected(!!value)}
           aria-label="Select row"
-          className="translate-y-[2px]"
+          className="translate-y-[2px] border-white/20 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
         />
       ),
       enableSorting: false,
@@ -121,21 +123,21 @@ export default function ContactsPage() {
     },
     {
       accessorKey: "firstName",
-      header: "Name",
+      header: "Contact Name",
       cell: ({ row }) => (
-        <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-primary">
-            <span className="text-sm font-bold">
+        <div className="flex items-center gap-4">
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary text-white shadow-lg shadow-primary/20">
+            <span className="text-sm font-black italic">
               {row.original.firstName?.[0]}
               {row.original.lastName?.[0]}
             </span>
           </div>
-          <div>
-            <p className="font-medium">
+          <div className="flex flex-col">
+            <p className="font-bold text-white text-base leading-tight">
               {row.original.firstName} {row.original.lastName}
             </p>
             {row.original.title && (
-              <p className="text-xs text-muted-foreground">
+              <p className="text-[10px] uppercase font-black tracking-widest text-white/40 mt-1">
                 {row.original.title}
               </p>
             )}
@@ -145,79 +147,50 @@ export default function ContactsPage() {
     },
     {
       accessorKey: "email",
-      header: "Email",
+      header: "Email Address",
       cell: ({ row }) =>
         row.original.email ? (
-          <div className="flex items-center gap-1.5 text-sm">
-            <Mail className="h-3.5 w-3.5 text-muted-foreground" />
+          <div className="flex items-center gap-2 text-white/60 font-medium">
+            <Mail className="h-4 w-4 text-primary" />
             {row.original.email}
           </div>
         ) : (
-          <span className="text-sm text-muted-foreground">--</span>
-        ),
-    },
-    {
-      accessorKey: "phone",
-      header: "Phone",
-      cell: ({ row }) =>
-        row.original.phone ? (
-          <div className="flex items-center gap-1.5 text-sm">
-            <Phone className="h-3.5 w-3.5 text-muted-foreground" />
-            {row.original.phone}
-          </div>
-        ) : (
-          <span className="text-sm text-muted-foreground">--</span>
+          <span className="text-white/20">--</span>
         ),
     },
     {
       accessorKey: "companyName",
-      header: "Company",
+      header: "Organization",
       cell: ({ row }) =>
         row.original.companyName ? (
-          <div className="flex items-center gap-1.5 text-sm">
-            <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
+          <div className="flex items-center gap-2 text-white/60 font-medium">
+            <Building2 className="h-4 w-4 text-primary" />
             {row.original.companyName}
           </div>
         ) : (
-          <span className="text-sm text-muted-foreground">--</span>
+          <span className="text-white/20">--</span>
         ),
     },
     {
       accessorKey: "contactType",
-      header: "Type",
+      header: "Category",
       cell: ({ row }) =>
         row.original.contactType ? (
-          <Badge variant="outline" className="text-xs capitalize">
+          <Badge className="bg-white/5 border-none text-white/40 font-black uppercase tracking-widest text-[10px] rounded-full px-3 py-1">
             {row.original.contactType}
           </Badge>
         ) : null,
     },
     {
-      accessorKey: "tags",
-      header: "Tags",
-      cell: ({ row }) =>
-        row.original.tags?.length ? (
-          <div className="flex flex-wrap gap-1">
-            {row.original.tags.slice(0, 3).map((tag) => (
-              <Badge key={tag} variant="secondary" className="text-xs">
-                {tag}
-              </Badge>
-            ))}
-            {(row.original.tags?.length ?? 0) > 3 && (
-              <Badge variant="secondary" className="text-xs">
-                +{(row.original.tags?.length ?? 0) - 3}
-              </Badge>
-            )}
-          </div>
-        ) : null,
-    },
-    {
       accessorKey: "createdAt",
-      header: "Added",
+      header: "Registration",
       cell: ({ row }) => (
-        <span className="text-sm text-muted-foreground">
-          {format(new Date(row.original.createdAt), "MMM d, yyyy")}
-        </span>
+        <div className="flex flex-col">
+          <span className="text-sm font-bold text-white/80">
+            {format(new Date(row.original.createdAt), "MMM d, yyyy")}
+          </span>
+          <span className="text-[10px] font-black uppercase tracking-widest text-white/20">Created</span>
+        </div>
       ),
     },
     {
@@ -225,25 +198,27 @@ export default function ContactsPage() {
       cell: ({ row }) => (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-8 w-8">
-              <MoreHorizontal className="h-4 w-4" />
+            <Button variant="ghost" size="icon" className="h-10 w-10 text-white/40 hover:text-white hover:bg-white/10 rounded-xl">
+              <MoreHorizontal className="h-5 w-5" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
+          <DropdownMenuContent align="end" className="w-[180px] p-2 rounded-2xl bg-[#1A1C30] border-white/10 text-white">
             <DropdownMenuItem
+              className="rounded-xl focus:bg-white/10 focus:text-white"
               onClick={() =>
                 router.push(`/dashboard/contacts/${row.original.id}`)
               }
             >
-              <Edit className="mr-2 h-4 w-4" /> View / Edit
+              <Edit className="mr-2 h-4 w-4 text-primary" /> View Profile
             </DropdownMenuItem>
+            <DropdownMenuSeparator className="bg-white/5" />
             <DropdownMenuItem
-              className="text-destructive"
+              className="text-red-400 rounded-xl focus:bg-red-500/10 focus:text-red-400"
               onClick={() =>
                 deleteContact.mutate({ id: row.original.id })
               }
             >
-              <Trash2 className="mr-2 h-4 w-4" /> Delete
+              <Trash2 className="mr-2 h-4 w-4" /> Remove Contact
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -255,29 +230,23 @@ export default function ContactsPage() {
 
   if (!isLoading && allContacts.length === 0) {
     return (
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold">Contacts</h1>
-            <p className="text-muted-foreground">
-              Your CRM for managing all event attendees and contacts.
-            </p>
+      <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-8">
+        <motion.div
+           initial={{ scale: 0.9, opacity: 0 }}
+           animate={{ scale: 1, opacity: 1 }}
+           className="p-10 rounded-[40px] bg-white/5 border border-white/10 backdrop-blur-3xl max-w-xl w-full"
+        >
+          <div className="mx-auto flex h-24 w-24 items-center justify-center rounded-3xl bg-primary/10 mb-8 group">
+            <Users className="h-12 w-12 text-primary group-hover:scale-110 transition-transform duration-500" />
           </div>
-        </div>
-
-        <div className="flex flex-col items-center justify-center rounded-lg border border-dashed p-12 text-center">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
-            <Users className="h-8 w-8 text-primary" />
-          </div>
-          <h3 className="mt-4 text-lg font-semibold">No contacts yet</h3>
-          <p className="mt-2 max-w-sm text-sm text-muted-foreground">
-            Contacts are automatically created when you add guests to events.
-            You can also create contacts manually.
+          <h1 className="text-3xl font-black text-white mb-4 italic tracking-tight">Your Network</h1>
+          <p className="text-white/40 mb-10 text-lg leading-relaxed">
+            Your CRM is currently empty. Contacts are automatically created when guests register for events, or you can build your library manually.
           </p>
           <Dialog open={createOpen} onOpenChange={setCreateOpen}>
             <DialogTrigger asChild>
-              <Button className="mt-6 gap-2">
-                <Plus className="h-4 w-4" /> Add First Contact
+              <Button size="lg" className="h-14 px-10 rounded-2xl bg-primary hover:bg-primary/90 text-white font-black text-lg shadow-2xl shadow-primary/20 transition-all hover:-translate-y-1">
+                Add Your First Contact
               </Button>
             </DialogTrigger>
             <CreateContactDialog
@@ -285,26 +254,28 @@ export default function ContactsPage() {
               setFormData={setFormData}
               isPending={createContact.isPending}
               onSubmit={() => createContact.mutate(formData)}
+              onClose={() => setCreateOpen(false)}
             />
           </Dialog>
-        </div>
+        </motion.div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="space-y-10 pb-20">
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 px-2">
         <div>
-          <h1 className="text-2xl font-bold">Contacts</h1>
-          <p className="text-muted-foreground">
-            {stats?.total ?? 0} contact{(stats?.total ?? 0) !== 1 ? "s" : ""} in your CRM
+          <h1 className="text-4xl font-black text-white italic tracking-tighter">Contacts</h1>
+          <p className="text-white/40 font-bold uppercase tracking-[0.2em] text-[10px] mt-2">
+            {stats?.total ?? 0} beautiful contact{(stats?.total ?? 0) !== 1 ? "s" : ""}
           </p>
         </div>
         <Dialog open={createOpen} onOpenChange={setCreateOpen}>
           <DialogTrigger asChild>
-            <Button className="gap-2">
-              <Plus className="h-4 w-4" /> Add Contact
+            <Button className="h-14 px-8 rounded-2xl bg-white text-[#1A1C30] hover:bg-white/90 font-black text-base shadow-2xl transition-all hover:-translate-y-1 flex gap-3">
+              <Plus className="h-6 w-6" />
+              Add Contact
             </Button>
           </DialogTrigger>
           <CreateContactDialog
@@ -312,6 +283,7 @@ export default function ContactsPage() {
             setFormData={setFormData}
             isPending={createContact.isPending}
             onSubmit={() => createContact.mutate(formData)}
+            onClose={() => setCreateOpen(false)}
           />
         </Dialog>
       </div>
@@ -320,7 +292,7 @@ export default function ContactsPage() {
         columns={columns}
         data={allContacts}
         searchKey="firstName"
-        searchPlaceholder="Search contacts..."
+        searchPlaceholder="Find a contact..."
         isLoading={isLoading}
       />
     </div>
@@ -332,6 +304,7 @@ function CreateContactDialog({
   setFormData,
   isPending,
   onSubmit,
+  onClose,
 }: {
   formData: {
     firstName: string;
@@ -346,48 +319,51 @@ function CreateContactDialog({
   setFormData: React.Dispatch<React.SetStateAction<typeof formData>>;
   isPending: boolean;
   onSubmit: () => void;
+  onClose: () => void;
 }) {
   return (
-    <DialogContent className="sm:max-w-lg">
-      <DialogHeader>
-        <DialogTitle>Add Contact</DialogTitle>
-        <DialogDescription>
-          Create a new contact in your CRM.
+    <DialogContent className="sm:max-w-xl bg-[#1A1C30] border-white/10 text-white rounded-[40px] p-0 overflow-hidden">
+      <div className="p-8 border-b border-white/5 bg-white/3">
+        <DialogTitle className="text-2xl font-black italic">New Contact</DialogTitle>
+        <DialogDescription className="text-white/40 font-medium">
+          Expand your network by adding a new contact.
         </DialogDescription>
-      </DialogHeader>
+      </div>
       <form
         onSubmit={(e) => {
           e.preventDefault();
           onSubmit();
         }}
-        className="space-y-4"
+        className="p-8 space-y-6"
       >
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-6 sm:grid-cols-2">
           <div className="space-y-2">
-            <Label htmlFor="c-firstName">First Name *</Label>
+            <Label htmlFor="c-firstName" className="text-[10px] font-black uppercase tracking-widest text-white/30 ml-1">First Name *</Label>
             <Input
               id="c-firstName"
               value={formData.firstName}
               onChange={(e) =>
                 setFormData((d) => ({ ...d, firstName: e.target.value }))
               }
+              className="h-12 bg-white/5 border-white/10 rounded-2xl focus:ring-primary px-4"
               required
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="c-lastName">Last Name</Label>
+            <Label htmlFor="c-lastName" className="text-[10px] font-black uppercase tracking-widest text-white/30 ml-1">Last Name</Label>
             <Input
               id="c-lastName"
               value={formData.lastName}
               onChange={(e) =>
                 setFormData((d) => ({ ...d, lastName: e.target.value }))
               }
+              className="h-12 bg-white/5 border-white/10 rounded-2xl focus:ring-primary px-4"
             />
           </div>
         </div>
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-6 sm:grid-cols-2">
           <div className="space-y-2">
-            <Label htmlFor="c-email">Email</Label>
+            <Label htmlFor="c-email" className="text-[10px] font-black uppercase tracking-widest text-white/30 ml-1">Email Address</Label>
             <Input
               id="c-email"
               type="email"
@@ -395,55 +371,63 @@ function CreateContactDialog({
               onChange={(e) =>
                 setFormData((d) => ({ ...d, email: e.target.value }))
               }
+              className="h-12 bg-white/5 border-white/10 rounded-2xl focus:ring-primary px-4"
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="c-phone">Phone</Label>
+            <Label htmlFor="c-phone" className="text-[10px] font-black uppercase tracking-widest text-white/30 ml-1">Phone Number</Label>
             <Input
               id="c-phone"
               value={formData.phone}
               onChange={(e) =>
                 setFormData((d) => ({ ...d, phone: e.target.value }))
               }
+              className="h-12 bg-white/5 border-white/10 rounded-2xl focus:ring-primary px-4"
             />
           </div>
         </div>
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-6 sm:grid-cols-2">
           <div className="space-y-2">
-            <Label htmlFor="c-company">Company</Label>
+            <Label htmlFor="c-company" className="text-[10px] font-black uppercase tracking-widest text-white/30 ml-1">Company</Label>
             <Input
               id="c-company"
               value={formData.companyName}
               onChange={(e) =>
                 setFormData((d) => ({ ...d, companyName: e.target.value }))
               }
+              className="h-12 bg-white/5 border-white/10 rounded-2xl focus:ring-primary px-4"
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="c-title">Job Title</Label>
+            <Label htmlFor="c-title" className="text-[10px] font-black uppercase tracking-widest text-white/30 ml-1">Current Role</Label>
             <Input
               id="c-title"
               value={formData.title}
               onChange={(e) =>
                 setFormData((d) => ({ ...d, title: e.target.value }))
               }
+              className="h-12 bg-white/5 border-white/10 rounded-2xl focus:ring-primary px-4"
             />
           </div>
         </div>
         <div className="space-y-2">
-          <Label htmlFor="c-notes">Notes</Label>
+          <Label htmlFor="c-notes" className="text-[10px] font-black uppercase tracking-widest text-white/30 ml-1">Notes & Details</Label>
           <Textarea
             id="c-notes"
             value={formData.notes}
             onChange={(e) =>
               setFormData((d) => ({ ...d, notes: e.target.value }))
             }
+            className="bg-white/5 border-white/10 rounded-[20px] focus:ring-primary px-4 py-3"
             rows={3}
           />
         </div>
-        <div className="flex justify-end gap-2">
-          <Button type="submit" disabled={isPending}>
-            {isPending ? "Creating..." : "Create Contact"}
+        <div className="flex justify-end gap-3 pt-4">
+          <Button type="button" variant="ghost" className="h-12 px-6 rounded-2xl text-white/40 hover:text-white" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button type="submit" disabled={isPending} className="h-12 px-8 rounded-2xl bg-primary hover:bg-primary/90 text-white font-black shadow-lg shadow-primary/20">
+            {isPending ? "Adding..." : "Add Contact"}
           </Button>
         </div>
       </form>
