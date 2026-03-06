@@ -122,7 +122,7 @@ export function DashboardSidebar({ collapsed, onToggle }: DashboardSidebarProps)
   return (
     <aside
       className={cn(
-        "flex h-screen flex-col border-r border-r-white/5 glass-panel text-white transition-all duration-300 relative z-50",
+        "glass-panel relative z-50 flex h-screen flex-col border-r border-border text-foreground transition-all duration-300",
         collapsed ? "w-16" : "w-64"
       )}
     >
@@ -131,14 +131,14 @@ export function DashboardSidebar({ collapsed, onToggle }: DashboardSidebarProps)
         {!collapsed && (
           <Link href="/dashboard" className="text-xl font-bold tracking-tight">
             <span className="text-primary italic">Guest</span>
-            <span className="text-white">Manager</span>
+            <span className="text-foreground">Manager</span>
           </Link>
         )}
         <Button
           variant="ghost"
           size="icon"
           onClick={onToggle}
-          className="h-8 w-8 shrink-0 hover:bg-white/10 text-white/50 hover:text-white"
+          className="h-8 w-8 shrink-0 text-muted-foreground hover:bg-muted hover:text-foreground"
         >
           <ChevronLeft
             className={cn(
@@ -150,7 +150,7 @@ export function DashboardSidebar({ collapsed, onToggle }: DashboardSidebarProps)
       </div>
 
       <div className="px-4 mb-4">
-        <div className="h-px bg-linear-to-r from-transparent via-white/10 to-transparent" />
+        <div className="h-px bg-linear-to-r from-transparent via-border to-transparent" />
       </div>
 
       {/* Navigation */}
@@ -168,13 +168,13 @@ export function DashboardSidebar({ collapsed, onToggle }: DashboardSidebarProps)
                   "flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold transition-all duration-300 relative group",
                   isActive
                     ? "bg-primary text-white shadow-[0_0_20px_rgba(255,91,106,0.4)]"
-                    : "text-white/60 hover:bg-white/5 hover:text-white"
+                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
                 )}
                 title={collapsed ? item.label : undefined}
               >
                 <item.icon className={cn(
                   "h-5 w-5 shrink-0 transition-transform duration-300 group-hover:scale-110",
-                  isActive ? "text-white" : "text-white/40 group-hover:text-primary"
+                  isActive ? "text-white" : "text-muted-foreground group-hover:text-primary"
                 )} />
                 {!collapsed && <span>{item.label}</span>}
                 {showBadge && (
@@ -186,7 +186,7 @@ export function DashboardSidebar({ collapsed, onToggle }: DashboardSidebarProps)
                   </span>
                 )}
                 {isActive && !collapsed && (
-                  <div className="absolute right-2 w-1.5 h-1.5 rounded-full bg-white/80" />
+                  <div className="absolute right-2 h-1.5 w-1.5 rounded-full bg-white/80" />
                 )}
               </Link>
             );
@@ -195,7 +195,7 @@ export function DashboardSidebar({ collapsed, onToggle }: DashboardSidebarProps)
       </ScrollArea>
 
       <div className="px-4 my-2">
-        <div className="h-px bg-linear-to-r from-transparent via-white/10 to-transparent" />
+        <div className="h-px bg-linear-to-r from-transparent via-border to-transparent" />
       </div>
 
       {/* Bottom navigation */}
@@ -210,8 +210,8 @@ export function DashboardSidebar({ collapsed, onToggle }: DashboardSidebarProps)
               className={cn(
                 "flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold transition-all duration-300 group",
                 isActive
-                  ? "bg-white/10 text-white"
-                  : "text-white/60 hover:bg-white/5 hover:text-white"
+                  ? "bg-muted text-foreground"
+                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
               )}
               title={collapsed ? item.label : undefined}
             >
@@ -222,7 +222,7 @@ export function DashboardSidebar({ collapsed, onToggle }: DashboardSidebarProps)
         })}
         <button
           onClick={handleSignOut}
-          className="flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold text-white/40 transition-all duration-300 hover:bg-red-500/10 hover:text-red-400 group"
+          className="group flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold text-muted-foreground transition-all duration-300 hover:bg-red-500/10 hover:text-red-400"
           title={collapsed ? "Sign Out" : undefined}
         >
           <LogOut className="h-5 w-5 shrink-0 transition-transform duration-300 group-hover:-translate-x-1" />

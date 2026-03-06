@@ -17,7 +17,7 @@ export default function DashboardLayout({
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
-    <div className="flex h-screen relative overflow-hidden bg-modychat">
+    <div className="flex h-screen relative overflow-hidden bg-background dark:bg-modychat">
       <CommandPalette />
 
       {/* Desktop sidebar - Absolute to let background show through the glass */}
@@ -30,7 +30,7 @@ export default function DashboardLayout({
 
       {/* Mobile sidebar */}
       <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
-        <SheetContent side="left" className="w-64 p-0 border-r-white/5 bg-[#1A1C30]">
+        <SheetContent side="left" className="w-64 p-0 border-r border-border bg-card">
           <DashboardSidebar
             collapsed={false}
             onToggle={() => setMobileOpen(false)}

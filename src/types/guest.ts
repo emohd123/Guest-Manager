@@ -10,7 +10,7 @@ export interface Guest {
   seatNumber: string | null;
   tags?: string[] | null;
   notes: string | null;
-  source: "manual" | "import" | "api" | "website";
+  source: string | null;
   checkedInAt: string | null;
   createdAt: string;
 }

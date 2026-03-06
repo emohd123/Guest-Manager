@@ -193,7 +193,7 @@ export default function DesignSetupPage({
         </TabsList>
 
         <AnimatePresence mode="wait">
-          <TabsContent value="branding" className="mt-0 outline-none">
+          <TabsContent key="branding" value="branding" className="mt-0 outline-none">
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="grid gap-10 md:grid-cols-2">
               <div className="rounded-[40px] bg-white/5 border border-white/10 p-10 md:p-12 space-y-10 shadow-2xl">
                  <div className="space-y-2">
@@ -264,7 +264,7 @@ export default function DesignSetupPage({
             </motion.div>
           </TabsContent>
 
-          <TabsContent value="ticket" className="mt-0 outline-none">
+          <TabsContent key="ticket" value="ticket" className="mt-0 outline-none">
             <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="rounded-[40px] bg-white/5 border border-white/10 p-10 md:p-12 shadow-2xl">
               <div className="mb-12">
                 <p className="text-[10px] font-black text-primary uppercase tracking-[0.4em] italic mb-2 leading-none">Secure Issuance</p>
@@ -282,7 +282,7 @@ export default function DesignSetupPage({
             </motion.div>
           </TabsContent>
 
-          <TabsContent value="email" className="mt-0 outline-none">
+          <TabsContent key="email" value="email" className="mt-0 outline-none">
             <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="rounded-[40px] bg-white/5 border border-white/10 p-10 md:p-12 shadow-2xl">
                <div className="mb-12">
                   <p className="text-[10px] font-black text-primary uppercase tracking-[0.4em] italic mb-2 leading-none">Relay Protocols</p>
@@ -299,7 +299,7 @@ export default function DesignSetupPage({
             </motion.div>
           </TabsContent>
 
-          <TabsContent value="agenda" className="mt-0 outline-none">
+          <TabsContent key="agenda" value="agenda" className="mt-0 outline-none">
             <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="rounded-[40px] bg-white/5 border border-white/10 p-10 md:p-12 shadow-2xl">
                <div className="mb-12">
                   <p className="text-[10px] font-black text-primary uppercase tracking-[0.4em] italic mb-2 leading-none">Mission Flow</p>

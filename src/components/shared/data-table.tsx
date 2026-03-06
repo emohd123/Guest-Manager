@@ -108,7 +108,7 @@ export function DataTable<TData, TValue>({
         <div className="flex flex-1 items-center gap-4">
           {searchKey && (
             <div className="relative group lg:w-[400px]">
-              <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-white/30 transition-colors group-focus-within:text-primary" />
+              <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground transition-colors group-focus-within:text-primary" />
               <Input
                 placeholder={searchPlaceholder}
                 value={
@@ -120,7 +120,7 @@ export function DataTable<TData, TValue>({
                     column.setFilterValue(e.target.value);
                   }
                 }}
-                className="pl-12 h-12 bg-white/5 border-white/10 rounded-2xl text-white placeholder:text-white/20 focus-visible:ring-primary focus-visible:border-primary transition-all pr-4"
+                className="h-12 rounded-2xl border-border bg-card/80 pl-12 pr-4 text-foreground placeholder:text-muted-foreground focus-visible:border-primary focus-visible:ring-primary transition-all"
               />
             </div>
           )}
@@ -131,19 +131,19 @@ export function DataTable<TData, TValue>({
           <Button
             variant="ghost"
             size="sm"
-            className="h-10 px-4 rounded-xl bg-white/5 border border-white/10 text-white/60 hover:bg-white/10 hover:text-white hidden sm:flex gap-2"
+            className="hidden h-10 gap-2 rounded-xl border border-border bg-card/80 px-4 text-muted-foreground hover:bg-card hover:text-foreground sm:flex"
           >
             <Download className="h-4 w-4" /> Export
           </Button>
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="h-10 px-4 rounded-xl bg-white/5 border border-white/10 text-white/60 hover:bg-white/10 hover:text-white gap-2">
+              <Button variant="ghost" size="sm" className="h-10 gap-2 rounded-xl border border-border bg-card/80 px-4 text-muted-foreground hover:bg-card hover:text-foreground">
                 <Settings2 className="h-4 w-4" />
                 View
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-[180px] p-2 rounded-2xl bg-[#1A1C30] border-white/10 text-white">
+            <DropdownMenuContent align="end" className="w-[180px] rounded-2xl border border-border bg-popover p-2 text-popover-foreground">
               {table
                 .getAllColumns()
                 .filter(
@@ -155,7 +155,7 @@ export function DataTable<TData, TValue>({
                   return (
                     <DropdownMenuCheckboxItem
                       key={column.id}
-                      className="capitalize rounded-lg focus:bg-white/10 focus:text-white"
+                      className="capitalize rounded-lg focus:bg-accent/10 focus:text-popover-foreground"
                       checked={column.getIsVisible()}
                       onCheckedChange={(value) =>
                         column.toggleVisibility(!!value)
@@ -171,14 +171,14 @@ export function DataTable<TData, TValue>({
       </div>
 
       {/* Table Container */}
-      <div className="rounded-[40px] bg-white/5 border border-white/10 shadow-2xl overflow-hidden backdrop-blur-3xl">
+      <div className="overflow-hidden rounded-[40px] border border-border bg-card/90 shadow-2xl backdrop-blur-3xl dark:bg-white/5 dark:border-white/10">
         <div className="overflow-x-auto">
           <Table>
-            <TableHeader className="bg-white/5 border-b border-white/10">
+            <TableHeader className="border-b border-border bg-muted/40 dark:border-white/10 dark:bg-white/5">
               {table.getHeaderGroups().map((headerGroup) => (
                 <TableRow key={headerGroup.id} className="border-none hover:bg-transparent">
                   {headerGroup.headers.map((header) => (
-                    <TableHead key={header.id} className="text-white/40 h-14 first:pl-8 last:pr-8 font-bold text-xs uppercase tracking-widest">
+                    <TableHead key={header.id} className="h-14 first:pl-8 last:pr-8 text-xs font-bold uppercase tracking-widest text-muted-foreground">
                       {header.isPlaceholder
                         ? null
                         : flexRender(
@@ -199,7 +199,7 @@ export function DataTable<TData, TValue>({
                   >
                     <div className="flex flex-col items-center justify-center gap-4">
                       <div className="h-10 w-10 animate-spin rounded-full border-4 border-primary border-t-transparent shadow-[0_0_20px_rgba(255,91,106,0.5)]" />
-                      <p className="text-white/40 font-bold uppercase tracking-widest text-[10px]">Loading Data...</p>
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Loading Data...</p>
                     </div>
                   </TableCell>
                 </TableRow>
@@ -208,10 +208,10 @@ export function DataTable<TData, TValue>({
                   <TableRow
                     key={row.id}
                     data-state={row.getIsSelected() && "selected"}
-                    className="border-b border-white/5 last:border-0 group transition-all duration-300 hover:bg-white/5 data-[state=selected]:bg-primary/10"
+                    className="group border-b border-border transition-all duration-300 last:border-0 hover:bg-muted/40 data-[state=selected]:bg-primary/10 dark:border-white/5 dark:hover:bg-white/5"
                   >
                     {row.getVisibleCells().map((cell) => (
-                       <TableCell key={cell.id} className="py-5 first:pl-8 last:pr-8 text-white/80 group-hover:text-white font-medium">
+                       <TableCell key={cell.id} className="py-5 first:pl-8 last:pr-8 font-medium text-foreground group-hover:text-foreground dark:text-white/80 dark:group-hover:text-white">
                         {flexRender(
                           cell.column.columnDef.cell,
                           cell.getContext(),
@@ -224,14 +224,14 @@ export function DataTable<TData, TValue>({
                 <TableRow>
                   <TableCell
                     colSpan={columns.length}
-                    className="h-64 text-center text-white/20"
+                    className="h-64 text-center text-muted-foreground"
                   >
                     <div className="flex flex-col items-center justify-center gap-2">
-                      <div className="p-4 rounded-full bg-white/5 mb-2">
-                        <Search className="h-8 w-8 text-white/10" />
+                      <div className="mb-2 rounded-full bg-muted p-4 dark:bg-white/5">
+                        <Search className="h-8 w-8 text-muted-foreground/50 dark:text-white/10" />
                       </div>
                       <p className="font-bold uppercase tracking-widest text-xs">No entries found</p>
-                      <p className="text-[10px] text-white/5 lowercase">Try adjusting your filters</p>
+                      <p className="text-[10px] lowercase text-muted-foreground/70">Try adjusting your filters</p>
                     </div>
                   </TableCell>
                 </TableRow>
@@ -243,8 +243,8 @@ export function DataTable<TData, TValue>({
 
       {/* Pagination Container */}
       <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between px-4">
-        <div className="flex items-center gap-4 bg-white/5 p-1 rounded-2xl">
-          <div className="px-4 py-2 text-xs font-black uppercase text-white/30 tracking-tighter">
+        <div className="flex items-center gap-4 rounded-2xl border border-border bg-card/80 p-1 dark:border-white/10 dark:bg-white/5">
+          <div className="px-4 py-2 text-xs font-black uppercase tracking-tighter text-muted-foreground">
             {table.getFilteredSelectedRowModel().rows.length > 0 ? (
               <span className="text-primary font-black">
                 {table.getFilteredSelectedRowModel().rows.length} / {table.getFilteredRowModel().rows.length} SELECTED
@@ -257,17 +257,17 @@ export function DataTable<TData, TValue>({
 
         <div className="flex items-center gap-6 lg:gap-8">
           <div className="flex items-center gap-3">
-            <span className="text-[10px] font-black uppercase text-white/20 tracking-widest">Rows per page</span>
+            <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Rows per page</span>
             <Select
               value={`${table.getState().pagination.pageSize}`}
               onValueChange={(value) => table.setPageSize(Number(value))}
             >
-              <SelectTrigger className="h-10 w-20 rounded-xl bg-white/5 border-white/10 text-white font-bold transition-all hover:bg-white/10">
+              <SelectTrigger className="h-10 w-20 rounded-xl border-border bg-card text-foreground font-bold transition-all hover:bg-muted dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10">
                 <SelectValue placeholder={table.getState().pagination.pageSize} />
               </SelectTrigger>
-              <SelectContent side="top" className="bg-[#1A1C30] border-white/10 text-white rounded-xl">
+              <SelectContent side="top" className="rounded-xl border border-border bg-popover text-popover-foreground">
                 {[10, 20, 30, 50, 100].map((size) => (
-                  <SelectItem key={size} value={`${size}`} className="rounded-lg focus:bg-white/10 focus:text-white font-bold">
+                  <SelectItem key={size} value={`${size}`} className="rounded-lg font-bold focus:bg-accent/10 focus:text-popover-foreground">
                     {size}
                   </SelectItem>
                 ))}
@@ -276,13 +276,13 @@ export function DataTable<TData, TValue>({
           </div>
 
           <div className="flex items-center gap-4">
-            <span className="text-[10px] font-black uppercase text-white/20 tracking-widest">
+            <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
               Page {table.getState().pagination.pageIndex + 1} of {Math.max(1, table.getPageCount())}
             </span>
             <div className="flex items-center gap-2">
               <Button
                 variant="outline"
-                className="h-10 w-10 p-0 rounded-xl bg-white/5 border-white/10 text-white/60 hover:bg-white/10 hover:text-white disabled:opacity-20"
+                className="h-10 w-10 rounded-xl border-border bg-card/80 p-0 text-muted-foreground hover:bg-card hover:text-foreground disabled:opacity-20 dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10"
                 onClick={() => table.previousPage()}
                 disabled={!table.getCanPreviousPage()}
               >
@@ -290,7 +290,7 @@ export function DataTable<TData, TValue>({
               </Button>
               <Button
                 variant="outline"
-                className="h-10 w-10 p-0 rounded-xl bg-white/5 border-white/10 text-white/60 hover:bg-white/10 hover:text-white disabled:opacity-20"
+                className="h-10 w-10 rounded-xl border-border bg-card/80 p-0 text-muted-foreground hover:bg-card hover:text-foreground disabled:opacity-20 dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10"
                 onClick={() => table.nextPage()}
                 disabled={!table.getCanNextPage()}
               >

@@ -42,26 +42,26 @@ export function DashboardTopbar({
     .slice(0, 2);
 
   return (
-    <header className="sticky top-0 z-40 flex h-20 items-center justify-between border-b border-b-white/5 bg-background/40 backdrop-blur-3xl px-6 lg:px-8">
+    <header className="sticky top-0 z-40 flex h-20 items-center justify-between border-b border-border bg-background/80 backdrop-blur-3xl px-6 lg:px-8">
       <div className="flex items-center gap-4">
         <Button
           variant="ghost"
           size="icon"
-          className="lg:hidden text-white"
+          className="lg:hidden text-foreground"
           onClick={onMenuClick}
         >
           <Menu className="h-6 w-6" />
         </Button>
         <div className="flex flex-col">
-          <p className="text-sm font-bold text-white/50 uppercase tracking-widest">{companyName}</p>
-          <h2 className="text-xl font-bold text-white capitalize">{pathname.split('/').pop()?.replace('-', ' ')}</h2>
+          <p className="text-sm font-bold text-muted-foreground uppercase tracking-widest">{companyName}</p>
+          <h2 className="text-xl font-bold text-foreground capitalize">{pathname.split('/').pop()?.replace('-', ' ')}</h2>
         </div>
       </div>
 
       <div className="flex items-center gap-4">
         <Button
           variant="secondary"
-          className="hidden h-11 w-72 justify-start gap-3 rounded-2xl bg-white/5 border-white/5 text-white/40 hover:bg-white/10 hover:text-white lg:flex"
+          className="hidden h-11 w-72 justify-start gap-3 rounded-2xl border border-border bg-card/80 text-muted-foreground hover:bg-card hover:text-foreground lg:flex"
           onClick={() => {
             document.dispatchEvent(
               new KeyboardEvent("keydown", { key: "k", metaKey: true })
@@ -70,16 +70,16 @@ export function DashboardTopbar({
         >
           <Search className="h-4 w-4" />
           <span className="font-medium">Search anything...</span>
-          <kbd className="pointer-events-none ml-auto inline-flex h-6 select-none items-center gap-1 rounded-lg border border-white/10 bg-white/5 px-2 font-mono text-[10px] font-bold text-white/40">
+          <kbd className="pointer-events-none ml-auto inline-flex h-6 select-none items-center gap-1 rounded-lg border border-border bg-muted px-2 font-mono text-[10px] font-bold text-muted-foreground">
             <span className="text-xs">⌘</span>K
           </kbd>
         </Button>
 
-        <div className="flex items-center gap-2 bg-white/5 p-1 rounded-2xl">
+        <div className="flex items-center gap-2 rounded-2xl border border-border bg-card/80 p-1">
           <Button
             variant="ghost"
             size="icon"
-            className="rounded-xl text-white/70 hover:bg-white/10 hover:text-white"
+            className="rounded-xl text-muted-foreground hover:bg-muted hover:text-foreground"
             onClick={() => setTheme(isDark ? "light" : "dark")}
           >
             <Sun className="h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
@@ -96,26 +96,26 @@ export function DashboardTopbar({
               <span className="hidden sm:inline">Create</span>
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-[200px] p-2 rounded-2xl bg-[#1A1C30] border-white/10 text-white">
-            <DropdownMenuItem asChild className="rounded-xl focus:bg-white/10 focus:text-white">
+          <DropdownMenuContent align="end" className="w-[200px] rounded-2xl border border-border bg-popover p-2 text-popover-foreground">
+            <DropdownMenuItem asChild className="rounded-xl focus:bg-accent/10 focus:text-popover-foreground">
               <Link href="/dashboard/events/new" className="cursor-pointer py-2">
                 <CalendarDays className="mr-2 h-4 w-4 text-primary" />
                 <span className="font-semibold">New Event</span>
               </Link>
             </DropdownMenuItem>
-            <DropdownMenuItem asChild className="rounded-xl focus:bg-white/10 focus:text-white">
+            <DropdownMenuItem asChild className="rounded-xl focus:bg-accent/10 focus:text-popover-foreground">
               <Link href="/dashboard/contacts" className="cursor-pointer py-2">
                 <Contact className="mr-2 h-4 w-4 text-primary" />
                 <span className="font-semibold">New Contact</span>
               </Link>
             </DropdownMenuItem>
-            <DropdownMenuItem asChild className="rounded-xl focus:bg-white/10 focus:text-white">
+            <DropdownMenuItem asChild className="rounded-xl focus:bg-accent/10 focus:text-popover-foreground">
               <Link href="/dashboard/tickets" className="cursor-pointer py-2">
                 <Ticket className="mr-2 h-4 w-4 text-primary" />
                 <span className="font-semibold">Issue Ticket</span>
               </Link>
             </DropdownMenuItem>
-            <DropdownMenuItem asChild className="rounded-xl focus:bg-white/10 focus:text-white">
+            <DropdownMenuItem asChild className="rounded-xl focus:bg-accent/10 focus:text-popover-foreground">
               <Link href="/dashboard/orders" className="cursor-pointer py-2">
                 <ShoppingCart className="mr-2 h-4 w-4 text-primary" />
                 <span className="font-semibold">Create Order</span>
@@ -126,26 +126,26 @@ export function DashboardTopbar({
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-11 rounded-2xl gap-3 pl-1 pr-3 hover:bg-white/5">
+            <Button variant="ghost" className="h-11 rounded-2xl gap-3 pl-1 pr-3 hover:bg-muted">
               <Avatar className="h-9 w-9 border-2 border-primary/20">
                 <AvatarFallback className="bg-primary text-white text-xs font-bold">
                   {initials}
                 </AvatarFallback>
               </Avatar>
               <div className="hidden lg:flex flex-col items-start leading-none gap-1">
-                <span className="text-sm font-bold text-white">{userName}</span>
-                <span className="text-[10px] text-white/40 uppercase font-black tracking-tighter">Admin</span>
+                <span className="text-sm font-bold text-foreground">{userName}</span>
+                <span className="text-[10px] text-muted-foreground uppercase font-black tracking-tighter">Admin</span>
               </div>
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-[200px] p-2 rounded-2xl bg-[#1A1C30] border-white/10 text-white">
-            <DropdownMenuItem className="font-bold py-3 px-4 border-b border-white/5 mb-2 hover:bg-transparent">
+          <DropdownMenuContent align="end" className="w-[200px] rounded-2xl border border-border bg-popover p-2 text-popover-foreground">
+            <DropdownMenuItem className="mb-2 border-b border-border px-4 py-3 font-bold hover:bg-transparent">
               <div className="flex flex-col">
                 <span className="text-sm">{userName}</span>
-                <span className="text-xs text-white/40 font-normal">Administrator</span>
+                <span className="text-xs text-muted-foreground font-normal">Administrator</span>
               </div>
             </DropdownMenuItem>
-            <DropdownMenuItem asChild className="rounded-xl focus:bg-white/10 focus:text-white">
+            <DropdownMenuItem asChild className="rounded-xl focus:bg-accent/10 focus:text-popover-foreground">
               <Link href="/dashboard/settings" className="cursor-pointer py-2">Settings</Link>
             </DropdownMenuItem>
           </DropdownMenuContent>

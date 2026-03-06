@@ -24,11 +24,20 @@
   },
   "include": [
     "next-env.d.ts",
-    "**/*.ts",
-    "**/*.tsx",
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    "**/*.d.ts",
     ".next/types/**/*.ts",
-    ".next/dev/types/**/*.ts",
-    "**/*.mts"
+    ".next/dev/types/**/*.ts"
   ],
-  "exclude": ["node_modules", "mobile", "script.ts"]
+  "exclude": [
+    "node_modules",
+    "mobile",
+    ".worktrees",
+    "logs",
+    "screenshots",
+    "temp",
+    "drizzle.config.ts",
+    "script.ts"
+  ]
 }

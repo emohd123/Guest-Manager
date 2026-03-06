@@ -25,6 +25,7 @@ import {
 import { Plus, MoreHorizontal, Eye, Edit, Trash2, Copy, CalendarDays, Archive } from "lucide-react";
 import { toast } from "sonner";
 import { useState } from "react";
+import { cn } from "@/lib/utils";
 
 import { Checkbox } from "@/components/ui/checkbox";
 
