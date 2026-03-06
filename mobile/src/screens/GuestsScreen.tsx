@@ -1,6 +1,7 @@
-import React, { useMemo, useState, useEffect } from "react";
-import { FlatList, Pressable, StyleSheet, Text, TextInput, View, Animated } from "react-native";
+import React, { useMemo, useState } from "react";
+import { FlatList, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import type { MobileGuest } from "../types";
+import { FadeSlideIn } from "../ui/motion";
 
 export function GuestsScreen({
   guests,
@@ -28,65 +29,74 @@ export function GuestsScreen({
     });
   }, [guests, search]);
 
-  const [slideAnim] = useState(() => new Animated.Value(30));
-  const [fadeAnim] = useState(() => new Animated.Value(0));
-
-  useEffect(() => {
-    Animated.parallel([
-      Animated.timing(fadeAnim, { toValue: 1, duration: 400, useNativeDriver: true }),
-      Animated.timing(slideAnim, { toValue: 0, duration: 400, useNativeDriver: true })
-    ]).start();
-  }, [fadeAnim, slideAnim]);
-
   return (
-    <Animated.View style={[styles.container, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
-      <Text style={styles.title}>Guest List</Text>
-      <TextInput
-        value={search}
-        onChangeText={setSearch}
-        placeholder="Search guests by name, email, or ticket"
-        placeholderTextColor="#A0A5B1"
-        style={styles.search}
-      />
+    <View style={styles.container}>
+      <FadeSlideIn>
+        <View style={styles.hero}>
+          <Text style={styles.eyebrow}>Front Desk</Text>
+          <Text style={styles.title}>Guest list</Text>
+        </View>
+      </FadeSlideIn>
+
+      <FadeSlideIn delay={70}>
+        <TextInput
+          value={search}
+          onChangeText={setSearch}
+          placeholder="Search guests by name, email, or ticket"
+          placeholderTextColor="#A0A5B1"
+          style={styles.search}
+        />
+      </FadeSlideIn>
 
       <FlatList
         data={filtered}
         keyExtractor={(item) => item.id}
-        renderItem={({ item }) => {
+        renderItem={({ item, index }) => {
           const checkedIn = item.attendanceState === "checked_in" || item.status === "checked_in";
           const loading = busyGuestId === item.id;
           return (
-            <View style={styles.row}>
-              <View style={styles.rowMain}>
-                <Text style={styles.name}>
-                  {`${item.firstName ?? ""} ${item.lastName ?? ""}`.trim() || "Guest"}
-                </Text>
-                <Text style={styles.meta}>{item.email ?? item.ticket?.barcode ?? "No email"}</Text>
+            <FadeSlideIn delay={80 + index * 18}>
+              <View style={styles.row}>
+                <View style={styles.avatar}>
+                  <Text style={styles.avatarText}>
+                    {(`${item.firstName ?? ""}`[0] ?? "?").toUpperCase()}
+                  </Text>
+                </View>
+                <View style={styles.rowMain}>
+                  <Text style={styles.name}>
+                    {`${item.firstName ?? ""} ${item.lastName ?? ""}`.trim() || "Guest"}
+                  </Text>
+                  <Text style={styles.meta}>{item.email ?? item.ticket?.barcode ?? "No email"}</Text>
+                </View>
+                {checkedIn ? (
+                  <Pressable
+                    style={[styles.action, styles.checkout]}
+                    disabled={loading}
+                    onPress={() => onQuickCheckOut(item)}
+                  >
+                    <Text style={[styles.actionText, { color: "#1A1C30" }]}>
+                      {loading ? "..." : "Check Out"}
+                    </Text>
+                  </Pressable>
+                ) : (
+                  <Pressable
+                    style={[styles.action, styles.checkin]}
+                    disabled={loading}
+                    onPress={() => onQuickCheckIn(item)}
+                  >
+                    <Text style={[styles.actionText, { color: "#FFFFFF" }]}>
+                      {loading ? "..." : "Check In"}
+                    </Text>
+                  </Pressable>
+                )}
               </View>
-              {checkedIn ? (
-                <Pressable
-                  style={[styles.action, styles.checkout]}
-                  disabled={loading}
-                  onPress={() => onQuickCheckOut(item)}
-                >
-                  <Text style={[styles.actionText, { color: "#1A1C30" }]}>{loading ? "..." : "Check Out"}</Text>
-                </Pressable>
-              ) : (
-                <Pressable
-                  style={[styles.action, styles.checkin]}
-                  disabled={loading}
-                  onPress={() => onQuickCheckIn(item)}
-                >
-                  <Text style={[styles.actionText, { color: "#FFFFFF" }]}>{loading ? "..." : "Check In"}</Text>
-                </Pressable>
-              )}
-            </View>
+            </FadeSlideIn>
           );
         }}
         ListEmptyComponent={<Text style={styles.empty}>No guests found.</Text>}
         contentContainerStyle={styles.listContent}
       />
-    </Animated.View>
+    </View>
   );
 }
 
@@ -96,47 +106,71 @@ const styles = StyleSheet.create({
     backgroundColor: "transparent",
     padding: 24,
   },
+  hero: {
+    marginBottom: 14,
+  },
+  eyebrow: {
+    color: "#8C94A8",
+    fontSize: 11,
+    fontWeight: "800",
+    letterSpacing: 1.2,
+    textTransform: "uppercase",
+    marginBottom: 8,
+  },
   title: {
-    fontSize: 24,
+    fontSize: 26,
     fontWeight: "900",
-    marginBottom: 16,
     color: "#1A1C30",
-    letterSpacing: -0.5,
+    letterSpacing: -0.7,
   },
   search: {
     borderWidth: 1,
-    borderColor: "#EBEFF5",
-    borderRadius: 30, // massive pill
+    borderColor: "rgba(26,28,48,0.06)",
+    borderRadius: 30,
     backgroundColor: "#ffffff",
     paddingHorizontal: 20,
     paddingVertical: 14,
     marginBottom: 20,
     fontSize: 15,
     color: "#1A1C30",
-    shadowColor: "#000",
-    shadowOpacity: 0.03,
-    shadowOffset: { width: 0, height: 4 },
-    shadowRadius: 10,
-    elevation: 2,
+    shadowColor: "#14192C",
+    shadowOpacity: 0.04,
+    shadowOffset: { width: 0, height: 10 },
+    shadowRadius: 18,
+    elevation: 4,
   },
   listContent: {
-    paddingBottom: 100, // Space for floating tab bar
+    paddingBottom: 110,
   },
   row: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     borderWidth: 1,
-    borderColor: "#EBEFF5",
+    borderColor: "rgba(26,28,48,0.06)",
     backgroundColor: "#ffffff",
-    borderRadius: 20,
+    borderRadius: 22,
     padding: 16,
     marginBottom: 12,
-    shadowColor: "#000",
-    shadowOpacity: 0.03,
-    shadowOffset: { width: 0, height: 4 },
-    shadowRadius: 10,
-    elevation: 2,
+    shadowColor: "#14192C",
+    shadowOpacity: 0.04,
+    shadowOffset: { width: 0, height: 10 },
+    shadowRadius: 18,
+    elevation: 4,
+  },
+  avatar: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: "#14192C",
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 14,
+  },
+  avatarText: {
+    color: "#FFFFFF",
+    fontWeight: "800",
+    fontSize: 14,
   },
   rowMain: {
     flex: 1,
@@ -161,10 +195,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   checkin: {
-    backgroundColor: "#FF5B6A", // Coral action
+    backgroundColor: "#FF5B6A",
   },
   checkout: {
-    backgroundColor: "rgba(26,28,48,0.05)", // Subdued gray/navy instead of bright blue
+    backgroundColor: "rgba(26,28,48,0.07)",
   },
   actionText: {
     fontWeight: "800",
@@ -180,4 +214,3 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
 });
-

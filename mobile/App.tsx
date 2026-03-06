@@ -48,6 +48,7 @@ import { getCachedGuests, initGuestCache, upsertGuests } from "./src/storage/gue
 import { enqueueMutation, initOfflineQueue, listQueuedMutations } from "./src/storage/offlineQueue";
 import { clearSession, loadSession, saveSession } from "./src/storage/session";
 import { replayQueue } from "./src/sync/replay";
+import { FadeSlideIn } from "./src/ui/motion";
 import type {
   MobileGuest,
   PairingSession,
@@ -407,7 +408,8 @@ export default function App() {
     return (
       <SafeAreaView style={styles.full}>
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>Guest Manager Pro</Text>
+          <Text style={styles.headerEyebrow}>Guest Manager Pro</Text>
+          <Text style={styles.headerTitle}>Live check-in control</Text>
           <Text style={styles.headerMeta}>Device: {session.deviceName}</Text>
           <Pressable onPress={staffSignOut} style={styles.signOutBtn}>
             <Text style={styles.signOutText}>Unpair</Text>
@@ -415,15 +417,17 @@ export default function App() {
         </View>
         <View style={styles.main}>
           <View style={styles.whiteCard}>
-            {tab === "home" && <EventHomeScreen summary={summary} refreshing={refreshing} onRefresh={refreshDashboardData} />}
-            {tab === "guests" && (
-              <GuestsScreen guests={guests} onQuickCheckIn={handleQuickCheckIn} onQuickCheckOut={handleQuickCheckOut} busyGuestId={busyGuestId} />
-            )}
-            {tab === "scan" && <ScanScreen onSubmitBarcode={manualScan} />}
-            {tab === "walkup" && <WalkupScreen onSubmit={submitWalkup} />}
-            {tab === "activity" && (
-              <ActivityScreen queueCount={queueCount} lastSyncAt={lastSyncAt} onSyncNow={syncNow} onHeartbeat={() => sendHeartbeat(session, { appVersion: "0.1.0" }).then(() => setLastSyncAt(new Date().toISOString()))} syncing={syncing} />
-            )}
+            <FadeSlideIn key={tab} style={styles.screenStage} duration={320} distance={18}>
+              {tab === "home" && <EventHomeScreen summary={summary} refreshing={refreshing} onRefresh={refreshDashboardData} />}
+              {tab === "guests" && (
+                <GuestsScreen guests={guests} onQuickCheckIn={handleQuickCheckIn} onQuickCheckOut={handleQuickCheckOut} busyGuestId={busyGuestId} />
+              )}
+              {tab === "scan" && <ScanScreen onSubmitBarcode={manualScan} />}
+              {tab === "walkup" && <WalkupScreen onSubmit={submitWalkup} />}
+              {tab === "activity" && (
+                <ActivityScreen queueCount={queueCount} lastSyncAt={lastSyncAt} onSyncNow={syncNow} onHeartbeat={() => sendHeartbeat(session, { appVersion: "0.1.0" }).then(() => setLastSyncAt(new Date().toISOString()))} syncing={syncing} />
+              )}
+            </FadeSlideIn>
           </View>
         </View>
         <View style={styles.floatingTabBarContainer}>
@@ -504,8 +508,17 @@ export default function App() {
 }
 
 function TabButton({ label, active, onPress }: { label: string; active: boolean; onPress: () => void }) {
+  const icon = {
+    Home: "Home",
+    Guests: "Guests",
+    Scan: "Scan",
+    Walkup: "Walk-up",
+    Activity: "Sync",
+  }[label] ?? label;
+
   return (
     <Pressable style={[styles.tabButton, active && styles.tabButtonActive]} onPress={onPress}>
+      <Text style={[styles.tabIcon, active && styles.tabIconActive]}>{icon}</Text>
       <Text style={[styles.tabText, active && styles.tabTextActive]}>{label}</Text>
     </Pressable>
   );
@@ -517,38 +530,44 @@ const styles = StyleSheet.create({
   
   header: { 
     paddingHorizontal: 24, 
-    paddingVertical: 20, 
+    paddingTop: 20,
+    paddingBottom: 24,
     backgroundColor: "#1A1C30",
   },
-  headerTitle: { fontWeight: "800", color: "#FFFFFF", fontSize: 22, marginBottom: 4 },
-  headerMeta: { color: "rgba(255,255,255,0.6)", fontSize: 13 },
+  headerEyebrow: { color: "#FF8B96", fontSize: 11, fontWeight: "800", letterSpacing: 1.2, textTransform: "uppercase", marginBottom: 8 },
+  headerTitle: { fontWeight: "900", color: "#FFFFFF", fontSize: 26, marginBottom: 6, letterSpacing: -0.7 },
+  headerMeta: { color: "rgba(255,255,255,0.64)", fontSize: 13 },
   signOutBtn: { 
     position: "absolute", right: 24, top: 24,
-    paddingHorizontal: 12, paddingVertical: 6, 
-    backgroundColor: "rgba(255,91,106,0.1)", // Coral tint
-    borderRadius: 8,
+    paddingHorizontal: 14, paddingVertical: 8, 
+    backgroundColor: "rgba(255,91,106,0.12)",
+    borderRadius: 12,
   },
-  signOutText: { color: "#FF5B6A", fontWeight: "700", fontSize: 13 },
+  signOutText: { color: "#FF5B6A", fontWeight: "800", fontSize: 13 },
   
   main: { flex: 1, backgroundColor: "#1A1C30" },
   whiteCard: {
     flex: 1,
-    backgroundColor: "#EFF2F7", // Very light gray content area
-    borderTopLeftRadius: 60,
+    backgroundColor: "#EFF2F7",
+    borderTopLeftRadius: 46,
+    borderTopRightRadius: 46,
     overflow: "hidden",
+  },
+  screenStage: {
+    flex: 1,
   },
 
   // Floating Tab Bar
   floatingTabBarContainer: {
     position: "absolute",
-    bottom: 30, // Lifted from bottom
+    bottom: 26,
     left: 20,
     right: 20,
     alignItems: "center",
   },
   floatingTabBar: {
     flexDirection: "row", 
-    backgroundColor: "#242742", // Slightly lighter navy than background
+    backgroundColor: "#20243D",
     borderRadius: 40,
     paddingVertical: 8,
     paddingHorizontal: 16,
@@ -561,10 +580,12 @@ const styles = StyleSheet.create({
   tabButton: { 
     flex: 1, 
     alignItems: "center", 
-    paddingVertical: 10,
+    paddingVertical: 9,
     borderRadius: 24,
   },
-  tabButtonActive: { backgroundColor: "#1A1C30" }, // Indent active tab
-  tabText: { color: "#8E94A3", fontSize: 11, fontWeight: "600", marginTop: 2 },
-  tabTextActive: { color: "#FF5B6A" }, // Coral Active Text
+  tabButtonActive: { backgroundColor: "#13182C" },
+  tabIcon: { color: "#77819A", fontSize: 10, fontWeight: "800" },
+  tabIconActive: { color: "#FFFFFF" },
+  tabText: { color: "#8E94A3", fontSize: 11, fontWeight: "700", marginTop: 4 },
+  tabTextActive: { color: "#FF5B6A" },
 });
