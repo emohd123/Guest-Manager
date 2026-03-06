@@ -114,9 +114,12 @@ export function DataTable<TData, TValue>({
                 value={
                   (table.getColumn(searchKey)?.getFilterValue() as string) ?? ""
                 }
-                onChange={(e) =>
-                  table.getColumn(searchKey)?.setFilterValue(e.target.value)
-                }
+                onChange={(e) => {
+                  const column = table.getColumn(searchKey);
+                  if (column) {
+                    column.setFilterValue(e.target.value);
+                  }
+                }}
                 className="pl-12 h-12 bg-white/5 border-white/10 rounded-2xl text-white placeholder:text-white/20 focus-visible:ring-primary focus-visible:border-primary transition-all pr-4"
               />
             </div>

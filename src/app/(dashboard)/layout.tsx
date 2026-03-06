@@ -6,6 +6,7 @@ import { DashboardSidebar } from "@/components/layout/dashboard-sidebar";
 import { DashboardTopbar } from "@/components/layout/dashboard-topbar";
 import { CommandPalette } from "@/components/layout/command-palette";
 import { motion, AnimatePresence } from "framer-motion";
+import { Sheet, SheetContent } from "@/components/ui/sheet";
 
 export default function DashboardLayout({
   children,

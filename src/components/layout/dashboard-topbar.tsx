@@ -12,6 +12,7 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Sun, Moon, Menu, Search, Plus, CalendarDays, Contact, Ticket, ShoppingCart } from "lucide-react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 interface DashboardTopbarProps {
   onMenuClick: () => void;
@@ -24,6 +25,7 @@ export function DashboardTopbar({
   userName = "User",
   companyName = "Company",
 }: DashboardTopbarProps) {
+  const pathname = usePathname();
   const mounted = useSyncExternalStore(
     () => () => {},
     () => true,

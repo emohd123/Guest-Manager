@@ -3,7 +3,7 @@ import * as React from "react";
 import { DataTable } from "@/components/shared/data-table";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Plus, Mail, RefreshCw, Star, Filter, X, LayoutTemplate, Activity, Zap, Target, Search, ArrowRight } from "lucide-react";
+import { Plus, Mail, RefreshCw, Star, Filter, X, LayoutTemplate, Activity, Zap, Target, Search, ArrowRight, ShieldCheck } from "lucide-react";
 import { use } from "react";
 import { trpc } from "@/lib/trpc/client";
 import { Input } from "@/components/ui/input";
@@ -75,7 +75,7 @@ export default function SentEmailsPage({ params }: { params: Promise<{ eventId: 
       cell: ({ row }: { row: any }) => (
         <div className="flex flex-col gap-0.5">
            <span className="text-[11px] font-black text-white italic truncate uppercase tracking-tight leading-none">{row.original.emailAddress}</span>
-           <span className="text-[9px] font-bold text-white/10 uppercase tracking-widest">ID: {row.original.id.split('-')[0]}</span>
+           <span className="text-[9px] font-bold text-white/10 uppercase tracking-widest">ID: {row.original.id?.split('-')[0] || 'N/A'}</span>
         </div>
       )
     },
