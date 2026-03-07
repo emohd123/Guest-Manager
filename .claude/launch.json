@@ -1,0 +1,29 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "Next.js Dev",
+      "runtimeExecutable": "cmd",
+      "runtimeArgs": ["/c", "npm run dev -- --turbopack"],
+      "port": 3000
+    },
+    {
+      "name": "Drizzle Studio",
+      "runtimeExecutable": "cmd",
+      "runtimeArgs": ["/c", "npm run db:studio"],
+      "port": 4983
+    }
+  ,{
+      "name": "Mobile Metro",
+      "runtimeExecutable": "cmd",
+      "runtimeArgs": ["/c", "cd mobile && npx expo start --port 8081"],
+      "port": 8081
+    }
+  ,{
+      "name": "Attendee Portal Dev",
+      "runtimeExecutable": "cmd",
+      "runtimeArgs": ["/c", "cd .worktrees\\attendee-portal && npm run dev -- --turbopack --port 3001"],
+      "port": 3001
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "expo": {
+    "name": "Guest Manager Check In",
+    "slug": "guest-manager-checkin-v2",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "package": "com.anonymous.guestmanagercheckinv2"
+    },
+    "web": {},
+    "extra": {
+      "apiBaseUrl": "http://localhost:3000",
+      "appVersion": "0.1.0"
+    },
+    "plugins": [
+      "expo-asset",
+      "expo-sqlite"
+    ]
+  }
+}

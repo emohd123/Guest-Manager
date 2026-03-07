@@ -1,0 +1,117 @@
+export type AuthMode = "staff" | "code_pin";
+
+export type PairingSession = {
+  token: string;
+  eventId: string;
+  companyId: string;
+  deviceId: string;
+  deviceName: string;
+};
+
+/** Session for an authenticated visitor/attendee */
+export type VisitorSession = {
+  /** Supabase access token */
+  token: string;
+  /** Supabase user ID */
+  userId: string;
+  email: string;
+  name: string;
+};
+
+export type SummaryMetrics = {
+  totalGuests: number;
+  checkedIn: number;
+  checkedOut: number;
+  noShow: number;
+  successfulScans: number;
+  unsuccessfulScans: number;
+  totalScans: number;
+};
+
+export type MobileGuest = {
+  id: string;
+  firstName: string | null;
+  lastName: string | null;
+  email: string | null;
+  status: string;
+  attendanceState?: string | null;
+  ticket?: {
+    id: string;
+    barcode: string;
+    status: string;
+    checkedIn: boolean | null;
+  } | null;
+};
+
+export type QueueItem = {
+  id: string;
+  endpoint: string;
+  method: "POST";
+  payload: Record<string, unknown>;
+  eventId: string;
+  createdAt: string;
+};
+
+export type VisitorTicket = {
+  guestId: string;
+  ticketId: string;
+  barcode: string;
+  status: string;
+  ticketType: string;
+  rsvpStatus: string | null;
+  rsvpAt: string | null;
+  event: {
+    id: string;
+    name: string;
+    startsAt: string;
+    endsAt: string | null;
+    location: string | null;
+    visitorCode?: string | null;
+  };
+  agenda?: AgendaItem[] | null;
+  agendaTitle?: string | null;
+};
+
+export type AgendaItem = {
+  id: string;
+  time: string;
+  title: string;
+  description?: string;
+  location?: string;
+  speaker?: string;
+};
+
+export type VisitorEvent = {
+  guestId: string;
+  eventId: string;
+  eventName: string;
+  startsAt: string;
+  ticketStatus: string;
+  attendanceState: string | null;
+  rsvpStatus: string | null;
+  rsvpAt: string | null;
+};
+
+export type VisitorGuestListItem = {
+  id: string;
+  firstName: string;
+  lastName: string | null;
+  eventId: string;
+  eventName: string | null;
+  rsvpStatus: string | null;
+  rsvpAt: string | null;
+};
+
+export type VisitorNotification = {
+  id: string;
+  eventId: string;
+  eventName?: string | null;
+  title: string;
+  /** Body text from the DB */
+  body?: string;
+  /** Legacy field — same as body, kept for backwards compat */
+  message?: string;
+  createdAt: string;
+  type: "info" | "warning" | "update" | "event_update" | "agenda_update" | "message_reply";
+  isRead: boolean;
+};

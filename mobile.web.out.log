@@ -1,0 +1,20 @@
+
+> guest-manager-mobile-v2@0.1.0 web
+> expo start --web --port 8083
+
+Starting project at C:\Users\cactu\OneDrive\Desktop\app\Guest Manager\mobile
+Metro is running in CI mode, reloads are disabled. Remove CI=true to enable watch mode.
+Starting Metro Bundler
+Waiting on http://localhost:8083
+Logs for your project will appear below.
+Web node_modules\expo\AppEntry.js ▓▓▓▓▓▓░░░░░░░░░░ 38.4% (60/98)
+Web node_modules\expo\AppEntry.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░ 99.9% (249/252)
+Web node_modules\expo\AppEntry.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░ 99.9% (259/260)
+Web Bundled 10762ms node_modules\expo\AppEntry.js (260 modules)
+Web Bundling failed 649ms node_modules\expo-sqlite\web\worker.ts (1 module)
+Unable to resolve "./wa-sqlite/wa-sqlite.wasm" from "node_modules\expo-sqlite\web\worker.ts"
+› Detected a change in babel.config.js. Restart the server to see the new results. You may need to clear the bundler cache with the --clear flag for your changes to take effect.
+› Detected a change in babel.config.js. Restart the server to see the new results. You may need to clear the bundler cache with the --clear flag for your changes to take effect.
+› Detected a change in babel.config.js. Restart the server to see the new results. You may need to clear the bundler cache with the --clear flag for your changes to take effect.
+› Detected a change in babel.config.js. Restart the server to see the new results. You may need to clear the bundler cache with the --clear flag for your changes to take effect.
+› Detected a change in babel.config.js. Restart the server to see the new results. You may need to clear the bundler cache with the --clear flag for your changes to take effect.
