@@ -178,7 +178,7 @@ export default function DesignSetupPage({
           {[
             { value: "branding", label: "Branding", icon: ImagePlus },
             { value: "ticket", label: "Tickets", icon: Ticket },
-            { value: "email", label: "Comms", icon: Mail },
+            { value: "email", label: "Email", icon: Mail },
             { value: "agenda", label: "Agenda", icon: CalendarDays }
           ].map((tab) => (
             <TabsTrigger 
@@ -268,7 +268,7 @@ export default function DesignSetupPage({
             <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="rounded-[40px] bg-white/5 border border-white/10 p-10 md:p-12 shadow-2xl">
               <div className="mb-12">
                 <p className="text-[10px] font-black text-primary uppercase tracking-[0.4em] italic mb-2 leading-none">Ticket Layout</p>
-                <h2 className="text-3xl font-black text-white italic uppercase tracking-tighter">PDF Ticket Schematic</h2>
+                <h2 className="text-3xl font-black text-white italic uppercase tracking-tighter">PDF Ticket Design</h2>
               </div>
               <TicketDesignEditor
                 design={ticketDesign}
@@ -303,7 +303,7 @@ export default function DesignSetupPage({
             <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="rounded-[40px] bg-white/5 border border-white/10 p-10 md:p-12 shadow-2xl">
                <div className="mb-12">
                   <p className="text-[10px] font-black text-primary uppercase tracking-[0.4em] italic mb-2 leading-none">Agenda</p>
-                  <h2 className="text-3xl font-black text-white italic uppercase tracking-tighter">Event Agenda Flow</h2>
+                  <h2 className="text-3xl font-black text-white italic uppercase tracking-tighter">Event Agenda</h2>
                </div>
               <AgendaEditor
                 settings={agendaSettings}

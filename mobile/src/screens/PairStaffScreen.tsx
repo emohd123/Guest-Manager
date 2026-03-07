@@ -43,7 +43,7 @@ export function PairStaffScreen({
       icon="Admin"
       eyebrow="Manual Pairing"
       title="Pair with staff token"
-      subtitle="Use a direct staff token and event ID when the device is being staged by an admin or operator."
+      subtitle="Use a staff token and event ID when this device is being set up by your event team."
     >
       <FadeSlideIn delay={90}>
         <View style={styles.stack}>

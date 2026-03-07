@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Building2,
@@ -36,6 +36,8 @@ import {
 } from "@/components/ui/select";
 
 export default function SettingsPage() {
+  const [activeTab, setActiveTab] = useState("account");
+
   return (
     <motion.div 
       initial={{ opacity: 0, y: 20 }}
@@ -49,7 +51,7 @@ export default function SettingsPage() {
         </p>
       </div>
 
-      <Tabs defaultValue="account" className="space-y-10">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-10">
         <TabsList className="bg-white/5 border border-white/10 p-1 rounded-2xl h-auto w-fit overflow-x-auto flex-nowrap">
           <TabsTrigger value="account" className="rounded-xl px-8 py-3 font-black text-xs uppercase tracking-widest data-[state=active]:bg-primary data-[state=active]:text-white transition-all italic flex gap-2">
             <Building2 className="h-4 w-4" />
@@ -69,47 +71,27 @@ export default function SettingsPage() {
           </TabsTrigger>
         </TabsList>
 
-        <AnimatePresence mode="wait">
-          <TabsContent value="account" className="mt-0 outline-none">
-            <motion.div
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 10 }}
-              className="space-y-8"
-            >
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.div
+            key={activeTab}
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 10 }}
+            className="space-y-8"
+          >
+            <TabsContent value="account" className="mt-0 outline-none">
               <AccountSettings />
-            </motion.div>
-          </TabsContent>
-          <TabsContent value="billing" className="mt-0 outline-none">
-            <motion.div
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 10 }}
-              className="space-y-8"
-            >
+            </TabsContent>
+            <TabsContent value="billing" className="mt-0 outline-none">
               <BillingSettings />
-            </motion.div>
-          </TabsContent>
-          <TabsContent value="team" className="mt-0 outline-none">
-            <motion.div
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 10 }}
-              className="space-y-8"
-            >
+            </TabsContent>
+            <TabsContent value="team" className="mt-0 outline-none">
               <TeamSettings />
-            </motion.div>
-          </TabsContent>
-          <TabsContent value="api" className="mt-0 outline-none">
-            <motion.div
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 10 }}
-              className="space-y-8"
-            >
+            </TabsContent>
+            <TabsContent value="api" className="mt-0 outline-none">
               <ApiSettings />
-            </motion.div>
-          </TabsContent>
+            </TabsContent>
+          </motion.div>
         </AnimatePresence>
       </Tabs>
     </motion.div>
@@ -131,22 +113,19 @@ function AccountSettings() {
     name: "",
   });
 
-  const [prevCompanyId, setPrevCompanyId] = useState<string | null>(null);
-  const [prevUserId, setPrevUserId] = useState<string | null>(null);
-
-  if (company && company.id !== prevCompanyId) {
-    setPrevCompanyId(company.id);
+  useEffect(() => {
+    if (!company) return;
     setCompanyForm({
       name: company.name ?? "",
       slug: company.slug ?? "",
       timezone: company.timezone ?? "America/Los_Angeles",
     });
-  }
+  }, [company]);
 
-  if (user && user.id !== prevUserId) {
-    setPrevUserId(user.id);
+  useEffect(() => {
+    if (!user) return;
     setUserForm({ name: user.name ?? "" });
-  }
+  }, [user]);
 
   const updateCompany = trpc.settings.updateCompany.useMutation({
     onSuccess: () => {
@@ -158,7 +137,7 @@ function AccountSettings() {
 
   const updateUser = trpc.settings.updateUser.useMutation({
     onSuccess: () => {
-      toast.success("Identity updated");
+      toast.success("Profile updated");
       utils.settings.getUser.invalidate();
     },
     onError: (err) => toast.error(err.message),
@@ -193,8 +172,8 @@ function AccountSettings() {
                </button>
              </div>
              <div className="space-y-1">
-               <p className="text-sm font-black text-white italic">Asset Identity</p>
-               <p className="text-[10px] font-bold text-white/20 uppercase tracking-tighter">SVG, PNG or WebP · Max 4MB</p>
+               <p className="text-sm font-black text-white italic">Company Logo</p>
+               <p className="text-[10px] font-bold text-white/20 uppercase tracking-tighter">SVG, PNG or WebP - Max 4MB</p>
              </div>
           </div>
 
@@ -270,7 +249,7 @@ function AccountSettings() {
         >
           <div className="relative z-10 space-y-8">
             <div>
-              <h3 className="text-2xl font-black text-white italic leading-none mb-2">Operator</h3>
+              <h3 className="text-2xl font-black text-white italic leading-none mb-2">Profile</h3>
               <p className="text-white/30 text-[10px] font-bold uppercase tracking-widest">Profile and access</p>
             </div>
 
@@ -287,7 +266,7 @@ function AccountSettings() {
                     value={userForm.name}
                     onChange={(e) => setUserForm(f => ({ ...f, name: e.target.value }))}
                     className="h-14 rounded-2xl bg-white/5 border-white/10 text-white font-bold px-6 focus:border-primary transition-all"
-                    placeholder="OPERATOR NAME"
+                    placeholder="FULL NAME"
                   />
                 </div>
                 <div className="p-6 rounded-3xl bg-white/3 border border-white/5 space-y-4">
@@ -337,7 +316,7 @@ function AccountSettings() {
             </div>
             
             <p className="text-white/30 text-xs leading-relaxed max-w-[300px]">
-              Purge all data clusters and terminate account access permanently. This cannot be undone.
+              Delete your workspace and its data permanently. This cannot be undone.
             </p>
 
             <Button variant="outline" className="border-red-500/20 text-red-500 hover:bg-red-500 hover:text-white font-black uppercase tracking-widest text-[10px] rounded-2xl h-12 w-full transition-all">
@@ -566,25 +545,25 @@ function TeamSettings() {
 
           <div className="grid gap-4 md:flex items-end">
             <div className="flex-1 space-y-2">
-              <Label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Email Coordinates</Label>
+              <Label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Email Address</Label>
               <Input
                 type="email"
-                placeholder="OPERATOR@CORE.SYSTEM"
+                placeholder="team@example.com"
                 className="h-14 rounded-2xl bg-white/5 border-white/10 text-white font-bold px-6 focus:border-primary transition-all"
                 value={inviteEmail}
                 onChange={(e) => setInviteEmail(e.target.value)}
               />
             </div>
             <div className="w-full md:w-[180px] space-y-2">
-               <Label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Assigned Role</Label>
+               <Label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Role</Label>
                <Select defaultValue="manager">
                 <SelectTrigger className="h-14 rounded-2xl bg-white/5 border-white/10 text-white font-bold px-6 focus:border-primary">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="bg-[#1A1C30] border-white/10 text-white">
-                  <SelectItem value="admin">ADMINISTRATOR</SelectItem>
+                  <SelectItem value="admin">ADMIN</SelectItem>
                   <SelectItem value="manager">MANAGER</SelectItem>
-                  <SelectItem value="staff">TECHNICAL STAFF</SelectItem>
+                  <SelectItem value="staff">STAFF</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -592,13 +571,13 @@ function TeamSettings() {
               className="h-14 px-8 rounded-2xl bg-primary text-white font-black italic uppercase tracking-widest shadow-2xl shadow-primary/20 hover:scale-[1.05] active:scale-95 transition-all flex gap-3"
               onClick={() => {
                 if (inviteEmail) {
-                  toast.success(`Invitation transmitted to ${inviteEmail}`);
+                  toast.success(`Invitation sent to ${inviteEmail}`);
                   setInviteEmail("");
                 }
               }}
             >
               <Mail className="h-5 w-5" />
-              Transmit
+              Send Invite
             </Button>
           </div>
         </div>
@@ -609,7 +588,7 @@ function TeamSettings() {
       <div>
         <div className="flex items-center justify-between mb-8 px-4">
           <div>
-            <h3 className="text-2xl font-black text-white italic leading-none mb-2">Personnel Roster</h3>
+            <h3 className="text-2xl font-black text-white italic leading-none mb-2">Team Members</h3>
             <p className="text-white/30 text-[10px] font-bold uppercase tracking-widest">Active team members</p>
           </div>
         </div>
@@ -634,7 +613,7 @@ function TeamSettings() {
                   </div>
                   <div>
                     <h4 className="text-lg font-black text-white italic tracking-tighter leading-none mb-1">
-                      {member.name ?? "UNKNOWN OPERATOR"}
+                      {member.name ?? "Unknown User"}
                     </h4>
                     <p className="text-[10px] font-bold text-white/20 uppercase tracking-widest leading-none">
                       {member.email}
@@ -643,7 +622,7 @@ function TeamSettings() {
                 </div>
                 <div className="flex items-center gap-6">
                    <div className="text-right hidden sm:block">
-                     <p className="text-[9px] font-black text-white/20 uppercase tracking-[0.2em] mb-1">Authorization</p>
+                     <p className="text-[9px] font-black text-white/20 uppercase tracking-[0.2em] mb-1">Role</p>
                      <Badge className="bg-white/10 text-white/60 border-none font-black text-[9px] uppercase tracking-widest px-3">
                         {member.role}
                      </Badge>
@@ -683,12 +662,12 @@ function ApiSettings() {
                </div>
                <div className="space-y-2">
                  <p className="text-white/60 font-black italic text-lg leading-none">NO ACTIVE INTEGRATIONS</p>
-                 <p className="text-[10px] font-bold text-white/20 uppercase tracking-widest">Generate persistent authorization keys</p>
+                 <p className="text-[10px] font-bold text-white/20 uppercase tracking-widest">Create API keys for integrations</p>
                </div>
             </div>
 
             <Button disabled className="h-16 w-full rounded-3xl bg-white/5 border border-white/10 text-white/20 font-black italic uppercase tracking-widest">
-              LOCKED · STORAGE REQUIRED
+              API KEYS COMING SOON
             </Button>
           </div>
         </motion.div>
@@ -741,7 +720,7 @@ function ApiSettings() {
               icon: Building2
             },
             {
-              title: "Guest Data",
+              title: "Guests",
               desc: "Guests, check-in activity, and reporting",
               icon: Users
             },
@@ -771,4 +750,5 @@ function ApiSettings() {
     </div>
   );
 }
+
 

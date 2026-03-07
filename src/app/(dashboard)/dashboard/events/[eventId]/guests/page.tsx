@@ -97,7 +97,7 @@ export default function EventGuestsPage({
 
   const deleteGuest = trpc.guests.delete.useMutation({
     onSuccess: () => {
-      toast.success("Guest removed from roster");
+      toast.success("Guest removed from guest list");
       refetch();
       refetchStats();
     },
@@ -107,13 +107,13 @@ export default function EventGuestsPage({
     onSuccess: () => {
       refetch();
       refetchStats();
-      toast.success("Guest data synchronized");
+      toast.success("Guest list updated");
     },
   });
 
   const bulkCreate = trpc.guests.bulkCreate.useMutation({
     onSuccess: (data) => {
-      toast.success(`${data.imported} guests integrated into roster`);
+      toast.success(`${data.imported} guests added to the guest list`);
       setImportOpen(false);
       refetch();
       refetchStats();
@@ -156,19 +156,15 @@ export default function EventGuestsPage({
   const handleExportCSV = () => {
     const guests = (data?.guests ?? []) as Guest[];
     if (guests.length === 0) {
-      toast.error("Roster empty");
+      toast.error("Guest list is empty");
       return;
     }
-    const csvHeaders = ["First Name", "Last Name", "Email", "Phone", "Status", "Confirmation", "Type", "Section"];
+    const csvHeaders = ["Guest Name", "Current State", "Allocation", "Confirmation"];
     const csvRows = guests.map((g) => [
-      g.firstName ?? "",
-      g.lastName ?? "",
-      g.email ?? "",
-      g.phone ?? "",
-      g.status,
+      `${g.firstName ?? ""} ${g.lastName ?? ""}`.trim() || "Guest",
+      g.status.replace("_", " "),
+      g.tableNumber ? `Table ${g.tableNumber}` : "General Admission",
       getGuestConfirmationLabel(g.rsvpStatus),
-      g.guestType ?? "",
-      g.tableNumber ?? "",
     ]);
     const csv = [csvHeaders, ...csvRows]
       .map((row) => row.map((cell) => `"${cell}"`).join(","))
@@ -177,7 +173,7 @@ export default function EventGuestsPage({
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `roster-v1-${eventId}.csv`;
+    a.download = `guest-list-${eventId}.csv`;
     a.click();
     URL.revokeObjectURL(url);
       toast.success("Guest list exported");

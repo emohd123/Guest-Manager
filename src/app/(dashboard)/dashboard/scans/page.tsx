@@ -13,17 +13,17 @@ export default function ScansPage() {
   const columns = [
     {
       accessorKey: "scanType",
-      header: "Operation Type",
+      header: "Scan Type",
       cell: ({ row }: any) => <span className="font-black italic text-primary uppercase text-[10px] tracking-widest leading-none">{row.original.scanType.replace("_", " ")}</span>
     },
     {
       accessorKey: "barcode",
-      header: "Asset ID",
+      header: "Ticket Code",
       cell: ({ row }: any) => <span className="font-mono text-[10px] font-bold text-white/40 uppercase tracking-widest">{row.original.barcode}</span>
     },
     {
       accessorKey: "scannedAt",
-      header: "Protocol Time",
+      header: "Scanned At",
       cell: ({ row }: any) => (
         <div className="flex flex-col">
           <span className="font-black italic text-white uppercase tracking-tight leading-none mb-1">
@@ -46,10 +46,10 @@ export default function ScansPage() {
            initial={{ x: -20, opacity: 0 }}
            animate={{ x: 0, opacity: 1 }}
         >
-          <h1 className="text-4xl font-black text-white italic tracking-tighter uppercase leading-none">Audit</h1>
+          <h1 className="text-4xl font-black text-white italic tracking-tighter uppercase leading-none">Scans</h1>
           <p className="text-white/40 font-bold uppercase tracking-[0.2em] text-[10px] mt-2 italic flex items-center gap-2">
              <Activity className="h-3 w-3 text-primary animate-pulse" />
-             Universal Scan Activity Log
+             Ticket scan activity
           </p>
         </motion.div>
       </div>
@@ -64,9 +64,9 @@ export default function ScansPage() {
             <ScanLine className="h-10 w-10 -rotate-12" />
           </div>
           <div className="space-y-2">
-            <h3 className="text-2xl font-black text-white italic tracking-tighter uppercase leading-none">Zero Log Density</h3>
+            <h3 className="text-2xl font-black text-white italic tracking-tighter uppercase leading-none">No Scans Yet</h3>
             <p className="max-w-xs mx-auto text-[10px] font-bold text-white/20 uppercase tracking-[0.2em] leading-relaxed">
-              No ticket scan strings have been recorded. Verify hardware synchronization.
+              No ticket scans have been recorded yet.
             </p>
           </div>
         </motion.div>
@@ -79,7 +79,7 @@ export default function ScansPage() {
             columns={columns}
             data={scans}
             searchKey="barcode"
-            searchPlaceholder="Filter asset identifiers..."
+            searchPlaceholder="Search ticket codes..."
             isLoading={isLoading}
           />
         </motion.div>

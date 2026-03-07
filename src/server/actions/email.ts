@@ -2,10 +2,8 @@ import { Resend } from "resend";
 import { render } from "@react-email/components";
 import TicketEmail from "@/emails/TicketEmail";
 import { generateAndUploadQRCode } from "../utils/qrcode";
-import { getDb } from "@/server/db";
-import { tickets, sentEmails } from "@/server/db/schema";
-import { eq } from "drizzle-orm";
 import { nanoid } from "nanoid";
+import { createSupabaseAdminClient } from "@/server/supabase/admin";
 
 export interface EmailDesign {
   headerImageUrl?: string;
@@ -159,22 +157,33 @@ export async function sendTicketEmail({
     const data = await resend.emails.send(sendOptions);
 
     try {
-      const db = getDb();
-      // Try to find the event from the barcode
-      const ticketResult = await db.select({ eventId: tickets.eventId }).from(tickets).where(eq(tickets.barcode, barcode)).limit(1);
-      const eventId = ticketResult[0]?.eventId;
+      const supabase = createSupabaseAdminClient();
+      const { data: ticketData, error: ticketError } = await supabase
+        .from("tickets")
+        .select("event_id")
+        .eq("barcode", barcode)
+        .limit(1)
+        .maybeSingle();
 
-      if (eventId) {
-        await db.insert(sentEmails).values({
+      if (ticketError) {
+        throw new Error(ticketError.message);
+      }
+
+      if (ticketData?.event_id) {
+        const { error: sentEmailError } = await supabase.from("sent_emails").insert({
           id: nanoid(),
-          eventId,
-          emailAddress: toEmail,
+          event_id: ticketData.event_id,
+          email_address: toEmail,
           subject: sendOptions.subject as string,
           type: "Ticket sent",
           state: "Sending",
           status: "Unopened",
-          resendId: data.data?.id,
+          resend_id: data.data?.id,
         });
+
+        if (sentEmailError) {
+          throw new Error(sentEmailError.message);
+        }
       }
     } catch (logErr) {
       console.error("Failed to log email to db:", logErr);

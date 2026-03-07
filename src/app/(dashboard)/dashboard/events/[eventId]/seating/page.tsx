@@ -79,17 +79,17 @@ export default function SeatingPage({ params }: { params: Promise<{ eventId: str
             <h1 className="text-4xl font-black text-white italic tracking-tighter uppercase leading-none">Venue</h1>
             <p className="text-white/40 font-bold uppercase tracking-[0.2em] text-[10px] mt-2 italic flex items-center gap-2">
                <Activity className="h-3 w-3 text-primary animate-pulse" />
-               Spatial Allocation Strategy
+               Seating and table assignments
             </p>
           </motion.div>
         </div>
         
         <div className="flex flex-wrap gap-3">
           <Button variant="outline" className="h-12 px-6 rounded-2xl bg-white/5 border-white/10 text-white/60 hover:text-white font-black italic uppercase tracking-widest text-[10px] transition-all flex gap-3">
-            Floor Plan EXPORT
+            Export Floor Plan
           </Button>
           <Button className="h-12 px-8 rounded-2xl bg-primary text-white shadow-2xl shadow-primary/20 font-black italic uppercase tracking-widest text-[10px] flex gap-3 transition-all hover:scale-105 active:scale-95" onClick={() => { setSelectedGuest(null); setIsModalOpen(true); }}>
-            <UserPlus className="h-5 w-5" /> Add Registry
+            <UserPlus className="h-5 w-5" /> Add Guest
           </Button>
         </div>
       </div>
@@ -100,7 +100,7 @@ export default function SeatingPage({ params }: { params: Promise<{ eventId: str
           <div className="relative group">
             <Search className="absolute left-6 top-1/2 h-5 w-5 -translate-y-1/2 text-white/20 group-focus-within:text-primary transition-colors" />
             <Input 
-              placeholder="Search tactical zone or unit..." 
+              placeholder="Search tables or guests..." 
               className="h-14 pl-16 pr-6 rounded-2xl bg-white/5 border-white/10 text-white font-black italic uppercase tracking-widest text-[10px] focus:ring-primary transition-all"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -125,7 +125,7 @@ export default function SeatingPage({ params }: { params: Promise<{ eventId: str
                       </div>
                       <div>
                         <h3 className="text-2xl font-black text-white italic uppercase tracking-tighter leading-none mb-1">{tableName}</h3>
-                        <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] italic">{members.length} UNITS ASSIGNED</p>
+                        <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] italic">{members.length} GUESTS ASSIGNED</p>
                       </div>
                     </div>
                     <Button variant="ghost" size="icon" className="h-10 w-10 text-white/10 hover:text-white hover:bg-white/5 rounded-xl border border-white/5">
@@ -158,13 +158,13 @@ export default function SeatingPage({ params }: { params: Promise<{ eventId: str
                     ))}
                     {members.length > 5 && (
                       <button className="w-full py-4 text-[9px] font-black text-white/20 uppercase tracking-[0.3em] hover:text-primary hover:tracking-[0.4em] transition-all italic mt-4">
-                        + {members.length - 5} ADDITIONAL UNITS
+                        + {members.length - 5} MORE GUESTS
                       </button>
                     )}
                     {members.length === 0 && (
                       <div className="py-20 text-center space-y-4 border-2 border-dashed border-white/5 rounded-[32px]">
                         <Target className="h-10 w-10 text-white/5 mx-auto" />
-                        <p className="text-[10px] font-black text-white/10 uppercase tracking-widest italic">ZERO ALLOCATION</p>
+                        <p className="text-[10px] font-black text-white/10 uppercase tracking-widest italic">NO GUESTS ASSIGNED</p>
                       </div>
                     )}
                   </div>
@@ -175,16 +175,16 @@ export default function SeatingPage({ params }: { params: Promise<{ eventId: str
           </div>
         </div>
 
-        {/* Sidebar Intelligence */}
+        {/* Sidebar Summary */}
         <div className="space-y-8">
           <motion.div initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} className="p-8 rounded-[40px] bg-primary text-white shadow-2xl shadow-primary/20 relative overflow-hidden group">
             <div className="relative z-10 space-y-10">
                <div className="flex items-center justify-between">
                   <Activity className="h-10 w-10 text-white/40 animate-pulse" />
-                  <Badge className="bg-white/10 text-white border-none backdrop-blur-md px-4 py-1.5 rounded-full font-black text-[9px] uppercase tracking-widest italic">LIVE GRID</Badge>
+                  <Badge className="bg-white/10 text-white border-none backdrop-blur-md px-4 py-1.5 rounded-full font-black text-[9px] uppercase tracking-widest italic">LIVE SEATING</Badge>
                </div>
                <div className="space-y-4">
-                  <p className="text-[10px] font-black uppercase tracking-[0.3em] opacity-60 italic">Global Allocation</p>
+                  <p className="text-[10px] font-black uppercase tracking-[0.3em] opacity-60 italic">Assigned Guests</p>
                   <div className="text-5xl font-black italic tracking-tighter leading-none">{assignedGuests} <span className="text-xl opacity-30">/ {totalGuests}</span></div>
                </div>
                <div className="space-y-4">
@@ -196,7 +196,7 @@ export default function SeatingPage({ params }: { params: Promise<{ eventId: str
                      />
                   </div>
                   <p className="text-[10px] text-right font-black uppercase tracking-widest italic opacity-60">
-                     {Math.round(assignmentPercentage)}% CAPACITY VERIFIED
+                     {Math.round(assignmentPercentage)}% ASSIGNED
                   </p>
                </div>
             </div>
@@ -205,8 +205,8 @@ export default function SeatingPage({ params }: { params: Promise<{ eventId: str
 
           <motion.div initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.1 }} className="rounded-[40px] bg-white/5 border border-white/10 overflow-hidden backdrop-blur-xl">
              <div className="p-8 border-b border-white/5 bg-white/2">
-                <h3 className="text-xl font-black text-white italic uppercase tracking-tighter leading-none mb-1">Queue</h3>
-                <p className="text-[10px] font-black text-white/20 uppercase tracking-widest italic">{unassignedGuests} UNASSIGNED UNITS</p>
+                <h3 className="text-xl font-black text-white italic uppercase tracking-tighter leading-none mb-1">Unassigned Guests</h3>
+                <p className="text-[10px] font-black text-white/20 uppercase tracking-widest italic">{unassignedGuests} GUESTS WITHOUT A TABLE</p>
              </div>
              <div className="max-h-[500px] overflow-y-auto custom-scrollbar">
                 <div className="divide-y divide-white/5">
@@ -238,8 +238,8 @@ export default function SeatingPage({ params }: { params: Promise<{ eventId: str
                         <Users className="h-8 w-8" />
                       </div>
                       <div className="space-y-1">
-                        <h4 className="text-lg font-black text-white italic uppercase tracking-tighter">GRID COMPLETE</h4>
-                        <p className="text-[9px] font-black text-white/20 uppercase tracking-widest italic">All units allocated to zones</p>
+                        <h4 className="text-lg font-black text-white italic uppercase tracking-tighter">ALL GUESTS ASSIGNED</h4>
+                        <p className="text-[9px] font-black text-white/20 uppercase tracking-widest italic">Every guest has a table assignment</p>
                       </div>
                     </div>
                   )}

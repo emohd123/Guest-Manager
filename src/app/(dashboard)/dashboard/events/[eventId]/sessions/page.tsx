@@ -13,27 +13,27 @@ export default function SessionsPage() {
   const columns = [
     {
       accessorKey: "title",
-      header: "Operation Block",
+      header: "Session Name",
       cell: ({ row }: any) => <span className="font-black italic text-white uppercase tracking-tight">{row.original.title}</span>
     },
     {
       accessorKey: "date",
-      header: "Deployment Date",
+      header: "Session Date",
       cell: ({ row }: any) => <span className="text-[10px] font-bold text-white/40 uppercase tracking-widest leading-none">{row.original.date}</span>
     },
     {
       accessorKey: "startTime",
-      header: "Active Window",
+      header: "Time",
       cell: ({ row }: any) => <span className="font-black italic text-primary uppercase text-[10px] tracking-widest">{row.original.startTime} — {row.original.endTime}</span>
     },
     {
       accessorKey: "location",
-      header: "Zone",
+      header: "Location",
       cell: ({ row }: any) => <span className="uppercase text-[10px] font-black text-white/40 tracking-widest">{row.original.location}</span>
     },
     {
       accessorKey: "capacity",
-      header: "Threshold",
+      header: "Capacity",
       cell: ({ row }: any) => <span className="font-black italic text-white tracking-widest">{row.original.capacity}</span>
     },
   ];
@@ -48,7 +48,7 @@ export default function SessionsPage() {
           <h1 className="text-4xl font-black text-white italic tracking-tighter uppercase leading-none">Sessions</h1>
           <p className="text-white/40 font-bold uppercase tracking-[0.2em] text-[10px] mt-2 italic flex items-center gap-2">
              <Activity className="h-3 w-3 text-primary animate-pulse" />
-             Tactical Schedule Partitioning
+             Event schedule
           </p>
         </motion.div>
         <Button className="h-14 px-8 rounded-2xl bg-primary text-white font-black text-base shadow-2xl shadow-primary/20 transition-all hover:scale-[1.05] active:scale-95 italic flex gap-3">
@@ -67,13 +67,13 @@ export default function SessionsPage() {
             <CalendarDays className="h-10 w-10 -rotate-12" />
           </div>
           <div className="space-y-2">
-            <h3 className="text-2xl font-black text-white italic tracking-tighter uppercase leading-none">Schedule Void</h3>
+            <h3 className="text-2xl font-black text-white italic tracking-tighter uppercase leading-none">No Sessions Yet</h3>
             <p className="max-w-xs mx-auto text-[10px] font-bold text-white/20 uppercase tracking-[0.2em] leading-relaxed">
-              No tactical blocks scheduled. Partition your event into manageable time zones for streamlined logistics.
+              No sessions have been added yet. Create sessions to organize your event schedule.
             </p>
           </div>
           <Button className="h-14 px-10 rounded-2xl bg-white/10 hover:bg-primary text-white font-black italic uppercase tracking-widest transition-all">
-            Initialize First Block
+            Add First Session
           </Button>
         </motion.div>
       ) : (
@@ -85,7 +85,7 @@ export default function SessionsPage() {
             columns={columns}
             data={sessions}
             searchKey="title"
-            searchPlaceholder="Filter mission blocks..."
+            searchPlaceholder="Search sessions..."
             isLoading={isLoading}
           />
         </motion.div>

@@ -1,8 +1,8 @@
 "use client";
 
-import { use, useMemo } from "react";
+import { use, useMemo, useRef } from "react";
 import { format } from "date-fns";
-import { Download } from "lucide-react";
+import { Download, Printer } from "lucide-react";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis, Legend } from "recharts";
 import { trpc } from "@/lib/trpc/client";
 import { Button } from "@/components/ui/button";
@@ -27,6 +27,12 @@ export default function ReportsPage({ params }: { params: Promise<{ eventId: str
     { eventId },
     { enabled: false }
   );
+  const attendeeRoster = trpc.reports.attendeeRoster.useQuery({ eventId });
+  const attendeeRosterExport = trpc.reports.exportAttendeeRosterCsv.useQuery(
+    { eventId },
+    { enabled: false }
+  );
+  const attendeeReportRef = useRef<HTMLDivElement | null>(null);
 
   const timeSeriesData = useMemo(() => {
     return (data?.arrivalsTimeSeries ?? []).map((pt) => ({
@@ -47,14 +53,16 @@ export default function ReportsPage({ params }: { params: Promise<{ eventId: str
     );
   }
 
-  async function downloadCsv(kind: "checkins" | "noShows" | "arrivals") {
+  async function downloadCsv(kind: "checkins" | "noShows" | "arrivals" | "attendees") {
     try {
       const source =
         kind === "checkins"
           ? checkinsExport
           : kind === "noShows"
           ? noShowsExport
-          : arrivalsExport;
+          : kind === "arrivals"
+          ? arrivalsExport
+          : attendeeRosterExport;
 
       const result = await source.refetch();
       const payload = result.data;
@@ -78,6 +86,42 @@ export default function ReportsPage({ params }: { params: Promise<{ eventId: str
     }
   }
 
+  function printAttendeeReport() {
+    if (!attendeeReportRef.current) {
+      toast.error("Attendee report is not ready to print");
+      return;
+    }
+
+    const printWindow = window.open("", "_blank", "width=1200,height=900");
+    if (!printWindow) {
+      toast.error("Popup blocked. Allow popups to print the attendee report.");
+      return;
+    }
+
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>Attendee Report</title>
+          <style>
+            body { font-family: Arial, sans-serif; padding: 32px; color: #0f172a; }
+            h1 { margin: 0 0 8px; font-size: 28px; }
+            p { margin: 0 0 24px; color: #475569; }
+            table { width: 100%; border-collapse: collapse; }
+            th, td { border: 1px solid #cbd5e1; padding: 12px; text-align: left; }
+            th { background: #f8fafc; font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; }
+            td { font-size: 14px; }
+          </style>
+        </head>
+        <body>
+          ${attendeeReportRef.current.innerHTML}
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+    printWindow.focus();
+    printWindow.print();
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-8 lg:flex-row lg:items-start lg:justify-between">
@@ -98,6 +142,14 @@ export default function ReportsPage({ params }: { params: Promise<{ eventId: str
             <Button variant="outline" className="gap-2 text-muted-foreground shadow-sm" onClick={() => downloadCsv("arrivals")}>
               <Download className="h-4 w-4" />
               Export Arrivals
+            </Button>
+            <Button variant="outline" className="gap-2 text-muted-foreground shadow-sm" onClick={() => downloadCsv("attendees")}>
+              <Download className="h-4 w-4" />
+              Export attendee report
+            </Button>
+            <Button variant="outline" className="gap-2 text-muted-foreground shadow-sm" onClick={printAttendeeReport}>
+              <Printer className="h-4 w-4" />
+              Print attendee report
             </Button>
           </div>
         </div>
@@ -207,6 +259,57 @@ export default function ReportsPage({ params }: { params: Promise<{ eventId: str
       <div className="mt-12 space-y-2">
         <h3 className="text-xl font-bold text-slate-500">Tallies</h3>
         <p className="text-xs text-slate-400 italic">Not configured</p>
+      </div>
+
+      <div className="mt-12 space-y-4">
+        <div>
+          <h3 className="text-xl font-bold text-slate-500">Attendee Report</h3>
+          <p className="text-sm text-slate-400">Printable attendee roster with the live guest list structure.</p>
+        </div>
+        <Card className="shadow-sm border-slate-100 rounded-md overflow-hidden">
+          <CardContent className="p-0">
+            <div ref={attendeeReportRef}>
+              <div className="px-6 pt-6">
+                <h1 className="text-2xl font-bold text-slate-800">Attendee Report</h1>
+                <p className="mt-2 text-sm text-slate-500">Guest Name, Current State, Allocation, Confirmation</p>
+              </div>
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-slate-50/80 hover:bg-slate-50/80">
+                    <TableHead className="font-bold text-slate-600 h-12">Guest Name</TableHead>
+                    <TableHead className="font-bold text-slate-600 h-12">Current State</TableHead>
+                    <TableHead className="font-bold text-slate-600 h-12">Allocation</TableHead>
+                    <TableHead className="font-bold text-slate-600 h-12">Confirmation</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {attendeeRoster.isLoading ? (
+                    <TableRow>
+                      <TableCell colSpan={4} className="text-center text-slate-400 py-10">
+                        Loading attendee report...
+                      </TableCell>
+                    </TableRow>
+                  ) : (attendeeRoster.data?.length ?? 0) === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={4} className="text-center text-slate-400 py-10">
+                        No attendees found for this event.
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    attendeeRoster.data?.map((row) => (
+                      <TableRow key={row.id} className="border-b-slate-100">
+                        <TableCell className="text-slate-600 font-medium">{row.guestName}</TableCell>
+                        <TableCell className="text-slate-500 capitalize">{row.currentState}</TableCell>
+                        <TableCell className="text-slate-500">{row.allocation}</TableCell>
+                        <TableCell className="text-slate-500">{row.confirmation}</TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
       </div>
       
       <div className="mt-8 space-y-2">

@@ -57,21 +57,21 @@ export default function SentEmailsPage({ params }: { params: Promise<{ eventId: 
   const columns = [
     {
       accessorKey: "state",
-      header: "Operation State",
+      header: "Delivery State",
       cell: ({ row }: { row: any }) => (
         <Badge className="bg-green-500/10 text-green-500 border-none rounded-full px-3 py-0.5 font-black text-[8px] uppercase tracking-widest italic">{row.original.state}</Badge>
       )
     },
     {
       accessorKey: "status",
-      header: "Registry Status",
+      header: "Status",
       cell: ({ row }: { row: any }) => (
         <span className="text-[10px] font-bold uppercase tracking-widest leading-none italic text-muted-foreground">{row.original.status}</span>
       )
     },
     {
       accessorKey: "emailAddress",
-      header: "Target Node",
+      header: "Recipient",
       cell: ({ row }: { row: any }) => (
         <div className="flex flex-col gap-0.5">
            <span className="text-[11px] font-black text-foreground dark:text-white italic truncate uppercase tracking-tight leading-none">{row.original.emailAddress}</span>
@@ -81,17 +81,17 @@ export default function SentEmailsPage({ params }: { params: Promise<{ eventId: 
     },
     {
       accessorKey: "openCount",
-      header: "Interceptions",
+      header: "Opens",
       cell: ({ row }: { row: any }) => <div className="font-black italic text-primary">{row.original.openCount}</div>
     },
     {
       accessorKey: "clickCount",
-      header: "Propagations",
+      header: "Clicks",
       cell: ({ row }: { row: any }) => <div className="font-black italic text-muted-foreground">{row.original.clickCount}</div>
     },
     {
       id: "actions",
-      header: "CMD",
+      header: "Actions",
       cell: ({ row }: { row: any }) => (
         <div className="flex items-center justify-end gap-2">
            <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl border border-border bg-card/70 text-muted-foreground transition-all hover:text-foreground dark:border-white/5 dark:bg-white/5" onClick={() => setViewingEmail(row.original)}><Target className="h-4 w-4" /></Button>
@@ -156,9 +156,9 @@ export default function SentEmailsPage({ params }: { params: Promise<{ eventId: 
           </DialogHeader>
           <div className="space-y-6">
              {[
-                { label: "Target Node", value: viewingEmail?.emailAddress },
+                { label: "Recipient", value: viewingEmail?.emailAddress },
                 { label: "Email Subject", value: viewingEmail?.subject },
-                { label: "Operation State", value: `${viewingEmail?.status} (${viewingEmail?.state})` },
+                { label: "Delivery State", value: `${viewingEmail?.status} (${viewingEmail?.state})` },
                 { label: "Sent At", value: viewingEmail?.createdAt ? format(new Date(viewingEmail.createdAt), "PP pp").toUpperCase() : "PENDING" }
              ].map((item, i) => (
                 <div key={i} className="flex flex-col gap-2 rounded-[24px] border border-border bg-muted/40 p-6 dark:border-white/5 dark:bg-white/3">

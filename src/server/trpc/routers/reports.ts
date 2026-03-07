@@ -7,6 +7,9 @@ type GuestRow = {
   last_name: string | null;
   email: string | null;
   status: string;
+  table_number: string | null;
+  rsvp_status: string | null;
+  rsvp_at: string | null;
   checked_in_at: string | null;
   checked_out_at: string | null;
   attendance_state: string;
@@ -52,9 +55,22 @@ function toCsv(headers: string[], rows: Array<Array<unknown>>) {
   return [headers, ...rows].map((row) => row.map(csvEscape).join(",")).join("\n");
 }
 
+function confirmationLabel(status: string | null) {
+  switch (status) {
+    case "accepted":
+      return "Confirmed";
+    case "declined":
+      return "Declined";
+    case "maybe":
+      return "Maybe";
+    default:
+      return "Not Yet Confirmed";
+  }
+}
+
 async function loadReportData(ctx: { supabase: { from: (table: string) => any }; companyId: string }, eventId: string) {
   const [{ data: guestsData, error: guestsError }, { data: ticketsData, error: ticketsError }, { data: ticketTypesData, error: ticketTypesError }, { data: scansData, error: scansError }] = await Promise.all([
-    ctx.supabase.from("guests").select("id,first_name,last_name,email,status,checked_in_at,checked_out_at,attendance_state").eq("company_id", ctx.companyId).eq("event_id", eventId),
+    ctx.supabase.from("guests").select("id,first_name,last_name,email,status,table_number,rsvp_status,rsvp_at,checked_in_at,checked_out_at,attendance_state").eq("company_id", ctx.companyId).eq("event_id", eventId),
     ctx.supabase.from("tickets").select("id,ticket_type_id,guest_id,barcode,attendee_name,attendee_email,checked_in").eq("company_id", ctx.companyId).eq("event_id", eventId),
     ctx.supabase.from("ticket_types").select("id,name").eq("company_id", ctx.companyId).eq("event_id", eventId),
     ctx.supabase.from("scans").select("id,ticket_id,device_id,scan_type,barcode,result,scanned_at,device_info").eq("company_id", ctx.companyId).eq("event_id", eventId).order("scanned_at", { ascending: true }),
@@ -74,6 +90,21 @@ async function loadReportData(ctx: { supabase: { from: (table: string) => any };
 }
 
 export const reportsRouter = router({
+  attendeeRoster: protectedProcedure
+    .input(z.object({ eventId: z.string().uuid() }))
+    .query(async ({ ctx, input }) => {
+      const { guests } = await loadReportData(ctx, input.eventId);
+
+      return guests.map((guest) => ({
+        id: guest.id,
+        guestName: `${guest.first_name ?? ""} ${guest.last_name ?? ""}`.trim() || "Guest",
+        currentState: guest.status.replace(/_/g, " "),
+        allocation: guest.table_number ? `Table ${guest.table_number}` : "General Admission",
+        confirmation: confirmationLabel(guest.rsvp_status),
+        confirmationAt: guest.rsvp_at,
+      }));
+    }),
+
   checkInSummary: protectedProcedure
     .input(
       z.object({
@@ -211,6 +242,24 @@ export const reportsRouter = router({
         filename: `arrivals-${input.eventId}.csv`,
         contentType: "text/csv",
         csv: toCsv(["Scanned At", "Action", "Result", "Barcode", "Attendee", "Email", "Device"], rows),
+      };
+    }),
+
+  exportAttendeeRosterCsv: protectedProcedure
+    .input(z.object({ eventId: z.string().uuid() }))
+    .query(async ({ ctx, input }) => {
+      const { guests } = await loadReportData(ctx, input.eventId);
+      const rows = guests.map((guest) => [
+        `${guest.first_name ?? ""} ${guest.last_name ?? ""}`.trim() || "Guest",
+        guest.status.replace(/_/g, " "),
+        guest.table_number ? `Table ${guest.table_number}` : "General Admission",
+        confirmationLabel(guest.rsvp_status),
+      ]);
+
+      return {
+        filename: `attendee-roster-${input.eventId}.csv`,
+        contentType: "text/csv",
+        csv: toCsv(["Guest Name", "Current State", "Allocation", "Confirmation"], rows),
       };
     }),
 });

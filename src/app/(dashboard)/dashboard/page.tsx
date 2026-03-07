@@ -51,14 +51,14 @@ export default function DashboardPage() {
       title: "Total Guests",
       value: eventsLoading ? "—" : totalGuests.toString(),
       icon: Users,
-      sub: "Across all rosters",
+      sub: "Across all events",
       delay: 0.1
     },
     {
-      title: "Verified Entries",
+      title: "Total Check-Ins",
       value: eventsLoading ? "—" : totalCheckIns.toString(),
       icon: CheckCircle,
-      sub: "Real-time verification",
+      sub: "Checked in across events",
       delay: 0.2
     },
     {
@@ -81,24 +81,24 @@ export default function DashboardPage() {
     },
     {
       number: 2,
-      title: "Import Roster",
-      description: "Sync your guest data via CSV or integration.",
+      title: "Import Guests",
+      description: "Import your guest list from CSV or an integration.",
       href: "/dashboard/events",
       icon: Upload,
       done: totalGuests > 0,
     },
     {
       number: 3,
-      title: "Design Assets",
-      description: "Craft premium PDF tickets and visual IDs.",
+      title: "Design Tickets",
+      description: "Customize ticket PDFs and guest email designs.",
       href: "/dashboard/tickets",
       icon: Ticket,
       done: false,
     },
     {
       number: 4,
-      title: "Live Scan",
-      description: "Execute high-velocity entry management.",
+      title: "Check In Guests",
+      description: "Use the scanner and check-in tools on event day.",
       href: "/dashboard/events",
       icon: ScanLine,
       done: totalCheckIns > 0,
@@ -164,7 +164,7 @@ export default function DashboardPage() {
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div>
                   <h3 className="text-2xl font-black text-foreground dark:text-white italic leading-none mb-2">Getting Started</h3>
-                  <p className="text-muted-foreground dark:text-white/30 text-[10px] font-bold uppercase tracking-widest">Set up your first event workflow</p>
+                  <p className="text-muted-foreground dark:text-white/30 text-[10px] font-bold uppercase tracking-widest">Set up your first event</p>
                 </div>
                 <Badge className="bg-primary/20 text-primary border-none rounded-full px-4 py-1 font-black text-[10px] uppercase tracking-widest">
                   {completedSteps}/{setupSteps.length} completed
@@ -245,7 +245,7 @@ export default function DashboardPage() {
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {upcomingEvents.events.map((event, i) => (
+                  {upcomingEvents.events.map((event) => (
                     <Link
                       key={event.id}
                       href={`/dashboard/events/${event.id}`}
@@ -293,7 +293,7 @@ export default function DashboardPage() {
             <div className="grid gap-4">
               {[
                 { label: "New Event", href: "/dashboard/events/new", icon: CalendarDays, color: "text-blue-400", bg: "bg-blue-400/10" },
-                { label: "Add Roster", href: "/dashboard/contacts", icon: UserPlus, color: "text-purple-400", bg: "bg-purple-400/10" },
+                { label: "Add Guests", href: "/dashboard/contacts", icon: UserPlus, color: "text-purple-400", bg: "bg-purple-400/10" },
                 { label: "Studio", href: "/dashboard/tickets", icon: Ticket, color: "text-green-400", bg: "bg-green-400/10" },
                 { label: "Reports", href: "/dashboard/reports", icon: BarChart3, color: "text-coral-400", bg: "bg-primary/10" },
               ].map((action) => (

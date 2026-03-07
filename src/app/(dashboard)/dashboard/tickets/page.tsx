@@ -107,8 +107,8 @@ export default function TicketsPage() {
       <Tabs defaultValue="tickets" className="space-y-10">
         <TabsList className="bg-card/90 dark:bg-white/5 border border-border dark:border-white/10 p-1 rounded-2xl h-auto w-fit">
           <TabsTrigger value="tickets" className="rounded-xl px-8 py-3 font-black text-xs uppercase tracking-widest data-[state=active]:bg-primary data-[state=active]:text-white transition-all italic">Catalog</TabsTrigger>
-          <TabsTrigger value="templates" className="rounded-xl px-8 py-3 font-black text-xs uppercase tracking-widest data-[state=active]:bg-primary data-[state=active]:text-white transition-all italic">Blueprints</TabsTrigger>
-          <TabsTrigger value="scanner" className="rounded-xl px-8 py-3 font-black text-xs uppercase tracking-widest data-[state=active]:bg-primary data-[state=active]:text-white transition-all italic">Interface</TabsTrigger>
+          <TabsTrigger value="templates" className="rounded-xl px-8 py-3 font-black text-xs uppercase tracking-widest data-[state=active]:bg-primary data-[state=active]:text-white transition-all italic">Templates</TabsTrigger>
+          <TabsTrigger value="scanner" className="rounded-xl px-8 py-3 font-black text-xs uppercase tracking-widest data-[state=active]:bg-primary data-[state=active]:text-white transition-all italic">Scanner</TabsTrigger>
         </TabsList>
 
         <TabsContent value="tickets" className="mt-0 outline-none">
@@ -120,7 +120,7 @@ export default function TicketsPage() {
             <div className="p-8 border-b border-border dark:border-white/5 flex items-center justify-between">
               <div>
                 <h3 className="text-xl font-black text-foreground dark:text-white italic leading-none mb-2">Ticket Catalog</h3>
-                <p className="text-muted-foreground dark:text-white/30 text-[10px] font-bold uppercase tracking-widest">Active admission structures</p>
+                <p className="text-muted-foreground dark:text-white/30 text-[10px] font-bold uppercase tracking-widest">Active ticket types</p>
               </div>
             </div>
             
@@ -201,7 +201,7 @@ export default function TicketsPage() {
             <div className="flex items-center justify-between px-4">
               <div>
                 <h3 className="text-2xl font-black text-foreground dark:text-white italic leading-none mb-2">Ticket Templates</h3>
-                <p className="text-muted-foreground dark:text-white/30 text-[10px] font-bold uppercase tracking-widest">Global identity style guides</p>
+                <p className="text-muted-foreground dark:text-white/30 text-[10px] font-bold uppercase tracking-widest">Reusable ticket layouts</p>
               </div>
             </div>
 
@@ -247,9 +247,9 @@ export default function TicketsPage() {
             {/* Asset Capabilities */}
             <div className="grid gap-6 md:grid-cols-3">
               {[
-                { title: "Vector Matrix", desc: "High-resolution PDF generation with dynamic layering.", icon: FileText, color: "text-red-400" },
-                { title: "Mobile Integration", desc: "Native wallet synchronization for iOS and ecosystem.", icon: Smartphone, color: "text-primary" },
-                { title: "Dual Scanning", desc: "Support for QR, DataMatrix, and high-density barcodes.", icon: QrCode, color: "text-green-400" },
+                { title: "PDF Tickets", desc: "High-resolution PDF tickets with customizable layouts.", icon: FileText, color: "text-red-400" },
+                { title: "Mobile Access", desc: "Share tickets and event details in the mobile app.", icon: Smartphone, color: "text-primary" },
+                { title: "QR Scanning", desc: "Support for QR codes and barcode-based check-in.", icon: QrCode, color: "text-green-400" },
               ].map((cap, i) => (
                 <motion.div
                   key={cap.title}
@@ -297,7 +297,7 @@ export default function TicketsPage() {
                   Configure Scanner
                 </Button>
               </div>
-              <p className="text-[9px] font-black text-muted-foreground/70 dark:text-white/10 uppercase tracking-[0.4em] pt-4">Requires Camera Authorization (v2.0.4)</p>
+              <p className="text-[9px] font-black text-muted-foreground/70 dark:text-white/10 uppercase tracking-[0.4em] pt-4">Requires camera access</p>
             </div>
             <div className="absolute -left-20 -bottom-20 h-64 w-64 bg-primary/5 rounded-full blur-[100px]" />
           </motion.div>
