@@ -108,7 +108,7 @@ export default function ContactsPage() {
           checked={table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && "indeterminate")}
           onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
           aria-label="Select all"
-          className="translate-y-[2px] border-white/20 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+          className="translate-y-[2px] border-border data-[state=checked]:bg-primary data-[state=checked]:border-primary"
         />
       ),
       cell: ({ row }) => (
@@ -116,7 +116,7 @@ export default function ContactsPage() {
           checked={row.getIsSelected()}
           onCheckedChange={(value) => row.toggleSelected(!!value)}
           aria-label="Select row"
-          className="translate-y-[2px] border-white/20 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+          className="translate-y-[2px] border-border data-[state=checked]:bg-primary data-[state=checked]:border-primary"
         />
       ),
       enableSorting: false,
@@ -134,11 +134,11 @@ export default function ContactsPage() {
             </span>
           </div>
           <div className="flex flex-col">
-            <p className="font-bold text-white text-base leading-tight">
+            <p className="text-base font-bold leading-tight text-foreground">
               {row.original.firstName} {row.original.lastName}
             </p>
             {row.original.title && (
-              <p className="text-[10px] uppercase font-black tracking-widest text-white/40 mt-1">
+              <p className="mt-1 text-[10px] font-black uppercase tracking-widest text-muted-foreground">
                 {row.original.title}
               </p>
             )}
@@ -151,12 +151,12 @@ export default function ContactsPage() {
       header: "Email Address",
       cell: ({ row }) =>
         row.original.email ? (
-          <div className="flex items-center gap-2 text-white/60 font-medium">
+          <div className="flex items-center gap-2 font-medium text-muted-foreground">
             <Mail className="h-4 w-4 text-primary" />
             {row.original.email}
           </div>
         ) : (
-          <span className="text-white/20">--</span>
+          <span className="text-muted-foreground/50">--</span>
         ),
     },
     {
@@ -164,12 +164,12 @@ export default function ContactsPage() {
       header: "Organization",
       cell: ({ row }) =>
         row.original.companyName ? (
-          <div className="flex items-center gap-2 text-white/60 font-medium">
+          <div className="flex items-center gap-2 font-medium text-muted-foreground">
             <Building2 className="h-4 w-4 text-primary" />
             {row.original.companyName}
           </div>
         ) : (
-          <span className="text-white/20">--</span>
+          <span className="text-muted-foreground/50">--</span>
         ),
     },
     {
@@ -177,7 +177,7 @@ export default function ContactsPage() {
       header: "Category",
       cell: ({ row }) =>
         row.original.contactType ? (
-          <Badge className="bg-white/5 border-none text-white/40 font-black uppercase tracking-widest text-[10px] rounded-full px-3 py-1">
+          <Badge className="rounded-full border-none bg-muted px-3 py-1 text-[10px] font-black uppercase tracking-widest text-muted-foreground">
             {row.original.contactType}
           </Badge>
         ) : null,
@@ -187,10 +187,10 @@ export default function ContactsPage() {
       header: "Registration",
       cell: ({ row }) => (
         <div className="flex flex-col">
-          <span className="text-sm font-bold text-white/80">
+          <span className="text-sm font-bold text-foreground">
             {format(new Date(row.original.createdAt), "MMM d, yyyy")}
           </span>
-          <span className="text-[10px] font-black uppercase tracking-widest text-white/20">Created</span>
+          <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/70">Created</span>
         </div>
       ),
     },
@@ -199,20 +199,20 @@ export default function ContactsPage() {
       cell: ({ row }) => (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-10 w-10 text-white/40 hover:text-white hover:bg-white/10 rounded-xl">
+            <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl text-muted-foreground hover:bg-muted hover:text-foreground">
               <MoreHorizontal className="h-5 w-5" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-[180px] p-2 rounded-2xl bg-[#1A1C30] border-white/10 text-white">
+          <DropdownMenuContent align="end" className="w-[180px] rounded-2xl border border-border bg-popover p-2 text-popover-foreground">
             <DropdownMenuItem
-              className="rounded-xl focus:bg-white/10 focus:text-white"
+              className="rounded-xl focus:bg-accent/10 focus:text-popover-foreground"
               onClick={() =>
                 router.push(`/dashboard/contacts/${row.original.id}`)
               }
             >
               <Edit className="mr-2 h-4 w-4 text-primary" /> View Profile
             </DropdownMenuItem>
-            <DropdownMenuSeparator className="bg-white/5" />
+            <DropdownMenuSeparator className="bg-border" />
             <DropdownMenuItem
               className="text-red-400 rounded-xl focus:bg-red-500/10 focus:text-red-400"
               onClick={() =>
@@ -235,13 +235,13 @@ export default function ContactsPage() {
         <motion.div
            initial={{ scale: 0.9, opacity: 0 }}
            animate={{ scale: 1, opacity: 1 }}
-           className="p-10 rounded-[40px] bg-white/5 border border-white/10 backdrop-blur-3xl max-w-xl w-full"
+           className="w-full max-w-xl rounded-[40px] border border-border bg-card p-10 backdrop-blur-3xl"
         >
           <div className="mx-auto flex h-24 w-24 items-center justify-center rounded-3xl bg-primary/10 mb-8 group">
             <Users className="h-12 w-12 text-primary group-hover:scale-110 transition-transform duration-500" />
           </div>
-          <h1 className="text-3xl font-black text-white mb-4 italic tracking-tight">Your Network</h1>
-          <p className="text-white/40 mb-10 text-lg leading-relaxed">
+          <h1 className="mb-4 text-3xl font-black italic tracking-tight text-foreground">Your Network</h1>
+          <p className="mb-10 text-lg leading-relaxed text-muted-foreground">
             Your CRM is currently empty. Contacts are automatically created when guests register for events, or you can build your library manually.
           </p>
           <Dialog open={createOpen} onOpenChange={setCreateOpen}>
@@ -267,14 +267,14 @@ export default function ContactsPage() {
     <div className="space-y-10 pb-20">
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 px-2">
         <div>
-          <h1 className="text-4xl font-black text-white italic tracking-tighter">Contacts</h1>
-          <p className="text-white/40 font-bold uppercase tracking-[0.2em] text-[10px] mt-2">
+          <h1 className="text-4xl font-black italic tracking-tighter text-foreground">Contacts</h1>
+          <p className="mt-2 text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
             {stats?.total ?? 0} beautiful contact{(stats?.total ?? 0) !== 1 ? "s" : ""}
           </p>
         </div>
         <Dialog open={createOpen} onOpenChange={setCreateOpen}>
           <DialogTrigger asChild>
-            <Button className="h-14 px-8 rounded-2xl bg-white text-[#1A1C30] hover:bg-white/90 font-black text-base shadow-2xl transition-all hover:-translate-y-1 flex gap-3">
+            <Button className="flex h-14 gap-3 rounded-2xl border border-border bg-card px-8 text-base font-black text-foreground shadow-2xl transition-all hover:-translate-y-1 hover:bg-card/90">
               <Plus className="h-6 w-6" />
               Add Contact
             </Button>
@@ -323,10 +323,10 @@ function CreateContactDialog({
   onClose: () => void;
 }) {
   return (
-    <DialogContent className="sm:max-w-xl bg-[#1A1C30] border-white/10 text-white rounded-[40px] p-0 overflow-hidden">
-      <div className="p-8 border-b border-white/5 bg-white/3">
+    <DialogContent className="sm:max-w-xl rounded-[40px] border border-border bg-popover p-0 text-popover-foreground overflow-hidden">
+      <div className="border-b border-border bg-muted/30 p-8">
         <DialogTitle className="text-2xl font-black italic">New Contact</DialogTitle>
-        <DialogDescription className="text-white/40 font-medium">
+        <DialogDescription className="font-medium text-muted-foreground">
           Expand your network by adding a new contact.
         </DialogDescription>
       </div>
@@ -339,32 +339,32 @@ function CreateContactDialog({
       >
         <div className="grid gap-6 sm:grid-cols-2">
           <div className="space-y-2">
-            <Label htmlFor="c-firstName" className="text-[10px] font-black uppercase tracking-widest text-white/30 ml-1">First Name *</Label>
+            <Label htmlFor="c-firstName" className="ml-1 text-[10px] font-black uppercase tracking-widest text-muted-foreground">First Name *</Label>
             <Input
               id="c-firstName"
               value={formData.firstName}
               onChange={(e) =>
                 setFormData((d) => ({ ...d, firstName: e.target.value }))
               }
-              className="h-12 bg-white/5 border-white/10 rounded-2xl focus:ring-primary px-4"
+              className="h-12 rounded-2xl border-border bg-card px-4 text-foreground focus:ring-primary"
               required
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="c-lastName" className="text-[10px] font-black uppercase tracking-widest text-white/30 ml-1">Last Name</Label>
+            <Label htmlFor="c-lastName" className="ml-1 text-[10px] font-black uppercase tracking-widest text-muted-foreground">Last Name</Label>
             <Input
               id="c-lastName"
               value={formData.lastName}
               onChange={(e) =>
                 setFormData((d) => ({ ...d, lastName: e.target.value }))
               }
-              className="h-12 bg-white/5 border-white/10 rounded-2xl focus:ring-primary px-4"
+              className="h-12 rounded-2xl border-border bg-card px-4 text-foreground focus:ring-primary"
             />
           </div>
         </div>
         <div className="grid gap-6 sm:grid-cols-2">
           <div className="space-y-2">
-            <Label htmlFor="c-email" className="text-[10px] font-black uppercase tracking-widest text-white/30 ml-1">Email Address</Label>
+            <Label htmlFor="c-email" className="ml-1 text-[10px] font-black uppercase tracking-widest text-muted-foreground">Email Address</Label>
             <Input
               id="c-email"
               type="email"
@@ -372,59 +372,59 @@ function CreateContactDialog({
               onChange={(e) =>
                 setFormData((d) => ({ ...d, email: e.target.value }))
               }
-              className="h-12 bg-white/5 border-white/10 rounded-2xl focus:ring-primary px-4"
+              className="h-12 rounded-2xl border-border bg-card px-4 text-foreground focus:ring-primary"
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="c-phone" className="text-[10px] font-black uppercase tracking-widest text-white/30 ml-1">Phone Number</Label>
+            <Label htmlFor="c-phone" className="ml-1 text-[10px] font-black uppercase tracking-widest text-muted-foreground">Phone Number</Label>
             <Input
               id="c-phone"
               value={formData.phone}
               onChange={(e) =>
                 setFormData((d) => ({ ...d, phone: e.target.value }))
               }
-              className="h-12 bg-white/5 border-white/10 rounded-2xl focus:ring-primary px-4"
+              className="h-12 rounded-2xl border-border bg-card px-4 text-foreground focus:ring-primary"
             />
           </div>
         </div>
         <div className="grid gap-6 sm:grid-cols-2">
           <div className="space-y-2">
-            <Label htmlFor="c-company" className="text-[10px] font-black uppercase tracking-widest text-white/30 ml-1">Company</Label>
+            <Label htmlFor="c-company" className="ml-1 text-[10px] font-black uppercase tracking-widest text-muted-foreground">Company</Label>
             <Input
               id="c-company"
               value={formData.companyName}
               onChange={(e) =>
                 setFormData((d) => ({ ...d, companyName: e.target.value }))
               }
-              className="h-12 bg-white/5 border-white/10 rounded-2xl focus:ring-primary px-4"
+              className="h-12 rounded-2xl border-border bg-card px-4 text-foreground focus:ring-primary"
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="c-title" className="text-[10px] font-black uppercase tracking-widest text-white/30 ml-1">Current Role</Label>
+            <Label htmlFor="c-title" className="ml-1 text-[10px] font-black uppercase tracking-widest text-muted-foreground">Current Role</Label>
             <Input
               id="c-title"
               value={formData.title}
               onChange={(e) =>
                 setFormData((d) => ({ ...d, title: e.target.value }))
               }
-              className="h-12 bg-white/5 border-white/10 rounded-2xl focus:ring-primary px-4"
+              className="h-12 rounded-2xl border-border bg-card px-4 text-foreground focus:ring-primary"
             />
           </div>
         </div>
         <div className="space-y-2">
-          <Label htmlFor="c-notes" className="text-[10px] font-black uppercase tracking-widest text-white/30 ml-1">Notes & Details</Label>
+          <Label htmlFor="c-notes" className="ml-1 text-[10px] font-black uppercase tracking-widest text-muted-foreground">Notes & Details</Label>
           <Textarea
             id="c-notes"
             value={formData.notes}
             onChange={(e) =>
               setFormData((d) => ({ ...d, notes: e.target.value }))
             }
-            className="bg-white/5 border-white/10 rounded-[20px] focus:ring-primary px-4 py-3"
+            className="rounded-[20px] border-border bg-card px-4 py-3 text-foreground focus:ring-primary"
             rows={3}
           />
         </div>
         <div className="flex justify-end gap-3 pt-4">
-          <Button type="button" variant="ghost" className="h-12 px-6 rounded-2xl text-white/40 hover:text-white" onClick={onClose}>
+          <Button type="button" variant="ghost" className="h-12 rounded-2xl px-6 text-muted-foreground hover:text-foreground" onClick={onClose}>
             Cancel
           </Button>
           <Button type="submit" disabled={isPending} className="h-12 px-8 rounded-2xl bg-primary hover:bg-primary/90 text-white font-black shadow-lg shadow-primary/20">

@@ -14,12 +14,12 @@ export default function CampaignsPage() {
     {
       accessorKey: "name",
       header: "Campaign Name",
-      cell: ({ row }: any) => <span className="font-black italic text-white">{row.original.name}</span>
+      cell: ({ row }: any) => <span className="font-black italic text-foreground dark:text-white">{row.original.name}</span>
     },
     {
       accessorKey: "type",
       header: "Type",
-      cell: ({ row }: any) => <span className="uppercase text-[10px] font-black text-white/40 tracking-widest">{row.original.type}</span>
+      cell: ({ row }: any) => <span className="uppercase text-[10px] font-black text-muted-foreground dark:text-white/40 tracking-widest">{row.original.type}</span>
     },
     {
       accessorKey: "status",
@@ -37,8 +37,8 @@ export default function CampaignsPage() {
            initial={{ x: -20, opacity: 0 }}
            animate={{ x: 0, opacity: 1 }}
         >
-          <h1 className="text-4xl font-black text-white italic tracking-tighter uppercase">Broadcasting</h1>
-          <p className="text-white/40 font-bold uppercase tracking-[0.2em] text-[10px] mt-2">
+          <h1 className="text-4xl font-black text-foreground dark:text-white italic tracking-tighter uppercase">Broadcasting</h1>
+          <p className="text-muted-foreground dark:text-white/40 font-bold uppercase tracking-[0.2em] text-[10px] mt-2">
             Multi-channel marketing relay
           </p>
         </motion.div>
@@ -52,18 +52,18 @@ export default function CampaignsPage() {
         <motion.div 
           initial={{ scale: 0.95, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
-          className="flex flex-col items-center justify-center rounded-[40px] bg-white/5 border border-white/10 p-20 text-center space-y-8"
+          className="flex flex-col items-center justify-center rounded-[40px] bg-card/90 dark:bg-white/5 border border-border dark:border-white/10 p-20 text-center space-y-8"
         >
           <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-[32px] bg-primary/10 text-primary rotate-12 group-hover:rotate-0 transition-transform">
             <Megaphone className="h-10 w-10 -rotate-12" />
           </div>
           <div className="space-y-2">
-            <h3 className="text-2xl font-black text-white italic tracking-tighter uppercase">Silence Detected</h3>
-            <p className="max-w-sm text-[10px] font-bold text-white/20 uppercase tracking-widest">
+            <h3 className="text-2xl font-black text-foreground dark:text-white italic tracking-tighter uppercase">Silence Detected</h3>
+            <p className="max-w-sm text-[10px] font-bold text-muted-foreground/70 dark:text-white/20 uppercase tracking-widest">
               Awaiting your first broadcast transmission to the operational grid.
             </p>
           </div>
-          <Button className="h-14 px-10 rounded-2xl bg-white/10 hover:bg-white/15 text-white font-black italic uppercase tracking-widest transition-all">
+          <Button className="h-14 px-10 rounded-2xl bg-card hover:bg-muted dark:bg-white/10 dark:hover:bg-white/15 text-foreground dark:text-white border border-border dark:border-white/10 font-black italic uppercase tracking-widest transition-all">
             Initialize Payload
           </Button>
         </motion.div>

@@ -69,8 +69,8 @@ export default function TicketsPage() {
            initial={{ x: -20, opacity: 0 }}
            animate={{ x: 0, opacity: 1 }}
         >
-          <h1 className="text-4xl font-black text-white italic tracking-tighter uppercase">Studio</h1>
-          <p className="text-white/40 font-bold uppercase tracking-[0.2em] text-[10px] mt-2">
+          <h1 className="text-4xl font-black text-foreground dark:text-white italic tracking-tighter uppercase">Studio</h1>
+          <p className="text-muted-foreground dark:text-white/40 font-bold uppercase tracking-[0.2em] text-[10px] mt-2">
             Asset Engineering & Distribution
           </p>
         </motion.div>
@@ -90,22 +90,22 @@ export default function TicketsPage() {
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: stat.delay }}
-            className="group relative overflow-hidden rounded-[32px] bg-white/5 border border-white/10 p-8 transition-all hover:bg-white/8"
+            className="group relative overflow-hidden rounded-[32px] bg-card/90 dark:bg-white/5 border border-border dark:border-white/10 p-8 transition-all hover:bg-muted/60 dark:hover:bg-white/8"
           >
             <div className="relative z-10">
               <div className="p-3 w-fit rounded-2xl bg-primary/10 text-primary mb-6 group-hover:scale-110 transition-transform duration-500">
                 <stat.icon className="h-6 w-6" />
               </div>
-              <p className="text-[10px] font-black uppercase tracking-widest text-white/30 mb-1">{stat.label}</p>
-              <h2 className="text-3xl font-black text-white italic tracking-tight">{stat.value}</h2>
-              <p className="text-[10px] font-bold text-white/10 uppercase tracking-tighter mt-4">{stat.sub}</p>
+              <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground dark:text-white/30 mb-1">{stat.label}</p>
+              <h2 className="text-3xl font-black text-foreground dark:text-white italic tracking-tight">{stat.value}</h2>
+              <p className="text-[10px] font-bold text-muted-foreground/70 dark:text-white/10 uppercase tracking-tighter mt-4">{stat.sub}</p>
             </div>
           </motion.div>
         ))}
       </div>
 
       <Tabs defaultValue="tickets" className="space-y-10">
-        <TabsList className="bg-white/5 border border-white/10 p-1 rounded-2xl h-auto w-fit">
+        <TabsList className="bg-card/90 dark:bg-white/5 border border-border dark:border-white/10 p-1 rounded-2xl h-auto w-fit">
           <TabsTrigger value="tickets" className="rounded-xl px-8 py-3 font-black text-xs uppercase tracking-widest data-[state=active]:bg-primary data-[state=active]:text-white transition-all italic">Catalog</TabsTrigger>
           <TabsTrigger value="templates" className="rounded-xl px-8 py-3 font-black text-xs uppercase tracking-widest data-[state=active]:bg-primary data-[state=active]:text-white transition-all italic">Blueprints</TabsTrigger>
           <TabsTrigger value="scanner" className="rounded-xl px-8 py-3 font-black text-xs uppercase tracking-widest data-[state=active]:bg-primary data-[state=active]:text-white transition-all italic">Interface</TabsTrigger>
@@ -115,31 +115,31 @@ export default function TicketsPage() {
           <motion.div
             initial={{ opacity: 0, scale: 0.98 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="rounded-[40px] bg-white/5 border border-white/10 overflow-hidden"
+            className="rounded-[40px] bg-card/90 dark:bg-white/5 border border-border dark:border-white/10 overflow-hidden"
           >
-            <div className="p-8 border-b border-white/5 flex items-center justify-between">
+            <div className="p-8 border-b border-border dark:border-white/5 flex items-center justify-between">
               <div>
-                <h3 className="text-xl font-black text-white italic leading-none mb-2">Protocol Catalog</h3>
-                <p className="text-white/30 text-[10px] font-bold uppercase tracking-widest">Active admission structures</p>
+                <h3 className="text-xl font-black text-foreground dark:text-white italic leading-none mb-2">Protocol Catalog</h3>
+                <p className="text-muted-foreground dark:text-white/30 text-[10px] font-bold uppercase tracking-widest">Active admission structures</p>
               </div>
             </div>
             
             <div className="p-4">
               {isLoading ? (
                 <div className="space-y-4 p-4">
-                  {[1, 2, 3].map((i) => <Skeleton key={i} className="h-24 w-full rounded-3xl bg-white/5" />)}
+                  {[1, 2, 3].map((i) => <Skeleton key={i} className="h-24 w-full rounded-3xl bg-muted dark:bg-white/5" />)}
                 </div>
               ) : ticketTypeList.length === 0 ? (
                 <div className="p-20 text-center space-y-6">
-                  <div className="h-20 w-20 rounded-[32px] bg-white/5 border border-white/10 flex items-center justify-center mx-auto text-white/10">
+                  <div className="h-20 w-20 rounded-[32px] bg-muted dark:bg-white/5 border border-border dark:border-white/10 flex items-center justify-center mx-auto text-muted-foreground/40 dark:text-white/10">
                     <Ticket className="h-10 w-10" />
                   </div>
                   <div className="space-y-2">
-                    <h4 className="text-lg font-black text-white italic uppercase tracking-tighter">No Active Protocols</h4>
-                    <p className="text-white/20 text-[10px] font-bold uppercase tracking-widest">Initialize event tiers to begin</p>
+                    <h4 className="text-lg font-black text-foreground dark:text-white italic uppercase tracking-tighter">No Active Protocols</h4>
+                    <p className="text-muted-foreground/70 dark:text-white/20 text-[10px] font-bold uppercase tracking-widest">Initialize event tiers to begin</p>
                   </div>
                   <Link href="/dashboard/events">
-                    <Button className="rounded-2xl bg-white/10 hover:bg-primary text-white border border-white/10 font-black italic uppercase tracking-widest px-8 transition-all">
+                    <Button className="rounded-2xl bg-card dark:bg-white/10 hover:bg-primary text-foreground dark:text-white border border-border dark:border-white/10 font-black italic uppercase tracking-widest px-8 transition-all">
                       Configure Events
                     </Button>
                   </Link>
@@ -152,7 +152,7 @@ export default function TicketsPage() {
                       initial={{ opacity: 0, x: -20 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: i * 0.05 }}
-                      className="group flex flex-col sm:flex-row items-start sm:items-center justify-between p-6 rounded-[32px] bg-white/3 border border-white/5 hover:bg-white/8 transition-all gap-6"
+                      className="group flex flex-col sm:flex-row items-start sm:items-center justify-between p-6 rounded-[32px] bg-card/70 dark:bg-white/3 border border-border dark:border-white/5 hover:bg-muted/60 dark:hover:bg-white/8 transition-all gap-6"
                     >
                       <div className="flex items-center gap-6">
                         <div className="h-16 w-16 rounded-2xl bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
@@ -160,23 +160,23 @@ export default function TicketsPage() {
                         </div>
                         <div>
                           <div className="flex items-center gap-3 mb-1">
-                            <p className="font-black text-white text-lg italic tracking-tighter leading-none">{tt.name}</p>
-                            <Badge className="bg-white/10 text-white/40 border-none font-black text-[9px] uppercase tracking-widest px-3 italic">
+                            <p className="font-black text-foreground dark:text-white text-lg italic tracking-tighter leading-none">{tt.name}</p>
+                            <Badge className="bg-muted dark:bg-white/10 text-muted-foreground dark:text-white/40 border-none font-black text-[9px] uppercase tracking-widest px-3 italic">
                               {tt.status}
                             </Badge>
                           </div>
                           <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
                             {tt.eventTitle && (
-                              <span className="text-[10px] font-black text-white/20 uppercase tracking-widest flex items-center gap-2">
+                              <span className="text-[10px] font-black text-muted-foreground/70 dark:text-white/20 uppercase tracking-widest flex items-center gap-2">
                                 <Zap className="h-3 w-3 text-primary" />
                                 {tt.eventTitle}
                               </span>
                             )}
-                            <span className="text-[10px] font-black text-white/20 uppercase tracking-widest flex items-center gap-2">
+                            <span className="text-[10px] font-black text-muted-foreground/70 dark:text-white/20 uppercase tracking-widest flex items-center gap-2">
                               <DollarSign className="h-3 w-3" />
                               {(tt.price ?? 0) === 0 ? "GRATIS" : `$${((tt.price ?? 0) / 100).toFixed(2)}`}
                             </span>
-                            <span className="text-[10px] font-black text-white/20 uppercase tracking-widest flex items-center gap-2">
+                            <span className="text-[10px] font-black text-muted-foreground/70 dark:text-white/20 uppercase tracking-widest flex items-center gap-2">
                               <Hash className="h-3 w-3" />
                               {tt.quantitySold ?? 0} / {tt.quantityTotal ?? "INF"} ISSUED
                             </span>
@@ -184,7 +184,7 @@ export default function TicketsPage() {
                         </div>
                       </div>
                       <Link href={`/dashboard/events/${tt.eventId}`}>
-                        <Button variant="ghost" className="h-12 w-12 rounded-2xl p-0 text-white/10 hover:text-white hover:bg-white/5">
+                        <Button variant="ghost" className="h-12 w-12 rounded-2xl p-0 text-muted-foreground/70 dark:text-white/10 hover:text-foreground dark:hover:text-white hover:bg-muted dark:hover:bg-white/5">
                           <ExternalLink className="h-6 w-6" />
                         </Button>
                       </Link>
@@ -200,8 +200,8 @@ export default function TicketsPage() {
           <div className="space-y-10">
             <div className="flex items-center justify-between px-4">
               <div>
-                <h3 className="text-2xl font-black text-white italic leading-none mb-2">Visual Blueprints</h3>
-                <p className="text-white/30 text-[10px] font-bold uppercase tracking-widest">Global identity style guides</p>
+                <h3 className="text-2xl font-black text-foreground dark:text-white italic leading-none mb-2">Visual Blueprints</h3>
+                <p className="text-muted-foreground dark:text-white/30 text-[10px] font-bold uppercase tracking-widest">Global identity style guides</p>
               </div>
             </div>
 
@@ -212,7 +212,7 @@ export default function TicketsPage() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: i * 0.1 }}
-                  className="group rounded-[40px] bg-white/5 border border-white/10 overflow-hidden hover:bg-white/8 transition-all flex flex-col"
+                  className="group rounded-[40px] bg-card/90 dark:bg-white/5 border border-border dark:border-white/10 overflow-hidden hover:bg-muted/60 dark:hover:bg-white/8 transition-all flex flex-col"
                 >
                   <div className={cn("m-4 h-48 rounded-[32px] p-6 flex flex-col justify-between border relative overflow-hidden", template.style)}>
                     <div className="flex items-center justify-between relative z-10">
@@ -232,11 +232,11 @@ export default function TicketsPage() {
                     <div className="absolute -right-10 -bottom-10 h-32 w-32 bg-white/5 rounded-full blur-3xl" />
                   </div>
                   <div className="p-8 space-y-4">
-                    <h4 className="text-lg font-black text-white italic tracking-tighter uppercase">{template.name}</h4>
-                    <p className="text-[10px] font-bold text-white/30 uppercase tracking-widest leading-relaxed">
+                    <h4 className="text-lg font-black text-foreground dark:text-white italic tracking-tighter uppercase">{template.name}</h4>
+                    <p className="text-[10px] font-bold text-muted-foreground dark:text-white/30 uppercase tracking-widest leading-relaxed">
                       {template.description}
                     </p>
-                    <Button variant="outline" className="h-12 w-full rounded-2xl bg-white/5 border-white/10 text-white hover:bg-white/10 font-black italic uppercase tracking-widest text-[10px] transition-all">
+                    <Button variant="outline" className="h-12 w-full rounded-2xl bg-card dark:bg-white/5 border-border dark:border-white/10 text-foreground dark:text-white hover:bg-muted dark:hover:bg-white/10 font-black italic uppercase tracking-widest text-[10px] transition-all">
                       Deploy Protocol
                     </Button>
                   </div>
@@ -255,13 +255,13 @@ export default function TicketsPage() {
                   key={cap.title}
                   initial={{ opacity: 0, scale: 0.95 }}
                   whileInView={{ opacity: 1, scale: 1 }}
-                  className="p-8 rounded-[40px] bg-white/5 border border-white/10 group hover:bg-white/8 transition-all"
+                  className="p-8 rounded-[40px] bg-card/90 dark:bg-white/5 border border-border dark:border-white/10 group hover:bg-muted/60 dark:hover:bg-white/8 transition-all"
                 >
-                  <div className="h-12 w-12 rounded-2xl bg-white/5 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                  <div className="h-12 w-12 rounded-2xl bg-muted dark:bg-white/5 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
                     <cap.icon className={cn("h-6 w-6", cap.color)} />
                   </div>
-                  <h4 className="text-xl font-black text-white italic tracking-tighter uppercase mb-4">{cap.title}</h4>
-                  <p className="text-[10px] font-bold text-white/30 uppercase tracking-widest leading-relaxed">
+                  <h4 className="text-xl font-black text-foreground dark:text-white italic tracking-tighter uppercase mb-4">{cap.title}</h4>
+                  <p className="text-[10px] font-bold text-muted-foreground dark:text-white/30 uppercase tracking-widest leading-relaxed">
                     {cap.desc}
                   </p>
                 </motion.div>
@@ -274,15 +274,15 @@ export default function TicketsPage() {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="rounded-[40px] bg-white/5 border border-white/10 p-16 text-center space-y-10 relative overflow-hidden"
+            className="rounded-[40px] bg-card/90 dark:bg-white/5 border border-border dark:border-white/10 p-16 text-center space-y-10 relative overflow-hidden"
           >
             <div className="relative z-10 space-y-6">
               <div className="h-24 w-24 rounded-[40px] bg-primary/10 flex items-center justify-center mx-auto text-primary shadow-2xl shadow-primary/20 rotate-12">
                 <ScanLine className="h-12 w-12" />
               </div>
               <div className="space-y-3">
-                <h3 className="text-3xl font-black text-white italic tracking-tighter uppercase leading-none">Scanning Interface</h3>
-                <p className="max-w-md mx-auto text-[10px] font-bold text-white/30 uppercase tracking-[0.2em] leading-relaxed">
+                <h3 className="text-3xl font-black text-foreground dark:text-white italic tracking-tighter uppercase leading-none">Scanning Interface</h3>
+                <p className="max-w-md mx-auto text-[10px] font-bold text-muted-foreground dark:text-white/30 uppercase tracking-[0.2em] leading-relaxed">
                   Connect high-velocity capture devices or initialize local camera protocols for real-time validation.
                 </p>
               </div>
@@ -293,11 +293,11 @@ export default function TicketsPage() {
                     Initialize Kiosk
                   </Button>
                 </Link>
-                <Button variant="outline" className="h-16 px-10 rounded-2xl bg-white/5 border-white/10 text-white hover:bg-white/10 font-black italic uppercase tracking-widest transition-all">
+                <Button variant="outline" className="h-16 px-10 rounded-2xl bg-card dark:bg-white/5 border-border dark:border-white/10 text-foreground dark:text-white hover:bg-muted dark:hover:bg-white/10 font-black italic uppercase tracking-widest transition-all">
                   Configure Peripheral
                 </Button>
               </div>
-              <p className="text-[9px] font-black text-white/10 uppercase tracking-[0.4em] pt-4">Requires Camera Authorization (v2.0.4)</p>
+              <p className="text-[9px] font-black text-muted-foreground/70 dark:text-white/10 uppercase tracking-[0.4em] pt-4">Requires Camera Authorization (v2.0.4)</p>
             </div>
             <div className="absolute -left-20 -bottom-20 h-64 w-64 bg-primary/5 rounded-full blur-[100px]" />
           </motion.div>
