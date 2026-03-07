@@ -53,6 +53,14 @@ nul
 logs/
 screenshots/
 temp/
+.npm-cache/
+.playwright-mcp/
+.claude/
+mobile/.expo/
+mobile/.npm-cache/
+mobile/*.log
+*.out.log
+*.err.log
 
 # git worktrees
 .worktrees/
