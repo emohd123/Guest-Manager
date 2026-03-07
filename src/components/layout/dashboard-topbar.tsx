@@ -3,6 +3,7 @@
 import { useSyncExternalStore } from "react";
 import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
+import { trpc } from "@/lib/trpc/client";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -26,6 +27,9 @@ export function DashboardTopbar({
   companyName = "Company",
 }: DashboardTopbarProps) {
   const pathname = usePathname();
+  const segments = pathname.split("/").filter(Boolean);
+  const eventId = segments[0] === "dashboard" && segments[1] === "events" ? segments[2] : undefined;
+  const isEventOverview = Boolean(eventId && segments.length === 3);
   const mounted = useSyncExternalStore(
     () => () => {},
     () => true,
@@ -33,6 +37,10 @@ export function DashboardTopbar({
   );
   const { setTheme, resolvedTheme } = useTheme();
   const isDark = mounted && resolvedTheme === "dark";
+  const { data: event } = trpc.events.get.useQuery(
+    { id: eventId ?? "" },
+    { enabled: mounted && isEventOverview && !!eventId }
+  );
 
   const identityName = companyName || userName;
   const initials = identityName
@@ -42,13 +50,18 @@ export function DashboardTopbar({
     .toUpperCase()
     .slice(0, 2);
 
-  const segments = pathname.split("/").filter(Boolean);
   const pageTitle = (() => {
+    if (isEventOverview) {
+      return event?.title || "Event";
+    }
     const lastSegment = segments.at(-1);
     if (!lastSegment) return "Dashboard";
     if (pathname === "/dashboard/events/new") return "Create Event";
     if (lastSegment === "new") return "Create";
     if (lastSegment === "settings") return "Settings";
+    if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(lastSegment)) {
+      return "Details";
+    }
     return lastSegment.replace(/-/g, " ");
   })();
 

@@ -76,12 +76,12 @@ export default function ReportsPage() {
           initial={{ x: -20, opacity: 0 }}
           animate={{ x: 0, opacity: 1 }}
         >
-          <h1 className="text-4xl font-black text-white italic tracking-tighter uppercase transition-all">Analytics</h1>
-          <p className="text-white/40 font-bold uppercase tracking-[0.2em] text-[10px] mt-2">
+          <h1 className="text-4xl font-black text-foreground dark:text-white italic tracking-tighter uppercase transition-all">Analytics</h1>
+          <p className="text-muted-foreground dark:text-white/40 font-bold uppercase tracking-[0.2em] text-[10px] mt-2">
             Dynamic performance metrics
           </p>
         </motion.div>
-        <Button className="h-14 px-8 rounded-2xl bg-white/5 border border-white/10 text-white hover:bg-white/10 font-black text-base transition-all hover:-translate-y-1 flex gap-3 group">
+        <Button className="theme-ghost-surface h-14 px-8 rounded-2xl font-black text-base transition-all hover:-translate-y-1 flex gap-3 group">
           <Download className="h-6 w-6 group-hover:animate-bounce" />
           Full Report
         </Button>
@@ -95,15 +95,15 @@ export default function ReportsPage() {
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: stat.delay }}
-            className="group relative overflow-hidden rounded-[32px] bg-white/5 border border-white/10 p-8 transition-all hover:bg-white/8"
+            className="theme-panel group relative overflow-hidden p-8 transition-all hover:bg-muted/60 dark:hover:bg-white/8"
           >
             <div className="relative z-10">
               <div className="p-3 w-fit rounded-2xl bg-primary/10 text-primary mb-6 group-hover:scale-110 transition-transform duration-500">
                 <stat.icon className="h-6 w-6" />
               </div>
-              <p className="text-[10px] font-black uppercase tracking-widest text-white/30 mb-1">{stat.title}</p>
-              <h2 className="text-3xl font-black text-white italic tracking-tight">{stat.value}</h2>
-              <p className="text-[10px] font-bold text-white/10 uppercase tracking-tighter mt-4">{stat.sub}</p>
+              <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground dark:text-white/30 mb-1">{stat.title}</p>
+              <h2 className="text-3xl font-black text-foreground dark:text-white italic tracking-tight">{stat.value}</h2>
+              <p className="text-[10px] font-bold text-muted-foreground/70 dark:text-white/10 uppercase tracking-tighter mt-4">{stat.sub}</p>
             </div>
             <div className="absolute -right-4 -bottom-4 h-24 w-24 bg-primary/5 rounded-full blur-3xl group-hover:bg-primary/10 transition-colors" />
           </motion.div>
@@ -111,18 +111,18 @@ export default function ReportsPage() {
       </div>
 
       <Tabs defaultValue="events" className="space-y-10">
-        <TabsList className="bg-white/5 border border-white/10 p-1 rounded-2xl h-auto">
+        <TabsList className="h-auto rounded-2xl border border-border bg-card/90 p-1 dark:border-white/10 dark:bg-white/5">
           <TabsTrigger value="events" className="rounded-xl px-8 py-3 font-black text-xs uppercase tracking-widest data-[state=active]:bg-primary data-[state=active]:text-white transition-all italic">Events</TabsTrigger>
           <TabsTrigger value="attendance" className="rounded-xl px-8 py-3 font-black text-xs uppercase tracking-widest data-[state=active]:bg-primary data-[state=active]:text-white transition-all italic">Growth</TabsTrigger>
           <TabsTrigger value="revenue" className="rounded-xl px-8 py-3 font-black text-xs uppercase tracking-widest data-[state=active]:bg-primary data-[state=active]:text-white transition-all italic">Revenue</TabsTrigger>
         </TabsList>
 
         <TabsContent value="events" className="mt-0 outline-none">
-          <div className="rounded-[40px] bg-white/5 border border-white/10 overflow-hidden backdrop-blur-3xl">
-            <div className="p-8 border-b border-white/5 flex items-center justify-between">
+          <div className="theme-panel overflow-hidden backdrop-blur-3xl">
+            <div className="flex items-center justify-between border-b border-border p-8 dark:border-white/5">
               <div>
-                <h3 className="text-xl font-black text-white italic leading-none mb-2">Performance Index</h3>
-                <p className="text-white/30 text-[10px] font-bold uppercase tracking-widest">Recent Event Results</p>
+                <h3 className="text-xl font-black text-foreground dark:text-white italic leading-none mb-2">Performance Index</h3>
+                <p className="text-muted-foreground dark:text-white/30 text-[10px] font-bold uppercase tracking-widest">Recent Event Results</p>
               </div>
               <Link href="/dashboard/events/new">
                 <Button className="rounded-xl bg-primary text-white font-black px-6 text-xs italic tracking-tight uppercase">New Event</Button>
@@ -137,7 +137,7 @@ export default function ReportsPage() {
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="text-left text-white/20 border-b border-white/5">
+                    <tr className="border-b border-border text-left text-muted-foreground dark:border-white/5 dark:text-white/20">
                       <th className="py-6 px-8 font-black uppercase tracking-widest text-[10px]">Reference</th>
                       <th className="py-6 px-8 font-black uppercase tracking-widest text-[10px]">Title</th>
                       <th className="py-6 px-8 font-black uppercase tracking-widest text-[10px]">Status</th>
@@ -146,42 +146,42 @@ export default function ReportsPage() {
                       <th className="py-6 px-8 text-right font-black uppercase tracking-widest text-[10px]">Actions</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-white/5">
+                  <tbody className="divide-y divide-border dark:divide-white/5">
                     {eventsData?.events.map((event) => (
-                      <tr key={event.id} className="group hover:bg-white/5 transition-all">
+                      <tr key={event.id} className="group transition-all hover:bg-muted/40 dark:hover:bg-white/5">
                         <td className="py-6 px-8">
                           <span className="font-mono text-xs font-black text-primary italic">#{event.id.slice(0, 6)}</span>
                         </td>
                         <td className="py-6 px-8">
-                          <p className="font-bold text-white text-base leading-none mb-1">{event.title}</p>
-                          <p className="text-[10px] font-bold text-white/20 uppercase tracking-tighter">{event.eventType}</p>
+                          <p className="mb-1 text-base font-bold text-foreground dark:text-white leading-none">{event.title}</p>
+                          <p className="text-[10px] font-bold text-muted-foreground dark:text-white/20 uppercase tracking-tighter">{event.eventType}</p>
                         </td>
                         <td className="py-6 px-8">
                           <Badge className={cn(
                             "rounded-full px-3 py-1 font-black text-[9px] uppercase tracking-widest border-none",
-                            event.status === "published" ? "bg-green-500/20 text-green-400" : "bg-white/10 text-white/40"
+                            event.status === "published" ? "bg-green-500/20 text-green-400" : "bg-muted text-muted-foreground dark:bg-white/10 dark:text-white/40"
                           )}>
                             {event.status}
                           </Badge>
                         </td>
-                        <td className="py-6 px-8 font-bold text-white/40 italic">
+                        <td className="py-6 px-8 font-bold text-muted-foreground dark:text-white/40 italic">
                           {format(new Date(event.startsAt), "MMM d, yyyy")}
                         </td>
                         <td className="py-6 px-8">
                           <div className="flex items-center gap-2">
-                             <div className="h-1.5 w-16 bg-white/5 rounded-full overflow-hidden">
+                             <div className="h-1.5 w-16 bg-muted rounded-full overflow-hidden dark:bg-white/5">
                                 <motion.div 
                                   initial={{ width: 0 }}
                                   animate={{ width: "65%" }}
                                   className="h-full bg-primary"
                                 />
                              </div>
-                             <span className="text-[10px] font-black text-white italic">65%</span>
+                             <span className="text-[10px] font-black text-foreground dark:text-white italic">65%</span>
                           </div>
                         </td>
                         <td className="py-6 px-8 text-right">
                           <Link href={`/dashboard/events/${event.id}`}>
-                            <Button variant="ghost" className="h-10 w-10 p-0 rounded-xl hover:bg-white/10 text-white/30 hover:text-white">
+                            <Button variant="ghost" className="h-10 w-10 p-0 rounded-xl text-muted-foreground hover:bg-muted hover:text-foreground dark:text-white/30 dark:hover:bg-white/10 dark:hover:text-white">
                               <ArrowRight className="h-5 w-5" />
                             </Button>
                           </Link>

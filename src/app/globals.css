@@ -127,6 +127,42 @@
 }
 
 @layer utilities {
+  .theme-panel {
+    @apply rounded-[40px] border border-border bg-card/90 shadow-2xl dark:border-white/10 dark:bg-white/5;
+  }
+
+  .theme-panel-subtle {
+    @apply rounded-[32px] border border-border bg-card/70 dark:border-white/5 dark:bg-white/3;
+  }
+
+  .theme-section-title {
+    @apply text-2xl font-black text-foreground italic uppercase tracking-tighter dark:text-white;
+  }
+
+  .theme-eyebrow {
+    @apply text-[10px] font-black uppercase tracking-[0.3em] text-primary italic leading-none;
+  }
+
+  .theme-muted {
+    @apply text-muted-foreground dark:text-white/30;
+  }
+
+  .theme-label {
+    @apply text-[10px] font-black uppercase tracking-widest text-muted-foreground dark:text-white/40;
+  }
+
+  .theme-input {
+    @apply rounded-2xl border-border bg-card text-foreground placeholder:text-muted-foreground focus-visible:border-primary dark:border-white/10 dark:bg-white/5 dark:text-white;
+  }
+
+  .theme-textarea {
+    @apply rounded-[24px] border-border bg-card text-foreground placeholder:text-muted-foreground focus-visible:border-primary dark:border-white/10 dark:bg-white/5 dark:text-white;
+  }
+
+  .theme-ghost-surface {
+    @apply border-border bg-card/80 text-foreground hover:bg-muted dark:border-white/10 dark:bg-white/5 dark:text-white dark:hover:bg-white/10;
+  }
+
   .glass-panel {
     @apply bg-card/60 backdrop-blur-xl border border-border shadow-[0_8px_32px_0_rgba(0,0,0,0.05)] dark:shadow-[0_8px_32px_0_rgba(0,0,0,0.3)];
   }
@@ -174,6 +210,60 @@
   .mody-button {
     @apply rounded-full font-bold transition-all duration-300 active:scale-95;
   }
+}
+
+html:not(.dark) .bg-white\/10 {
+  background-color: color-mix(in srgb, var(--card) 84%, transparent) !important;
+}
+
+html:not(.dark) .bg-white\/8 {
+  background-color: color-mix(in srgb, var(--card) 88%, transparent) !important;
+}
+
+html:not(.dark) .bg-white\/5 {
+  background-color: color-mix(in srgb, var(--card) 92%, transparent) !important;
+}
+
+html:not(.dark) .bg-white\/3,
+html:not(.dark) .bg-white\/2 {
+  background-color: color-mix(in srgb, var(--card) 96%, transparent) !important;
+}
+
+html:not(.dark) .border-white\/10,
+html:not(.dark) .border-white\/5 {
+  border-color: color-mix(in srgb, var(--border) 90%, transparent) !important;
+}
+
+html:not(.dark) .text-white\/60 {
+  color: color-mix(in srgb, var(--foreground) 68%, transparent) !important;
+}
+
+html:not(.dark) .text-white\/40,
+html:not(.dark) .text-white\/30 {
+  color: color-mix(in srgb, var(--muted-foreground) 92%, transparent) !important;
+}
+
+html:not(.dark) .text-white\/20,
+html:not(.dark) .text-white\/10 {
+  color: color-mix(in srgb, var(--muted-foreground) 72%, transparent) !important;
+}
+
+html:not(.dark) .hover\:bg-white\/10:hover,
+html:not(.dark) .hover\:bg-white\/8:hover,
+html:not(.dark) .hover\:bg-white\/5:hover {
+  background-color: color-mix(in srgb, var(--muted) 96%, transparent) !important;
+}
+
+html:not(.dark) .hover\:text-white:hover,
+html:not(.dark) .hover\:text-white\/60:hover,
+html:not(.dark) .hover\:text-white\/40:hover,
+html:not(.dark) .hover\:text-white\/30:hover {
+  color: var(--foreground) !important;
+}
+
+html:not(.dark) .dashboard-theme-scope .text-white:not([class*="bg-primary"]):not([class*="bg-[#635BFF]"]),
+html:not(.dark) .public-theme-scope .text-white:not([class*="bg-primary"]) {
+  color: var(--foreground) !important;
 }
 
 @keyframes mesh-flow {

@@ -1,6 +1,7 @@
 "use client";
 
 import { use } from "react";
+import Link from "next/link";
 import { trpc } from "@/lib/trpc/client";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -39,7 +40,7 @@ export default function EventOverviewPage({
   }
 
   if (!event) {
-    return <div className="p-20 text-center text-white/40 font-black italic uppercase tracking-widest">Event Not Found</div>;
+    return <div className="p-20 text-center text-muted-foreground dark:text-white/40 font-black italic uppercase tracking-widest">Event Not Found</div>;
   }
 
   const emailData = [
@@ -65,6 +66,12 @@ export default function EventOverviewPage({
     "flex flex-col rounded-[40px] bg-card/90 dark:bg-white/5 border border-border dark:border-white/10 overflow-hidden group hover:bg-muted/60 dark:hover:bg-white/8 transition-all h-[480px]";
   const panelClass =
     "rounded-[40px] border border-border dark:border-white/10 bg-card/90 dark:bg-white/5";
+  const publicPageEnabled =
+    typeof (event.settings as { publicPage?: { enabled?: boolean } } | null)?.publicPage?.enabled === "boolean"
+      ? (event.settings as { publicPage?: { enabled?: boolean } }).publicPage?.enabled !== false
+      : true;
+  const canOpenPublicEventPage =
+    event.registrationEnabled && !!event.companySlug && event.status === "published" && publicPageEnabled;
 
   return (
     <div className="space-y-12 pb-20 px-2">
@@ -82,13 +89,34 @@ export default function EventOverviewPage({
         </motion.div>
         <div className="flex items-center gap-4">
           {event.registrationEnabled && (
-            <Button variant="outline" className="h-14 px-6 rounded-2xl bg-card/70 dark:bg-white/5 border-border dark:border-white/10 text-muted-foreground dark:text-white/60 hover:text-foreground dark:hover:text-white font-black italic uppercase tracking-widest text-[10px] transition-all flex gap-3">
-              Event Page <ExternalLink className="h-4 w-4" />
-            </Button>
+            canOpenPublicEventPage ? (
+              <Button
+                asChild
+                variant="outline"
+                className="theme-ghost-surface h-14 px-6 rounded-2xl font-black italic uppercase tracking-widest text-[10px] transition-all flex gap-3"
+              >
+                <Link href={`/e/${event.companySlug}/${event.slug}`} target="_blank" rel="noreferrer">
+                  Event Page <ExternalLink className="h-4 w-4" />
+                </Link>
+              </Button>
+            ) : (
+              <Button
+                variant="outline"
+                disabled
+                className="theme-ghost-surface h-14 px-6 rounded-2xl font-black italic uppercase tracking-widest text-[10px] transition-all flex gap-3"
+              >
+                {event.status !== "published" ? "Publish Event First" : "Event Page Unavailable"} <ExternalLink className="h-4 w-4" />
+              </Button>
+            )
           )}
-          <Button className="h-14 px-8 rounded-2xl bg-primary text-white font-black text-base shadow-2xl shadow-primary/20 transition-all hover:scale-[1.05] active:scale-95 italic flex gap-3">
-            <Plus className="h-6 w-6" />
-            Add Guest
+          <Button
+            asChild
+            className="h-14 px-8 rounded-2xl bg-primary text-white font-black text-base shadow-2xl shadow-primary/20 transition-all hover:scale-[1.05] active:scale-95 italic flex gap-3"
+          >
+            <Link href={`/dashboard/events/${event.id}/guests`}>
+              <Plus className="h-6 w-6" />
+              Add Guest
+            </Link>
           </Button>
         </div>
       </div>
@@ -109,9 +137,9 @@ export default function EventOverviewPage({
             transition={{ delay: i * 0.1 }}
             className={analyticsCardClass}
           >
-            <div className="p-8 border-b border-border/70 dark:border-white/5 bg-muted/20 dark:bg-white/2">
-              <h3 className="text-lg font-black text-foreground dark:text-white italic leading-none mb-1 uppercase tracking-tighter">{block.title}</h3>
-              <p className="text-muted-foreground/70 dark:text-white/20 text-[9px] font-bold uppercase tracking-widest">{block.sub}</p>
+            <div className="border-b border-border/70 bg-muted/20 p-8 dark:border-white/5 dark:bg-white/2">
+              <h3 className="mb-1 text-lg font-black text-foreground dark:text-white italic leading-none uppercase tracking-tighter">{block.title}</h3>
+              <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground/70 dark:text-white/20">{block.sub}</p>
             </div>
             
             <div className="flex-1 p-8 flex flex-col justify-between">
@@ -175,7 +203,7 @@ export default function EventOverviewPage({
                          <p className="text-[10px] font-black text-muted-foreground dark:text-white/40 uppercase tracking-widest">Real-time Load</p>
                          <p className="text-4xl font-black text-foreground dark:text-white italic leading-none">{totalGuests} <span className="text-sm text-muted-foreground dark:text-white/20">/ {capacity}</span></p>
                       </div>
-                      <div className="h-4 bg-muted rounded-full overflow-hidden border border-border dark:border-white/5">
+                      <div className="h-4 overflow-hidden rounded-full border border-border bg-muted dark:border-white/5">
                          <motion.div 
                            initial={{ width: 0 }}
                            animate={{ width: `${occupancyRate}%` }}
@@ -186,11 +214,11 @@ export default function EventOverviewPage({
                    </div>
                    
                    <div className="grid grid-cols-2 gap-4">
-                      <div className="p-4 rounded-3xl bg-muted/40 dark:bg-white/3 border border-border dark:border-white/5">
+                      <div className="rounded-3xl border border-border bg-muted/40 p-4 dark:border-white/5 dark:bg-white/3">
                          <p className="text-[8px] font-black text-muted-foreground/70 dark:text-white/20 uppercase tracking-widest mb-1">Revenue</p>
                          <p className="text-xl font-black text-primary italic">$0.00</p>
                       </div>
-                      <div className="p-4 rounded-3xl bg-muted/40 dark:bg-white/3 border border-border dark:border-white/5">
+                      <div className="rounded-3xl border border-border bg-muted/40 p-4 dark:border-white/5 dark:bg-white/3">
                          <p className="text-[8px] font-black text-muted-foreground/70 dark:text-white/20 uppercase tracking-widest mb-1">Growth</p>
                          <p className="text-xl font-black text-green-400 italic">+12%</p>
                       </div>
@@ -213,16 +241,16 @@ export default function EventOverviewPage({
           { title: "Ticket Types", icon: Ticket, desc: "Manage admission tiers, pricing, and inventory.", action: "Manage Tickets" },
           { title: "Check-in Activity", icon: Activity, desc: "Review check-in and checkout activity for this event.", action: "View Check-ins" }
         ].map((hub, i) => (
-          <div key={hub.title} className="p-10 rounded-[40px] bg-card/90 dark:bg-white/5 border border-border dark:border-white/10 group hover:bg-muted/60 dark:hover:bg-white/8 hover:border-primary/30 transition-all space-y-8 relative overflow-hidden">
+          <div key={hub.title} className="theme-panel group relative space-y-8 overflow-hidden p-10 hover:border-primary/30 hover:bg-muted/60 dark:hover:bg-white/8">
             <div className="relative z-10">
               <div className="h-14 w-14 rounded-2xl bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform mb-6">
                  <hub.icon className="h-7 w-7" />
               </div>
-              <h4 className="text-2xl font-black text-foreground dark:text-white italic tracking-tighter uppercase mb-4">{hub.title}</h4>
-              <p className="text-[10px] font-bold text-muted-foreground dark:text-white/30 uppercase tracking-widest leading-relaxed mb-8">
+              <h4 className="mb-4 text-2xl font-black text-foreground dark:text-white italic tracking-tighter uppercase">{hub.title}</h4>
+              <p className="mb-8 text-[10px] font-bold text-muted-foreground dark:text-white/30 uppercase tracking-widest leading-relaxed">
                 {hub.desc}
               </p>
-              <Button className="h-14 w-full rounded-2xl bg-muted/40 dark:bg-white/5 border border-border dark:border-white/10 text-foreground dark:text-white group-hover:bg-primary group-hover:text-white transition-all font-black italic uppercase tracking-widest text-xs">
+              <Button className="h-14 w-full rounded-2xl border border-border bg-muted/40 text-foreground transition-all font-black italic uppercase tracking-widest text-xs group-hover:bg-primary group-hover:text-white dark:border-white/10 dark:bg-white/5 dark:text-white">
                  {hub.action}
               </Button>
             </div>

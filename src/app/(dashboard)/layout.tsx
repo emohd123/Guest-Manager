@@ -32,7 +32,7 @@ export default function DashboardLayout({
     <div
       suppressHydrationWarning
       className={cn(
-        "flex h-screen relative overflow-hidden text-foreground transition-colors duration-300",
+        "dashboard-theme-scope flex h-screen relative overflow-hidden text-foreground transition-colors duration-300",
         mounted && isDark
           ? "bg-modychat"
           : "bg-[radial-gradient(circle_at_top_left,_rgba(255,91,106,0.10),_transparent_22%),linear-gradient(180deg,_#f8fafc_0%,_#eef2f7_100%)]"

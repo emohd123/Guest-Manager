@@ -89,7 +89,7 @@ export const listsRouter = router({
 
       const rows = (data ?? []) as ListRow[];
       const listIds = rows.map((row) => row.id);
-      let contactCountMap = new Map<string, number>();
+      const contactCountMap = new Map<string, number>();
 
       if (listIds.length > 0) {
         const { data: listContactsData, error: listContactsError } = await ctx.supabase

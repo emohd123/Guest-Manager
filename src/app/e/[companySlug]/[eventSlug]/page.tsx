@@ -92,6 +92,10 @@ export default function PublicEventPage({
   const primaryColor = settings.primaryColor || "#2563EB";
   const backgroundColor = settings.backgroundColor || "#FFFFFF";
   const logoUrl = settings.logoUrl || "";
+  const mapQuery = [publicPage.venueName, publicPage.locationText].filter(Boolean).join(" ").trim();
+  const mapHref = mapQuery
+    ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapQuery)}`
+    : null;
 
   if (!publicPage.enabled) {
     return (
@@ -178,9 +182,18 @@ export default function PublicEventPage({
     }
   };
 
+  const handleCopyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      toast.success("Event link copied.");
+    } catch {
+      toast.error("Could not copy the event link.");
+    }
+  };
+
   return (
     <div 
-      className="min-h-screen transition-colors duration-500" 
+      className="public-theme-scope min-h-screen transition-colors duration-500" 
       style={{ 
         backgroundColor,
       }}
@@ -297,9 +310,17 @@ export default function PublicEventPage({
                       {publicPage.venueName || publicPage.locationText || "Virtual Event or Venue TBD"}
                     </p>
                   </div>
-                  <Button variant="link" className="px-0 font-bold text-xs h-auto uppercase tracking-wider hvr-underline-from-left">
-                    Show on map <ChevronRight className="h-3 w-3" />
-                  </Button>
+                  {mapHref ? (
+                    <Button asChild variant="link" className="px-0 font-bold text-xs h-auto uppercase tracking-wider hvr-underline-from-left">
+                      <a href={mapHref} target="_blank" rel="noreferrer">
+                        Show on map <ChevronRight className="h-3 w-3" />
+                      </a>
+                    </Button>
+                  ) : (
+                    <Button variant="link" disabled className="px-0 font-bold text-xs h-auto uppercase tracking-wider">
+                      Map unavailable <ChevronRight className="h-3 w-3" />
+                    </Button>
+                  )}
                 </div>
 
                 <div className="p-6 rounded-3xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 space-y-4">
@@ -314,7 +335,11 @@ export default function PublicEventPage({
                         : "Invite friends and colleagues to reserve a free spot."}
                     </p>
                   </div>
-                  <Button variant="link" className="px-0 font-bold text-xs h-auto uppercase tracking-wider hvr-underline-from-left">
+                  <Button
+                    variant="link"
+                    className="px-0 font-bold text-xs h-auto uppercase tracking-wider hvr-underline-from-left"
+                    onClick={handleCopyLink}
+                  >
                     Copy link <ChevronRight className="h-3 w-3" />
                   </Button>
                 </div>

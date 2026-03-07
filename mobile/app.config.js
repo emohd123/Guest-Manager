@@ -20,9 +20,6 @@ module.exports = {
       ...(base.expo.extra ?? {}),
       apiBaseUrl,
     },
-    plugins: [
-      ...(base.expo.plugins ?? []),
-      "expo-notifications",
-    ],
+    plugins: [...(base.expo.plugins ?? [])],
   },
 };

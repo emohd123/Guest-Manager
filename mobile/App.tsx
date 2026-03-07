@@ -526,7 +526,7 @@ export default function App() {
               </FadeSlideIn>
             </PremiumCard>
           </View>
-          <View style={styles.floatingTabBarContainer}>
+          <View pointerEvents="box-none" style={styles.floatingTabBarContainer}>
             <View style={styles.floatingTabBar}>
               {(["home", "guests", "scan", "walkup", "activity"] as Tab[]).map((t) => (
                 <TabButton key={t} label={t.charAt(0).toUpperCase() + t.slice(1)} active={tab === t} onPress={() => setTab(t)} />
@@ -622,18 +622,20 @@ export default function App() {
 }
 
 function TabButton({ label, active, onPress }: { label: string; active: boolean; onPress: () => void }) {
-  const icon = {
-    Home: "Home",
-    Guests: "Guests",
-    Scan: "Scan",
-    Walkup: "Walk-up",
-    Activity: "Sync",
-  }[label] ?? label;
+  const meta = {
+    Home: { badge: "H", label: "Home" },
+    Guests: { badge: "G", label: "Guests" },
+    Scan: { badge: "S", label: "Scan" },
+    Walkup: { badge: "W", label: "Walk-up" },
+    Activity: { badge: "A", label: "Activity" },
+  }[label] ?? { badge: label.charAt(0), label };
 
   return (
     <Pressable style={[styles.tabButton, active && styles.tabButtonActive]} onPress={onPress}>
-      <Text style={[styles.tabIcon, active && styles.tabIconActive]}>{icon}</Text>
-      <Text style={[styles.tabText, active && styles.tabTextActive]}>{label}</Text>
+      <View style={[styles.tabBadge, active && styles.tabBadgeActive]}>
+        <Text style={[styles.tabBadgeText, active && styles.tabBadgeTextActive]}>{meta.badge}</Text>
+      </View>
+      <Text style={[styles.tabText, active && styles.tabTextActive]}>{meta.label}</Text>
     </Pressable>
   );
 }
@@ -707,11 +709,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   floatingTabBar: {
-    flexDirection: "row", 
+    flexDirection: "row",
     backgroundColor: "rgba(16,25,47,0.96)",
     borderRadius: 40,
-    paddingVertical: 8,
-    paddingHorizontal: 16,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    width: "100%",
+    maxWidth: 760,
+    gap: 8,
     shadowColor: "#000",
     shadowOpacity: 0.3,
     shadowOffset: { width: 0, height: 10 },
@@ -721,14 +726,28 @@ const styles = StyleSheet.create({
   tabButton: { 
     flex: 1, 
     alignItems: "center", 
-    paddingVertical: 9,
+    justifyContent: "center",
+    minHeight: 68,
+    paddingVertical: 10,
     borderRadius: 24,
   },
   tabButtonActive: { backgroundColor: "#13182C" },
-  tabIcon: { color: "#77819A", fontSize: 10, fontWeight: "800" },
-  tabIconActive: { color: "#FFFFFF" },
-  tabText: { color: "#8E94A3", fontSize: 11, fontWeight: "700", marginTop: 4 },
-  tabTextActive: { color: "#FF5B6A" },
+  tabBadge: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(255,255,255,0.06)",
+    marginBottom: 6,
+  },
+  tabBadgeActive: {
+    backgroundColor: "rgba(255,91,106,0.18)",
+  },
+  tabBadgeText: { color: "#94A0BC", fontSize: 12, fontWeight: "900" },
+  tabBadgeTextActive: { color: "#FF8B96" },
+  tabText: { color: "#C3CCDD", fontSize: 12, fontWeight: "800", letterSpacing: 0.2 },
+  tabTextActive: { color: "#FFFFFF" },
 });
 
 

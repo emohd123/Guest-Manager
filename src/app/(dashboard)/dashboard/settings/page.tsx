@@ -45,14 +45,14 @@ export default function SettingsPage() {
       className="space-y-12 pb-20 px-2"
     >
       <div className="flex flex-col gap-2">
-        <h1 className="text-4xl font-black text-white italic tracking-tighter uppercase">Settings</h1>
-        <p className="text-white/40 font-bold uppercase tracking-[0.2em] text-[10px]">
+        <h1 className="text-4xl font-black text-foreground dark:text-white italic tracking-tighter uppercase">Settings</h1>
+        <p className="text-muted-foreground dark:text-white/40 font-bold uppercase tracking-[0.2em] text-[10px]">
           Manage your workspace, billing, team, and integrations
         </p>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-10">
-        <TabsList className="bg-white/5 border border-white/10 p-1 rounded-2xl h-auto w-fit overflow-x-auto flex-nowrap">
+        <TabsList className="h-auto w-fit flex-nowrap overflow-x-auto rounded-2xl border border-border bg-card/90 p-1 dark:border-white/10 dark:bg-white/5">
           <TabsTrigger value="account" className="rounded-xl px-8 py-3 font-black text-xs uppercase tracking-widest data-[state=active]:bg-primary data-[state=active]:text-white transition-all italic flex gap-2">
             <Building2 className="h-4 w-4" />
             <span className="hidden sm:inline">Account</span>
@@ -149,13 +149,13 @@ function AccountSettings() {
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="rounded-[40px] bg-white/5 border border-white/10 p-10 relative overflow-hidden group"
+        className="theme-panel group relative overflow-hidden p-10"
       >
         <div className="relative z-10 space-y-8">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-2xl font-black text-white italic leading-none mb-2">Organization</h3>
-              <p className="text-white/30 text-[10px] font-bold uppercase tracking-widest">Organization profile</p>
+              <h3 className="text-2xl font-black text-foreground dark:text-white italic leading-none mb-2">Organization</h3>
+              <p className="text-muted-foreground dark:text-white/30 text-[10px] font-bold uppercase tracking-widest">Organization profile</p>
             </div>
             <div className="h-14 w-14 rounded-2xl bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform duration-500">
                <Building2 className="h-7 w-7" />
@@ -164,7 +164,7 @@ function AccountSettings() {
 
           <div className="flex items-center gap-8 py-4">
              <div className="relative group/avatar">
-               <div className="h-24 w-24 rounded-[32px] bg-white/5 border border-white/10 flex items-center justify-center text-white/20 group-hover/avatar:bg-white/8 transition-all">
+               <div className="flex h-24 w-24 items-center justify-center rounded-[32px] border border-border bg-card text-muted-foreground group-hover/avatar:bg-muted transition-all dark:border-white/10 dark:bg-white/5 dark:text-white/20 dark:group-hover/avatar:bg-white/8">
                   <Building2 className="h-10 w-10" />
                </div>
                <button className="absolute -bottom-2 -right-2 h-10 w-10 rounded-xl bg-primary text-white flex items-center justify-center shadow-2xl hover:scale-110 transition-transform">
@@ -172,49 +172,49 @@ function AccountSettings() {
                </button>
              </div>
              <div className="space-y-1">
-               <p className="text-sm font-black text-white italic">Company Logo</p>
-               <p className="text-[10px] font-bold text-white/20 uppercase tracking-tighter">SVG, PNG or WebP - Max 4MB</p>
+               <p className="text-sm font-black text-foreground dark:text-white italic">Company Logo</p>
+               <p className="text-[10px] font-bold text-muted-foreground dark:text-white/20 uppercase tracking-tighter">SVG, PNG or WebP - Max 4MB</p>
              </div>
           </div>
 
           {companyLoading ? (
             <div className="space-y-6">
-              <Skeleton className="h-14 w-full rounded-2xl bg-white/5" />
-              <Skeleton className="h-14 w-full rounded-2xl bg-white/5" />
+              <Skeleton className="h-14 w-full rounded-2xl bg-muted dark:bg-white/5" />
+              <Skeleton className="h-14 w-full rounded-2xl bg-muted dark:bg-white/5" />
             </div>
           ) : (
             <div className="space-y-6">
               <div className="space-y-2">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Organization Name</Label>
+                <Label className="theme-label ml-1">Organization Name</Label>
                 <Input
                   value={companyForm.name}
                   onChange={(e) => setCompanyForm(f => ({ ...f, name: e.target.value }))}
-                  className="h-14 rounded-2xl bg-white/5 border-white/10 text-white font-bold px-6 focus:border-primary transition-all"
+                  className="theme-input h-14 px-6 font-bold transition-all"
                   placeholder="ACME CORP"
                 />
               </div>
               <div className="space-y-2">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Workspace Slug</Label>
+                <Label className="theme-label ml-1">Workspace Slug</Label>
                 <div className="relative">
                   <Input
                     value={companyForm.slug}
                     onChange={(e) => setCompanyForm(f => ({ ...f, slug: e.target.value }))}
-                    className="h-14 rounded-2xl bg-white/5 border-white/10 text-white font-bold px-6 pl-14 focus:border-primary transition-all"
+                    className="theme-input h-14 px-6 pl-14 font-bold transition-all"
                     placeholder="acme-hq"
                   />
-                  <Globe className="absolute left-6 top-1/2 -translate-y-1/2 h-5 w-5 text-white/20" />
+                  <Globe className="absolute left-6 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground dark:text-white/20" />
                 </div>
               </div>
               <div className="space-y-2">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Timezone</Label>
+                <Label className="theme-label ml-1">Timezone</Label>
                 <Select
                   value={companyForm.timezone}
                   onValueChange={(v) => setCompanyForm(f => ({ ...f, timezone: v }))}
                 >
-                  <SelectTrigger className="h-14 rounded-2xl bg-white/5 border-white/10 text-white font-bold px-6 focus:border-primary transition-all">
+                  <SelectTrigger className="theme-input h-14 px-6 font-bold transition-all">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent className="bg-[#1A1C30] border-white/10 text-white">
+                  <SelectContent className="rounded-2xl border border-border bg-popover text-popover-foreground dark:border-white/10 dark:bg-[#1A1C30] dark:text-white">
                     <SelectItem value="America/New_York">Eastern Time (ET)</SelectItem>
                     <SelectItem value="America/Chicago">Central Time (CT)</SelectItem>
                     <SelectItem value="America/Denver">Mountain Time (MT)</SelectItem>

@@ -1,7 +1,10 @@
 import React, { useState } from "react";
 import {
+  Platform,
+  ScrollView,
   StyleSheet,
   Text,
+  useWindowDimensions,
   View,
 } from "react-native";
 import { CameraView, useCameraPermissions } from "expo-camera";
@@ -21,6 +24,7 @@ export function ScanScreen({
 }: {
   onSubmitBarcode: (barcode: string) => Promise<string>;
 }) {
+  const { width } = useWindowDimensions();
   const [permission, requestPermission] = useCameraPermissions();
   const [cameraMode, setCameraMode] = useState(false);
   const [facing, setFacing] = useState<"back" | "front">("back");
@@ -30,6 +34,7 @@ export function ScanScreen({
   const pulse = usePulseAnimation(cameraMode);
 
   const hasPermission = permission?.granted ?? false;
+  const cameraHeight = Math.max(360, Math.min(560, width * (Platform.OS === "web" ? 0.48 : 0.9)));
 
   async function submit(barcode: string) {
     if (!barcode || locked) return;
@@ -55,8 +60,18 @@ export function ScanScreen({
     setCameraMode((value) => !value);
   }
 
+  function toggleFacing() {
+    setFacing((current) => (current === "back" ? "front" : "back"));
+    setLastMessage(`Switched to ${facing === "back" ? "front" : "back"} lens`);
+  }
+
   return (
-    <View style={styles.container}>
+    <ScrollView
+      style={styles.scroll}
+      contentContainerStyle={styles.content}
+      showsVerticalScrollIndicator={false}
+      keyboardShouldPersistTaps="handled"
+    >
       <FadeSlideIn>
         <PremiumCard tone="dark" style={styles.hero}>
           <View style={styles.heroRow}>
@@ -84,7 +99,7 @@ export function ScanScreen({
               <PremiumButton
                 label={`Use ${facing === "back" ? "Front" : "Back"} Lens`}
                 tone="ghost"
-                onPress={() => setFacing((f) => (f === "back" ? "front" : "back"))}
+                onPress={toggleFacing}
               />
             </View>
           ) : null}
@@ -103,8 +118,9 @@ export function ScanScreen({
                 ]}
               />
             </View>
-            <View style={styles.cameraWrap}>
+            <View style={[styles.cameraWrap, { height: cameraHeight }]}>
               <CameraView
+                key={`camera-${facing}`}
                 style={StyleSheet.absoluteFillObject}
                 facing={facing}
                 barcodeScannerSettings={{
@@ -129,11 +145,20 @@ export function ScanScreen({
           {lastMessage ? <PremiumNotice text={lastMessage} /> : null}
         </PremiumCard>
       </FadeSlideIn>
-    </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
+  scroll: {
+    flex: 1,
+    backgroundColor: "transparent",
+  },
+  content: {
+    padding: spacing.xl,
+    paddingBottom: spacing.xxl * 2.5,
+    gap: spacing.md,
+  },
   container: {
     flex: 1,
     backgroundColor: "transparent",
@@ -150,9 +175,11 @@ const styles = StyleSheet.create({
   controls: {
     flexDirection: "row",
     gap: spacing.md,
+    flexWrap: "wrap",
   },
   control: {
     flex: 1,
+    minWidth: 220,
   },
   cameraShell: {
     gap: spacing.md,
@@ -175,7 +202,6 @@ const styles = StyleSheet.create({
     backgroundColor: palette.accentLive,
   },
   cameraWrap: {
-    height: 320,
     borderRadius: radii.lg,
     overflow: "hidden",
     backgroundColor: palette.bgElevated,

@@ -184,25 +184,35 @@ export default function DesignSetupPage({
   }
 
   const companySlug = (event as any)?.companySlug;
+  const canOpenPublicPreview =
+    !!companySlug &&
+    event?.status === "published" &&
+    publicPageEnabled;
 
   return (
     <div className="space-y-12 max-w-7xl mx-auto pb-20 px-2">
       {/* Header */}
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-8">
         <motion.div initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }}>
-          <h1 className="text-4xl font-black text-white italic tracking-tighter uppercase leading-none">Design Studio</h1>
-          <p className="text-white/40 font-bold uppercase tracking-[0.2em] text-[10px] mt-2 italic flex items-center gap-2">
+          <h1 className="text-4xl font-black text-foreground dark:text-white italic tracking-tighter uppercase leading-none">Design Studio</h1>
+          <p className="text-muted-foreground dark:text-white/40 font-bold uppercase tracking-[0.2em] text-[10px] mt-2 italic flex items-center gap-2">
             <Activity className="h-3 w-3 text-primary animate-pulse" />
              Branding, event page, tickets, email, and agenda
           </p>
         </motion.div>
         
-        <div className="flex flex-wrap gap-3">
-          <Button variant="outline" className="h-14 px-8 rounded-2xl bg-white/5 border-white/10 text-white/60 hover:text-white font-black italic uppercase tracking-widest text-[10px] transition-all flex gap-3" asChild>
-            <Link href={`/e/${companySlug}/${event?.slug}`} target="_blank">
-              <ExternalLink className="h-5 w-5" /> Live Preview
-            </Link>
-          </Button>
+          <div className="flex flex-wrap gap-3">
+          {canOpenPublicPreview ? (
+            <Button variant="outline" className="theme-ghost-surface h-14 px-8 rounded-2xl font-black italic uppercase tracking-widest text-[10px] transition-all flex gap-3" asChild>
+              <Link href={`/e/${companySlug}/${event?.slug}`} target="_blank">
+                <ExternalLink className="h-5 w-5" /> Live Preview
+              </Link>
+            </Button>
+          ) : (
+            <Button variant="outline" disabled className="theme-ghost-surface h-14 px-8 rounded-2xl font-black italic uppercase tracking-widest text-[10px] transition-all flex gap-3">
+              <ExternalLink className="h-5 w-5" /> {event?.status !== "published" ? "Publish For Preview" : "Preview Disabled"}
+            </Button>
+          )}
           <Button
             className="h-14 px-10 rounded-2xl bg-primary text-white shadow-2xl shadow-primary/20 font-black italic uppercase tracking-widest text-[11px] flex gap-3 transition-all hover:scale-105 active:scale-95 disabled:opacity-20"
             onClick={handleSave}
@@ -215,7 +225,7 @@ export default function DesignSetupPage({
       </div>
 
       <Tabs defaultValue="branding" className="space-y-12">
-        <TabsList className="h-auto gap-4 bg-white/5 p-2 rounded-[32px] border border-white/10 backdrop-blur-xl">
+        <TabsList className="h-auto gap-4 rounded-[32px] border border-border bg-card/90 p-2 backdrop-blur-xl dark:border-white/10 dark:bg-white/5">
           {[
             { value: "branding", label: "Branding + Event Page", icon: ImagePlus },
             { value: "ticket", label: "Tickets", icon: Ticket },
@@ -225,7 +235,7 @@ export default function DesignSetupPage({
             <TabsTrigger 
               key={tab.value}
               value={tab.value} 
-              className="group rounded-2xl px-8 py-4 data-[state=active]:bg-primary data-[state=active]:text-white text-white/20 font-black italic uppercase tracking-widest text-[10px] transition-all flex gap-3"
+              className="group rounded-2xl px-8 py-4 font-black italic uppercase tracking-widest text-[10px] transition-all flex gap-3"
             >
               <tab.icon className="h-4 w-4 transition-transform group-hover:scale-110" /> 
               {tab.label}
@@ -237,10 +247,10 @@ export default function DesignSetupPage({
           <TabsContent key="branding" value="branding" className="mt-0 outline-none">
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="grid gap-10 xl:grid-cols-[1.1fr_0.9fr]">
               <div className="space-y-10">
-                <div className="rounded-[40px] bg-white/5 border border-white/10 p-10 md:p-12 space-y-10 shadow-2xl">
+                <div className="theme-panel p-10 md:p-12 space-y-10">
                  <div className="space-y-2">
-                    <p className="text-[10px] font-black text-primary uppercase tracking-[0.4em] italic leading-none">Visual Identity</p>
-                    <h2 className="text-2xl font-black text-white italic uppercase tracking-tighter">Event Images</h2>
+                    <p className="theme-eyebrow">Visual Identity</p>
+                    <h2 className="theme-section-title">Event Images</h2>
                  </div>
                  
                  <div className="space-y-12">
@@ -251,9 +261,9 @@ export default function DesignSetupPage({
                       onChange={setCoverImageUrl}
                       onRemove={() => setCoverImageUrl("")}
                       aspectRatio="video"
-                      className="rounded-[32px] border-white/5 bg-white/2"
+                      className="rounded-[32px]"
                     />
-                    <Separator className="bg-white/5" />
+                    <Separator className="bg-border dark:bg-white/5" />
                     <ImageUpload
                       label="EVENT LOGO"
                       description="Logo used across guest-facing pages and email."
@@ -261,26 +271,26 @@ export default function DesignSetupPage({
                       onChange={setLogoUrl}
                       onRemove={() => setLogoUrl("")}
                       aspectRatio="square"
-                      className="max-w-[220px] rounded-[32px] border-white/5 bg-white/2"
+                      className="max-w-[220px] rounded-[32px]"
                     />
                  </div>
                 </div>
 
-                <div className="rounded-[40px] bg-white/5 border border-white/10 p-10 md:p-12 space-y-8 shadow-2xl">
+                <div className="theme-panel p-10 md:p-12 space-y-8">
                   <div className="space-y-2">
-                    <p className="text-[10px] font-black text-primary uppercase tracking-[0.4em] italic leading-none">Public Event Page</p>
-                    <h2 className="text-2xl font-black text-white italic uppercase tracking-tighter">Landing Page Content</h2>
+                    <p className="theme-eyebrow">Public Event Page</p>
+                    <h2 className="theme-section-title">Landing Page Content</h2>
                   </div>
 
                   <div className="grid gap-6 md:grid-cols-2">
                     <div className="space-y-3">
-                      <Label className="text-[9px] font-black uppercase tracking-[0.3em] text-white/40 italic">PUBLIC PAGE</Label>
+                      <Label className="text-[9px] font-black uppercase tracking-[0.3em] text-muted-foreground dark:text-white/40 italic">PUBLIC PAGE</Label>
                       <Button
                         type="button"
                         variant="outline"
                         className={cn(
-                          "h-14 w-full rounded-2xl border-white/10 font-black uppercase tracking-widest text-[10px]",
-                          publicPageEnabled ? "bg-primary/20 text-white" : "bg-white/5 text-white/60"
+                          "h-14 w-full rounded-2xl border-border dark:border-white/10 font-black uppercase tracking-widest text-[10px]",
+                          publicPageEnabled ? "bg-primary/20 text-foreground dark:text-white" : "bg-card text-muted-foreground dark:bg-white/5 dark:text-white/60"
                         )}
                         onClick={() => setPublicPageEnabled((value) => !value)}
                       >
@@ -290,13 +300,13 @@ export default function DesignSetupPage({
                     </div>
 
                     <div className="space-y-3">
-                      <Label className="text-[9px] font-black uppercase tracking-[0.3em] text-white/40 italic">EVENT ACCESS</Label>
+                      <Label className="text-[9px] font-black uppercase tracking-[0.3em] text-muted-foreground dark:text-white/40 italic">EVENT ACCESS</Label>
                       <Button
                         type="button"
                         variant="outline"
                         className={cn(
-                          "h-14 w-full rounded-2xl border-white/10 font-black uppercase tracking-widest text-[10px]",
-                          isPaidEvent ? "bg-primary/20 text-white" : "bg-white/5 text-white/60"
+                          "h-14 w-full rounded-2xl border-border dark:border-white/10 font-black uppercase tracking-widest text-[10px]",
+                          isPaidEvent ? "bg-primary/20 text-foreground dark:text-white" : "bg-card text-muted-foreground dark:bg-white/5 dark:text-white/60"
                         )}
                         onClick={() => setIsPaidEvent((value) => !value)}
                       >
@@ -308,39 +318,39 @@ export default function DesignSetupPage({
 
                   <div className="grid gap-6 md:grid-cols-2">
                     <div className="space-y-3">
-                      <Label className="text-[9px] font-black uppercase tracking-[0.3em] text-white/40 italic">HERO LABEL</Label>
-                      <Input value={heroLabel} onChange={(e) => setHeroLabel(e.target.value)} className="rounded-2xl bg-white/5 border-white/10 text-white" placeholder="Event Page" />
+                      <Label className="text-[9px] font-black uppercase tracking-[0.3em] text-muted-foreground dark:text-white/40 italic">HERO LABEL</Label>
+                      <Input value={heroLabel} onChange={(e) => setHeroLabel(e.target.value)} className="theme-input" placeholder="Event Page" />
                     </div>
                     <div className="space-y-3">
-                      <Label className="text-[9px] font-black uppercase tracking-[0.3em] text-white/40 italic">CTA LABEL</Label>
-                      <Input value={pageCtaLabel} onChange={(e) => setPageCtaLabel(e.target.value)} className="rounded-2xl bg-white/5 border-white/10 text-white" placeholder={isPaidEvent ? "Proceed to Checkout" : "Reserve Free Spot"} />
+                      <Label className="text-[9px] font-black uppercase tracking-[0.3em] text-muted-foreground dark:text-white/40 italic">CTA LABEL</Label>
+                      <Input value={pageCtaLabel} onChange={(e) => setPageCtaLabel(e.target.value)} className="theme-input" placeholder={isPaidEvent ? "Proceed to Checkout" : "Reserve Free Spot"} />
                     </div>
                   </div>
 
                   <div className="space-y-3">
-                    <Label className="text-[9px] font-black uppercase tracking-[0.3em] text-white/40 italic">PAGE HEADLINE</Label>
-                    <Input value={pageHeadline} onChange={(e) => setPageHeadline(e.target.value)} className="rounded-2xl bg-white/5 border-white/10 text-white" placeholder={event?.title || "Event headline"} />
+                    <Label className="text-[9px] font-black uppercase tracking-[0.3em] text-muted-foreground dark:text-white/40 italic">PAGE HEADLINE</Label>
+                    <Input value={pageHeadline} onChange={(e) => setPageHeadline(e.target.value)} className="theme-input" placeholder={event?.title || "Event headline"} />
                   </div>
 
                   <div className="space-y-3">
-                    <Label className="text-[9px] font-black uppercase tracking-[0.3em] text-white/40 italic">SUBHEADLINE</Label>
-                    <Textarea value={pageSubheadline} onChange={(e) => setPageSubheadline(e.target.value)} className="rounded-[24px] bg-white/5 border-white/10 text-white min-h-[120px]" placeholder="Short intro that explains what the event is about." />
+                    <Label className="text-[9px] font-black uppercase tracking-[0.3em] text-muted-foreground dark:text-white/40 italic">SUBHEADLINE</Label>
+                    <Textarea value={pageSubheadline} onChange={(e) => setPageSubheadline(e.target.value)} className="theme-textarea min-h-[120px]" placeholder="Short intro that explains what the event is about." />
                   </div>
 
                   <div className="grid gap-6 md:grid-cols-2">
                     <div className="space-y-3">
-                      <Label className="text-[9px] font-black uppercase tracking-[0.3em] text-white/40 italic">VENUE NAME</Label>
-                      <Input value={venueName} onChange={(e) => setVenueName(e.target.value)} className="rounded-2xl bg-white/5 border-white/10 text-white" placeholder="Bahrain World Trade Center" />
+                      <Label className="text-[9px] font-black uppercase tracking-[0.3em] text-muted-foreground dark:text-white/40 italic">VENUE NAME</Label>
+                      <Input value={venueName} onChange={(e) => setVenueName(e.target.value)} className="theme-input" placeholder="Bahrain World Trade Center" />
                     </div>
                     <div className="space-y-3">
-                      <Label className="text-[9px] font-black uppercase tracking-[0.3em] text-white/40 italic">LOCATION TEXT</Label>
-                      <Input value={locationText} onChange={(e) => setLocationText(e.target.value)} className="rounded-2xl bg-white/5 border-white/10 text-white" placeholder="Manama, Bahrain" />
+                      <Label className="text-[9px] font-black uppercase tracking-[0.3em] text-muted-foreground dark:text-white/40 italic">LOCATION TEXT</Label>
+                      <Input value={locationText} onChange={(e) => setLocationText(e.target.value)} className="theme-input" placeholder="Manama, Bahrain" />
                     </div>
                   </div>
 
                   <div className="space-y-3">
-                    <Label className="text-[9px] font-black uppercase tracking-[0.3em] text-white/40 italic">HIGHLIGHTS</Label>
-                    <Textarea value={highlightsCsv} onChange={(e) => setHighlightsCsv(e.target.value)} className="rounded-[24px] bg-white/5 border-white/10 text-white min-h-[160px]" placeholder={"One highlight per line\nKeynote speakers\nPremium networking\nLive sessions"} />
+                    <Label className="text-[9px] font-black uppercase tracking-[0.3em] text-muted-foreground dark:text-white/40 italic">HIGHLIGHTS</Label>
+                    <Textarea value={highlightsCsv} onChange={(e) => setHighlightsCsv(e.target.value)} className="theme-textarea min-h-[160px]" placeholder={"One highlight per line\nKeynote speakers\nPremium networking\nLive sessions"} />
                   </div>
 
                   <div className="grid gap-4 md:grid-cols-3">
@@ -354,8 +364,8 @@ export default function DesignSetupPage({
                         type="button"
                         variant="outline"
                         className={cn(
-                          "h-14 rounded-2xl border-white/10 font-black uppercase tracking-widest text-[10px]",
-                          item.value ? "bg-primary/20 text-white" : "bg-white/5 text-white/60"
+                          "h-14 rounded-2xl border-border dark:border-white/10 font-black uppercase tracking-widest text-[10px]",
+                          item.value ? "bg-primary/20 text-foreground dark:text-white" : "bg-card text-muted-foreground dark:bg-white/5 dark:text-white/60"
                         )}
                         onClick={() => item.setValue((current: boolean) => !current)}
                       >
@@ -366,56 +376,61 @@ export default function DesignSetupPage({
                 </div>
               </div>
 
-              <div className="rounded-[40px] bg-white/5 border border-white/10 p-10 md:p-12 space-y-10 shadow-2xl">
+              <div className="theme-panel p-10 md:p-12 space-y-10">
                  <div className="space-y-2">
-                    <p className="text-[10px] font-black text-primary uppercase tracking-[0.4em] italic leading-none">Theme Colors</p>
-                    <h2 className="text-2xl font-black text-white italic uppercase tracking-tighter">Appearance</h2>
+                    <p className="theme-eyebrow">Theme Colors</p>
+                    <h2 className="theme-section-title">Appearance</h2>
                  </div>
 
                  <div className="space-y-10">
                     <div className="grid gap-8 sm:grid-cols-2">
                       <div className="space-y-4">
-                        <Label className="text-[9px] font-black uppercase tracking-[0.3em] text-white/40 italic">PRIMARY COLOR</Label>
-                        <div className="flex items-center gap-4 bg-white/3 p-3 rounded-2xl border border-white/5">
-                          <div className="h-12 w-12 rounded-xl border border-white/10 shadow-2xl" style={{ backgroundColor: primaryColor }} />
-                          <Input value={primaryColor} onChange={(e) => setPrimaryColor(e.target.value)} className="border-none bg-transparent font-black text-[11px] uppercase tracking-widest text-white italic focus-visible:ring-0 h-10" />
+                        <Label className="text-[9px] font-black uppercase tracking-[0.3em] text-muted-foreground dark:text-white/40 italic">PRIMARY COLOR</Label>
+                        <div className="flex items-center gap-4 rounded-2xl border border-border bg-card/70 p-3 dark:border-white/5 dark:bg-white/3">
+                          <div className="h-12 w-12 rounded-xl border border-border shadow-2xl dark:border-white/10" style={{ backgroundColor: primaryColor }} />
+                          <Input value={primaryColor} onChange={(e) => setPrimaryColor(e.target.value)} className="h-10 border-none bg-transparent font-black text-[11px] uppercase tracking-widest text-foreground dark:text-white italic focus-visible:ring-0" />
                         </div>
                       </div>
                       <div className="space-y-4">
-                        <Label className="text-[9px] font-black uppercase tracking-[0.3em] text-white/40 italic">BACKGROUND COLOR</Label>
-                        <div className="flex items-center gap-4 bg-white/3 p-3 rounded-2xl border border-white/5">
-                          <div className="h-12 w-12 rounded-xl border border-white/10 shadow-2xl" style={{ backgroundColor: backgroundColor }} />
-                          <Input value={backgroundColor} onChange={(e) => setBackgroundColor(e.target.value)} className="border-none bg-transparent font-black text-[11px] uppercase tracking-widest text-white italic focus-visible:ring-0 h-10" />
+                        <Label className="text-[9px] font-black uppercase tracking-[0.3em] text-muted-foreground dark:text-white/40 italic">BACKGROUND COLOR</Label>
+                        <div className="flex items-center gap-4 rounded-2xl border border-border bg-card/70 p-3 dark:border-white/5 dark:bg-white/3">
+                          <div className="h-12 w-12 rounded-xl border border-border shadow-2xl dark:border-white/10" style={{ backgroundColor: backgroundColor }} />
+                          <Input value={backgroundColor} onChange={(e) => setBackgroundColor(e.target.value)} className="h-10 border-none bg-transparent font-black text-[11px] uppercase tracking-widest text-foreground dark:text-white italic focus-visible:ring-0" />
                         </div>
                       </div>
                     </div>
                     
-                    <Separator className="bg-white/5" />
+                    <Separator className="bg-border dark:bg-white/5" />
                     
                     <div className="space-y-4">
-                      <Label className="text-[9px] font-black uppercase tracking-[0.3em] text-white/40 italic">CUSTOM CSS</Label>
+                      <Label className="text-[9px] font-black uppercase tracking-[0.3em] text-muted-foreground dark:text-white/40 italic">CUSTOM CSS</Label>
                       <Textarea
                         placeholder="/* Optional advanced styling */"
                         value={customCss}
                         onChange={(e) => setCustomCss(e.target.value)}
-                        className="font-mono text-[10px] min-h-[220px] rounded-[32px] bg-white/3 border-white/5 p-8 focus:ring-primary text-white/60 selection:bg-primary/20 resize-none"
+                        className="min-h-[220px] resize-none rounded-[32px] border-border bg-card/70 p-8 font-mono text-[10px] text-foreground selection:bg-primary/20 focus:ring-primary dark:border-white/5 dark:bg-white/3 dark:text-white/60"
                       />
                     </div>
                     
-                    <Separator className="bg-white/5" />
+                    <Separator className="bg-border dark:bg-white/5" />
 
-                    <div className="space-y-5 text-sm text-white/70">
-                      <div className="rounded-[28px] border border-white/10 bg-white/5 p-6">
-                        <p className="font-black uppercase tracking-widest text-[10px] text-white/40 mb-3">Visibility</p>
+                    <div className="space-y-5 text-sm text-foreground dark:text-white/70">
+                      <div className="rounded-[28px] border border-border bg-card/70 p-6 dark:border-white/10 dark:bg-white/5">
+                        <p className="mb-3 font-black uppercase tracking-widest text-[10px] text-muted-foreground dark:text-white/40">Visibility</p>
                         <p>{publicPageEnabled ? "This event page can be visited publicly when the event is published." : "The public event page is hidden from visitors."}</p>
                       </div>
-                      <div className="rounded-[28px] border border-white/10 bg-white/5 p-6">
-                        <p className="font-black uppercase tracking-widest text-[10px] text-white/40 mb-3">Checkout Mode</p>
+                      <div className="rounded-[28px] border border-border bg-card/70 p-6 dark:border-white/10 dark:bg-white/5">
+                        <p className="mb-3 font-black uppercase tracking-widest text-[10px] text-muted-foreground dark:text-white/40">Checkout Mode</p>
                         <p>{isPaidEvent ? "Visitors will see paid ticket language and checkout messaging." : "Visitors will see free registration language and a reserve-spot CTA."}</p>
                       </div>
-                      <div className="rounded-[28px] border border-white/10 bg-white/5 p-6">
-                        <p className="font-black uppercase tracking-widest text-[10px] text-white/40 mb-3">Public URL</p>
-                        <p className="break-all text-white">{companySlug ? `/e/${companySlug}/${event?.slug}` : "Save to generate preview"}</p>
+                      <div className="rounded-[28px] border border-border bg-card/70 p-6 dark:border-white/10 dark:bg-white/5">
+                        <p className="mb-3 font-black uppercase tracking-widest text-[10px] text-muted-foreground dark:text-white/40">Public URL</p>
+                        <p className="break-all text-foreground dark:text-white">{companySlug ? `/e/${companySlug}/${event?.slug}` : "Save to generate preview"}</p>
+                        {!canOpenPublicPreview ? (
+                          <p className="mt-3 text-xs font-bold uppercase tracking-widest text-muted-foreground dark:text-white/50">
+                            {event?.status !== "published" ? "Publish the event to enable the public preview." : "Turn the public page on to enable preview."}
+                          </p>
+                        ) : null}
                       </div>
                     </div>
                  </div>
@@ -424,10 +439,10 @@ export default function DesignSetupPage({
           </TabsContent>
 
           <TabsContent key="ticket" value="ticket" className="mt-0 outline-none">
-            <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="rounded-[40px] bg-white/5 border border-white/10 p-10 md:p-12 shadow-2xl">
+            <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="theme-panel p-10 md:p-12">
               <div className="mb-12">
-                <p className="text-[10px] font-black text-primary uppercase tracking-[0.4em] italic mb-2 leading-none">Ticket Layout</p>
-                <h2 className="text-3xl font-black text-white italic uppercase tracking-tighter">PDF Ticket Design</h2>
+                <p className="theme-eyebrow mb-2">Ticket Layout</p>
+                <h2 className="text-3xl font-black text-foreground dark:text-white italic uppercase tracking-tighter">PDF Ticket Design</h2>
               </div>
               <TicketDesignEditor
                 design={ticketDesign}
@@ -442,10 +457,10 @@ export default function DesignSetupPage({
           </TabsContent>
 
           <TabsContent key="email" value="email" className="mt-0 outline-none">
-            <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="rounded-[40px] bg-white/5 border border-white/10 p-10 md:p-12 shadow-2xl">
+            <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="theme-panel p-10 md:p-12">
                <div className="mb-12">
-                  <p className="text-[10px] font-black text-primary uppercase tracking-[0.4em] italic mb-2 leading-none">Email Templates</p>
-                  <h2 className="text-3xl font-black text-white italic uppercase tracking-tighter">Guest Emails</h2>
+                  <p className="theme-eyebrow mb-2">Email Templates</p>
+                  <h2 className="text-3xl font-black text-foreground dark:text-white italic uppercase tracking-tighter">Guest Emails</h2>
                </div>
               <EmailDesignEditor
                 designs={emailDesigns}
@@ -459,10 +474,10 @@ export default function DesignSetupPage({
           </TabsContent>
 
           <TabsContent key="agenda" value="agenda" className="mt-0 outline-none">
-            <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="rounded-[40px] bg-white/5 border border-white/10 p-10 md:p-12 shadow-2xl">
+            <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="theme-panel p-10 md:p-12">
                <div className="mb-12">
-                  <p className="text-[10px] font-black text-primary uppercase tracking-[0.4em] italic mb-2 leading-none">Agenda</p>
-                  <h2 className="text-3xl font-black text-white italic uppercase tracking-tighter">Event Agenda</h2>
+                  <p className="theme-eyebrow mb-2">Agenda</p>
+                  <h2 className="text-3xl font-black text-foreground dark:text-white italic uppercase tracking-tighter">Event Agenda</h2>
                </div>
               <AgendaEditor
                 settings={agendaSettings}

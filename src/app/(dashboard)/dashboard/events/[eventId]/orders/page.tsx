@@ -89,8 +89,8 @@ export default function OrdersPage({ params }: { params: Promise<{ eventId: stri
       <DataTable
         columns={columns}
         data={orders}
-        searchKey="buyerName"
-        searchPlaceholder="Search buyer name or order #..."
+        searchKey="name"
+        searchPlaceholder="Search buyer name..."
         isLoading={isLoading}
       />
     </div>

@@ -1,5 +1,5 @@
 import React from "react";
-import { StyleSheet, View } from "react-native";
+import { ScrollView, StyleSheet, View } from "react-native";
 import { FadeSlideIn } from "../ui/motion";
 import {
   PremiumButton,
@@ -24,7 +24,12 @@ export function ActivityScreen({
   syncing: boolean;
 }) {
   return (
-    <View style={styles.container}>
+    <ScrollView
+      style={styles.scroll}
+      contentContainerStyle={styles.content}
+      showsVerticalScrollIndicator={false}
+      keyboardShouldPersistTaps="handled"
+    >
       <FadeSlideIn>
         <PremiumCard tone="dark" style={styles.hero}>
           <SectionHeading
@@ -54,15 +59,19 @@ export function ActivityScreen({
           <PremiumButton label="Send Heartbeat" tone="secondary" onPress={onHeartbeat} />
         </View>
       </FadeSlideIn>
-    </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  scroll: {
     flex: 1,
     backgroundColor: "transparent",
+  },
+  content: {
+    backgroundColor: "transparent",
     padding: spacing.xl,
+    paddingBottom: spacing.xxl * 2.5,
     gap: spacing.md,
   },
   hero: {
