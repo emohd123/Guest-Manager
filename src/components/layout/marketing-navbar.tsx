@@ -38,7 +38,8 @@ export function MarketingNavbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const pathname = usePathname();
-  const { setTheme, theme } = useTheme();
+  const { setTheme, resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === "dark";
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 10);
@@ -124,7 +125,7 @@ export function MarketingNavbar() {
               variant="ghost"
               size="icon"
               className="hover:bg-accent hover:text-accent-foreground transition-colors mr-2"
-              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+              onClick={() => setTheme(isDark ? "light" : "dark")}
             >
               <Sun className="h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
               <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
@@ -197,7 +198,7 @@ export function MarketingNavbar() {
                 variant="outline"
                 size="icon"
                 className="shrink-0"
-                onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+                onClick={() => setTheme(isDark ? "light" : "dark")}
               >
                 <Sun className="h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
                 <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />

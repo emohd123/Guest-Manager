@@ -1,5 +1,15 @@
-import React, { useState, useEffect } from "react";
-import { Text, TextInput, Pressable, StyleSheet, ActivityIndicator, Animated } from "react-native";
+import React, { useState } from "react";
+import { ScrollView, StyleSheet, View } from "react-native";
+import {
+  PremiumButton,
+  PremiumCard,
+  PremiumField,
+  PremiumNotice,
+  PremiumPill,
+  SectionHeading,
+} from "../ui/primitives";
+import { FadeSlideIn } from "../ui/motion";
+import { spacing } from "../ui/theme";
 
 export function WalkupScreen({
   onSubmit,
@@ -35,52 +45,71 @@ export function WalkupScreen({
         phone: phone.trim() || undefined,
         checkInNow,
       });
-      setMessage("Walkup saved");
+      setMessage("Walk-up guest saved");
       setFirstName("");
       setLastName("");
       setEmail("");
       setPhone("");
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Walkup failed");
+      setMessage(error instanceof Error ? error.message : "Walk-up failed");
     } finally {
       setBusy(false);
     }
   }
 
-  const [slideAnim] = useState(() => new Animated.Value(30));
-  const [fadeAnim] = useState(() => new Animated.Value(0));
-
-  useEffect(() => {
-    Animated.parallel([
-      Animated.timing(fadeAnim, { toValue: 1, duration: 400, useNativeDriver: true }),
-      Animated.timing(slideAnim, { toValue: 0, duration: 400, useNativeDriver: true })
-    ]).start();
-  }, [fadeAnim, slideAnim]);
-
   return (
-    <Animated.ScrollView 
-      style={[styles.container, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}
+    <ScrollView
+      style={styles.container}
       contentContainerStyle={styles.content}
       keyboardShouldPersistTaps="handled"
     >
-      <Text style={styles.heading}>Add Walkup</Text>
-      <TextInput style={styles.input} value={firstName} onChangeText={setFirstName} placeholder="First name" placeholderTextColor="#A0A5B1" />
-      <TextInput style={styles.input} value={lastName} onChangeText={setLastName} placeholder="Last name" placeholderTextColor="#A0A5B1" />
-      <TextInput style={styles.input} value={email} onChangeText={setEmail} placeholder="Email" keyboardType="email-address" placeholderTextColor="#A0A5B1" />
-      <TextInput style={styles.input} value={phone} onChangeText={setPhone} placeholder="Phone" keyboardType="phone-pad" placeholderTextColor="#A0A5B1" />
+      <FadeSlideIn>
+        <PremiumCard>
+          <SectionHeading
+            eyebrow="Walk-Up Entry"
+            title="Add guest at the door"
+            body="Capture a walk-up cleanly, then decide whether to check them in immediately."
+            right={<PremiumPill label={checkInNow ? "Check In Now" : "Save Only"} />}
+          />
+        </PremiumCard>
+      </FadeSlideIn>
 
-      <Pressable style={styles.toggle} onPress={() => setCheckInNow((value) => !value)}>
-        <Text style={styles.toggleText}>
-          {checkInNow ? "Immediate check-in: ON" : "Immediate check-in: OFF"}
-        </Text>
-      </Pressable>
-
-      <Pressable style={styles.button} onPress={handleSubmit} disabled={busy}>
-        {busy ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Save Walkup</Text>}
-      </Pressable>
-
-      {message ? <Text style={styles.message}>{message}</Text> : null}
-    </Animated.ScrollView>
+      <FadeSlideIn delay={80}>
+        <PremiumCard style={styles.formCard}>
+          <PremiumField label="First Name" value={firstName} onChangeText={setFirstName} placeholder="First name" />
+          <PremiumField label="Last Name" value={lastName} onChangeText={setLastName} placeholder="Last name" />
+          <PremiumField
+            label="Email"
+            value={email}
+            onChangeText={setEmail}
+            placeholder="Email"
+            keyboardType="email-address"
+            autoCapitalize="none"
+          />
+          <PremiumField
+            label="Phone"
+            value={phone}
+            onChangeText={setPhone}
+            placeholder="Phone"
+            keyboardType="phone-pad"
+          />
+          <View style={styles.toggle}>
+            <PremiumButton
+              label={checkInNow ? "Immediate Check-In On" : "Immediate Check-In Off"}
+              tone="secondary"
+              onPress={() => setCheckInNow((value) => !value)}
+            />
+          </View>
+          {message ? <PremiumNotice text={message} /> : null}
+          <PremiumButton
+            label="Save Walk-Up"
+            onPress={handleSubmit}
+            loading={busy}
+            disabled={busy}
+          />
+        </PremiumCard>
+      </FadeSlideIn>
+    </ScrollView>
   );
 }
 
@@ -90,76 +119,14 @@ const styles = StyleSheet.create({
     backgroundColor: "transparent",
   },
   content: {
-    padding: 24,
-    paddingBottom: 100, // accommodate tab bar
-    gap: 12,
+    padding: spacing.xl,
+    paddingBottom: 120,
+    gap: spacing.md,
   },
-  heading: {
-    fontSize: 24,
-    fontWeight: "900",
-    color: "#1A1C30",
-    marginBottom: 8,
-    letterSpacing: -0.5,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: "#EBEFF5",
-    borderRadius: 20,
-    backgroundColor: "#ffffff",
-    paddingHorizontal: 20,
-    paddingVertical: 18,
-    fontSize: 16,
-    color: "#1A1C30",
-    shadowColor: "#000",
-    shadowOpacity: 0.02,
-    shadowOffset: { width: 0, height: 4 },
-    shadowRadius: 10,
-    elevation: 2,
+  formCard: {
+    gap: spacing.md,
   },
   toggle: {
-    marginTop: 8,
-    borderWidth: 1,
-    borderColor: "#EBEFF5",
-    borderRadius: 20,
-    backgroundColor: "#ffffff",
-    paddingHorizontal: 20,
-    paddingVertical: 18,
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOpacity: 0.02,
-    shadowOffset: { width: 0, height: 4 },
-    shadowRadius: 10,
-    elevation: 2,
-  },
-  toggleText: {
-    color: "#1A1C30",
-    fontWeight: "800",
-    fontSize: 14,
-  },
-  button: {
-    marginTop: 16,
-    backgroundColor: "#FF5B6A", // Coral
-    borderRadius: 24,
-    paddingVertical: 20,
-    alignItems: "center",
-    shadowColor: "#FF5B6A",
-    shadowOpacity: 0.3,
-    shadowOffset: { width: 0, height: 6 },
-    shadowRadius: 12,
-    elevation: 6,
-  },
-  buttonText: {
-    color: "#fff",
-    fontWeight: "800",
-    fontSize: 16,
-    letterSpacing: 0.5,
-  },
-  message: {
-    marginTop: 12,
-    color: "#1A1C30",
-    textAlign: "center",
-    fontWeight: "600",
-    fontSize: 14,
+    marginTop: spacing.xs,
   },
 });
-

@@ -1,9 +1,8 @@
-import Constants from "expo-constants";
 import type { PairingSession } from "../types";
 import { listQueuedMutations, removeQueuedMutation } from "../storage/offlineQueue";
+import { getApiBaseUrl } from "../config";
 
-const extra = (Constants.expoConfig?.extra ?? {}) as Record<string, string | undefined>;
-const baseUrl = extra.apiBaseUrl ?? "http://localhost:3000";
+const baseUrl = getApiBaseUrl();
 
 export async function replayQueue(session: PairingSession) {
   const queue = listQueuedMutations();
@@ -22,4 +21,3 @@ export async function replayQueue(session: PairingSession) {
     }
   }
 }
-

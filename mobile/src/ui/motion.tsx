@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useMemo, useRef } from "react";
 import {
   Animated,
   Easing,
@@ -95,5 +95,45 @@ export function FadeSlideIn({
     >
       {children}
     </Animated.View>
+  );
+}
+
+export function usePulseAnimation(active = true) {
+  const useNativeDriver = Platform.OS !== "web";
+  const value = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (!active) {
+      value.setValue(0);
+      return;
+    }
+
+    const animation = Animated.loop(
+      Animated.sequence([
+        Animated.timing(value, {
+          toValue: 1,
+          duration: 900,
+          easing: Easing.inOut(Easing.quad),
+          useNativeDriver,
+        }),
+        Animated.timing(value, {
+          toValue: 0,
+          duration: 900,
+          easing: Easing.inOut(Easing.quad),
+          useNativeDriver,
+        }),
+      ])
+    );
+
+    animation.start();
+    return () => animation.stop();
+  }, [active, useNativeDriver, value]);
+
+  return useMemo(
+    () => ({
+      opacity: value.interpolate({ inputRange: [0, 1], outputRange: [0.48, 1] }),
+      scale: value.interpolate({ inputRange: [0, 1], outputRange: [0.92, 1.08] }),
+    }),
+    [value]
   );
 }

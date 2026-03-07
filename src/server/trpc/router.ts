@@ -15,6 +15,7 @@ import { listsRouter } from "./routers/lists";
 import { dataImportsRouter } from "./routers/dataImports";
 import { reportsRouter } from "./routers/reports";
 import { sentEmailsRouter } from "./routers/sentEmails";
+import { eventExperienceRouter } from "./routers/eventExperience";
 
 export const appRouter = router({
   events: eventsRouter,
@@ -33,6 +34,7 @@ export const appRouter = router({
   dataImports: dataImportsRouter,
   reports: reportsRouter,
   sentEmails: sentEmailsRouter,
+  eventExperience: eventExperienceRouter,
 });
 
 export type AppRouter = typeof appRouter;

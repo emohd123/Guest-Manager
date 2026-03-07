@@ -1,14 +1,13 @@
 import React, { useState } from "react";
 import {
-  ActivityIndicator,
-  Pressable,
   StyleSheet,
   Text,
-  TextInput,
   View,
 } from "react-native";
 import { AuthScreenLayout } from "../ui/AuthScreenLayout";
 import { FadeSlideIn } from "../ui/motion";
+import { PremiumButton, PremiumField, PremiumNotice } from "../ui/primitives";
+import { palette, spacing } from "../ui/theme";
 
 export function VisitorSignupScreen({
   onSubmit,
@@ -87,79 +86,56 @@ export function VisitorSignupScreen({
       <FadeSlideIn delay={90}>
         <View style={styles.form}>
           <View style={styles.row}>
-            <View style={[styles.field, styles.flexOne]}>
-              <Text style={styles.label}>First Name *</Text>
-              <TextInput
-                style={styles.input}
-                value={firstName}
-                onChangeText={setFirstName}
-                placeholder="Ahmed"
-                placeholderTextColor="#94a3b8"
-              />
-            </View>
-            <View style={[styles.field, styles.flexOne]}>
-              <Text style={styles.label}>Last Name</Text>
-              <TextInput
-                style={styles.input}
-                value={lastName}
-                onChangeText={setLastName}
-                placeholder="Al-Rashad"
-                placeholderTextColor="#94a3b8"
-              />
-            </View>
-          </View>
-
-          <View style={styles.field}>
-            <Text style={styles.label}>Email *</Text>
-            <TextInput
-              style={styles.input}
-              value={email}
-              onChangeText={setEmail}
-              placeholder="you@example.com"
-              autoCapitalize="none"
-              keyboardType="email-address"
-              autoCorrect={false}
-              placeholderTextColor="#94a3b8"
+            <PremiumField
+              containerStyle={styles.flexOne}
+              label="First Name *"
+              value={firstName}
+              onChangeText={setFirstName}
+              placeholder="Ahmed"
+            />
+            <PremiumField
+              containerStyle={styles.flexOne}
+              label="Last Name"
+              value={lastName}
+              onChangeText={setLastName}
+              placeholder="Al-Rashad"
             />
           </View>
 
-          <View style={styles.field}>
-            <Text style={styles.label}>Password *</Text>
-            <TextInput
-              style={styles.input}
-              value={password}
-              onChangeText={setPassword}
-              placeholder="Min. 6 characters"
-              secureTextEntry
-              placeholderTextColor="#94a3b8"
-            />
-          </View>
+          <PremiumField
+            label="Email *"
+            value={email}
+            onChangeText={setEmail}
+            placeholder="you@example.com"
+            autoCapitalize="none"
+            keyboardType="email-address"
+            autoCorrect={false}
+          />
 
-          <View style={styles.field}>
-            <Text style={styles.label}>Confirm Password *</Text>
-            <TextInput
-              style={styles.input}
-              value={confirm}
-              onChangeText={setConfirm}
-              placeholder="Re-enter password"
-              secureTextEntry
-              placeholderTextColor="#94a3b8"
-            />
-          </View>
+          <PremiumField
+            label="Password *"
+            value={password}
+            onChangeText={setPassword}
+            placeholder="Min. 6 characters"
+            secureTextEntry
+          />
 
-          {error ? <Text style={styles.error}>{error}</Text> : null}
+          <PremiumField
+            label="Confirm Password *"
+            value={confirm}
+            onChangeText={setConfirm}
+            placeholder="Re-enter password"
+            secureTextEntry
+          />
 
-          <Pressable
-            style={[styles.submitBtn, loading && styles.submitDisabled]}
+          {error ? <PremiumNotice tone="danger" text={error} /> : null}
+
+          <PremiumButton
+            label="Create Account"
             onPress={handleSubmit}
+            loading={loading}
             disabled={loading}
-          >
-            {loading ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <Text style={styles.submitText}>Create Account</Text>
-            )}
-          </Pressable>
+          />
         </View>
       </FadeSlideIn>
     </AuthScreenLayout>
@@ -171,77 +147,20 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   form: {
-    gap: 16,
+    gap: spacing.md,
   },
   row: {
     flexDirection: "row",
-    gap: 12,
-  },
-  field: {
-    gap: 8,
-  },
-  label: {
-    fontSize: 12,
-    fontWeight: "800",
-    color: "#8C94A8",
-    textTransform: "uppercase",
-    letterSpacing: 1.2,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: "rgba(26,28,48,0.06)",
-    borderRadius: 22,
-    paddingHorizontal: 20,
-    paddingVertical: 18,
-    backgroundColor: "#FFFFFF",
-    fontSize: 16,
-    color: "#1A1C30",
-    shadowColor: "#14192C",
-    shadowOpacity: 0.05,
-    shadowOffset: { width: 0, height: 10 },
-    shadowRadius: 20,
-    elevation: 4,
-  },
-  error: {
-    color: "#FF5B6A",
-    fontSize: 13,
-    backgroundColor: "rgba(255,91,106,0.1)",
-    padding: 14,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: "rgba(255,91,106,0.3)",
-    fontWeight: "600",
-  },
-  submitBtn: {
-    marginTop: 12,
-    backgroundColor: "#FF5B6A",
-    borderRadius: 24,
-    paddingVertical: 20,
-    alignItems: "center",
-    shadowColor: "#FF5B6A",
-    shadowOpacity: 0.3,
-    shadowOffset: { width: 0, height: 10 },
-    shadowRadius: 18,
-    elevation: 7,
-  },
-  submitDisabled: {
-    opacity: 0.6,
-    shadowOpacity: 0,
-  },
-  submitText: {
-    color: "#fff",
-    fontWeight: "800",
-    fontSize: 16,
-    letterSpacing: 0.5,
+    gap: spacing.md,
   },
   footerText: {
-    color: "#7D859B",
+    color: palette.textMuted,
     textAlign: "center",
     fontSize: 14,
     fontWeight: "500",
   },
   footerLink: {
-    color: "#1A1C30",
+    color: palette.text,
     fontWeight: "800",
   },
 });

@@ -7,6 +7,7 @@ import {
   Calendar, 
   MapPin, 
   Clock, 
+  Smartphone,
   Share2, 
   ShieldCheck, 
   ArrowLeft,
@@ -38,6 +39,10 @@ export default function PublicEventPage({
   });
 
   const { data: ticketTypes, isLoading: ticketsLoading } = trpc.ticketTypes.listPublic.useQuery(
+    { eventId: event?.id as string },
+    { enabled: !!event?.id }
+  );
+  const { data: experience } = trpc.eventExperience.publicSummary.useQuery(
     { eventId: event?.id as string },
     { enabled: !!event?.id }
   );
@@ -254,6 +259,114 @@ export default function PublicEventPage({
                     Copy link <ChevronRight className="h-3 w-3" />
                   </Button>
                 </div>
+              </div>
+
+              {experience?.settings.features?.liveStreamEnabled !== false && experience?.settings.liveStream?.url ? (
+                <div className="rounded-[2rem] border border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 p-8 space-y-4">
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+                      <Clock className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <h3 className="text-2xl font-black tracking-tight">Live Stream</h3>
+                      <p className="text-sm text-muted-foreground">Join the live experience directly from the app or website.</p>
+                    </div>
+                  </div>
+                  <Button asChild className="rounded-2xl h-12 px-6 font-bold">
+                    <a href={experience.settings.liveStream.url} target="_blank" rel="noreferrer">
+                      {experience.settings.liveStream.label || "Watch Live"}
+                    </a>
+                  </Button>
+                </div>
+              ) : null}
+
+              {experience?.sessions?.length ? (
+                <div className="space-y-6 pt-10">
+                  <div className="flex items-center gap-3">
+                    <div className="h-1px bg-zinc-100 dark:bg-zinc-800 grow" />
+                    <h2 className="text-xs font-black uppercase tracking-[0.3em] text-zinc-400 whitespace-nowrap">Agenda</h2>
+                    <div className="h-1px bg-zinc-100 dark:bg-zinc-800 grow" />
+                  </div>
+                  <div className="grid gap-4">
+                    {experience.sessions.slice(0, 6).map((session) => (
+                      <div key={session.id} className="rounded-3xl border border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 p-6">
+                        <div className="flex flex-wrap items-center justify-between gap-3">
+                          <div>
+                            <h3 className="text-lg font-black tracking-tight">{session.title}</h3>
+                            <p className="text-sm text-muted-foreground">
+                              {session.startsAt ? format(new Date(session.startsAt), "MMM d, h:mm a") : "Time TBD"}
+                              {session.location ? ` • ${session.location}` : ""}
+                            </p>
+                          </div>
+                          {session.liveNow ? (
+                            <span className="rounded-full bg-red-500/10 px-3 py-1 text-xs font-black uppercase tracking-widest text-red-500">
+                              Live
+                            </span>
+                          ) : null}
+                        </div>
+                        {session.description ? <p className="mt-3 text-sm text-muted-foreground">{session.description}</p> : null}
+                        {session.speaker ? <p className="mt-3 text-xs font-bold uppercase tracking-widest text-zinc-400">{session.speaker}</p> : null}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+
+              {experience?.settings.features?.sponsorHighlightsEnabled !== false &&
+              experience?.settings.sponsors?.featuredProfiles?.length ? (
+                <div className="space-y-6 pt-10">
+                  <div className="flex items-center gap-3">
+                    <div className="h-1px bg-zinc-100 dark:bg-zinc-800 grow" />
+                    <h2 className="text-xs font-black uppercase tracking-[0.3em] text-zinc-400 whitespace-nowrap">
+                      Featured Sponsors
+                    </h2>
+                    <div className="h-1px bg-zinc-100 dark:bg-zinc-800 grow" />
+                  </div>
+                  <div className="grid gap-4">
+                    {experience.settings.sponsors.featuredProfiles.slice(0, 4).map((profile) => (
+                      <div key={profile.id} className="rounded-3xl border border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 p-6">
+                        <div className="flex flex-wrap items-center justify-between gap-4">
+                          <div>
+                            <h3 className="text-lg font-black tracking-tight">{profile.name}</h3>
+                            <p className="text-sm text-muted-foreground">
+                              {[profile.role, profile.company, profile.booth].filter(Boolean).join(" • ") || "Featured partner"}
+                            </p>
+                          </div>
+                          {profile.kind ? (
+                            <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-black uppercase tracking-widest text-primary">
+                              {profile.kind}
+                            </span>
+                          ) : null}
+                        </div>
+                        {profile.headline ? <p className="mt-3 text-sm text-muted-foreground">{profile.headline}</p> : null}
+                        {profile.ctaUrl ? (
+                          <Button asChild variant="outline" className="mt-4 rounded-2xl h-11 px-5 font-bold">
+                            <a href={profile.ctaUrl} target="_blank" rel="noreferrer">
+                              {profile.ctaLabel || "Learn More"}
+                            </a>
+                          </Button>
+                        ) : null}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+
+              <div className="rounded-[2rem] border border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 p-8 space-y-4">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+                    <Smartphone className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-2xl font-black tracking-tight">Get the attendee app</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Access live streams, agenda saves, networking, and event updates from your phone.
+                    </p>
+                  </div>
+                </div>
+                <Button asChild className="rounded-2xl h-12 px-6 font-bold">
+                  <a href="/event-check-in-app">Open App Details</a>
+                </Button>
               </div>
             </div>
           </div>

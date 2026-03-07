@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTheme } from "next-themes";
 import { cn } from "@/lib/utils";
 import { DashboardSidebar } from "@/components/layout/dashboard-sidebar";
 import { DashboardTopbar } from "@/components/layout/dashboard-topbar";
@@ -17,16 +18,25 @@ export default function DashboardLayout({
   const [mounted, setMounted] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { resolvedTheme } = useTheme();
   const { data: company } = trpc.settings.getCompany.useQuery(undefined, {
     enabled: mounted,
   });
+  const isDark = resolvedTheme === "dark";
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
   return (
-    <div className="dark flex h-screen relative overflow-hidden bg-modychat text-foreground">
+    <div
+      className={cn(
+        "flex h-screen relative overflow-hidden text-foreground transition-colors duration-300",
+        isDark
+          ? "bg-modychat"
+          : "bg-[radial-gradient(circle_at_top_left,_rgba(255,91,106,0.10),_transparent_22%),linear-gradient(180deg,_#f8fafc_0%,_#eef2f7_100%)]"
+      )}
+    >
       {mounted ? <CommandPalette /> : null}
 
       {/* Desktop sidebar - Absolute to let background show through the glass */}
@@ -72,7 +82,7 @@ export default function DashboardLayout({
               </motion.div>
             </AnimatePresence>
           ) : (
-            <div className="h-full rounded-[32px] border border-white/10 bg-white/5 animate-pulse" />
+            <div className="h-full rounded-[32px] border border-border bg-card/60 animate-pulse" />
           )}
         </main>
       </div>

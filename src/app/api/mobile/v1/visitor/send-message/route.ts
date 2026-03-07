@@ -3,11 +3,8 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { jsonError } from "../../utils";
-import { createClient } from "@supabase/supabase-js";
-import { getDb } from "@/server/db";
-import { events as eventsTable } from "@/server/db/schema";
-import { eq } from "drizzle-orm";
-import { sql } from "drizzle-orm";
+import { createSupabaseAdminClient } from "@/server/supabase/admin";
+import { createEventNotifications } from "@/server/actions/createEventNotifications";
 
 const bodySchema = z.object({
   eventCode: z.string().min(4).max(12),
@@ -20,27 +17,18 @@ function getBearerToken(req: NextRequest) {
   return auth.startsWith("Bearer ") ? auth.slice(7) : null;
 }
 
-/**
- * POST /api/mobile/v1/visitor/send-message
- * Body: { eventCode, subject, body }
- * Visitor sends a message to the event organizer.
- */
 export async function POST(request: NextRequest) {
   try {
     const token = getBearerToken(request);
     if (!token) return jsonError("Missing bearer token", 401, "unauthorized");
+    const parsed = bodySchema.parse(await request.json());
 
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
-
+    const supabase = createSupabaseAdminClient();
     const { data: userData, error: userError } = await supabase.auth.getUser(token);
     if (userError || !userData.user?.email) {
       return jsonError("Invalid or expired token", 401, "unauthorized");
     }
 
-    const parsed = bodySchema.parse(await request.json());
     const email = userData.user.email;
     const meta = userData.user.user_metadata as { name?: string; firstName?: string; lastName?: string } | undefined;
     const guestName =
@@ -48,25 +36,37 @@ export async function POST(request: NextRequest) {
       [meta?.firstName, meta?.lastName].filter(Boolean).join(" ") ??
       email.split("@")[0];
 
-    const db = getDb();
+    const { data: event, error: eventError } = await supabase
+      .from("events")
+      .select("id,title")
+      .eq("visitor_code", parsed.eventCode.trim().toUpperCase())
+      .maybeSingle();
 
-    // Find event by code
-    const eventRows = await db
-      .select({ id: eventsTable.id, title: eventsTable.title })
-      .from(eventsTable)
-      .where(eq(eventsTable.visitorCode, parsed.eventCode.trim().toUpperCase()))
-      .limit(1);
-
-    if (!eventRows.length) {
+    if (eventError) {
+      return jsonError(eventError.message, 500, "event_not_found");
+    }
+    if (!event) {
       return jsonError("Event code not found.", 404, "event_not_found");
     }
 
-    const event = eventRows[0];
+    const { error: insertError } = await supabase.from("visitor_messages").insert({
+      event_id: event.id,
+      guest_email: email,
+      guest_name: guestName,
+      subject: parsed.subject,
+      body: parsed.body,
+    });
 
-    await db.execute(sql`
-      INSERT INTO visitor_messages (event_id, guest_email, guest_name, subject, body)
-      VALUES (${event.id}, ${email}, ${guestName}, ${parsed.subject}, ${parsed.body})
-    `);
+    if (insertError) {
+      return jsonError(insertError.message, 500, "send_failed");
+    }
+
+    await createEventNotifications({
+      eventId: event.id,
+      title: "New attendee message",
+      body: `${guestName} sent a message from the attendee app.`,
+      type: "message_reply",
+    });
 
     return NextResponse.json({
       success: true,

@@ -1,8 +1,18 @@
 "use server";
 
 import { createClient } from "@supabase/supabase-js";
+import { createSupabaseAdminClient } from "@/server/supabase/admin";
 
-export type NotificationType = "event_update" | "agenda_update" | "message_reply";
+export type NotificationType =
+  | "event_update"
+  | "agenda_update"
+  | "message_reply"
+  | "networking_request"
+  | "networking_accept"
+  | "meeting_update"
+  | "session_reminder"
+  | "live_stream"
+  | "chat_message";
 
 interface CreateNotificationsOptions {
   eventId: string;
@@ -33,6 +43,44 @@ export async function createEventNotifications(opts: CreateNotificationsOptions)
 
   try {
     const supabase = getSupabaseRestClient();
+    const adminSupabase = createSupabaseAdminClient();
+    const { data: eventRow } = await adminSupabase
+      .from("events")
+      .select("metadata")
+      .eq("id", eventId)
+      .maybeSingle();
+
+    const pushDevices = Array.isArray((eventRow as any)?.metadata?.eventApp?.pushDevices)
+      ? ((eventRow as any).metadata.eventApp.pushDevices as Array<{ email: string; token: string }>)
+      : [];
+
+    async function sendExpoPush(recipientEmails: string[]) {
+      const tokens = [...new Set(pushDevices.filter((device) => recipientEmails.includes(device.email)).map((device) => device.token))];
+      if (!tokens.length) return;
+
+      try {
+        await fetch("https://exp.host/--/api/v2/push/send", {
+          method: "POST",
+          headers: {
+            "content-type": "application/json",
+            accept: "application/json",
+          },
+          body: JSON.stringify(
+            tokens.map((to) => ({
+              to,
+              title,
+              body,
+              data: {
+                eventId,
+                type,
+              },
+            }))
+          ),
+        });
+      } catch (pushError) {
+        console.error("[createEventNotifications] Expo push failed:", pushError);
+      }
+    }
 
     if (recipientEmail) {
       const { error } = await supabase.from("visitor_notifications").insert({
@@ -44,6 +92,7 @@ export async function createEventNotifications(opts: CreateNotificationsOptions)
       });
 
       if (error) throw error;
+      await sendExpoPush([recipientEmail]);
       return;
     }
 
@@ -84,6 +133,7 @@ export async function createEventNotifications(opts: CreateNotificationsOptions)
 
     const { error } = await supabase.from("visitor_notifications").insert(rows);
     if (error) throw error;
+    await sendExpoPush(recipientEmails);
   } catch (err) {
     console.error("[createEventNotifications] Failed:", err);
   }

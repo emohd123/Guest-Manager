@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useState } from "react";
+import { use, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { trpc } from "@/lib/trpc/client";
 import { Button } from "@/components/ui/button";
@@ -41,6 +41,9 @@ import {
   Archive,
   Copy,
   Globe,
+  Smartphone,
+  Radio,
+  Sparkles,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -58,6 +61,7 @@ export default function EventSettingsPage({
   const { eventId } = use(params);
   const router = useRouter();
   const { data: event, isLoading, refetch } = trpc.events.get.useQuery({ id: eventId });
+  const { data: experience, refetch: refetchExperience } = trpc.eventExperience.get.useQuery({ eventId });
 
   // Form state
   const [title, setTitle] = useState("");
@@ -69,11 +73,32 @@ export default function EventSettingsPage({
   const [timezone, setTimezone] = useState("America/Los_Angeles");
   const [maxCapacity, setMaxCapacity] = useState("");
   const [registrationEnabled, setRegistrationEnabled] = useState(false);
+  const [welcomeMessage, setWelcomeMessage] = useState("");
+  const [homeHeadline, setHomeHeadline] = useState("");
+  const [liveStreamUrl, setLiveStreamUrl] = useState("");
+  const [liveStreamLabel, setLiveStreamLabel] = useState("");
+  const [liveStreamProvider, setLiveStreamProvider] = useState("embed");
+  const [liveStreamIsLive, setLiveStreamIsLive] = useState(false);
+  const [networkingIntro, setNetworkingIntro] = useState("");
+  const [directoryPrivacyDescription, setDirectoryPrivacyDescription] = useState("");
+  const [directoryEmptyStateMessage, setDirectoryEmptyStateMessage] = useState("");
+  const [sponsorsIntro, setSponsorsIntro] = useState("");
+  const [sponsorsCsv, setSponsorsCsv] = useState("");
+  const [announcementsCsv, setAnnouncementsCsv] = useState("");
+  const [interestsCsv, setInterestsCsv] = useState("");
+  const [goalsCsv, setGoalsCsv] = useState("");
+  const [industriesCsv, setIndustriesCsv] = useState("");
+  const [networkingEnabled, setNetworkingEnabled] = useState(true);
+  const [matchmakingEnabled, setMatchmakingEnabled] = useState(true);
+  const [liveStreamEnabled, setLiveStreamEnabled] = useState(true);
+  const [pushNotificationsEnabled, setPushNotificationsEnabled] = useState(true);
+  const [sessionTrackingEnabled, setSessionTrackingEnabled] = useState(true);
+  const [attendeeChatEnabled, setAttendeeChatEnabled] = useState(true);
+  const [directoryEnabled, setDirectoryEnabled] = useState(true);
+  const [sponsorHighlightsEnabled, setSponsorHighlightsEnabled] = useState(true);
 
-  const [prevEventId, setPrevEventId] = useState<string | null>(null);
-
-  if (event && event.id !== prevEventId) {
-    setPrevEventId(event.id);
+  useEffect(() => {
+    if (!event) return;
     setTitle(event.title);
     setDescription(event.description ?? "");
     setShortDescription(event.shortDescription ?? "");
@@ -83,7 +108,53 @@ export default function EventSettingsPage({
     setTimezone(event.timezone ?? "America/Los_Angeles");
     setMaxCapacity(event.maxCapacity?.toString() ?? "");
     setRegistrationEnabled(event.registrationEnabled ?? false);
-  }
+  }, [event]);
+
+  useEffect(() => {
+    if (!experience) return;
+    setWelcomeMessage(experience.settings.welcomeMessage ?? "");
+    setHomeHeadline(experience.settings.homeHeadline ?? "");
+    setLiveStreamUrl(experience.settings.liveStream.url ?? "");
+    setLiveStreamLabel(experience.settings.liveStream.label ?? "");
+    setLiveStreamProvider(experience.settings.liveStream.provider ?? "embed");
+    setLiveStreamIsLive(Boolean(experience.settings.liveStream.isLive));
+    setNetworkingIntro(experience.settings.networking.introText ?? "");
+    setDirectoryPrivacyDescription(experience.settings.networking.directory?.privacyDescription ?? "");
+    setDirectoryEmptyStateMessage(experience.settings.networking.directory?.emptyStateMessage ?? "");
+    setSponsorsIntro(experience.settings.sponsors?.introText ?? "");
+    setSponsorsCsv(
+      (experience.settings.sponsors?.featuredProfiles ?? [])
+        .map((profile) =>
+          [
+            profile.name,
+            profile.company ?? "",
+            profile.role ?? "",
+            profile.headline ?? "",
+            profile.ctaLabel ?? "",
+            profile.ctaUrl ?? "",
+            profile.booth ?? "",
+            profile.kind ?? "sponsor",
+          ].join(" | ")
+        )
+        .join("\n")
+    );
+    setAnnouncementsCsv(
+      (experience.settings.announcements ?? [])
+        .map((item) => `${item.title} :: ${item.body}`)
+        .join("\n")
+    );
+    setInterestsCsv((experience.settings.networking.taxonomy.interests ?? []).join(", "));
+    setGoalsCsv((experience.settings.networking.taxonomy.goals ?? []).join(", "));
+    setIndustriesCsv((experience.settings.networking.taxonomy.industries ?? []).join(", "));
+    setNetworkingEnabled(experience.settings.features.networkingEnabled);
+    setMatchmakingEnabled(experience.settings.features.matchmakingEnabled);
+    setLiveStreamEnabled(experience.settings.features.liveStreamEnabled);
+    setPushNotificationsEnabled(experience.settings.features.pushNotificationsEnabled);
+    setSessionTrackingEnabled(experience.settings.features.sessionTrackingEnabled);
+    setAttendeeChatEnabled(experience.settings.features.attendeeChatEnabled);
+    setDirectoryEnabled(experience.settings.features.directoryEnabled);
+    setSponsorHighlightsEnabled(experience.settings.features.sponsorHighlightsEnabled);
+  }, [experience]);
 
   const updateEvent = trpc.events.update.useMutation({
     onSuccess: () => {
@@ -125,6 +196,16 @@ export default function EventSettingsPage({
     },
   });
 
+  const updateExperience = trpc.eventExperience.updateSettings.useMutation({
+    onSuccess: () => {
+      toast.success("Attendee app settings updated");
+      refetchExperience();
+    },
+    onError: (err) => {
+      toast.error(err.message);
+    },
+  });
+
   const handleSave = () => {
     updateEvent.mutate({
       id: eventId,
@@ -142,6 +223,97 @@ export default function EventSettingsPage({
 
   const handleStatusChange = (newStatus: "draft" | "published" | "cancelled" | "completed") => {
     updateEvent.mutate({ id: eventId, status: newStatus });
+  };
+
+  const parseCsv = (value: string) =>
+    value
+      .split(",")
+      .map((item) => item.trim())
+      .filter(Boolean);
+
+  const parseAnnouncements = (value: string) =>
+    value
+      .split("\n")
+      .map((line) => line.trim())
+      .filter(Boolean)
+      .map((line, index) => {
+        const [title, ...bodyParts] = line.split("::");
+        return {
+          id: `announcement-${index + 1}`,
+          title: (title ?? "").trim() || `Announcement ${index + 1}`,
+          body: bodyParts.join("::").trim(),
+          createdAt: new Date().toISOString(),
+        };
+      });
+
+  const parseSponsors = (value: string) =>
+    value
+      .split("\n")
+      .map((line) => line.trim())
+      .filter(Boolean)
+      .map((line, index) => {
+        const [name, company, role, headline, ctaLabel, ctaUrl, booth, kind] = line
+          .split("|")
+          .map((item) => item.trim());
+        const sponsorKind =
+          kind === "exhibitor" || kind === "partner" || kind === "sponsor"
+            ? kind
+            : "sponsor";
+        return {
+          id: `sponsor-${index + 1}`,
+          name: name || `Sponsor ${index + 1}`,
+          company: company || undefined,
+          role: role || undefined,
+          headline: headline || undefined,
+          ctaLabel: ctaLabel || undefined,
+          ctaUrl: ctaUrl || undefined,
+          booth: booth || undefined,
+          kind: sponsorKind as "sponsor" | "exhibitor" | "partner",
+        };
+      });
+
+  const handleSaveExperience = () => {
+    updateExperience.mutate({
+      eventId,
+      settings: {
+        welcomeMessage,
+        homeHeadline,
+        features: {
+          networkingEnabled,
+          matchmakingEnabled,
+          liveStreamEnabled,
+          pushNotificationsEnabled,
+          sessionTrackingEnabled,
+          attendeeChatEnabled,
+          directoryEnabled,
+          sponsorHighlightsEnabled,
+        },
+        liveStream: {
+          url: liveStreamUrl,
+          label: liveStreamLabel,
+          provider: liveStreamProvider,
+          isLive: liveStreamIsLive,
+        },
+        networking: {
+          introText: networkingIntro,
+          taxonomy: {
+            interests: parseCsv(interestsCsv),
+            goals: parseCsv(goalsCsv),
+            industries: parseCsv(industriesCsv),
+          },
+          directory: {
+            privacyDescription: directoryPrivacyDescription,
+            emptyStateMessage: directoryEmptyStateMessage,
+          },
+        },
+        sponsors: {
+          introText: sponsorsIntro,
+          featuredProfiles: parseSponsors(sponsorsCsv),
+        },
+        announcements: parseAnnouncements(announcementsCsv),
+        push: experience?.settings.push ?? { reminderLeadMinutes: 15 },
+      },
+    });
   };
 
   if (isLoading) {
@@ -195,6 +367,180 @@ export default function EventSettingsPage({
             {event.status === "cancelled" && "This event has been cancelled."}
             {event.status === "completed" && "This event has been completed and archived."}
           </p>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Smartphone className="h-5 w-5" />
+            Attendee App Experience
+          </CardTitle>
+          <CardDescription>
+            Configure the live attendee app, networking, and embedded stream experience.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="homeHeadline">Home Headline</Label>
+              <Input id="homeHeadline" value={homeHeadline} onChange={(e) => setHomeHeadline(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="welcomeMessage">Welcome Message</Label>
+              <Input id="welcomeMessage" value={welcomeMessage} onChange={(e) => setWelcomeMessage(e.target.value)} />
+            </div>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="liveStreamUrl">Live Stream URL</Label>
+              <Input id="liveStreamUrl" value={liveStreamUrl} onChange={(e) => setLiveStreamUrl(e.target.value)} placeholder="https://..." />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="liveStreamLabel">Live Stream Label</Label>
+              <Input id="liveStreamLabel" value={liveStreamLabel} onChange={(e) => setLiveStreamLabel(e.target.value)} placeholder="Watch the keynote" />
+            </div>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="liveStreamProvider">Live Stream Provider</Label>
+              <Select value={liveStreamProvider} onValueChange={setLiveStreamProvider}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="embed">Embedded Link</SelectItem>
+                  <SelectItem value="youtube">YouTube</SelectItem>
+                  <SelectItem value="vimeo">Vimeo</SelectItem>
+                  <SelectItem value="custom">Custom</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex items-center gap-3 rounded-lg border border-border p-4 bg-background/50">
+              <Checkbox checked={liveStreamIsLive} onCheckedChange={(checked) => setLiveStreamIsLive(!!checked)} />
+              <div>
+                <Label className="font-medium flex items-center gap-2"><Radio className="h-4 w-4" /> Stream Live Now</Label>
+                <p className="text-xs text-muted-foreground">Highlight the live stream immediately in the app and on the website.</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="networkingIntro">Networking Intro Text</Label>
+            <Textarea
+              id="networkingIntro"
+              value={networkingIntro}
+              onChange={(e) => setNetworkingIntro(e.target.value)}
+              rows={3}
+              placeholder="Tell attendees how networking and smart matching work."
+            />
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="directoryPrivacyDescription">Directory Privacy Copy</Label>
+              <Textarea
+                id="directoryPrivacyDescription"
+                rows={3}
+                value={directoryPrivacyDescription}
+                onChange={(e) => setDirectoryPrivacyDescription(e.target.value)}
+                placeholder="Profiles stay hidden until attendees opt in."
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="directoryEmptyStateMessage">Directory Empty State</Label>
+              <Textarea
+                id="directoryEmptyStateMessage"
+                rows={3}
+                value={directoryEmptyStateMessage}
+                onChange={(e) => setDirectoryEmptyStateMessage(e.target.value)}
+                placeholder="No attendee profiles are visible yet."
+              />
+            </div>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-3">
+            <div className="space-y-2">
+              <Label htmlFor="interestsCsv">Interest Tags</Label>
+              <Textarea id="interestsCsv" rows={4} value={interestsCsv} onChange={(e) => setInterestsCsv(e.target.value)} placeholder="AI, Fintech, Luxury, Hospitality" />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="goalsCsv">Networking Goals</Label>
+              <Textarea id="goalsCsv" rows={4} value={goalsCsv} onChange={(e) => setGoalsCsv(e.target.value)} placeholder="Find buyers, Meet investors, Recruit talent" />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="industriesCsv">Industries</Label>
+              <Textarea id="industriesCsv" rows={4} value={industriesCsv} onChange={(e) => setIndustriesCsv(e.target.value)} placeholder="Technology, Events, Media" />
+            </div>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="sponsorsIntro">Sponsors Intro Text</Label>
+              <Textarea
+                id="sponsorsIntro"
+                rows={3}
+                value={sponsorsIntro}
+                onChange={(e) => setSponsorsIntro(e.target.value)}
+                placeholder="Meet the featured brands and exhibitors behind this event."
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="announcementsCsv">Announcements</Label>
+              <Textarea
+                id="announcementsCsv"
+                rows={6}
+                value={announcementsCsv}
+                onChange={(e) => setAnnouncementsCsv(e.target.value)}
+                placeholder="Opening Ceremony :: Doors open at 8:30 AM"
+              />
+              <p className="text-xs text-muted-foreground">One announcement per line using `Title :: Body`.</p>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="sponsorsCsv">Featured Sponsors / Exhibitors</Label>
+            <Textarea
+              id="sponsorsCsv"
+              rows={6}
+              value={sponsorsCsv}
+              onChange={(e) => setSponsorsCsv(e.target.value)}
+              placeholder="Acme Corp | Acme | Partner | Meet our innovation team | Book Meeting | https://example.com | Booth A12 | sponsor"
+            />
+            <p className="text-xs text-muted-foreground">
+              One profile per line using `Name | Company | Role | Headline | CTA Label | CTA URL | Booth | Kind`.
+            </p>
+          </div>
+
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+            {[
+              { checked: networkingEnabled, setChecked: setNetworkingEnabled, title: "Networking", desc: "Show attendee profiles and discovery in the app." },
+              { checked: matchmakingEnabled, setChecked: setMatchmakingEnabled, title: "Smart Matching", desc: "Recommend attendees based on goals and interests." },
+              { checked: liveStreamEnabled, setChecked: setLiveStreamEnabled, title: "Live Stream", desc: "Expose live event watching in mobile and public web." },
+              { checked: pushNotificationsEnabled, setChecked: setPushNotificationsEnabled, title: "Push Notifications", desc: "Register devices for attendee push delivery." },
+              { checked: sessionTrackingEnabled, setChecked: setSessionTrackingEnabled, title: "Session Tracking", desc: "Track views, saves, and planned attendance." },
+              { checked: attendeeChatEnabled, setChecked: setAttendeeChatEnabled, title: "Attendee Chat", desc: "Unlock attendee-to-attendee chat after a confirmed match or meeting." },
+              { checked: directoryEnabled, setChecked: setDirectoryEnabled, title: "Attendee Directory", desc: "Expose browse and search for opted-in attendee profiles." },
+              { checked: sponsorHighlightsEnabled, setChecked: setSponsorHighlightsEnabled, title: "Sponsor Highlights", desc: "Feature sponsor and exhibitor profiles in app and public web." },
+            ].map((item) => (
+              <div key={item.title} className="flex items-center gap-3 rounded-lg border border-border p-4 bg-background/50">
+                <Checkbox checked={item.checked} onCheckedChange={(checked) => item.setChecked(!!checked)} />
+                <div>
+                  <Label className="font-medium flex items-center gap-2"><Sparkles className="h-4 w-4" /> {item.title}</Label>
+                  <p className="text-xs text-muted-foreground">{item.desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="flex justify-end">
+            <Button onClick={handleSaveExperience} disabled={updateExperience.isPending} className="gap-2">
+              <Save className="h-4 w-4" />
+              {updateExperience.isPending ? "Saving..." : "Save Attendee App Settings"}
+            </Button>
+          </div>
         </CardContent>
       </Card>
 

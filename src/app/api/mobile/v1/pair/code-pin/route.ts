@@ -2,8 +2,7 @@ export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { getDb } from "@/server/db";
-import { pairWithCodePin } from "@/server/services/checkin";
+import { pairWithCodePinSupabase } from "@/server/services/checkin/pairing-service-supabase";
 import { ensureMobileV2Enabled, getRequestIp, jsonError } from "../../utils";
 
 const bodySchema = z.object({
@@ -25,10 +24,9 @@ export async function POST(request: NextRequest) {
   try {
     ensureMobileV2Enabled();
     const parsed = bodySchema.parse(await request.json());
-    const db = getDb();
     const ip = getRequestIp(request);
 
-    const result = await pairWithCodePin(db, {
+    const result = await pairWithCodePinSupabase({
       code: parsed.accessCode.trim().toUpperCase(),
       pin: parsed.pin.trim(),
       rateLimitKey: `${ip}:${parsed.accessCode.trim().toUpperCase()}`,
@@ -59,4 +57,3 @@ export async function POST(request: NextRequest) {
     return jsonError(error instanceof Error ? error.message : "Unable to pair device", 400, "pair_failed");
   }
 }
-

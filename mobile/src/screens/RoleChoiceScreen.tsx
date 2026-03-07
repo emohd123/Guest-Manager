@@ -1,6 +1,8 @@
 import React from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { FadeSlideIn } from "../ui/motion";
+import { PremiumBackdrop, PremiumCard, PremiumPill } from "../ui/primitives";
+import { palette, radii, shadows, spacing, type } from "../ui/theme";
 
 export function RoleChoiceScreen({
   onSelectStaff,
@@ -10,216 +12,191 @@ export function RoleChoiceScreen({
   onSelectVisitor: () => void;
 }) {
   return (
-    <View style={styles.container}>
-      <View style={styles.backdrop}>
-        <View style={[styles.orb, styles.orbCoral]} />
-        <View style={[styles.orb, styles.orbBlue]} />
-      </View>
-
-      <FadeSlideIn style={styles.inner}>
-        <View style={styles.headerArea}>
-          <Text style={styles.eyebrow}>Guest Manager Mobile</Text>
-          <Text style={styles.title}>Choose how this device should behave</Text>
-          <Text style={styles.subtitle}>
-            Staff gets a fast operational shell for scanning and walk-ins. Visitors get a personal portal for tickets and updates.
-          </Text>
-        </View>
-
-        <View style={styles.whiteCard}>
-          <View style={styles.cards}>
-            <Pressable style={styles.staffCard} onPress={onSelectStaff}>
-              <View style={styles.cardHeader}>
-                <Text style={styles.staffCardIcon}>Staff</Text>
-                <View style={styles.staffArrow}>
-                  <Text style={styles.staffArrowText}>Open</Text>
-                </View>
-              </View>
-              <Text style={styles.staffCardTitle}>Staff Login</Text>
-              <Text style={styles.staffCardDescription}>
-                Pair to an event, scan tickets, manage arrivals, and keep the line moving.
-              </Text>
-            </Pressable>
-
-            <Pressable style={styles.visitorCard} onPress={onSelectVisitor}>
-              <View style={styles.cardHeader}>
-                <Text style={styles.visitorCardIcon}>Visitor</Text>
-                <View style={styles.visitorArrow}>
-                  <Text style={styles.visitorArrowText}>Open</Text>
-                </View>
-              </View>
-              <Text style={styles.visitorCardTitle}>Visitor Portal</Text>
-              <Text style={styles.visitorCardDescription}>
-                View tickets, schedules, attendee updates, and organizer replies.
-              </Text>
-            </Pressable>
+    <PremiumBackdrop>
+      <View style={styles.container}>
+        <FadeSlideIn style={styles.inner}>
+          <View style={styles.headerArea}>
+            <PremiumPill label="Guest Manager Mobile" tone="live" />
+            <Text style={styles.title}>Choose how this device should move through the event</Text>
+            <Text style={styles.subtitle}>
+              One premium shell for attendees and a sharper operational shell for floor staff.
+            </Text>
           </View>
 
-          <Text style={styles.footer}>Experience Platform</Text>
-        </View>
-      </FadeSlideIn>
-    </View>
+          <PremiumCard style={styles.whiteCard}>
+            <View style={styles.cards}>
+              <Pressable style={styles.staffCard} onPress={onSelectStaff}>
+                <View style={styles.cardHeader}>
+                  <PremiumPill label="Staff" />
+                  <View style={styles.staffArrow}>
+                    <Text style={styles.staffArrowText}>Operate</Text>
+                  </View>
+                </View>
+                <Text style={styles.staffCardTitle}>Check-In Operations</Text>
+                <Text style={styles.staffCardDescription}>
+                  Pair the device, scan arrivals, manage walk-ins, and stay synced with the queue.
+                </Text>
+              </Pressable>
+
+              <Pressable style={styles.visitorCard} onPress={onSelectVisitor}>
+                <View style={styles.cardHeader}>
+                  <PremiumPill label="Attendee" />
+                  <View style={styles.visitorArrow}>
+                    <Text style={styles.visitorArrowText}>Enter</Text>
+                  </View>
+                </View>
+                <Text style={styles.visitorCardTitle}>Live Event Experience</Text>
+                <Text style={styles.visitorCardDescription}>
+                  Tickets, agenda, live sessions, networking, inbox, and event updates in one place.
+                </Text>
+              </Pressable>
+            </View>
+
+            <View style={styles.footerRow}>
+              <Text style={styles.footerLabel}>Premium Event Platform</Text>
+              <Text style={styles.footerValue}>Attendee + Ops</Text>
+            </View>
+          </PremiumCard>
+        </FadeSlideIn>
+      </View>
+    </PremiumBackdrop>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#13182C",
-  },
-  backdrop: {
-    ...StyleSheet.absoluteFillObject,
-    overflow: "hidden",
-  },
-  orb: {
-    position: "absolute",
-    borderRadius: 999,
-  },
-  orbCoral: {
-    width: 260,
-    height: 260,
-    top: -40,
-    right: -90,
-    backgroundColor: "rgba(255,91,106,0.15)",
-  },
-  orbBlue: {
-    width: 220,
-    height: 220,
-    bottom: 180,
-    left: -80,
-    backgroundColor: "rgba(98,129,255,0.14)",
   },
   inner: {
     flex: 1,
+    paddingHorizontal: spacing.xl,
+    paddingTop: 52,
+    paddingBottom: spacing.xl,
   },
   headerArea: {
-    flex: 0.46,
+    flex: 0.44,
     justifyContent: "center",
-    paddingHorizontal: 30,
-  },
-  eyebrow: {
-    fontSize: 11,
-    fontWeight: "800",
-    color: "#FF8B96",
-    letterSpacing: 1.3,
-    textTransform: "uppercase",
-    marginBottom: 14,
+    gap: spacing.md,
   },
   title: {
-    fontSize: 32,
+    fontSize: type.hero,
     fontWeight: "900",
-    color: "#FFFFFF",
-    letterSpacing: -0.8,
-    marginBottom: 10,
+    color: palette.textInverse,
+    letterSpacing: -1,
   },
   subtitle: {
-    fontSize: 15,
-    color: "rgba(255,255,255,0.72)",
+    fontSize: type.bodyLg,
+    color: "rgba(255,255,255,0.74)",
     lineHeight: 23,
+    maxWidth: 360,
   },
   whiteCard: {
-    flex: 0.54,
-    backgroundColor: "#EEF2F8",
-    borderTopLeftRadius: 46,
-    borderTopRightRadius: 46,
-    paddingHorizontal: 26,
-    paddingTop: 30,
-    paddingBottom: 24,
+    flex: 0.56,
+    borderTopLeftRadius: 38,
+    borderTopRightRadius: 38,
+    paddingTop: spacing.xl,
     justifyContent: "space-between",
   },
   cards: {
     width: "100%",
-    gap: 18,
+    gap: spacing.lg,
   },
   cardHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "flex-start",
-    marginBottom: 16,
+    marginBottom: spacing.lg,
   },
   staffCard: {
-    backgroundColor: "#14192C",
-    borderRadius: 30,
-    padding: 24,
-    shadowColor: "#13182C",
-    shadowOpacity: 0.16,
-    shadowOffset: { width: 0, height: 16 },
-    shadowRadius: 28,
-    elevation: 8,
-  },
-  staffCardIcon: {
-    fontSize: 13,
-    fontWeight: "900",
-    color: "#FFFFFF",
+    backgroundColor: palette.bgElevated,
+    borderRadius: radii.lg,
+    padding: spacing.xl,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.08)",
+    ...shadows.strong,
   },
   staffCardTitle: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: "800",
-    color: "#FFFFFF",
-    marginBottom: 6,
+    color: palette.textInverse,
+    marginBottom: 8,
+    letterSpacing: -0.4,
   },
   staffCardDescription: {
     fontSize: 14,
-    color: "rgba(255,255,255,0.62)",
-    lineHeight: 20,
+    color: "rgba(255,255,255,0.66)",
+    lineHeight: 21,
   },
   staffArrow: {
-    minWidth: 60,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: "#FF5B6A",
+    minWidth: 82,
+    height: 38,
+    borderRadius: radii.pill,
+    backgroundColor: palette.accent,
     alignItems: "center",
     justifyContent: "center",
-    paddingHorizontal: 12,
+    paddingHorizontal: 14,
   },
   staffArrowText: {
-    color: "#ffffff",
+    color: palette.textInverse,
     fontWeight: "800",
     fontSize: 11,
+    letterSpacing: 0.7,
+    textTransform: "uppercase",
   },
   visitorCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 30,
-    padding: 24,
-    shadowColor: "#14192C",
-    shadowOpacity: 0.05,
-    shadowOffset: { width: 0, height: 14 },
-    shadowRadius: 24,
-    elevation: 5,
-  },
-  visitorCardIcon: {
-    fontSize: 13,
-    fontWeight: "900",
-    color: "#1A1C30",
+    backgroundColor: palette.surfaceTint,
+    borderRadius: radii.lg,
+    padding: spacing.xl,
+    borderWidth: 1,
+    borderColor: palette.line,
   },
   visitorCardTitle: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: "800",
-    color: "#1A1C30",
-    marginBottom: 6,
+    color: palette.text,
+    marginBottom: 8,
+    letterSpacing: -0.4,
   },
   visitorCardDescription: {
     fontSize: 14,
-    color: "#7D859B",
-    lineHeight: 20,
+    color: palette.textMuted,
+    lineHeight: 21,
   },
   visitorArrow: {
-    minWidth: 60,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: "#EEF2F8",
+    minWidth: 76,
+    height: 38,
+    borderRadius: radii.pill,
+    backgroundColor: "rgba(19,26,42,0.08)",
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: 12,
   },
   visitorArrowText: {
-    color: "#1A1C30",
+    color: palette.text,
     fontWeight: "800",
     fontSize: 11,
+    letterSpacing: 0.7,
+    textTransform: "uppercase",
   },
-  footer: {
+  footerRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginTop: spacing.lg,
+    paddingTop: spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: palette.line,
+  },
+  footerLabel: {
     fontSize: 12,
-    color: "#9098AB",
-    fontWeight: "600",
-    textAlign: "center",
+    color: palette.textMuted,
+    fontWeight: "700",
+    textTransform: "uppercase",
+    letterSpacing: 1,
+  },
+  footerValue: {
+    fontSize: 13,
+    color: palette.text,
+    fontWeight: "800",
   },
 });

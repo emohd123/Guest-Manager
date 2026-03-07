@@ -1,6 +1,20 @@
-import React, { useState, useEffect } from "react";
-import { View, Text, TextInput, Pressable, StyleSheet, Animated } from "react-native";
+import React, { useState } from "react";
+import {
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import { CameraView, useCameraPermissions } from "expo-camera";
+import { FadeSlideIn, usePulseAnimation } from "../ui/motion";
+import {
+  PremiumButton,
+  PremiumCard,
+  PremiumField,
+  PremiumNotice,
+  PremiumPill,
+  SectionHeading,
+} from "../ui/primitives";
+import { palette, radii, spacing } from "../ui/theme";
 
 export function ScanScreen({
   onSubmitBarcode,
@@ -13,6 +27,7 @@ export function ScanScreen({
   const [barcodeInput, setBarcodeInput] = useState("");
   const [lastMessage, setLastMessage] = useState("");
   const [locked, setLocked] = useState(false);
+  const pulse = usePulseAnimation(cameraMode);
 
   const hasPermission = permission?.granted ?? false;
 
@@ -40,61 +55,81 @@ export function ScanScreen({
     setCameraMode((value) => !value);
   }
 
-  const [slideAnim] = useState(() => new Animated.Value(30));
-  const [fadeAnim] = useState(() => new Animated.Value(0));
-
-  useEffect(() => {
-    Animated.parallel([
-      Animated.timing(fadeAnim, { toValue: 1, duration: 400, useNativeDriver: true }),
-      Animated.timing(slideAnim, { toValue: 0, duration: 400, useNativeDriver: true })
-    ]).start();
-  }, [fadeAnim, slideAnim]);
-
   return (
-    <Animated.View style={[styles.container, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
-      <Text style={styles.heading}>Scan Tickets</Text>
-      <Text style={styles.description}>
-        Use camera scanning or enter barcode manually.
-      </Text>
+    <View style={styles.container}>
+      <FadeSlideIn>
+        <PremiumCard tone="dark" style={styles.hero}>
+          <View style={styles.heroRow}>
+            <SectionHeading
+              eyebrow="Scanning"
+              title="Ticket capture"
+              body="Run camera or manual barcode entry with clear, high-contrast feedback."
+            />
+            <PremiumPill label={cameraMode ? "Camera Live" : "Manual Mode"} tone="live" />
+          </View>
+        </PremiumCard>
+      </FadeSlideIn>
 
-      <View style={styles.controls}>
-        <Pressable style={styles.toggle} onPress={toggleCamera}>
-          <Text style={styles.toggleText}>{cameraMode ? "Hide Camera" : "Use Camera"}</Text>
-        </Pressable>
-
-        {cameraMode && hasPermission ? (
-          <Pressable style={styles.toggle} onPress={() => setFacing((f) => (f === "back" ? "front" : "back"))}>
-            <Text style={styles.toggleText}>Switch to {facing === "back" ? "Front" : "Back"}</Text>
-          </Pressable>
-        ) : null}
-      </View>
+      <FadeSlideIn delay={70}>
+        <View style={styles.controls}>
+          <View style={styles.control}>
+            <PremiumButton
+              label={cameraMode ? "Hide Camera" : "Use Camera"}
+              tone="secondary"
+              onPress={toggleCamera}
+            />
+          </View>
+          {cameraMode && hasPermission ? (
+            <View style={styles.control}>
+              <PremiumButton
+                label={`Use ${facing === "back" ? "Front" : "Back"} Lens`}
+                tone="ghost"
+                onPress={() => setFacing((f) => (f === "back" ? "front" : "back"))}
+              />
+            </View>
+          ) : null}
+        </View>
+      </FadeSlideIn>
 
       {cameraMode && hasPermission ? (
-        <View style={styles.cameraWrap}>
-          <CameraView
-            style={StyleSheet.absoluteFillObject}
-            facing={facing}
-            barcodeScannerSettings={{
-              barcodeTypes: ["qr", "code128", "code39", "ean13", "ean8", "upc_a", "upc_e"],
-            }}
-            onBarcodeScanned={({ data }) => submit(data)}
-          />
-        </View>
+        <FadeSlideIn delay={100}>
+          <PremiumCard style={styles.cameraShell}>
+            <View style={styles.cameraStatus}>
+              <Text style={styles.cameraStatusText}>Live scanner ready</Text>
+              <View
+                style={[
+                  styles.cameraPulse,
+                  { opacity: pulse.opacity, transform: [{ scale: pulse.scale }] },
+                ]}
+              />
+            </View>
+            <View style={styles.cameraWrap}>
+              <CameraView
+                style={StyleSheet.absoluteFillObject}
+                facing={facing}
+                barcodeScannerSettings={{
+                  barcodeTypes: ["qr", "code128", "code39", "ean13", "ean8", "upc_a", "upc_e"],
+                }}
+                onBarcodeScanned={({ data }) => submit(data)}
+              />
+            </View>
+          </PremiumCard>
+        </FadeSlideIn>
       ) : null}
 
-      <TextInput
-        value={barcodeInput}
-        onChangeText={setBarcodeInput}
-        placeholder="Enter barcode..."
-        placeholderTextColor="#A0A5B1"
-        style={styles.input}
-      />
-      <Pressable style={styles.button} onPress={() => submit(barcodeInput)}>
-        <Text style={styles.buttonText}>Submit Barcode</Text>
-      </Pressable>
-
-      {lastMessage ? <Text style={styles.message}>{lastMessage}</Text> : null}
-    </Animated.View>
+      <FadeSlideIn delay={130}>
+        <PremiumCard style={styles.manualCard}>
+          <PremiumField
+            label="Manual Barcode Entry"
+            value={barcodeInput}
+            onChangeText={setBarcodeInput}
+            placeholder="Enter barcode"
+          />
+          <PremiumButton label="Submit Barcode" onPress={() => submit(barcodeInput)} />
+          {lastMessage ? <PremiumNotice text={lastMessage} /> : null}
+        </PremiumCard>
+      </FadeSlideIn>
+    </View>
   );
 }
 
@@ -102,91 +137,50 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "transparent",
-    padding: 24,
-    gap: 16,
+    padding: spacing.xl,
+    gap: spacing.md,
   },
-  heading: {
-    fontSize: 24,
-    fontWeight: "900",
-    color: "#1A1C30",
-    letterSpacing: -0.5,
+  hero: {
+    backgroundColor: palette.bgElevated,
+    borderColor: "rgba(255,255,255,0.12)",
   },
-  description: {
-    color: "#8E94A3",
-    fontSize: 15,
-    marginTop: -8,
+  heroRow: {
+    gap: spacing.md,
   },
   controls: {
     flexDirection: "row",
-    gap: 12,
+    gap: spacing.md,
   },
-  toggle: {
-    borderWidth: 1,
-    borderColor: "#EBEFF5",
-    borderRadius: 20,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: "#ffffff",
-    shadowColor: "#000",
-    shadowOpacity: 0.02,
-    shadowOffset: { width: 0, height: 2 },
-    shadowRadius: 4,
-    elevation: 1,
+  control: {
+    flex: 1,
   },
-  toggleText: {
-    color: "#1A1C30",
+  cameraShell: {
+    gap: spacing.md,
+    padding: spacing.md,
+  },
+  cameraStatus: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  cameraStatusText: {
+    color: palette.text,
+    fontSize: 14,
     fontWeight: "800",
-    fontSize: 13,
+  },
+  cameraPulse: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: palette.accentLive,
   },
   cameraWrap: {
-    height: 300, // Make camera slightly larger
-    borderRadius: 30, // massive radius
+    height: 320,
+    borderRadius: radii.lg,
     overflow: "hidden",
-    backgroundColor: "#1A1C30",
-    marginBottom: 8,
-    shadowColor: "#000",
-    shadowOpacity: 0.1,
-    shadowOffset: { width: 0, height: 8 },
-    shadowRadius: 16,
-    elevation: 8,
+    backgroundColor: palette.bgElevated,
   },
-  input: {
-    borderWidth: 1,
-    borderColor: "#EBEFF5",
-    borderRadius: 20,
-    backgroundColor: "#ffffff",
-    paddingHorizontal: 20,
-    paddingVertical: 18,
-    fontSize: 16,
-    color: "#1A1C30",
-    shadowColor: "#000",
-    shadowOpacity: 0.02,
-    shadowOffset: { width: 0, height: 4 },
-    shadowRadius: 10,
-    elevation: 2,
-  },
-  button: {
-    backgroundColor: "#FF5B6A", // Coral
-    borderRadius: 24,
-    paddingVertical: 18,
-    alignItems: "center",
-    shadowColor: "#FF5B6A",
-    shadowOpacity: 0.3,
-    shadowOffset: { width: 0, height: 6 },
-    shadowRadius: 12,
-    elevation: 6,
-  },
-  buttonText: {
-    color: "#fff",
-    fontWeight: "800",
-    fontSize: 16,
-    letterSpacing: 0.5,
-  },
-  message: {
-    marginTop: 8,
-    color: "#1A1C30",
-    textAlign: "center",
-    fontWeight: "600",
-    fontSize: 14,
+  manualCard: {
+    gap: spacing.md,
   },
 });

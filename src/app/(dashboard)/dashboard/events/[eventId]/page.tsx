@@ -20,6 +20,7 @@ export default function EventOverviewPage({
   const { data: event, isLoading } = trpc.events.get.useQuery({ id: eventId });
   const { data: guestStats } = trpc.guests.stats.useQuery({ eventId });
   const { data: ticketTypeStats } = trpc.ticketTypes.stats.useQuery({ eventId });
+  const { data: experience } = trpc.eventExperience.get.useQuery({ eventId });
 
   if (isLoading) {
     return (
@@ -60,6 +61,10 @@ export default function EventOverviewPage({
   const totalGuests = guestStats?.total ?? 0;
   const capacity = event.maxCapacity ?? 1000;
   const occupancyRate = totalGuests > 0 ? (totalGuests / capacity) * 100 : 0;
+  const analyticsCardClass =
+    "flex flex-col rounded-[40px] bg-card/90 dark:bg-white/5 border border-border dark:border-white/10 overflow-hidden group hover:bg-muted/60 dark:hover:bg-white/8 transition-all h-[480px]";
+  const panelClass =
+    "rounded-[40px] border border-border dark:border-white/10 bg-card/90 dark:bg-white/5";
 
   return (
     <div className="space-y-12 pb-20 px-2">
@@ -69,15 +74,15 @@ export default function EventOverviewPage({
           initial={{ x: -20, opacity: 0 }}
           animate={{ x: 0, opacity: 1 }}
         >
-          <h1 className="text-4xl font-black text-white italic tracking-tighter uppercase">{event.title}</h1>
-          <p className="text-white/40 font-bold uppercase tracking-[0.2em] text-[10px] mt-2 italic flex items-center gap-2">
+          <h1 className="text-4xl font-black text-foreground dark:text-white italic tracking-tighter uppercase">{event.title}</h1>
+          <p className="text-muted-foreground dark:text-white/40 font-bold uppercase tracking-[0.2em] text-[10px] mt-2 italic flex items-center gap-2">
             <Activity className="h-3 w-3 text-primary animate-pulse" />
             Live Event Overview
           </p>
         </motion.div>
         <div className="flex items-center gap-4">
           {event.registrationEnabled && (
-            <Button variant="outline" className="h-14 px-6 rounded-2xl bg-white/5 border-white/10 text-white/60 hover:text-white font-black italic uppercase tracking-widest text-[10px] transition-all flex gap-3">
+            <Button variant="outline" className="h-14 px-6 rounded-2xl bg-card/70 dark:bg-white/5 border-border dark:border-white/10 text-muted-foreground dark:text-white/60 hover:text-foreground dark:hover:text-white font-black italic uppercase tracking-widest text-[10px] transition-all flex gap-3">
               Event Page <ExternalLink className="h-4 w-4" />
             </Button>
           )}
@@ -102,11 +107,11 @@ export default function EventOverviewPage({
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: i * 0.1 }}
-            className="flex flex-col rounded-[40px] bg-white/5 border border-white/10 overflow-hidden group hover:bg-white/8 transition-all h-[480px]"
+            className={analyticsCardClass}
           >
-            <div className="p-8 border-b border-white/5 bg-white/2">
-              <h3 className="text-lg font-black text-white italic leading-none mb-1 uppercase tracking-tighter">{block.title}</h3>
-              <p className="text-white/20 text-[9px] font-bold uppercase tracking-widest">{block.sub}</p>
+            <div className="p-8 border-b border-border/70 dark:border-white/5 bg-muted/20 dark:bg-white/2">
+              <h3 className="text-lg font-black text-foreground dark:text-white italic leading-none mb-1 uppercase tracking-tighter">{block.title}</h3>
+              <p className="text-muted-foreground/70 dark:text-white/20 text-[9px] font-bold uppercase tracking-widest">{block.sub}</p>
             </div>
             
             <div className="flex-1 p-8 flex flex-col justify-between">
@@ -142,7 +147,7 @@ export default function EventOverviewPage({
                       </ResponsiveContainer>
                       <div className="absolute inset-0 flex items-center justify-center flex-col pointer-events-none">
                          <TrendingUp className="h-6 w-6 text-primary mb-1" />
-                         <span className="text-[10px] font-black text-white italic">73%</span>
+                         <span className="text-[10px] font-black text-foreground dark:text-white italic">73%</span>
                       </div>
                    </div>
                    
@@ -151,11 +156,11 @@ export default function EventOverviewPage({
                        <div key={item.name} className="flex items-center justify-between group/row">
                           <div className="flex items-center gap-3">
                              <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: MODY_COLORS[(idx + (block.colorOffset || 0)) % MODY_COLORS.length] }} />
-                             <span className="text-[10px] font-black text-white/40 uppercase tracking-widest group-hover/row:text-white transition-colors">{item.name}</span>
+                             <span className="text-[10px] font-black text-muted-foreground dark:text-white/40 uppercase tracking-widest group-hover/row:text-foreground dark:group-hover/row:text-white transition-colors">{item.name}</span>
                           </div>
                           <div className="flex items-center gap-4">
-                            <span className="text-[10px] font-black text-white italic">{item.count}</span>
-                            <Button variant="ghost" className="h-6 w-6 rounded-lg p-0 text-white/10 hover:text-white hover:bg-white/5">
+                            <span className="text-[10px] font-black text-foreground dark:text-white italic">{item.count}</span>
+                            <Button variant="ghost" className="h-6 w-6 rounded-lg p-0 text-muted-foreground/40 dark:text-white/10 hover:text-foreground dark:hover:text-white hover:bg-muted dark:hover:bg-white/5">
                               <ExternalLinkIcon className="h-3 w-3" />
                             </Button>
                           </div>
@@ -167,26 +172,26 @@ export default function EventOverviewPage({
                  <div className="h-full flex flex-col justify-center space-y-12">
                    <div className="space-y-6">
                       <div className="flex justify-between items-end">
-                         <p className="text-[10px] font-black text-white/40 uppercase tracking-widest">Real-time Load</p>
-                         <p className="text-4xl font-black text-white italic leading-none">{totalGuests} <span className="text-sm text-white/20">/ {capacity}</span></p>
+                         <p className="text-[10px] font-black text-muted-foreground dark:text-white/40 uppercase tracking-widest">Real-time Load</p>
+                         <p className="text-4xl font-black text-foreground dark:text-white italic leading-none">{totalGuests} <span className="text-sm text-muted-foreground dark:text-white/20">/ {capacity}</span></p>
                       </div>
-                      <div className="h-4 bg-white/5 rounded-full overflow-hidden border border-white/5">
+                      <div className="h-4 bg-muted rounded-full overflow-hidden border border-border dark:border-white/5">
                          <motion.div 
                            initial={{ width: 0 }}
                            animate={{ width: `${occupancyRate}%` }}
                            className="h-full bg-linear-to-r from-primary to-primary/40 rounded-full shadow-[0_0_20px_rgba(255,95,82,0.3)]"
                          />
                       </div>
-                      <p className="text-[9px] font-bold text-white/10 uppercase tracking-widest text-center">Occupancy rate: {occupancyRate.toFixed(1)}%</p>
+                      <p className="text-[9px] font-bold text-muted-foreground/60 dark:text-white/10 uppercase tracking-widest text-center">Occupancy rate: {occupancyRate.toFixed(1)}%</p>
                    </div>
                    
                    <div className="grid grid-cols-2 gap-4">
-                      <div className="p-4 rounded-3xl bg-white/3 border border-white/5">
-                         <p className="text-[8px] font-black text-white/20 uppercase tracking-widest mb-1">Revenue</p>
+                      <div className="p-4 rounded-3xl bg-muted/40 dark:bg-white/3 border border-border dark:border-white/5">
+                         <p className="text-[8px] font-black text-muted-foreground/70 dark:text-white/20 uppercase tracking-widest mb-1">Revenue</p>
                          <p className="text-xl font-black text-primary italic">$0.00</p>
                       </div>
-                      <div className="p-4 rounded-3xl bg-white/3 border border-white/5">
-                         <p className="text-[8px] font-black text-white/20 uppercase tracking-widest mb-1">Growth</p>
+                      <div className="p-4 rounded-3xl bg-muted/40 dark:bg-white/3 border border-border dark:border-white/5">
+                         <p className="text-[8px] font-black text-muted-foreground/70 dark:text-white/20 uppercase tracking-widest mb-1">Growth</p>
                          <p className="text-xl font-black text-green-400 italic">+12%</p>
                       </div>
                    </div>
@@ -203,27 +208,55 @@ export default function EventOverviewPage({
         animate={{ opacity: 1, y: 0 }}
         className="grid gap-6 md:grid-cols-3"
       >
-        {[
+        {[ 
           { title: "Import Guests", icon: Plus, desc: "Upload a CSV or add guests in bulk.", action: "Import Guests" },
           { title: "Ticket Types", icon: Ticket, desc: "Manage admission tiers, pricing, and inventory.", action: "Manage Tickets" },
           { title: "Check-in Activity", icon: Activity, desc: "Review check-in and checkout activity for this event.", action: "View Check-ins" }
         ].map((hub, i) => (
-          <div key={hub.title} className="p-10 rounded-[40px] bg-white/5 border border-white/10 group hover:bg-white/8 hover:border-primary/30 transition-all space-y-8 relative overflow-hidden">
+          <div key={hub.title} className="p-10 rounded-[40px] bg-card/90 dark:bg-white/5 border border-border dark:border-white/10 group hover:bg-muted/60 dark:hover:bg-white/8 hover:border-primary/30 transition-all space-y-8 relative overflow-hidden">
             <div className="relative z-10">
               <div className="h-14 w-14 rounded-2xl bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform mb-6">
                  <hub.icon className="h-7 w-7" />
               </div>
-              <h4 className="text-2xl font-black text-white italic tracking-tighter uppercase mb-4">{hub.title}</h4>
-              <p className="text-[10px] font-bold text-white/30 uppercase tracking-widest leading-relaxed mb-8">
+              <h4 className="text-2xl font-black text-foreground dark:text-white italic tracking-tighter uppercase mb-4">{hub.title}</h4>
+              <p className="text-[10px] font-bold text-muted-foreground dark:text-white/30 uppercase tracking-widest leading-relaxed mb-8">
                 {hub.desc}
               </p>
-              <Button className="h-14 w-full rounded-2xl bg-white/5 border border-white/10 text-white group-hover:bg-primary transition-all font-black italic uppercase tracking-widest text-xs">
+              <Button className="h-14 w-full rounded-2xl bg-muted/40 dark:bg-white/5 border border-border dark:border-white/10 text-foreground dark:text-white group-hover:bg-primary group-hover:text-white transition-all font-black italic uppercase tracking-widest text-xs">
                  {hub.action}
               </Button>
             </div>
             <div className="absolute -right-10 -bottom-10 h-32 w-32 bg-primary/5 rounded-full blur-3xl group-hover:bg-primary/10 transition-colors" />
           </div>
         ))}
+      </motion.div>
+
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="grid gap-6 md:grid-cols-3">
+        <div className={cn(panelClass, "p-8")}>
+          <h3 className="text-xl font-black text-foreground dark:text-white italic uppercase tracking-tighter">Attendee App</h3>
+          <p className="mt-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground dark:text-white/30">
+            {experience?.settings.homeHeadline ?? "Your live event companion"}
+          </p>
+          <div className="mt-6 space-y-2 text-sm text-muted-foreground dark:text-white/60">
+            <div>Networking enabled: {experience?.settings.features.networkingEnabled ? "Yes" : "No"}</div>
+            <div>Push enabled: {experience?.settings.features.pushNotificationsEnabled ? "Yes" : "No"}</div>
+            <div>Live stream: {experience?.settings.liveStream.url ? "Configured" : "Not configured"}</div>
+          </div>
+        </div>
+        <div className={cn(panelClass, "p-8")}>
+          <h3 className="text-xl font-black text-foreground dark:text-white italic uppercase tracking-tighter">Sessions</h3>
+          <p className="mt-6 text-4xl font-black italic text-foreground dark:text-white">{experience?.sessions.length ?? 0}</p>
+          <p className="mt-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground dark:text-white/30">
+            {experience?.sessions.filter((session) => session.liveNow).length ?? 0} live right now
+          </p>
+        </div>
+        <div className={cn(panelClass, "p-8")}>
+          <h3 className="text-xl font-black text-foreground dark:text-white italic uppercase tracking-tighter">Networking</h3>
+          <p className="mt-6 text-4xl font-black italic text-foreground dark:text-white">{experience?.networkingSummary.optedInCount ?? 0}</p>
+          <p className="mt-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground dark:text-white/30">
+            opted in attendees
+          </p>
+        </div>
       </motion.div>
     </div>
   );

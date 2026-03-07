@@ -1,9 +1,21 @@
-import Constants from "expo-constants";
-import type { MobileGuest, PairingSession, SummaryMetrics, VisitorGuestListItem } from "../types";
+import type {
+  MobileGuest,
+  PairingSession,
+  SummaryMetrics,
+  VisitorEvent,
+  VisitorGuestListItem,
+  VisitorHomeData,
+  VisitorChatThread,
+  VisitorMeeting,
+  VisitorNetworkingProfile,
+  VisitorNetworkingRecommendation,
+  VisitorNetworkingRequest,
+  VisitorSponsorProfile,
+  VisitorSessionItem,
+} from "../types";
+import { getApiBaseUrl } from "../config";
 
-const fallbackBaseUrl = "http://localhost:3000";
-const extra = (Constants.expoConfig?.extra ?? {}) as Record<string, string | undefined>;
-const baseUrl = process.env.EXPO_PUBLIC_API_URL || extra.apiBaseUrl || fallbackBaseUrl;
+const baseUrl = getApiBaseUrl();
 
 type DeviceInfo = {
   name: string;
@@ -212,7 +224,7 @@ export async function fetchVisitorTicket(token: string) {
 }
 
 export async function fetchVisitorEvents(token: string) {
-  return apiRequest<{ events: import("../types").VisitorEvent[] }>(
+  return apiRequest<{ events: VisitorEvent[] }>(
     "/api/mobile/v1/visitor/me/events",
     { method: "GET" },
     token
@@ -274,6 +286,165 @@ export async function fetchVisitorGuestList(token: string) {
   }>(
     "/api/mobile/v1/visitor/me/guests",
     { method: "GET" },
+    token
+  );
+}
+
+export async function fetchVisitorHome(token: string, eventId?: string) {
+  const suffix = eventId ? `?eventId=${encodeURIComponent(eventId)}` : "";
+  return apiRequest<VisitorHomeData>(
+    `/api/mobile/v1/visitor/me/home${suffix}`,
+    { method: "GET" },
+    token
+  );
+}
+
+export async function fetchVisitorSessions(token: string, eventId: string) {
+  return apiRequest<{
+    sessions: VisitorSessionItem[];
+    settings: Record<string, unknown>;
+  }>(
+    `/api/mobile/v1/visitor/me/sessions?eventId=${encodeURIComponent(eventId)}`,
+    { method: "GET" },
+    token
+  );
+}
+
+export async function updateVisitorSessionState(
+  token: string,
+  eventId: string,
+  sessionId: string,
+  action: "save" | "unsave" | "plan" | "unplan" | "view" | "live_open"
+) {
+  return apiRequest<{ success: boolean; state: { savedSessionIds: string[]; plannedSessionIds: string[] } }>(
+    `/api/mobile/v1/visitor/me/sessions/${sessionId}`,
+    {
+      method: "POST",
+      body: JSON.stringify({ eventId, action }),
+    },
+    token
+  );
+}
+
+export async function fetchVisitorNetworking(token: string, eventId: string) {
+  return apiRequest<{
+    viewerGuestId: string;
+    profile: VisitorNetworkingProfile;
+    recommendations: VisitorNetworkingRecommendation[];
+    directory: VisitorNetworkingRecommendation[];
+    featuredSponsors: VisitorSponsorProfile[];
+    requests: VisitorNetworkingRequest[];
+    meetings: VisitorMeeting[];
+    taxonomy: { interests: string[]; goals: string[]; industries: string[] };
+    introText?: string;
+    privacyDescription?: string;
+    directoryEmptyState?: string;
+  }>(
+    `/api/mobile/v1/visitor/me/networking?eventId=${encodeURIComponent(eventId)}`,
+    { method: "GET" },
+    token
+  );
+}
+
+export async function updateVisitorProfile(
+  token: string,
+  payload: {
+    eventId: string;
+    optedIn?: boolean;
+    visible?: boolean;
+    headline?: string;
+    company?: string;
+    role?: string;
+    bio?: string;
+    profileImageUrl?: string;
+    interests?: string[];
+    goals?: string[];
+    industries?: string[];
+    availability?: string;
+    contactSharing?: { email?: boolean; phone?: boolean };
+  }
+) {
+  return apiRequest<{ profile: VisitorNetworkingProfile }>(
+    "/api/mobile/v1/visitor/me/profile",
+    {
+      method: "POST",
+      body: JSON.stringify(payload),
+    },
+    token
+  );
+}
+
+export async function sendNetworkingRequest(
+  token: string,
+  payload: {
+    eventId: string;
+    targetGuestId: string;
+    message?: string;
+  }
+) {
+  return apiRequest<{ request: VisitorNetworkingRequest }>(
+    "/api/mobile/v1/visitor/me/networking",
+    {
+      method: "POST",
+      body: JSON.stringify(payload),
+    },
+    token
+  );
+}
+
+export async function respondToNetworkingRequest(
+  token: string,
+  requestId: string,
+  payload: {
+    eventId: string;
+    status: "accepted" | "declined";
+    scheduledFor?: string;
+    location?: string;
+    notes?: string;
+  }
+) {
+  return apiRequest<{ success: boolean }>(
+    `/api/mobile/v1/visitor/me/networking/requests/${requestId}/respond`,
+    {
+      method: "POST",
+      body: JSON.stringify(payload),
+    },
+    token
+  );
+}
+
+export async function fetchVisitorChat(token: string, eventId: string) {
+  return apiRequest<{ viewerGuestId: string; threads: VisitorChatThread[] }>(
+    `/api/mobile/v1/visitor/me/chat?eventId=${encodeURIComponent(eventId)}`,
+    { method: "GET" },
+    token
+  );
+}
+
+export async function sendVisitorChatMessage(
+  token: string,
+  payload: { eventId: string; body: string; threadId?: string; targetGuestId?: string }
+) {
+  return apiRequest<{ threadId: string; message: import("../types").VisitorChatMessage }>(
+    "/api/mobile/v1/visitor/me/chat",
+    {
+      method: "POST",
+      body: JSON.stringify(payload),
+    },
+    token
+  );
+}
+
+export async function registerPushToken(
+  token: string,
+  payload: { eventId: string; token: string; platform: string }
+) {
+  return apiRequest<{ success: boolean }>(
+    "/api/mobile/v1/visitor/me/push-token",
+    {
+      method: "POST",
+      body: JSON.stringify(payload),
+    },
     token
   );
 }

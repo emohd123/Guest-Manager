@@ -2,6 +2,8 @@ import React from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { AuthScreenLayout } from "../ui/AuthScreenLayout";
 import { FadeSlideIn } from "../ui/motion";
+import { PremiumCard, PremiumPill } from "../ui/primitives";
+import { palette, radii, shadows, spacing } from "../ui/theme";
 
 export function StaffChoiceScreen({
   onSelectCodePin,
@@ -20,7 +22,7 @@ export function StaffChoiceScreen({
       icon="Door"
       eyebrow="Staff Pairing"
       title="Connect this device to an event"
-      subtitle="Choose the pairing method that matches your ops setup. Each option now lands in the same polished shell and motion pattern."
+      subtitle="Choose the pairing method that fits the floor setup. Each path lands in the same premium operations shell."
     >
       <FadeSlideIn delay={70}>
         <View style={styles.options}>
@@ -65,44 +67,38 @@ function OptionCard({
   onPress: () => void;
 }) {
   return (
-    <Pressable style={styles.option} onPress={onPress}>
-      <View style={[styles.iconWrapper, { backgroundColor: accent }]}>
-        <Text style={styles.optionIcon}>{icon}</Text>
-      </View>
-      <View style={styles.optionText}>
-        <Text style={styles.optionTitle}>{title}</Text>
-        <Text style={styles.optionDesc}>{description}</Text>
-      </View>
-      <View style={styles.chevronWrap}>
-        <Text style={styles.chevron}>Go</Text>
-      </View>
+    <Pressable onPress={onPress}>
+      <PremiumCard style={styles.option}>
+        <View style={[styles.iconWrapper, { backgroundColor: accent }]}>
+          <Text style={styles.optionIcon}>{icon}</Text>
+        </View>
+        <View style={styles.optionText}>
+          <PremiumPill label="Pairing Method" />
+          <Text style={styles.optionTitle}>{title}</Text>
+          <Text style={styles.optionDesc}>{description}</Text>
+        </View>
+        <View style={styles.chevronWrap}>
+          <Text style={styles.chevron}>Go</Text>
+        </View>
+      </PremiumCard>
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
   options: {
-    gap: 16,
+    gap: spacing.md,
   },
   option: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#ffffff",
-    borderRadius: 26,
-    padding: 22,
-    borderWidth: 1,
-    borderColor: "rgba(26,28,48,0.06)",
-    gap: 16,
-    shadowColor: "#14192C",
-    shadowOpacity: 0.05,
-    shadowOffset: { width: 0, height: 12 },
-    shadowRadius: 20,
-    elevation: 4,
+    gap: spacing.md,
+    padding: spacing.lg,
   },
   iconWrapper: {
     width: 58,
     height: 58,
-    borderRadius: 20,
+    borderRadius: radii.md,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -113,29 +109,30 @@ const styles = StyleSheet.create({
   },
   optionText: {
     flex: 1,
+    gap: 8,
   },
   optionTitle: {
     fontSize: 17,
     fontWeight: "800",
-    color: "#1A1C30",
-    marginBottom: 6,
+    color: palette.text,
   },
   optionDesc: {
     fontSize: 14,
-    color: "#74809A",
+    color: palette.textMuted,
     lineHeight: 20,
     fontWeight: "500",
   },
   chevronWrap: {
     width: 42,
     height: 42,
-    borderRadius: 21,
-    backgroundColor: "#13182C",
+    borderRadius: radii.pill,
+    backgroundColor: palette.bgElevated,
     alignItems: "center",
     justifyContent: "center",
+    ...shadows.soft,
   },
   chevron: {
-    color: "#FFFFFF",
+    color: palette.textInverse,
     fontSize: 11,
     fontWeight: "800",
   },

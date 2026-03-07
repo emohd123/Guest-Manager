@@ -31,8 +31,8 @@ export function DashboardTopbar({
     () => true,
     () => false
   );
-  const { setTheme, theme } = useTheme();
-  const isDark = mounted && theme === "dark";
+  const { setTheme, resolvedTheme } = useTheme();
+  const isDark = mounted && resolvedTheme === "dark";
 
   const identityName = companyName || userName;
   const initials = identityName

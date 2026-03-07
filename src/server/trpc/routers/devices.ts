@@ -11,6 +11,10 @@ import {
   rotatePairingAccess,
   updateDeviceRecord,
 } from "@/server/services/checkin";
+import {
+  getPairingAccessSupabase,
+  rotatePairingAccessSupabase,
+} from "@/server/services/checkin/pairing-service-supabase";
 
 export const devicesRouter = router({
   list: protectedProcedure
@@ -46,13 +50,13 @@ export const devicesRouter = router({
   getPairingAccess: protectedProcedure
     .input(z.object({ eventId: z.string().uuid() }))
     .query(async ({ ctx, input }) => {
-      return getPairingAccess(ctx.db, input.eventId, ctx.userId);
+      return getPairingAccessSupabase(input.eventId, ctx.userId);
     }),
 
   rotatePairingAccess: protectedProcedure
     .input(z.object({ eventId: z.string().uuid() }))
     .mutation(async ({ ctx, input }) => {
-      return rotatePairingAccess(ctx.db, input.eventId, ctx.userId);
+      return rotatePairingAccessSupabase(input.eventId, ctx.userId);
     }),
 
   createPairingQrToken: protectedProcedure
@@ -131,4 +135,3 @@ export const devicesRouter = router({
       });
     }),
 });
-
