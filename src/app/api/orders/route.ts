@@ -68,6 +68,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Registration is not open" }, { status: 400 });
     }
 
+    const eventSettings =
+      event[0].settings && typeof event[0].settings === "object"
+        ? (event[0].settings as Record<string, any>)
+        : {};
+    const isPaidEvent = eventSettings.publicPage?.isPaidEvent !== false;
+
     // Validate ticket types belong to this event
     const ticketTypeIds = cartItems.map((item) => item.ticketTypeId);
     const validTicketTypes = await db
@@ -82,7 +88,20 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const subtotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+    const normalizedCartItems = cartItems.map((item) => {
+      const ticketType = validTicketTypes.find((tt) => tt.id === item.ticketTypeId);
+      return {
+        ...item,
+        name: ticketType?.name ?? item.name,
+        currency: ticketType?.currency ?? item.currency,
+        price: isPaidEvent ? ticketType?.price ?? item.price : 0,
+      };
+    });
+
+    const subtotal = normalizedCartItems.reduce(
+      (sum, item) => sum + item.price * item.quantity,
+      0
+    );
     const isFree = subtotal === 0;
 
     // For paid orders, create a Stripe Checkout Session instead
@@ -90,7 +109,7 @@ export async function POST(request: NextRequest) {
       const stripe = getStripeClient();
       const origin = request.nextUrl.origin;
 
-      const lineItems = cartItems.map((item) => ({
+      const lineItems = normalizedCartItems.map((item) => ({
         price_data: {
           currency: item.currency.toLowerCase(),
           product_data: {
@@ -111,7 +130,7 @@ export async function POST(request: NextRequest) {
           eventId: event[0].id,
           attendeeName,
           attendeeEmail,
-          cartItems: JSON.stringify(cartItems),
+          cartItems: JSON.stringify(normalizedCartItems),
         },
         success_url: `${origin}/e/${companySlug}/${eventSlug}?success=1&session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${origin}/e/${companySlug}/${eventSlug}?cancelled=1`,
@@ -144,14 +163,14 @@ export async function POST(request: NextRequest) {
           name: attendeeName,
           subtotal: 0,
           total: 0,
-          currency: cartItems[0]?.currency ?? "USD",
+          currency: normalizedCartItems[0]?.currency ?? "USD",
           completedAt: new Date(),
         })
         .returning();
       orderId = order.id;
 
       await tx.insert(orderItems).values(
-        cartItems.map((item) => ({
+        normalizedCartItems.map((item) => ({
           orderId: order.id,
           ticketTypeId: item.ticketTypeId,
           quantity: item.quantity,
@@ -160,7 +179,7 @@ export async function POST(request: NextRequest) {
         }))
       );
 
-      for (const item of cartItems) {
+      for (const item of normalizedCartItems) {
         await tx
           .update(ticketTypes)
           .set({

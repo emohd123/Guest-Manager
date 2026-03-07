@@ -3,6 +3,20 @@ export interface DesignSettings {
   primaryColor?: string;
   backgroundColor?: string;
   customCss?: string;
+  publicPage?: {
+    enabled?: boolean;
+    isPaidEvent?: boolean;
+    heroLabel?: string;
+    headline?: string;
+    subheadline?: string;
+    venueName?: string;
+    locationText?: string;
+    ctaLabel?: string;
+    highlights?: string[];
+    showAgenda?: boolean;
+    showSponsors?: boolean;
+    showAppDownload?: boolean;
+  };
 }
 
 export type EventFeatureFlags = {

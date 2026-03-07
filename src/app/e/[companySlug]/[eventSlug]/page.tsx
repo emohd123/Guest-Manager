@@ -23,6 +23,24 @@ import Link from "next/link";
 import type { DesignSettings } from "@/types/event";
 import { toast } from "sonner";
 
+function getPublicPageSettings(settings: DesignSettings, hasPaidTickets: boolean) {
+  const publicPage = settings.publicPage ?? {};
+  return {
+    enabled: publicPage.enabled !== false,
+    isPaidEvent: publicPage.isPaidEvent ?? hasPaidTickets,
+    heroLabel: publicPage.heroLabel || "Event Page",
+    headline: publicPage.headline || "",
+    subheadline: publicPage.subheadline || "",
+    venueName: publicPage.venueName || "",
+    locationText: publicPage.locationText || "",
+    ctaLabel: publicPage.ctaLabel || "",
+    highlights: publicPage.highlights ?? [],
+    showAgenda: publicPage.showAgenda !== false,
+    showSponsors: publicPage.showSponsors !== false,
+    showAppDownload: publicPage.showAppDownload !== false,
+  };
+}
+
 export default function PublicEventPage({ 
   params 
 }: { 
@@ -69,9 +87,27 @@ export default function PublicEventPage({
   }
 
   const settings = (event.settings as DesignSettings) || {};
+  const hasPaidTickets = (ticketTypes ?? []).some((ticket) => (ticket.price ?? 0) > 0);
+  const publicPage = getPublicPageSettings(settings, hasPaidTickets);
   const primaryColor = settings.primaryColor || "#2563EB";
   const backgroundColor = settings.backgroundColor || "#FFFFFF";
   const logoUrl = settings.logoUrl || "";
+
+  if (!publicPage.enabled) {
+    return (
+      <div className="flex min-h-[70vh] items-center justify-center p-8">
+        <div className="max-w-xl space-y-4 text-center">
+          <h1 className="text-3xl font-black tracking-tight">This event page is not public yet</h1>
+          <p className="text-muted-foreground">
+            The organizer has not published the public event landing page.
+          </p>
+          <Button asChild className="rounded-2xl h-12 px-8 font-bold">
+            <Link href="/">Return Home</Link>
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   const handleCheckout = async (selection: Record<string, number>) => {
     if (!attendeeName.trim()) {
@@ -174,8 +210,13 @@ export default function PublicEventPage({
               </div>
               
               <h1 className="text-5xl sm:text-6xl font-black tracking-tighter leading-[0.9] text-zinc-950 dark:text-white" style={{ color: primaryColor === "#FFFFFF" ? undefined : primaryColor }}>
-                {event.title}
+                {publicPage.headline || event.title}
               </h1>
+              {publicPage.subheadline ? (
+                <p className="max-w-2xl text-lg leading-relaxed text-zinc-600 dark:text-zinc-400">
+                  {publicPage.subheadline}
+                </p>
+              ) : null}
 
               <div className="flex flex-wrap gap-4 pt-2">
                 <div className="flex items-center gap-3 px-5 py-3 rounded-2xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800">
@@ -191,6 +232,15 @@ export default function PublicEventPage({
                   <div className="flex flex-col">
                     <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400 leading-none mb-1">Time</span>
                     <span className="text-sm font-bold leading-none">{format(new Date(event.startsAt), "h:mm a")}</span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 px-5 py-3 rounded-2xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800">
+                  <Ticket className="h-5 w-5" style={{ color: primaryColor }} />
+                  <div className="flex flex-col">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400 leading-none mb-1">Access</span>
+                    <span className="text-sm font-bold leading-none">
+                      {publicPage.isPaidEvent ? "Paid Event" : "Free Event"}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -214,7 +264,10 @@ export default function PublicEventPage({
               )}
               <div className="absolute top-6 left-6 flex gap-2">
                 <span className="px-4 py-2 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white text-xs font-black uppercase tracking-widest shadow-xl">
-                  Confirmed Event
+                  {publicPage.heroLabel}
+                </span>
+                <span className="px-4 py-2 rounded-full bg-black/25 backdrop-blur-md border border-white/20 text-white text-xs font-black uppercase tracking-widest shadow-xl">
+                  {publicPage.isPaidEvent ? "Paid" : "Free"}
                 </span>
               </div>
             </div>
@@ -240,7 +293,9 @@ export default function PublicEventPage({
                   </div>
                   <div>
                     <h4 className="font-bold">Location</h4>
-                    <p className="text-sm text-muted-foreground">Virtual Event or Venue TBD</p>
+                    <p className="text-sm text-muted-foreground">
+                      {publicPage.venueName || publicPage.locationText || "Virtual Event or Venue TBD"}
+                    </p>
                   </div>
                   <Button variant="link" className="px-0 font-bold text-xs h-auto uppercase tracking-wider hvr-underline-from-left">
                     Show on map <ChevronRight className="h-3 w-3" />
@@ -253,13 +308,30 @@ export default function PublicEventPage({
                   </div>
                   <div>
                     <h4 className="font-bold">Spread the word</h4>
-                    <p className="text-sm text-muted-foreground">Invite friends and colleagues.</p>
+                    <p className="text-sm text-muted-foreground">
+                      {publicPage.isPaidEvent
+                        ? "Share the event page with guests ready to purchase access."
+                        : "Invite friends and colleagues to reserve a free spot."}
+                    </p>
                   </div>
                   <Button variant="link" className="px-0 font-bold text-xs h-auto uppercase tracking-wider hvr-underline-from-left">
                     Copy link <ChevronRight className="h-3 w-3" />
                   </Button>
                 </div>
               </div>
+
+              {publicPage.highlights.length ? (
+                <div className="grid gap-4 pt-6 sm:grid-cols-3">
+                  {publicPage.highlights.slice(0, 6).map((highlight) => (
+                    <div
+                      key={highlight}
+                      className="rounded-3xl border border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 p-5"
+                    >
+                      <p className="text-sm font-bold leading-relaxed">{highlight}</p>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
 
               {experience?.settings.features?.liveStreamEnabled !== false && experience?.settings.liveStream?.url ? (
                 <div className="rounded-[2rem] border border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 p-8 space-y-4">
@@ -280,7 +352,7 @@ export default function PublicEventPage({
                 </div>
               ) : null}
 
-              {experience?.sessions?.length ? (
+              {publicPage.showAgenda && experience?.sessions?.length ? (
                 <div className="space-y-6 pt-10">
                   <div className="flex items-center gap-3">
                     <div className="h-1px bg-zinc-100 dark:bg-zinc-800 grow" />
@@ -312,7 +384,8 @@ export default function PublicEventPage({
                 </div>
               ) : null}
 
-              {experience?.settings.features?.sponsorHighlightsEnabled !== false &&
+              {publicPage.showSponsors &&
+              experience?.settings.features?.sponsorHighlightsEnabled !== false &&
               experience?.settings.sponsors?.featuredProfiles?.length ? (
                 <div className="space-y-6 pt-10">
                   <div className="flex items-center gap-3">
@@ -352,6 +425,7 @@ export default function PublicEventPage({
                 </div>
               ) : null}
 
+              {publicPage.showAppDownload ? (
               <div className="rounded-[2rem] border border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 p-8 space-y-4">
                 <div className="flex items-center gap-3">
                   <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
@@ -368,6 +442,7 @@ export default function PublicEventPage({
                   <a href="/event-check-in-app">Open App Details</a>
                 </Button>
               </div>
+              ) : null}
             </div>
           </div>
 
@@ -381,10 +456,18 @@ export default function PublicEventPage({
                 <div className="space-y-2">
                   <div className="flex items-center gap-2">
                     <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
-                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400">Tickets Available</span>
+                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400">
+                      {publicPage.isPaidEvent ? "Tickets Available" : "Free Registration"}
+                    </span>
                   </div>
-                  <h3 className="text-3xl font-black tracking-tighter">Registration</h3>
-                  <p className="text-muted-foreground text-sm">Select your tickets and proceed to complete your registration below.</p>
+                  <h3 className="text-3xl font-black tracking-tighter">
+                    {publicPage.isPaidEvent ? "Registration" : "Reserve your place"}
+                  </h3>
+                  <p className="text-muted-foreground text-sm">
+                    {publicPage.isPaidEvent
+                      ? "Select your tickets and proceed to complete your registration below."
+                      : "Choose your free ticket and submit your details to reserve your place."}
+                  </p>
                 </div>
 
                 <div className="grid gap-3">
@@ -413,6 +496,9 @@ export default function PublicEventPage({
                     ticketTypes={ticketTypes || []} 
                     onCheckout={handleCheckout}
                     isLoading={checkoutLoading}
+                    checkoutLabel={publicPage.ctaLabel || (publicPage.isPaidEvent ? "Proceed to Checkout" : "Reserve Free Spot")}
+                    amountLabel={publicPage.isPaidEvent ? "Total Amount" : "Selected Tickets"}
+                    freeEvent={!publicPage.isPaidEvent}
                   />
                 )}
 

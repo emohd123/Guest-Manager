@@ -21,9 +21,19 @@ interface TicketWidgetProps {
   ticketTypes: TicketType[];
   onCheckout: (selection: Record<string, number>) => void | Promise<void>;
   isLoading?: boolean;
+  checkoutLabel?: string;
+  amountLabel?: string;
+  freeEvent?: boolean;
 }
 
-export function TicketWidget({ ticketTypes, onCheckout, isLoading }: TicketWidgetProps) {
+export function TicketWidget({
+  ticketTypes,
+  onCheckout,
+  isLoading,
+  checkoutLabel,
+  amountLabel,
+  freeEvent,
+}: TicketWidgetProps) {
   const [quantities, setQuantities] = useState<Record<string, number>>({});
 
   const updateQuantity = (id: string, delta: number, min: number, max: number) => {
@@ -83,7 +93,9 @@ export function TicketWidget({ ticketTypes, onCheckout, isLoading }: TicketWidge
                   )}
                   <div className="flex items-center gap-4 pt-1">
                     <span className="text-2xl font-black text-primary">
-                      {(ticket.price ?? 0) === 0 ? "FREE" : `$${((ticket.price ?? 0) / 100).toFixed(2)}`}
+                      {freeEvent || (ticket.price ?? 0) === 0
+                        ? "FREE"
+                        : `$${((ticket.price ?? 0) / 100).toFixed(2)}`}
                     </span>
                     {ticket.quantityTotal && (
                       <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest bg-zinc-100 dark:bg-zinc-800 px-2 py-1 rounded-lg">
@@ -139,9 +151,11 @@ export function TicketWidget({ ticketTypes, onCheckout, isLoading }: TicketWidge
       <div className="sticky bottom-6 p-1 rounded-[2rem] bg-zinc-900/10 backdrop-blur-xl border border-white/20">
         <div className="p-6 rounded-[1.75rem] bg-zinc-950 text-white shadow-2xl flex items-center justify-between gap-4">
           <div className="flex flex-col">
-            <span className="text-zinc-500 text-[10px] font-black uppercase tracking-widest">Total Amount</span>
+            <span className="text-zinc-500 text-[10px] font-black uppercase tracking-widest">
+              {amountLabel ?? "Total Amount"}
+            </span>
             <span className="text-2xl font-black tracking-tighter">
-              ${(totalPrice / 100).toFixed(2)}
+              {freeEvent || totalPrice === 0 ? "FREE" : `$${(totalPrice / 100).toFixed(2)}`}
             </span>
           </div>
           
@@ -156,7 +170,7 @@ export function TicketWidget({ ticketTypes, onCheckout, isLoading }: TicketWidge
             ) : (
               <ShoppingCart className="h-5 w-5 fill-zinc-950" />
             )}
-            Proceed to Checkout
+            {checkoutLabel ?? "Proceed to Checkout"}
           </Button>
         </div>
       </div>

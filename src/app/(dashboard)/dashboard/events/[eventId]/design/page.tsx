@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ImagePlus, Paintbrush, ExternalLink, Loader2, Check, Ticket, Mail, CalendarDays, Activity, Zap, ShieldCheck } from "lucide-react";
+import { ImagePlus, ExternalLink, Loader2, Ticket, Mail, CalendarDays, Activity, ShieldCheck, Globe, BadgeDollarSign } from "lucide-react";
 import { trpc } from "@/lib/trpc/client";
 import { ImageUpload } from "@/components/shared/ImageUpload";
 import { toast } from "sonner";
@@ -32,12 +32,24 @@ export default function DesignSetupPage({
 
   const { data: event, isLoading } = trpc.events.get.useQuery({ id: eventId });
 
-  // ---------- Branding tab state ----------
+  // ---------- Branding + event page state ----------
   const [coverImageUrl, setCoverImageUrl] = useState("");
   const [logoUrl, setLogoUrl] = useState("");
   const [primaryColor, setPrimaryColor] = useState("#2563EB");
   const [backgroundColor, setBackgroundColor] = useState("#FFFFFF");
   const [customCss, setCustomCss] = useState("");
+  const [publicPageEnabled, setPublicPageEnabled] = useState(true);
+  const [isPaidEvent, setIsPaidEvent] = useState(false);
+  const [heroLabel, setHeroLabel] = useState("Event Page");
+  const [pageHeadline, setPageHeadline] = useState("");
+  const [pageSubheadline, setPageSubheadline] = useState("");
+  const [venueName, setVenueName] = useState("");
+  const [locationText, setLocationText] = useState("");
+  const [pageCtaLabel, setPageCtaLabel] = useState("");
+  const [highlightsCsv, setHighlightsCsv] = useState("");
+  const [showAgenda, setShowAgenda] = useState(true);
+  const [showSponsors, setShowSponsors] = useState(true);
+  const [showAppDownload, setShowAppDownload] = useState(true);
 
   // ---------- Ticket design tab state ----------
   const [ticketDesign, setTicketDesign] = useState<TicketDesignSettings>({
@@ -80,6 +92,18 @@ export default function DesignSetupPage({
         setPrimaryColor(settings.primaryColor || "#2563EB");
         setBackgroundColor(settings.backgroundColor || "#FFFFFF");
         setCustomCss(settings.customCss || "");
+        setPublicPageEnabled(settings.publicPage?.enabled !== false);
+        setIsPaidEvent(Boolean(settings.publicPage?.isPaidEvent));
+        setHeroLabel(settings.publicPage?.heroLabel || "Event Page");
+        setPageHeadline(settings.publicPage?.headline || "");
+        setPageSubheadline(settings.publicPage?.subheadline || "");
+        setVenueName(settings.publicPage?.venueName || "");
+        setLocationText(settings.publicPage?.locationText || "");
+        setPageCtaLabel(settings.publicPage?.ctaLabel || "");
+        setHighlightsCsv((settings.publicPage?.highlights ?? []).join("\n"));
+        setShowAgenda(settings.publicPage?.showAgenda !== false);
+        setShowSponsors(settings.publicPage?.showSponsors !== false);
+        setShowAppDownload(settings.publicPage?.showAppDownload !== false);
         if (settings.ticketDesign) setTicketDesign(settings.ticketDesign);
         if (settings.emailDesigns) setEmailDesigns(settings.emailDesigns);
         if (settings.agenda) setAgendaSettings(settings.agenda);
@@ -127,6 +151,23 @@ export default function DesignSetupPage({
         primaryColor,
         backgroundColor,
         customCss,
+        publicPage: {
+          enabled: publicPageEnabled,
+          isPaidEvent,
+          heroLabel,
+          headline: pageHeadline,
+          subheadline: pageSubheadline,
+          venueName,
+          locationText,
+          ctaLabel: pageCtaLabel,
+          highlights: highlightsCsv
+            .split("\n")
+            .map((line) => line.trim())
+            .filter(Boolean),
+          showAgenda,
+          showSponsors,
+          showAppDownload,
+        },
         ticketDesign,
         emailDesigns,
         agenda: agendaSettings,
@@ -151,8 +192,8 @@ export default function DesignSetupPage({
         <motion.div initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }}>
           <h1 className="text-4xl font-black text-white italic tracking-tighter uppercase leading-none">Design Studio</h1>
           <p className="text-white/40 font-bold uppercase tracking-[0.2em] text-[10px] mt-2 italic flex items-center gap-2">
-             <Activity className="h-3 w-3 text-primary animate-pulse" />
-             Branding, tickets, email, and agenda
+            <Activity className="h-3 w-3 text-primary animate-pulse" />
+             Branding, event page, tickets, email, and agenda
           </p>
         </motion.div>
         
@@ -176,7 +217,7 @@ export default function DesignSetupPage({
       <Tabs defaultValue="branding" className="space-y-12">
         <TabsList className="h-auto gap-4 bg-white/5 p-2 rounded-[32px] border border-white/10 backdrop-blur-xl">
           {[
-            { value: "branding", label: "Branding", icon: ImagePlus },
+            { value: "branding", label: "Branding + Event Page", icon: ImagePlus },
             { value: "ticket", label: "Tickets", icon: Ticket },
             { value: "email", label: "Email", icon: Mail },
             { value: "agenda", label: "Agenda", icon: CalendarDays }
@@ -194,8 +235,9 @@ export default function DesignSetupPage({
 
         <AnimatePresence mode="wait">
           <TabsContent key="branding" value="branding" className="mt-0 outline-none">
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="grid gap-10 md:grid-cols-2">
-              <div className="rounded-[40px] bg-white/5 border border-white/10 p-10 md:p-12 space-y-10 shadow-2xl">
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="grid gap-10 xl:grid-cols-[1.1fr_0.9fr]">
+              <div className="space-y-10">
+                <div className="rounded-[40px] bg-white/5 border border-white/10 p-10 md:p-12 space-y-10 shadow-2xl">
                  <div className="space-y-2">
                     <p className="text-[10px] font-black text-primary uppercase tracking-[0.4em] italic leading-none">Visual Identity</p>
                     <h2 className="text-2xl font-black text-white italic uppercase tracking-tighter">Event Images</h2>
@@ -219,9 +261,109 @@ export default function DesignSetupPage({
                       onChange={setLogoUrl}
                       onRemove={() => setLogoUrl("")}
                       aspectRatio="square"
-                      className="rounded-[32px] border-white/5 bg-white/2"
+                      className="max-w-[220px] rounded-[32px] border-white/5 bg-white/2"
                     />
                  </div>
+                </div>
+
+                <div className="rounded-[40px] bg-white/5 border border-white/10 p-10 md:p-12 space-y-8 shadow-2xl">
+                  <div className="space-y-2">
+                    <p className="text-[10px] font-black text-primary uppercase tracking-[0.4em] italic leading-none">Public Event Page</p>
+                    <h2 className="text-2xl font-black text-white italic uppercase tracking-tighter">Landing Page Content</h2>
+                  </div>
+
+                  <div className="grid gap-6 md:grid-cols-2">
+                    <div className="space-y-3">
+                      <Label className="text-[9px] font-black uppercase tracking-[0.3em] text-white/40 italic">PUBLIC PAGE</Label>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className={cn(
+                          "h-14 w-full rounded-2xl border-white/10 font-black uppercase tracking-widest text-[10px]",
+                          publicPageEnabled ? "bg-primary/20 text-white" : "bg-white/5 text-white/60"
+                        )}
+                        onClick={() => setPublicPageEnabled((value) => !value)}
+                      >
+                        <Globe className="mr-2 h-4 w-4" />
+                        {publicPageEnabled ? "Public Page On" : "Public Page Off"}
+                      </Button>
+                    </div>
+
+                    <div className="space-y-3">
+                      <Label className="text-[9px] font-black uppercase tracking-[0.3em] text-white/40 italic">EVENT ACCESS</Label>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className={cn(
+                          "h-14 w-full rounded-2xl border-white/10 font-black uppercase tracking-widest text-[10px]",
+                          isPaidEvent ? "bg-primary/20 text-white" : "bg-white/5 text-white/60"
+                        )}
+                        onClick={() => setIsPaidEvent((value) => !value)}
+                      >
+                        <BadgeDollarSign className="mr-2 h-4 w-4" />
+                        {isPaidEvent ? "Paid Event" : "Free Event"}
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="grid gap-6 md:grid-cols-2">
+                    <div className="space-y-3">
+                      <Label className="text-[9px] font-black uppercase tracking-[0.3em] text-white/40 italic">HERO LABEL</Label>
+                      <Input value={heroLabel} onChange={(e) => setHeroLabel(e.target.value)} className="rounded-2xl bg-white/5 border-white/10 text-white" placeholder="Event Page" />
+                    </div>
+                    <div className="space-y-3">
+                      <Label className="text-[9px] font-black uppercase tracking-[0.3em] text-white/40 italic">CTA LABEL</Label>
+                      <Input value={pageCtaLabel} onChange={(e) => setPageCtaLabel(e.target.value)} className="rounded-2xl bg-white/5 border-white/10 text-white" placeholder={isPaidEvent ? "Proceed to Checkout" : "Reserve Free Spot"} />
+                    </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    <Label className="text-[9px] font-black uppercase tracking-[0.3em] text-white/40 italic">PAGE HEADLINE</Label>
+                    <Input value={pageHeadline} onChange={(e) => setPageHeadline(e.target.value)} className="rounded-2xl bg-white/5 border-white/10 text-white" placeholder={event?.title || "Event headline"} />
+                  </div>
+
+                  <div className="space-y-3">
+                    <Label className="text-[9px] font-black uppercase tracking-[0.3em] text-white/40 italic">SUBHEADLINE</Label>
+                    <Textarea value={pageSubheadline} onChange={(e) => setPageSubheadline(e.target.value)} className="rounded-[24px] bg-white/5 border-white/10 text-white min-h-[120px]" placeholder="Short intro that explains what the event is about." />
+                  </div>
+
+                  <div className="grid gap-6 md:grid-cols-2">
+                    <div className="space-y-3">
+                      <Label className="text-[9px] font-black uppercase tracking-[0.3em] text-white/40 italic">VENUE NAME</Label>
+                      <Input value={venueName} onChange={(e) => setVenueName(e.target.value)} className="rounded-2xl bg-white/5 border-white/10 text-white" placeholder="Bahrain World Trade Center" />
+                    </div>
+                    <div className="space-y-3">
+                      <Label className="text-[9px] font-black uppercase tracking-[0.3em] text-white/40 italic">LOCATION TEXT</Label>
+                      <Input value={locationText} onChange={(e) => setLocationText(e.target.value)} className="rounded-2xl bg-white/5 border-white/10 text-white" placeholder="Manama, Bahrain" />
+                    </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    <Label className="text-[9px] font-black uppercase tracking-[0.3em] text-white/40 italic">HIGHLIGHTS</Label>
+                    <Textarea value={highlightsCsv} onChange={(e) => setHighlightsCsv(e.target.value)} className="rounded-[24px] bg-white/5 border-white/10 text-white min-h-[160px]" placeholder={"One highlight per line\nKeynote speakers\nPremium networking\nLive sessions"} />
+                  </div>
+
+                  <div className="grid gap-4 md:grid-cols-3">
+                    {[
+                      { label: "Show Agenda", value: showAgenda, setValue: setShowAgenda },
+                      { label: "Show Sponsors", value: showSponsors, setValue: setShowSponsors },
+                      { label: "Show App Download", value: showAppDownload, setValue: setShowAppDownload },
+                    ].map((item) => (
+                      <Button
+                        key={item.label}
+                        type="button"
+                        variant="outline"
+                        className={cn(
+                          "h-14 rounded-2xl border-white/10 font-black uppercase tracking-widest text-[10px]",
+                          item.value ? "bg-primary/20 text-white" : "bg-white/5 text-white/60"
+                        )}
+                        onClick={() => item.setValue((current: boolean) => !current)}
+                      >
+                        {item.label}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
               </div>
 
               <div className="rounded-[40px] bg-white/5 border border-white/10 p-10 md:p-12 space-y-10 shadow-2xl">
@@ -258,6 +400,23 @@ export default function DesignSetupPage({
                         onChange={(e) => setCustomCss(e.target.value)}
                         className="font-mono text-[10px] min-h-[220px] rounded-[32px] bg-white/3 border-white/5 p-8 focus:ring-primary text-white/60 selection:bg-primary/20 resize-none"
                       />
+                    </div>
+                    
+                    <Separator className="bg-white/5" />
+
+                    <div className="space-y-5 text-sm text-white/70">
+                      <div className="rounded-[28px] border border-white/10 bg-white/5 p-6">
+                        <p className="font-black uppercase tracking-widest text-[10px] text-white/40 mb-3">Visibility</p>
+                        <p>{publicPageEnabled ? "This event page can be visited publicly when the event is published." : "The public event page is hidden from visitors."}</p>
+                      </div>
+                      <div className="rounded-[28px] border border-white/10 bg-white/5 p-6">
+                        <p className="font-black uppercase tracking-widest text-[10px] text-white/40 mb-3">Checkout Mode</p>
+                        <p>{isPaidEvent ? "Visitors will see paid ticket language and checkout messaging." : "Visitors will see free registration language and a reserve-spot CTA."}</p>
+                      </div>
+                      <div className="rounded-[28px] border border-white/10 bg-white/5 p-6">
+                        <p className="font-black uppercase tracking-widest text-[10px] text-white/40 mb-3">Public URL</p>
+                        <p className="break-all text-white">{companySlug ? `/e/${companySlug}/${event?.slug}` : "Save to generate preview"}</p>
+                      </div>
                     </div>
                  </div>
               </div>

@@ -327,7 +327,19 @@ export const eventsRouter = router({
 
       const { data, error } = await query.maybeSingle();
       if (error) throw new Error(error.message);
-      return data ? mapEvent(data as EventRow, company.slug) : null;
+      if (!data) return null;
+
+      const settings =
+        data.settings && typeof data.settings === "object"
+          ? (data.settings as Record<string, any>)
+          : {};
+      const publicPageEnabled = settings.publicPage?.enabled;
+
+      if (ctx.companyId !== company.id && publicPageEnabled === false) {
+        return null;
+      }
+
+      return mapEvent(data as EventRow, company.slug);
     }),
 
   stats: protectedProcedure.query(async ({ ctx }) => {

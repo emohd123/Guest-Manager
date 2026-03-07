@@ -59,12 +59,15 @@ export function ImageUpload({
       alert("Failed to upload image. Please ensure the 'events' bucket exists in your Supabase storage.");
     } finally {
       setIsUploading(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
     }
   };
 
   const aspectClasses = {
     video: "aspect-video",
-    square: "aspect-square w-32 h-32",
+    square: "aspect-square w-full min-h-[220px]",
     portrait: "aspect-[3/4]",
   };
 
@@ -72,10 +75,10 @@ export function ImageUpload({
     <div className={cn("space-y-4 w-full", className)}>
       {label && <label className="text-sm font-bold uppercase tracking-wider text-muted-foreground">{label}</label>}
       
-      <div className="relative group">
+      <div className="relative group w-full">
         {value ? (
           <div className={cn(
-            "relative overflow-hidden rounded-[2rem] border-2 border-zinc-100 dark:border-zinc-800 transition-all duration-500",
+            "relative w-full overflow-hidden rounded-[2rem] border-2 border-zinc-100 dark:border-zinc-800 transition-all duration-500",
             aspectClasses[aspectRatio]
           )}>
             <img 
@@ -108,7 +111,7 @@ export function ImageUpload({
           <div 
             onClick={() => fileInputRef.current?.click()}
             className={cn(
-              "relative flex flex-col items-center justify-center rounded-[2rem] border-2 border-dashed border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/30 hover:bg-zinc-100 dark:hover:bg-zinc-900/50 hover:border-primary/50 transition-all duration-300 cursor-pointer group",
+              "relative flex w-full flex-col items-center justify-center rounded-[2rem] border-2 border-dashed border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/30 hover:bg-zinc-100 dark:hover:bg-zinc-900/50 hover:border-primary/50 transition-all duration-300 cursor-pointer group",
               aspectClasses[aspectRatio]
             )}
           >
