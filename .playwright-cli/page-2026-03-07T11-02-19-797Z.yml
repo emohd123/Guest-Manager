@@ -1,0 +1,29 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e5]:
+    - generic [ref=e6]:
+      - generic [ref=e7]: GuestManager
+      - generic [ref=e8]: Sign in to your account
+    - generic [ref=e9]:
+      - generic [ref=e10]:
+        - generic [ref=e11]:
+          - generic [ref=e12]: Email
+          - textbox "Email" [ref=e13]:
+            - /placeholder: you@example.com
+        - generic [ref=e14]:
+          - generic [ref=e15]:
+            - generic [ref=e16]: Password
+            - link "Forgot password?" [ref=e17] [cursor=pointer]:
+              - /url: /forgot-password
+          - textbox "Password" [ref=e18]:
+            - /placeholder: Enter your password
+        - button "Sign In" [ref=e19]
+      - generic [ref=e21]: OR
+      - button "Continue with Google" [ref=e22]:
+        - img
+        - text: Continue with Google
+    - paragraph [ref=e24]:
+      - text: Don't have an account?
+      - link "Sign up free" [ref=e25] [cursor=pointer]:
+        - /url: /signup
+  - region "Notifications alt+T"
+  - alert [ref=e26]

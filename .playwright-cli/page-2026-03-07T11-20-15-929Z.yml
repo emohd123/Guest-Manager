@@ -1,0 +1,6 @@
+- generic [active] [ref=e1]:
+  - contentinfo [ref=e18]:
+    - text: Powered by
+    - link "GuestManager" [ref=e19] [cursor=pointer]:
+      - /url: /
+  - region "Notifications alt+T"
