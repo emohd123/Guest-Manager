@@ -1,0 +1,38 @@
+<svg width="1440" height="1080" viewBox="0 0 1440 1080" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="systemBg" x1="74" y1="56" x2="1364" y2="1038" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFF7FB"/>
+      <stop offset="0.48" stop-color="#F4EDFF"/>
+      <stop offset="1" stop-color="#F6F9FF"/>
+    </linearGradient>
+  </defs>
+  <rect width="1440" height="1080" rx="44" fill="url(#systemBg)"/>
+  <text x="88" y="112" fill="#111827" font-family="Poppins, Arial, sans-serif" font-size="48" font-weight="800" letter-spacing="-1.8">Events Hub Icon System</text>
+  <text x="88" y="158" fill="#6B7280" font-family="Poppins, Arial, sans-serif" font-size="22" font-weight="500">Production-ready event-tech brand mark with location pin, ticket, and check-in confirmation.</text>
+
+  <rect x="88" y="214" width="592" height="360" rx="34" fill="white"/>
+  <rect x="760" y="214" width="592" height="360" rx="34" fill="#111827"/>
+  <rect x="88" y="624" width="400" height="320" rx="34" fill="white"/>
+  <rect x="520" y="624" width="400" height="320" rx="34" fill="#F4EEFF"/>
+  <rect x="952" y="624" width="400" height="320" rx="34" fill="#111827"/>
+
+  <image href="/assets/brand/events-hub-icon-primary.svg" x="206" y="264" width="356" height="356"/>
+  <text x="120" y="540" fill="#111827" font-family="Poppins, Arial, sans-serif" font-size="30" font-weight="700">1. Primary Standalone Icon</text>
+  <text x="120" y="578" fill="#6B7280" font-family="Poppins, Arial, sans-serif" font-size="19" font-weight="500">Transparent background, glossy gradient, soft glow, and depth.</text>
+
+  <image href="/assets/brand/events-hub-icon-primary.svg" x="878" y="264" width="356" height="356"/>
+  <text x="792" y="540" fill="#F9FAFB" font-family="Poppins, Arial, sans-serif" font-size="30" font-weight="700">2. Light and Dark Safe</text>
+  <text x="792" y="578" fill="#CBD5E1" font-family="Poppins, Arial, sans-serif" font-size="19" font-weight="500">Strong white ticket and bold check for contrast on dark surfaces.</text>
+
+  <image href="/assets/brand/events-hub-icon-flat.svg" x="164" y="680" width="248" height="248"/>
+  <text x="124" y="900" fill="#111827" font-family="Poppins, Arial, sans-serif" font-size="26" font-weight="700">3. Flat Icon</text>
+  <text x="124" y="932" fill="#6B7280" font-family="Poppins, Arial, sans-serif" font-size="17" font-weight="500">Optimized for small-size UI use.</text>
+
+  <image href="/assets/brand/events-hub-icon-app-tile.svg" x="596" y="680" width="248" height="248"/>
+  <text x="556" y="900" fill="#111827" font-family="Poppins, Arial, sans-serif" font-size="26" font-weight="700">4. App Tile</text>
+  <text x="556" y="932" fill="#6B7280" font-family="Poppins, Arial, sans-serif" font-size="17" font-weight="500">Rounded-square mobile app presentation.</text>
+
+  <image href="/assets/brand/events-hub-icon-favicon.svg" x="1104" y="748" width="96" height="96"/>
+  <text x="1000" y="900" fill="#F9FAFB" font-family="Poppins, Arial, sans-serif" font-size="26" font-weight="700">5. Tiny Favicon</text>
+  <text x="1000" y="932" fill="#CBD5E1" font-family="Poppins, Arial, sans-serif" font-size="17" font-weight="500">Minimal, crisp, and recognizable at 16-32px.</text>
+</svg>

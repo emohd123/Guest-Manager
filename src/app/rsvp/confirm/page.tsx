@@ -81,7 +81,7 @@ export default async function ConfirmAttendancePage({ searchParams }: PageProps)
               href="/"
               className="inline-flex h-12 items-center justify-center rounded-2xl bg-primary px-6 text-sm font-black uppercase tracking-[0.2em] text-white"
             >
-              Back to GuestManager
+              Back to Events Hub
             </Link>
           </div>
         </div>

@@ -24,6 +24,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
+import { BrandMark } from "@/components/brand/brand-mark";
+import { BrandWordmark } from "@/components/brand/brand-wordmark";
 
 const navigation = [
   {
@@ -128,10 +130,17 @@ export function DashboardSidebar({ collapsed, onToggle }: DashboardSidebarProps)
     >
       {/* Logo */}
       <div className="flex h-20 items-center justify-between px-6">
-        {!collapsed && (
-          <Link href="/dashboard" className="text-xl font-bold tracking-tight">
-            <span className="text-primary italic">Guest</span>
-            <span className="text-foreground">Manager</span>
+        {collapsed ? (
+          <Link href="/dashboard" aria-label="Events Hub dashboard">
+            <BrandMark className="h-11 w-11" />
+          </Link>
+        ) : (
+          <Link href="/dashboard" aria-label="Events Hub dashboard">
+            <BrandWordmark
+              className="gap-2.5"
+              markClassName="h-11 w-11"
+              textClassName="text-[1.55rem]"
+            />
           </Link>
         )}
         <Button

@@ -8,7 +8,7 @@
 
 ## 1. Overview
 
-Add a self-service **Attendee Portal** to the Guest Manager platform. Attendees create accounts, see their event history, view their ticket QR code, browse event agendas, see fellow guests, message organizers, and receive change notifications. Organizers get a browser-based QR scanner that pairs with existing device infrastructure.
+Add a self-service **Attendee Portal** to the Events Hub platform. Attendees create accounts, see their event history, view their ticket QR code, browse event agendas, see fellow guests, message organizers, and receive change notifications. Organizers get a browser-based QR scanner that pairs with existing device infrastructure.
 
 ---
 

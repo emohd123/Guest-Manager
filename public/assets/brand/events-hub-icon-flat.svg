@@ -1,0 +1,25 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="flatPinGradient" x1="138" y1="90" x2="372" y2="388" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FF5A7A"/>
+      <stop offset="0.3" stop-color="#FF6B8A"/>
+      <stop offset="0.72" stop-color="#7C4DFF"/>
+      <stop offset="1" stop-color="#5B3DF5"/>
+    </linearGradient>
+    <linearGradient id="flatCheckGradient" x1="194" y1="165" x2="280" y2="248" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FF5A7A"/>
+      <stop offset="1" stop-color="#7C4DFF"/>
+    </linearGradient>
+    <mask id="flatTicketMask">
+      <rect x="144" y="136" width="224" height="114" rx="28" fill="white"/>
+      <circle cx="144" cy="193" r="17" fill="black"/>
+      <circle cx="368" cy="193" r="17" fill="black"/>
+    </mask>
+  </defs>
+  <path d="M256 448C241.315 448 227.343 441.54 217.433 430.61C187.168 397.24 88 277.005 88 172C88 79.2162 163.216 4 256 4C348.784 4 424 79.2162 424 172C424 277.005 324.832 397.24 294.567 430.61C284.657 441.54 270.685 448 256 448Z" fill="url(#flatPinGradient)"/>
+  <circle cx="256" cy="176" r="120" fill="white" fill-opacity="0.08"/>
+  <rect x="144" y="136" width="224" height="114" rx="28" fill="white" fill-opacity="0.98" mask="url(#flatTicketMask)"/>
+  <path d="M172 154H300" stroke="white" stroke-opacity="0.54" stroke-width="12" stroke-linecap="round"/>
+  <path d="M194 188L234 226L304 152" stroke="url(#flatCheckGradient)" stroke-width="28" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M256 416C240.683 398.445 168 316.835 168 234" stroke="white" stroke-opacity="0.18" stroke-width="10" stroke-linecap="round"/>
+</svg>

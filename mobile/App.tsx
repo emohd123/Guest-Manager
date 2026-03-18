@@ -61,6 +61,7 @@ import { enqueueMutation, initOfflineQueue, listQueuedMutations } from "./src/st
 import { clearSession, loadSession, saveSession } from "./src/storage/session";
 import { replayQueue } from "./src/sync/replay";
 import { FadeSlideIn } from "./src/ui/motion";
+import { BrandLogo } from "./src/ui/brand-logo";
 import { PremiumBackdrop, PremiumCard, PremiumPill } from "./src/ui/primitives";
 import { palette, radii, spacing } from "./src/ui/theme";
 import { getExpoProjectId } from "./src/config";
@@ -430,8 +431,9 @@ export default function App() {
         <PremiumBackdrop>
           <View style={styles.bootShell}>
             <PremiumCard tone="glass" style={styles.bootCard}>
+              <BrandLogo size={138} />
               <PremiumPill label="Launching" tone="live" />
-              <Text style={styles.bootTitle}>Guest Manager Mobile</Text>
+              <Text style={styles.bootTitle}>Events Hub</Text>
               <Text style={styles.bootBody}>
                 Preparing attendee and operations experiences.
               </Text>

@@ -1,23 +1,44 @@
 {
   "expo": {
-    "name": "Guest Manager Check In",
-    "slug": "guest-manager-checkin-v2",
+    "name": "Events Hub",
+    "slug": "events-hub",
     "version": "0.1.0",
+    "scheme": "eventshub",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
     "assetBundlePatterns": [
       "**/*"
     ],
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.eventshub.app",
+      "buildNumber": "1",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
-      "package": "com.anonymous.guestmanagercheckinv2",
-      "usesCleartextTraffic": true
+      "package": "com.eventshub.app",
+      "versionCode": 1,
+      "usesCleartextTraffic": false,
+      "permissions": [
+        "CAMERA",
+        "POST_NOTIFICATIONS"
+      ]
+    },
+    "icon": "./assets/events-hub-icon.png",
+    "splash": {
+      "image": "./assets/events-hub-splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0A1020"
     },
     "web": {},
     "extra": {
-      "apiBaseUrl": "http://192.168.10.111:3000",
+      "apiBaseUrl": "https://events-hub.vercel.app",
+      "appUrl": "https://events-hub.vercel.app",
+      "supportUrl": "https://events-hub.vercel.app/contact",
+      "privacyPolicyUrl": "https://events-hub.vercel.app/privacy-policy",
+      "termsOfServiceUrl": "https://events-hub.vercel.app/terms-of-service",
       "appVersion": "0.1.0",
       "eas": {
         "projectId": "fc55d351-9fad-4100-8734-4878319722ea"
@@ -25,7 +46,19 @@
     },
     "plugins": [
       "expo-asset",
-      "expo-sqlite"
+      "expo-sqlite",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Events Hub uses the camera to scan tickets and attendee QR codes during live event check-in."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "defaultChannel": "general"
+        }
+      ]
     ],
     "owner": "emohd123"
   }

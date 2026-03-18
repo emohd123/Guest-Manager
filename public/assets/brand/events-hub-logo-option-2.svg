@@ -1,0 +1,25 @@
+<svg width="1280" height="720" viewBox="0 0 1280 720" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1280" height="720" rx="40" fill="#0D1324"/>
+  <rect x="52" y="52" width="1176" height="616" rx="34" fill="#121A30"/>
+  <text x="96" y="132" fill="#94A3B8" font-family="Poppins, Arial, sans-serif" font-size="28" font-weight="600">Logo Concept 02</text>
+  <text x="96" y="170" fill="#E5E7EB" font-family="Poppins, Arial, sans-serif" font-size="20" font-weight="500">Monogram-led identity with a high-end hospitality feel</text>
+
+  <circle cx="214" cy="322" r="96" fill="url(#monobg)"/>
+  <path d="M176 268H252V290H199V312H244V334H199V378H176V268Z" fill="white"/>
+  <path d="M214 268H237V311L272 268H301L261 316L304 378H276L244 332L237 340V378H214V268Z" fill="white"/>
+
+  <text x="352" y="308" fill="#F8FAFC" font-family="Cormorant Garamond, Georgia, serif" font-size="112" font-weight="700" letter-spacing="-2">Events Hub</text>
+  <text x="356" y="374" fill="#CBD5E1" font-family="Poppins, Arial, sans-serif" font-size="31" font-weight="500">Elegant, premium, and ideal for VIP or luxury event positioning</text>
+
+  <rect x="112" y="466" width="1056" height="114" rx="28" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.08)"/>
+  <text x="154" y="522" fill="#F8FAFC" font-family="Poppins, Arial, sans-serif" font-size="26" font-weight="700">Best for:</text>
+  <text x="284" y="522" fill="#CBD5E1" font-family="Poppins, Arial, sans-serif" font-size="26" font-weight="500">A premium editorial brand direction with stronger elegance and status.</text>
+
+  <defs>
+    <linearGradient id="monobg" x1="142" y1="242" x2="286" y2="408" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FF8E63"/>
+      <stop offset="0.52" stop-color="#FF5C7A"/>
+      <stop offset="1" stop-color="#7C5CFF"/>
+    </linearGradient>
+  </defs>
+</svg>

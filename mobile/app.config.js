@@ -1,9 +1,14 @@
 const base = require("./app.json");
 
+function normalizeUrl(value) {
+  if (!value) return "";
+  return String(value).trim().replace(/\/+$/, "");
+}
+
 const apiBaseUrl =
-  process.env.EXPO_PUBLIC_API_URL ||
-  base.expo?.extra?.apiBaseUrl ||
-  "http://localhost:3000";
+  normalizeUrl(process.env.EXPO_PUBLIC_API_URL) ||
+  normalizeUrl(base.expo?.extra?.apiBaseUrl) ||
+  "https://events-hub.vercel.app";
 
 const allowCleartext =
   process.env.EXPO_PUBLIC_ALLOW_CLEARTEXT === "true" || apiBaseUrl.startsWith("http://");

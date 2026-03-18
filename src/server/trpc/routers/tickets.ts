@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { router, protectedProcedure } from "../index";
 import { generateAndSendTicket } from "@/server/actions/generateAndSendTicket";
+import { getAppUrl } from "@/lib/app-urls";
 
 type TicketRow = {
   id: string;
@@ -189,7 +190,7 @@ export const ticketsRouter = router({
       if (eventError) throw new Error(eventError.message);
 
       const eventData = event as EventRow | null;
-      const appBaseUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+      const appBaseUrl = getAppUrl();
 
       await generateAndSendTicket({
         ticketId: ticket.id,

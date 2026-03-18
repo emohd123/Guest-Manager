@@ -1,6 +1,7 @@
 import React from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { FadeSlideIn } from "../ui/motion";
+import { BrandLogo } from "../ui/brand-logo";
 import { PremiumBackdrop, PremiumCard, PremiumPill } from "../ui/primitives";
 import { palette, radii, shadows, spacing, type } from "../ui/theme";
 
@@ -16,7 +17,8 @@ export function RoleChoiceScreen({
       <View style={styles.container}>
         <FadeSlideIn style={styles.inner}>
           <View style={styles.headerArea}>
-            <PremiumPill label="Guest Manager Mobile" tone="live" />
+            <BrandLogo size={124} />
+            <PremiumPill label="Events Hub" tone="live" />
             <Text style={styles.title}>Choose how this device should move through the event</Text>
             <Text style={styles.subtitle}>
               One premium shell for attendees and a sharper operational shell for floor staff.
@@ -77,6 +79,7 @@ const styles = StyleSheet.create({
     flex: 0.44,
     justifyContent: "center",
     gap: spacing.md,
+    alignItems: "flex-start",
   },
   title: {
     fontSize: type.hero,

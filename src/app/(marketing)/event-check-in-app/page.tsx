@@ -252,7 +252,7 @@ export default function CheckInAppPage() {
           Ready to simplify your event check-in?
         </h2>
         <p className="mt-3 text-muted-foreground">
-          Join thousands of event organizers who trust GuestManager.
+          Join thousands of event organizers who trust Events Hub.
         </p>
         <div className="mt-6 flex justify-center gap-3">
           <Button asChild size="lg">

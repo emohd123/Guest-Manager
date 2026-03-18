@@ -1,0 +1,24 @@
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="faviconPinGradientHd" x1="16" y1="10" x2="50" y2="54" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FF5A7A"/>
+      <stop offset="0.32" stop-color="#FF6B8A"/>
+      <stop offset="0.72" stop-color="#7C4DFF"/>
+      <stop offset="1" stop-color="#5B3DF5"/>
+    </linearGradient>
+    <linearGradient id="faviconCheckGradientHd" x1="24" y1="22" x2="35" y2="32" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FF5A7A"/>
+      <stop offset="1" stop-color="#7C4DFF"/>
+    </linearGradient>
+    <mask id="faviconTicketMaskHd">
+      <rect x="17" y="17" width="30" height="15" rx="6" fill="white"/>
+      <circle cx="17" cy="24.5" r="2.5" fill="black"/>
+      <circle cx="47" cy="24.5" r="2.5" fill="black"/>
+    </mask>
+  </defs>
+  <path d="M32 57C30.1396 57 28.3691 56.2038 27.1125 54.824C23.2193 50.5486 10 35.4349 10 22C10 9.84974 19.8497 0 32 0C44.1503 0 54 9.84974 54 22C54 35.4349 40.7807 50.5486 36.8875 54.824C35.6309 56.2038 33.8604 57 32 57Z" fill="url(#faviconPinGradientHd)"/>
+  <circle cx="32" cy="23.5" r="15" fill="white" fill-opacity="0.1"/>
+  <rect x="17" y="17" width="30" height="15" rx="6" fill="white" fill-opacity="0.98" mask="url(#faviconTicketMaskHd)"/>
+  <path d="M20.5 20.5H37.5" stroke="white" stroke-opacity="0.56" stroke-width="2" stroke-linecap="round"/>
+  <path d="M24 24L29 28.8L39 19.2" stroke="url(#faviconCheckGradientHd)" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

@@ -47,7 +47,7 @@ export default function ContactPage() {
             Chat with an expert
           </h1>
           <p className="mt-4 text-lg text-muted-foreground">
-            Have questions about GuestManager? Our team is here to help you find
+            Have questions about Events Hub? Our team is here to help you find
             the right solution for your events.
           </p>
         </div>
@@ -164,7 +164,7 @@ export default function ContactPage() {
                     <div>
                       <p className="font-medium">Phone</p>
                       <p className="text-sm text-muted-foreground">
-                        +973-33382366
+                        +973-33382466
                       </p>
                     </div>
                   </div>
@@ -175,7 +175,7 @@ export default function ContactPage() {
                     <div>
                       <p className="font-medium">Office</p>
                       <p className="text-sm text-muted-foreground">
-                        San Francisco, CA
+                        Bahrain, Seef Area
                       </p>
                     </div>
                   </div>

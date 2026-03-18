@@ -201,7 +201,7 @@ export default function RegistrationTicketingPage() {
       <section className="border-t bg-muted/20 px-4 py-16">
         <div className="mx-auto max-w-3xl">
           <h2 className="mb-8 text-center text-3xl font-bold">
-            Why choose GuestManager?
+            Why choose Events Hub?
           </h2>
           <div className="space-y-4">
             {[

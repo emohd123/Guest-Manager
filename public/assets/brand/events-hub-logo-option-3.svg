@@ -1,0 +1,20 @@
+<svg width="1280" height="720" viewBox="0 0 1280 720" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1280" height="720" rx="40" fill="#FFF7ED"/>
+  <rect x="52" y="52" width="1176" height="616" rx="34" fill="#FFFBF5"/>
+  <text x="96" y="132" fill="#9A6B37" font-family="Poppins, Arial, sans-serif" font-size="28" font-weight="600">Logo Concept 03</text>
+  <text x="96" y="170" fill="#3F2A1D" font-family="Poppins, Arial, sans-serif" font-size="20" font-weight="500">Calendar-stage symbol with a warmer event-led brand personality</text>
+
+  <rect x="118" y="238" width="162" height="148" rx="34" fill="#111827"/>
+  <rect x="118" y="238" width="162" height="36" rx="18" fill="#FF7A59"/>
+  <rect x="146" y="222" width="18" height="36" rx="9" fill="#111827"/>
+  <rect x="234" y="222" width="18" height="36" rx="9" fill="#111827"/>
+  <path d="M158 320C158 302.327 172.327 288 190 288H208C225.673 288 240 302.327 240 320V336H158V320Z" fill="#FFD39B"/>
+  <rect x="152" y="336" width="94" height="18" rx="9" fill="#FFD39B"/>
+
+  <text x="330" y="314" fill="#171717" font-family="Poppins, Arial, sans-serif" font-size="96" font-weight="800" letter-spacing="-4">Events Hub</text>
+  <text x="334" y="380" fill="#7C5A3B" font-family="Poppins, Arial, sans-serif" font-size="31" font-weight="500">Warm, approachable, and distinctly event-centered</text>
+
+  <rect x="112" y="466" width="1056" height="114" rx="28" fill="#FFF1DE" stroke="#F7D9B0"/>
+  <text x="154" y="522" fill="#3F2A1D" font-family="Poppins, Arial, sans-serif" font-size="26" font-weight="700">Best for:</text>
+  <text x="284" y="522" fill="#7C5A3B" font-family="Poppins, Arial, sans-serif" font-size="26" font-weight="500">A friendlier brand with stronger “events and hospitality” cues.</text>
+</svg>

@@ -44,7 +44,7 @@ export * from "./attendee-profiles";
 
 **Step 3: Verify TypeScript compiles**
 ```bash
-cd "C:\Users\cactu\OneDrive\Desktop\app\Guest Manager"
+cd "C:\Users\cactu\OneDrive\Desktop\app\Events Hub"
 npx tsc --noEmit 2>&1 | head -20
 ```
 Expected: no errors (or only pre-existing unrelated errors)
@@ -183,7 +183,7 @@ git commit -m "feat: add attendee_messages and attendee_notifications schema"
 
 **Step 1: Generate migration**
 ```bash
-cd "C:\Users\cactu\OneDrive\Desktop\app\Guest Manager"
+cd "C:\Users\cactu\OneDrive\Desktop\app\Events Hub"
 npx drizzle-kit generate
 ```
 Expected: creates a new `.sql` file in `drizzle/` containing CREATE TABLE for all 4 new tables.
@@ -1151,7 +1151,7 @@ git commit -m "feat: attendeeMessages and attendeeNotifications tRPC routers"
 
 **Step 1: Install package**
 ```bash
-cd "C:\Users\cactu\OneDrive\Desktop\app\Guest Manager"
+cd "C:\Users\cactu\OneDrive\Desktop\app\Events Hub"
 npm install qrcode.react
 npm install --save-dev @types/qrcode
 ```

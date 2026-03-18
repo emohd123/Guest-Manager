@@ -1,0 +1,64 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="primaryPinGradientHd" x1="136" y1="82" x2="374" y2="392" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FF5A7A"/>
+      <stop offset="0.32" stop-color="#FF6B8A"/>
+      <stop offset="0.72" stop-color="#7C4DFF"/>
+      <stop offset="1" stop-color="#5B3DF5"/>
+    </linearGradient>
+    <radialGradient id="primaryHighlightHd" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(210 144) rotate(39.8) scale(174 126)">
+      <stop stop-color="#FFFFFF" stop-opacity="0.6"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="primaryOrbHd" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(256 178) rotate(90) scale(128)">
+      <stop stop-color="#FFFFFF" stop-opacity="0.24"/>
+      <stop offset="0.74" stop-color="#FFFFFF" stop-opacity="0.08"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="primaryRimHd" x1="144" y1="56" x2="355" y2="426" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFFFF" stop-opacity="0.34"/>
+      <stop offset="0.44" stop-color="#FFFFFF" stop-opacity="0.1"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0.18"/>
+    </linearGradient>
+    <linearGradient id="primaryTicketHd" x1="162" y1="144" x2="350" y2="246" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#FFF3FA"/>
+    </linearGradient>
+    <linearGradient id="primaryCheckHd" x1="194" y1="165" x2="280" y2="248" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FF5A7A"/>
+      <stop offset="1" stop-color="#7C4DFF"/>
+    </linearGradient>
+    <filter id="primaryGlowHd" x="24" y="0" width="464" height="476" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feFlood flood-opacity="0" result="BackgroundImageFix"/>
+      <feGaussianBlur in="SourceGraphic" stdDeviation="22" result="blur"/>
+      <feColorMatrix in="blur" type="matrix" values="1 0 0 0 0 0 0.34 0 0 0 0 0 1 0 0 0 0 0 0.26 0" result="glow"/>
+      <feBlend in="glow" in2="SourceGraphic" mode="normal"/>
+    </filter>
+    <filter id="primaryTicketShadowHd" x="114" y="108" width="284" height="178" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feFlood flood-opacity="0" result="BackgroundImageFix"/>
+      <feOffset dy="12"/>
+      <feGaussianBlur stdDeviation="12"/>
+      <feColorMatrix type="matrix" values="0 0 0 0 0.356863 0 0 0 0 0.239216 0 0 0 0 0.960784 0 0 0 0.24 0"/>
+      <feBlend in2="BackgroundImageFix" result="effect1_dropShadow_1_1"/>
+      <feBlend in="SourceGraphic" in2="effect1_dropShadow_1_1" result="shape"/>
+    </filter>
+    <mask id="primaryTicketMaskHd">
+      <rect x="144" y="136" width="224" height="114" rx="28" fill="white"/>
+      <circle cx="144" cy="193" r="17" fill="black"/>
+      <circle cx="368" cy="193" r="17" fill="black"/>
+    </mask>
+  </defs>
+  <g filter="url(#primaryGlowHd)">
+    <path d="M256 450C241.315 450 227.343 443.54 217.433 432.61C187.168 399.24 88 279.005 88 174C88 81.2162 163.216 6 256 6C348.784 6 424 81.2162 424 174C424 279.005 324.832 399.24 294.567 432.61C284.657 443.54 270.685 450 256 450Z" fill="url(#primaryPinGradientHd)"/>
+    <path d="M256 450C241.315 450 227.343 443.54 217.433 432.61C187.168 399.24 88 279.005 88 174C88 81.2162 163.216 6 256 6C348.784 6 424 81.2162 424 174C424 279.005 324.832 399.24 294.567 432.61C284.657 443.54 270.685 450 256 450Z" fill="url(#primaryHighlightHd)"/>
+    <circle cx="256" cy="178" r="124" fill="url(#primaryOrbHd)"/>
+  </g>
+  <path d="M256 450C241.315 450 227.343 443.54 217.433 432.61C187.168 399.24 88 279.005 88 174C88 81.2162 163.216 6 256 6C348.784 6 424 81.2162 424 174C424 279.005 324.832 399.24 294.567 432.61C284.657 443.54 270.685 450 256 450Z" stroke="url(#primaryRimHd)" stroke-width="8"/>
+  <g filter="url(#primaryTicketShadowHd)">
+    <rect x="144" y="136" width="224" height="114" rx="28" fill="url(#primaryTicketHd)" mask="url(#primaryTicketMaskHd)"/>
+  </g>
+  <path d="M172 154H300" stroke="white" stroke-opacity="0.62" stroke-width="12" stroke-linecap="round"/>
+  <path d="M194 188L234 226L304 152" stroke="url(#primaryCheckHd)" stroke-width="28" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M256 418C240.683 400.445 168 318.835 168 236" stroke="white" stroke-opacity="0.24" stroke-width="10" stroke-linecap="round"/>
+  <ellipse cx="256" cy="462" rx="80" ry="20" fill="#5B3DF5" fill-opacity="0.14"/>
+</svg>

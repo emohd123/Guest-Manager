@@ -3,6 +3,7 @@ import { router, protectedProcedure } from "../index";
 import { sendTicketEmail } from "@/server/actions/email";
 import { format } from "date-fns";
 import crypto from "crypto";
+import { getAppUrl } from "@/lib/app-urls";
 
 type GuestStatus = "invited" | "confirmed" | "declined" | "waitlisted" | "checked_in" | "no_show";
 type TicketStatus = "valid" | "voided" | "expired" | "used";
@@ -714,7 +715,7 @@ export const guestsRouter = router({
 
       const eventDate = eventData.starts_at ? format(new Date(eventData.starts_at), "MMM d, yyyy") : undefined;
       const eventTime = eventData.starts_at ? format(new Date(eventData.starts_at), "h:mm a") : undefined;
-      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+      const baseUrl = getAppUrl();
       const ticketUrl = `${baseUrl}/api/tickets/${ticketData.id}/pdf`;
       const confirmAttendanceUrl = `${baseUrl}/rsvp/confirm?guestId=${guestData.id}&eventId=${guestData.event_id}`;
 

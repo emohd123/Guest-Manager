@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { BrandWordmark } from "@/components/brand/brand-wordmark";
 
 const footerLinks = {
   Products: [
@@ -9,18 +10,18 @@ const footerLinks = {
   Resources: [
     { name: "Pricing", href: "/pricing" },
     { name: "Contact Sales", href: "/contact" },
-    { name: "API Documentation", href: "#" },
-    { name: "Help Center", href: "#" },
+    { name: "Support", href: "/contact" },
+    { name: "Privacy Policy", href: "/privacy-policy" },
   ],
   Company: [
-    { name: "About Us", href: "#" },
-    { name: "Blog", href: "#" },
-    { name: "Careers", href: "#" },
+    { name: "About Events Hub", href: "/" },
+    { name: "Event Check-In App", href: "/event-check-in-app" },
+    { name: "Registration & Ticketing", href: "/registration-ticketing" },
   ],
   Legal: [
-    { name: "Privacy Policy", href: "#" },
-    { name: "Terms of Service", href: "#" },
-    { name: "Cookie Policy", href: "#" },
+    { name: "Privacy Policy", href: "/privacy-policy" },
+    { name: "Terms of Service", href: "/terms-of-service" },
+    { name: "Cookie Policy", href: "/privacy-policy#cookies" },
   ],
 };
 
@@ -31,8 +32,12 @@ export function MarketingFooter() {
         <div className="grid gap-12 md:grid-cols-2 lg:grid-cols-5">
           {/* Brand */}
           <div className="lg:col-span-1">
-            <Link href="/" className="text-2xl font-bold tracking-tight text-white">
-              <span className="text-primary text-glow drop-shadow-[0_0_15px_rgba(99,102,241,0.5)]">Guest</span>Manager
+            <Link href="/" aria-label="Events Hub home">
+              <BrandWordmark
+                className="gap-3"
+                markClassName="h-14 w-14"
+                textClassName="text-[2.2rem] text-white"
+              />
             </Link>
             <p className="mt-4 text-sm text-white/70 leading-relaxed">
               The all-in-one platform for event check-in, ticketing, and guest
@@ -62,26 +67,26 @@ export function MarketingFooter() {
 
         <div className="mt-12 flex flex-col items-center justify-between border-t border-white/10 pt-8 md:flex-row">
           <p className="text-sm text-white/70">
-            &copy; {new Date().getFullYear()} GuestManager. All rights reserved.
+            &copy; {new Date().getFullYear()} Events Hub. All rights reserved.
           </p>
           <div className="mt-4 flex gap-6 md:mt-0">
             <Link
-              href="#"
+              href="/contact"
               className="text-sm text-white/70 hover:text-white"
             >
-              Twitter
+              Support
             </Link>
             <Link
-              href="#"
+              href="/privacy-policy"
               className="text-sm text-white/70 hover:text-white"
             >
-              LinkedIn
+              Privacy
             </Link>
             <Link
-              href="#"
+              href="/terms-of-service"
               className="text-sm text-white/70 hover:text-white"
             >
-              GitHub
+              Terms
             </Link>
           </div>
         </div>

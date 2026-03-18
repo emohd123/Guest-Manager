@@ -88,7 +88,7 @@ export async function sendTicketEmail({
     // Generate QR code as a hosted public URL (data: URIs are blocked by email clients)
     const qrCodeDataUri = await generateAndUploadQRCode(barcode);
 
-    const senderName = emailDesign?.senderName || "Guest Manager";
+    const senderName = emailDesign?.senderName || "Events Hub";
     const replyTo = emailDesign?.replyTo;
     const configuredFrom = process.env.RESEND_FROM_EMAIL?.trim();
     const fromEmail =

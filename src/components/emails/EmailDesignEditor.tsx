@@ -329,7 +329,7 @@ function SingleEmailEditor({
 
               {/* Footer */}
               <p className="text-[11px] text-zinc-400 text-center pt-2 border-t border-zinc-100">
-                This email was sent by {design.senderName || "Guest Manager"}. Tickets are for one-time use only.
+                This email was sent by {design.senderName || "Events Hub"}. Tickets are for one-time use only.
               </p>
             </div>
           </div>

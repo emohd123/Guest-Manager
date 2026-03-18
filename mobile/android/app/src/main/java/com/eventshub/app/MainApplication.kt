@@ -1,4 +1,4 @@
-package com.anonymous.guestmanagercheckinv2
+package com.eventshub.app
 
 import android.app.Application
 import android.content.res.Configuration

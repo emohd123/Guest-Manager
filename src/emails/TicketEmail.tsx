@@ -61,7 +61,7 @@ export const TicketEmail = ({
   confirmAttendanceUrl,
   headerImageUrl = "",
   labelColor = "#2563EB",
-  senderName = "Guest Manager",
+  senderName = "Events Hub",
   customBodyHtml = DEFAULT_BODY,
   visibleFields = {
     eventName: true,

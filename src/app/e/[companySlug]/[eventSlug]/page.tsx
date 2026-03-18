@@ -271,7 +271,7 @@ export default function PublicEventPage({
                 <div className="w-full h-full flex items-center justify-center">
                   <div className="flex flex-col items-center gap-4 text-zinc-300 dark:text-zinc-800">
                     <div className="h-20 w-20 rounded-full border-4 border-current border-dashed" />
-                    <span className="font-black italic tracking-tighter text-2xl uppercase">GuestManager</span>
+                    <span className="font-black italic tracking-tighter text-2xl uppercase">Events Hub</span>
                   </div>
                 </div>
               )}

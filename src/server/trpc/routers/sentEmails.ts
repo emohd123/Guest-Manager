@@ -3,6 +3,7 @@ import { z } from "zod";
 import { format } from "date-fns";
 import { sendTicketEmail } from "../../actions/email";
 import { Resend } from "resend";
+import { getAppUrl } from "@/lib/app-urls";
 
 type SentEmailRow = {
   id: string;
@@ -129,7 +130,7 @@ export const sentEmailsRouter = router({
       const settings = (eventData.settings as Record<string, unknown> | null) ?? {};
       const eventDate = eventData.starts_at ? format(new Date(eventData.starts_at), "MMM d, yyyy") : undefined;
       const eventTime = eventData.starts_at ? format(new Date(eventData.starts_at), "h:mm a") : undefined;
-      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+      const baseUrl = getAppUrl();
       const ticketUrl = `${baseUrl}/api/tickets/${ticketData.id}/pdf`;
       const email = guestData.email;
       if (!email) throw new Error("Guest has no email address. Cannot resend.");

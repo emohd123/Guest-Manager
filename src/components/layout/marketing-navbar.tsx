@@ -11,6 +11,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { BrandWordmark } from "@/components/brand/brand-wordmark";
 import { Menu, X, ChevronDown, CheckCircle, Ticket, Globe, Sun, Moon } from "lucide-react";
 
 const products = [
@@ -58,8 +59,12 @@ export function MarketingNavbar() {
       >
         <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-8">
-            <Link href="/" className="text-2xl font-bold tracking-tight">
-              <span className="text-primary text-glow drop-shadow-[0_0_15px_rgba(99,102,241,0.5)]">Guest</span>Manager
+            <Link href="/" aria-label="Events Hub home">
+              <BrandWordmark
+                className="gap-3"
+                markClassName="h-12 w-12"
+                textClassName="text-[2rem]"
+              />
             </Link>
 
             <nav className="hidden items-center gap-2 md:flex">

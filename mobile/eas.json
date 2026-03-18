@@ -8,13 +8,40 @@
       "distribution": "internal"
     },
     "preview": {
+      "distribution": "internal",
       "android": {
         "buildType": "apk"
       }
     },
-    "production": {}
+    "beta": {
+      "distribution": "store",
+      "channel": "beta",
+      "autoIncrement": true,
+      "android": {
+        "buildType": "app-bundle"
+      }
+    },
+    "production": {
+      "distribution": "store",
+      "channel": "production",
+      "autoIncrement": true,
+      "android": {
+        "buildType": "app-bundle"
+      }
+    }
   },
   "submit": {
-    "production": {}
+    "beta": {
+      "android": {
+        "track": "internal"
+      },
+      "ios": {}
+    },
+    "production": {
+      "android": {
+        "track": "production"
+      },
+      "ios": {}
+    }
   }
 }

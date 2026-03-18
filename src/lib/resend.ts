@@ -1,4 +1,5 @@
 import { Resend } from "resend";
+import { getAppUrl } from "@/lib/app-urls";
 
 export interface RegistrationEmailData {
   to: string;
@@ -31,6 +32,7 @@ function getFromEmail() {
 export async function sendRegistrationConfirmation(data: RegistrationEmailData) {
   const resend = getResendClient();
   const fromEmail = getFromEmail();
+  const appUrl = getAppUrl();
 
   const ticketRows = data.tickets
     .map(
@@ -103,7 +105,7 @@ export async function sendRegistrationConfirmation(data: RegistrationEmailData) 
           <tr>
             <td style="padding: 24px 40px; border-top: 1px solid #f0f0f0; text-align: center;">
               <p style="margin: 0; font-size: 13px; color: #9ca3af;">
-                Powered by <a href="https://guestmanager.com" style="color: #377DFF; text-decoration: none;">GuestManager</a>
+                Powered by <a href="${appUrl}" style="color: #377DFF; text-decoration: none;">Events Hub</a>
               </p>
             </td>
           </tr>
@@ -116,7 +118,7 @@ export async function sendRegistrationConfirmation(data: RegistrationEmailData) 
 
   const text = `You're registered for ${data.eventTitle}!\n\nHi ${data.attendeeName},\n\nThanks for registering!\n\nEvent: ${data.eventTitle}\nDate: ${data.eventDate}\n${data.eventLocation ? `Location: ${data.eventLocation}\n` : ""}Order #${data.orderNumber}\n\nTickets:\n${data.tickets
     .map((ticket) => `- ${ticket.name} x ${ticket.quantity}: ${ticket.price === 0 ? "Free" : `$${((ticket.price * ticket.quantity) / 100).toFixed(2)}`}`)
-    .join("\n")}\n\nTotal: ${data.isFree ? "Free" : `$${(data.total / 100).toFixed(2)}`}\n\nPowered by GuestManager`;
+    .join("\n")}\n\nTotal: ${data.isFree ? "Free" : `$${(data.total / 100).toFixed(2)}`}\n\nPowered by Events Hub`;
 
   return resend.emails.send({
     from: fromEmail,

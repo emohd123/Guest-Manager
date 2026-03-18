@@ -1,0 +1,31 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="siteIconBgHd" x1="68" y1="42" x2="444" y2="458" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FF7A96"/>
+      <stop offset="0.26" stop-color="#FF6B8A"/>
+      <stop offset="0.72" stop-color="#7C4DFF"/>
+      <stop offset="1" stop-color="#4F35F1"/>
+    </linearGradient>
+    <radialGradient id="siteIconHighlightHd" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(176 118) rotate(48) scale(238 188)">
+      <stop stop-color="#FFFFFF" stop-opacity="0.32"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="siteIconCheckHd" x1="206" y1="202" x2="302" y2="290" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FF5A7A"/>
+      <stop offset="1" stop-color="#7C4DFF"/>
+    </linearGradient>
+    <mask id="siteIconTicketMaskHd">
+      <rect x="164" y="158" width="184" height="96" rx="24" fill="white"/>
+      <circle cx="164" cy="206" r="14" fill="black"/>
+      <circle cx="348" cy="206" r="14" fill="black"/>
+    </mask>
+  </defs>
+  <rect width="512" height="512" rx="128" fill="#F4F0FF"/>
+  <rect x="34" y="34" width="444" height="444" rx="112" fill="url(#siteIconBgHd)"/>
+  <rect x="34" y="34" width="444" height="444" rx="112" fill="url(#siteIconHighlightHd)"/>
+  <path d="M256 410C243.969 410 232.509 404.748 224.47 395.848C200.025 368.785 120 271.93 120 186.881C120 111.82 180.82 51 255.881 51C330.942 51 391.762 111.82 391.762 186.881C391.762 271.93 311.737 368.785 287.292 395.848C279.253 404.748 267.793 410 256 410Z" fill="url(#siteIconBgHd)"/>
+  <circle cx="256" cy="188" r="116" fill="white" fill-opacity="0.12"/>
+  <rect x="164" y="158" width="184" height="96" rx="24" fill="white" fill-opacity="0.98" mask="url(#siteIconTicketMaskHd)"/>
+  <path d="M188 172H292" stroke="white" stroke-opacity="0.5" stroke-width="10" stroke-linecap="round"/>
+  <path d="M206 204L240 236L302 173" stroke="url(#siteIconCheckHd)" stroke-width="22" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

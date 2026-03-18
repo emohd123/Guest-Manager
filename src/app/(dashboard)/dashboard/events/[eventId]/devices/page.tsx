@@ -37,8 +37,7 @@ type DeviceRow = {
 };
 
 const iosUrl =
-  process.env.NEXT_PUBLIC_MOBILE_IOS_URL ??
-  "https://apps.apple.com/us/app/guest-manager-check-in/id1460267612";
+  process.env.NEXT_PUBLIC_MOBILE_IOS_URL ?? "";
 const androidUrl = process.env.NEXT_PUBLIC_MOBILE_ANDROID_URL ?? "";
 const checkinV2Enabled = process.env.NEXT_PUBLIC_CHECKIN_APP_V2_ENABLED !== "false";
 
@@ -321,9 +320,15 @@ export default function DevicesPage({ params }: { params: Promise<{ eventId: str
             <CardTitle>Mobile Apps</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            <a href={iosUrl} target="_blank" rel="noreferrer" className="block">
-              <Button className="w-full">Download iPhone App</Button>
-            </a>
+            {iosUrl ? (
+              <a href={iosUrl} target="_blank" rel="noreferrer" className="block">
+                <Button className="w-full">Download iPhone App</Button>
+              </a>
+            ) : (
+              <Button className="w-full" disabled>
+                TestFlight Link Coming Soon
+              </Button>
+            )}
             {androidUrl ? (
               <a href={androidUrl} target="_blank" rel="noreferrer" className="block">
                 <Button className="w-full" variant="outline">
@@ -332,7 +337,7 @@ export default function DevicesPage({ params }: { params: Promise<{ eventId: str
               </a>
             ) : (
               <Button className="w-full" variant="outline" disabled>
-                Android Coming Soon
+                Play Internal Testing Link Coming Soon
               </Button>
             )}
           </CardContent>

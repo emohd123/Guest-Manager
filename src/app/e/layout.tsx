@@ -11,7 +11,7 @@ export default function PublicEventLayout({
       <footer className="border-t py-6 text-center text-sm text-muted-foreground">
         Powered by{" "}
         <Link href="/" className="font-medium text-primary hover:underline">
-          GuestManager
+          Events Hub
         </Link>
       </footer>
     </div>

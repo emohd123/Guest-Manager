@@ -195,7 +195,7 @@ export default function HomePage() {
         <div className="mx-auto max-w-3xl text-center relative z-10">
           <h2 className="text-5xl font-bold text-glow dark:drop-shadow-[0_0_20px_rgba(255,255,255,0.3)]">Ready to get started?</h2>
           <p className="mt-6 text-xl text-muted-foreground">
-            Try GuestManager free. The first 50 check-ins are on us.
+            Try Events Hub free. The first 50 check-ins are on us.
           </p>
           <div className="mt-12 flex justify-center gap-4">
             <Button asChild size="lg" className="gap-2 shadow-[0_4px_20px_0_rgba(99,102,241,0.5)] hover:shadow-[0_6px_25px_0_rgba(99,102,241,0.7)] transition-all duration-300 transform hover:-translate-y-1">

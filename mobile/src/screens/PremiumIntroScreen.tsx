@@ -2,6 +2,7 @@ import React, { useMemo, useState } from "react";
 import { Pressable, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import { PremiumBackdrop, PremiumButton, PremiumCard, PremiumPill } from "../ui/primitives";
 import { FadeSlideIn } from "../ui/motion";
+import { BrandLogo } from "../ui/brand-logo";
 import { palette, radii, spacing, type } from "../ui/theme";
 
 const slides = [
@@ -41,7 +42,7 @@ export function PremiumIntroScreen({
       <View style={styles.container}>
         <FadeSlideIn style={[styles.inner, isWide && styles.innerWide]}>
           <View style={styles.header}>
-            <PremiumPill label="Guest Manager Mobile" tone="live" />
+            <PremiumPill label="Events Hub" tone="live" />
             <Pressable onPress={onSkip} style={styles.skip}>
               <Text style={styles.skipText}>Skip</Text>
             </Pressable>
@@ -57,7 +58,13 @@ export function PremiumIntroScreen({
             <PremiumCard tone="glass" style={[styles.previewCard, isWide && styles.previewCardWide]}>
               <Text style={styles.previewEyebrow}>{slide.eyebrow}</Text>
               <View style={styles.previewRows}>
-                <View style={styles.previewPanelLg} />
+                <View style={styles.previewHero}>
+                  <BrandLogo size={136} variant="tile" />
+                  <View style={styles.previewCopy}>
+                    <Text style={styles.previewTitle}>Events Hub</Text>
+                    <Text style={styles.previewBody}>Premium check-in, ticketing, and attendee flow in one polished product.</Text>
+                  </View>
+                </View>
                 <View style={styles.previewRow}>
                   <View style={styles.previewPanelSm} />
                   <View style={styles.previewPanelSm} />
@@ -177,14 +184,35 @@ const styles = StyleSheet.create({
   previewRows: {
     gap: spacing.md,
   },
+  previewHero: {
+    minHeight: 154,
+    borderRadius: radii.lg,
+    backgroundColor: "rgba(255,255,255,0.08)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.14)",
+    padding: spacing.lg,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.lg,
+  },
+  previewCopy: {
+    flex: 1,
+    gap: 8,
+  },
+  previewTitle: {
+    color: palette.textInverse,
+    fontSize: 22,
+    fontWeight: "900",
+    letterSpacing: -0.6,
+  },
+  previewBody: {
+    color: "rgba(255,255,255,0.68)",
+    fontSize: 13,
+    lineHeight: 20,
+  },
   previewRow: {
     flexDirection: "row",
     gap: spacing.md,
-  },
-  previewPanelLg: {
-    height: 130,
-    borderRadius: radii.lg,
-    backgroundColor: "rgba(255,255,255,0.12)",
   },
   previewPanelSm: {
     flex: 1,
