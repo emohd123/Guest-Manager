@@ -4,8 +4,9 @@ const fallbackBaseUrl = "https://events-hub-vert.vercel.app";
 const extra = ((Constants.expoConfig?.extra ?? {}) as Record<string, unknown>) ?? {};
 
 function getWebBaseUrl() {
-  if (typeof window === "undefined") return undefined;
+  if (typeof window === "undefined" || !window.location) return undefined;
   const { protocol, hostname } = window.location;
+  if (!protocol || !hostname) return undefined;
   return `${protocol}//${hostname}:3000`;
 }
 
