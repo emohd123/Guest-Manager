@@ -1,4 +1,4 @@
-const DEFAULT_APP_URL = "https://events-hub.vercel.app";
+const DEFAULT_APP_URL = "https://events-hub-vert.vercel.app";
 
 function trimTrailingSlash(value: string) {
   return value.replace(/\/+$/, "");

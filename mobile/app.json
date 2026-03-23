@@ -34,14 +34,14 @@
     },
     "web": {},
     "extra": {
-      "apiBaseUrl": "https://events-hub.vercel.app",
-      "appUrl": "https://events-hub.vercel.app",
-      "supportUrl": "https://events-hub.vercel.app/contact",
-      "privacyPolicyUrl": "https://events-hub.vercel.app/privacy-policy",
-      "termsOfServiceUrl": "https://events-hub.vercel.app/terms-of-service",
+      "apiBaseUrl": "https://events-hub-vert.vercel.app",
+      "appUrl": "https://events-hub-vert.vercel.app",
+      "supportUrl": "https://events-hub-vert.vercel.app/contact",
+      "privacyPolicyUrl": "https://events-hub-vert.vercel.app/privacy-policy",
+      "termsOfServiceUrl": "https://events-hub-vert.vercel.app/terms-of-service",
       "appVersion": "0.1.0",
       "eas": {
-        "projectId": "fc55d351-9fad-4100-8734-4878319722ea"
+        "projectId": "7c69d004-775a-4522-afb7-570888702e61"
       }
     },
     "plugins": [

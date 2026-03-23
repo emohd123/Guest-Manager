@@ -4,7 +4,7 @@
 
 1. `cd mobile`
 2. `npm install`
-3. Set `EXPO_PUBLIC_API_URL` only when testing against a non-production API
+3. Default production API is `https://events-hub-vert.vercel.app`; set `EXPO_PUBLIC_API_URL` only when testing against a non-production API
 4. `npm run start`
 
 ## Included Screens

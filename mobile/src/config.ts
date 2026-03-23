@@ -1,6 +1,6 @@
 import Constants from "expo-constants";
 
-const fallbackBaseUrl = "https://events-hub.vercel.app";
+const fallbackBaseUrl = "https://events-hub-vert.vercel.app";
 const extra = ((Constants.expoConfig?.extra ?? {}) as Record<string, unknown>) ?? {};
 
 function getWebBaseUrl() {
