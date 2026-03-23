@@ -10,17 +10,10 @@ const apiBaseUrl =
   normalizeUrl(base.expo?.extra?.apiBaseUrl) ||
   "https://events-hub-vert.vercel.app";
 
-const allowCleartext =
-  process.env.EXPO_PUBLIC_ALLOW_CLEARTEXT === "true" || apiBaseUrl.startsWith("http://");
-
 module.exports = {
   ...base,
   expo: {
     ...base.expo,
-    android: {
-      ...(base.expo.android ?? {}),
-      usesCleartextTraffic: allowCleartext,
-    },
     extra: {
       ...(base.expo.extra ?? {}),
       apiBaseUrl,

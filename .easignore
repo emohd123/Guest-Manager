@@ -2,6 +2,7 @@
 
 # dependencies
 node_modules/
+/mobile/node_modules/
 /.pnp
 .pnp.*
 .yarn/*
@@ -58,11 +59,15 @@ temp/
 .claude/
 mobile/.expo/
 mobile/.npm-cache/
-mobile/builds/
 mobile/*.log
-mobile/android/local.properties
 *.out.log
 *.err.log
 
 # git worktrees
 .worktrees/
+
+# mobile build artifacts and local SDK overrides
+mobile/android/.gradle/
+mobile/android/build/
+mobile/android/app/build/
+mobile/android/local.properties
