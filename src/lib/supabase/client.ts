@@ -1,8 +1,13 @@
 import { createBrowserClient } from "@supabase/ssr";
+import { createUnavailableSupabaseClient, getSupabaseEnv } from "./shared";
 
 export function createClient() {
-  return createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
+  const env = getSupabaseEnv();
+  if (!env) {
+    return createUnavailableSupabaseClient(
+      "Supabase is not configured for this deployment."
+    );
+  }
+
+  return createBrowserClient(env.url, env.anonKey);
 }

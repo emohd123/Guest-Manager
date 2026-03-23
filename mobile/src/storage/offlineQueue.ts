@@ -3,18 +3,30 @@ import type { QueueItem } from "../types";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let db: any = null;
+let dbInitAttempted = false;
 const memoryQueue: QueueItem[] = [];
 
-if (Platform.OS !== "web") {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const SQLite = require("expo-sqlite");
-  db = SQLite.openDatabaseSync("guest-manager-mobile-v2.db");
+function getDb() {
+  if (Platform.OS === "web") return null;
+  if (dbInitAttempted) return db;
+
+  dbInitAttempted = true;
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const SQLite = require("expo-sqlite");
+    db = SQLite.openDatabaseSync("guest-manager-mobile-v2.db");
+  } catch (error) {
+    console.error("[offlineQueue] Falling back to in-memory queue", error);
+    db = null;
+  }
+
+  return db;
 }
 
 function ensureQueueTable() {
-  if (Platform.OS === "web") return;
-  if (!db) return;
-  db.execSync(`
+  const activeDb = getDb();
+  if (!activeDb) return;
+  activeDb.execSync(`
     CREATE TABLE IF NOT EXISTS mobile_mutation_queue (
       id TEXT PRIMARY KEY NOT NULL,
       endpoint TEXT NOT NULL,
@@ -42,14 +54,14 @@ export function initOfflineQueue() {
 }
 
 export function enqueueMutation(item: QueueItem) {
-  if (Platform.OS === "web") {
+  const activeDb = getDb();
+  if (!activeDb) {
     memoryQueue.push(item);
     return;
   }
-  if (!db) return;
   ensureQueueTable();
   const row = toRow(item);
-  db.runSync(
+  activeDb.runSync(
     `INSERT OR REPLACE INTO mobile_mutation_queue (id, endpoint, method, payload_json, event_id, created_at)
      VALUES (?, ?, ?, ?, ?, ?)`,
     [row.id, row.endpoint, row.method, row.payload_json, row.event_id, row.created_at]
@@ -57,12 +69,12 @@ export function enqueueMutation(item: QueueItem) {
 }
 
 export function listQueuedMutations(): QueueItem[] {
-  if (Platform.OS === "web") {
+  const activeDb = getDb();
+  if (!activeDb) {
     return [...memoryQueue];
   }
-  if (!db) return [];
   ensureQueueTable();
-  const rows = db.getAllSync(
+  const rows = activeDb.getAllSync(
     `SELECT id, endpoint, method, payload_json, event_id, created_at
      FROM mobile_mutation_queue
      ORDER BY created_at ASC`
@@ -86,12 +98,12 @@ export function listQueuedMutations(): QueueItem[] {
 }
 
 export function removeQueuedMutation(id: string) {
-  if (Platform.OS === "web") {
+  const activeDb = getDb();
+  if (!activeDb) {
     const idx = memoryQueue.findIndex((q) => q.id === id);
     if (idx !== -1) memoryQueue.splice(idx, 1);
     return;
   }
-  if (!db) return;
   ensureQueueTable();
-  db.runSync(`DELETE FROM mobile_mutation_queue WHERE id = ?`, [id]);
+  activeDb.runSync(`DELETE FROM mobile_mutation_queue WHERE id = ?`, [id]);
 }

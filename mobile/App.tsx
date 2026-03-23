@@ -61,6 +61,7 @@ import { enqueueMutation, initOfflineQueue, listQueuedMutations } from "./src/st
 import { clearSession, loadSession, saveSession } from "./src/storage/session";
 import { replayQueue } from "./src/sync/replay";
 import { FadeSlideIn } from "./src/ui/motion";
+import { AppErrorBoundary } from "./src/ui/app-error-boundary";
 import { BrandLogo } from "./src/ui/brand-logo";
 import { PremiumBackdrop, PremiumCard, PremiumPill } from "./src/ui/primitives";
 import { palette, radii, spacing } from "./src/ui/theme";
@@ -130,6 +131,14 @@ async function clearVisitorSession() {
 
 // ── Main App ─────────────────────────────────────────────────────────────────
 export default function App() {
+  return (
+    <AppErrorBoundary>
+      <AppShell />
+    </AppErrorBoundary>
+  );
+}
+
+function AppShell() {
   const [booting, setBooting] = useState(true);
   const [introComplete, setIntroComplete] = useState(false);
   const [authStep, setAuthStep] = useState<AuthStep>("role_choice");
@@ -152,8 +161,12 @@ export default function App() {
 
   // ── Boot: restore either session ──────────────────────────────────────────
   useEffect(() => {
-    initOfflineQueue();
-    initGuestCache();
+    try {
+      initOfflineQueue();
+      initGuestCache();
+    } catch (error) {
+      console.error("[App] Failed to initialize local storage", error);
+    }
     Promise.all([
       loadSession(),
       loadVisitorSession(),

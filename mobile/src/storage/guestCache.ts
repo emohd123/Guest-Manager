@@ -3,18 +3,30 @@ import type { MobileGuest } from "../types";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let db: any = null;
+let dbInitAttempted = false;
 const memoryCache = new Map<string, MobileGuest>();
 
-if (Platform.OS !== "web") {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const SQLite = require("expo-sqlite");
-  db = SQLite.openDatabaseSync("guest-manager-mobile-v2.db");
+function getDb() {
+  if (Platform.OS === "web") return null;
+  if (dbInitAttempted) return db;
+
+  dbInitAttempted = true;
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const SQLite = require("expo-sqlite");
+    db = SQLite.openDatabaseSync("guest-manager-mobile-v2.db");
+  } catch (error) {
+    console.error("[guestCache] Falling back to in-memory cache", error);
+    db = null;
+  }
+
+  return db;
 }
 
 export function initGuestCache() {
-  if (Platform.OS === "web") return;
-  if (!db) return;
-  db.execSync(`
+  const activeDb = getDb();
+  if (!activeDb) return;
+  activeDb.execSync(`
     CREATE TABLE IF NOT EXISTS guests_cache (
       id TEXT PRIMARY KEY NOT NULL,
       event_id TEXT NOT NULL,
@@ -25,17 +37,17 @@ export function initGuestCache() {
 }
 
 export function upsertGuests(eventId: string, guests: MobileGuest[]) {
-  if (Platform.OS === "web") {
+  const activeDb = getDb();
+  if (!activeDb) {
     guests.forEach((guest) => memoryCache.set(guest.id, guest));
     return;
   }
 
-  if (!db) return;
   initGuestCache();
   const now = new Date().toISOString();
-  db.withTransactionSync(() => {
+  activeDb.withTransactionSync(() => {
     guests.forEach((guest) => {
-      db.runSync(
+      activeDb.runSync(
         `INSERT OR REPLACE INTO guests_cache (id, event_id, payload_json, updated_at)
          VALUES (?, ?, ?, ?)`,
         [guest.id, eventId, JSON.stringify(guest), now]
@@ -45,17 +57,16 @@ export function upsertGuests(eventId: string, guests: MobileGuest[]) {
 }
 
 export function getCachedGuests(eventId: string): MobileGuest[] {
-  if (Platform.OS === "web") {
+  const activeDb = getDb();
+  if (!activeDb) {
     return Array.from(memoryCache.values());
   }
 
-  if (!db) return [];
   initGuestCache();
-  const rows = db.getAllSync(
+  const rows = activeDb.getAllSync(
     `SELECT payload_json FROM guests_cache WHERE event_id = ? ORDER BY updated_at DESC`,
     [eventId]
   ) as Array<{ payload_json: string }>;
 
   return rows.map((row) => JSON.parse(row.payload_json) as MobileGuest);
 }
-
