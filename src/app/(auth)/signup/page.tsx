@@ -16,6 +16,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { CheckCircle, Mail } from "lucide-react";
+import { BrandWordmark } from "@/components/brand/brand-wordmark";
 
 export default function SignupPage() {
   const router = useRouter();
@@ -77,7 +78,7 @@ export default function SignupPage() {
   if (emailSent) {
     return (
       <div className="bg-mesh min-h-screen py-10 px-4 flex items-center justify-center">
-        <Card>
+        <Card className="w-full max-w-md rounded-[32px] border-border/80 bg-card/95 shadow-2xl">
           <CardHeader className="text-center">
             <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30">
               <Mail className="h-8 w-8 text-green-600" />
@@ -131,11 +132,18 @@ export default function SignupPage() {
 
   return (
     <div className="bg-mesh min-h-screen py-10 px-4 flex items-center justify-center">
-      <Card>
+      <Card className="w-full max-w-md rounded-[32px] border-border/80 bg-card/95 shadow-2xl">
         <CardHeader className="text-center">
-        <CardTitle className="text-2xl font-bold">
-          <span className="text-primary">Guest</span>Manager
-        </CardTitle>
+        <div className="flex justify-center">
+          <Link href="/" aria-label="Events Hub home">
+            <BrandWordmark
+              className="gap-2.5"
+              markClassName="h-10 w-10"
+              textClassName="text-[1.7rem]"
+            />
+          </Link>
+        </div>
+        <CardTitle className="sr-only">Events Hub</CardTitle>
         <CardDescription>Create your free account</CardDescription>
       </CardHeader>
       <CardContent>

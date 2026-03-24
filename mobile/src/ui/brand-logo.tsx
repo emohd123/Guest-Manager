@@ -14,7 +14,7 @@ export function BrandLogo({
   variant = "pin",
 }: BrandLogoProps) {
   const isTile = variant === "tile";
-  const imageSize = isTile ? size : Math.round(size * 0.84);
+  const imageSize = isTile ? Math.round(size * 0.9) : Math.round(size * 0.94);
 
   return (
     <View
@@ -32,9 +32,9 @@ export function BrandLogo({
         style={[
           styles.glow,
           {
-            width: Math.round(size * 0.82),
-            height: Math.round(size * 0.82),
-            borderRadius: Math.round(size * 0.41),
+            width: Math.round(size * 0.86),
+            height: Math.round(size * 0.86),
+            borderRadius: Math.round(size * 0.43),
           },
           isTile && styles.tileGlow,
         ]}

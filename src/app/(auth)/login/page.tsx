@@ -16,6 +16,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { BrandWordmark } from "@/components/brand/brand-wordmark";
 
 export default function LoginPage() {
   return (
@@ -124,11 +125,18 @@ function LoginForm() {
   };
 
   return (
-    <Card>
+    <Card className="w-full max-w-md rounded-[32px] border-border/80 bg-card/95 shadow-2xl">
       <CardHeader className="text-center">
-        <CardTitle className="text-2xl font-bold">
-          <span className="text-primary">Guest</span>Manager
-        </CardTitle>
+        <div className="flex justify-center">
+          <Link href="/" aria-label="Events Hub home">
+            <BrandWordmark
+              className="gap-2.5"
+              markClassName="h-10 w-10"
+              textClassName="text-[1.7rem]"
+            />
+          </Link>
+        </div>
+        <CardTitle className="sr-only">Events Hub</CardTitle>
         <CardDescription>Sign in to your account</CardDescription>
       </CardHeader>
       <CardContent>
