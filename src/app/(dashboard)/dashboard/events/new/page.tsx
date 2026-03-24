@@ -23,6 +23,7 @@ import { toast } from "sonner";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { TIMEZONE_OPTIONS } from "@/lib/timezones";
 
 const eventSchema = z.object({
   title: z.string().min(1, "Event title is required").max(255),
@@ -254,14 +255,15 @@ export default function NewEventPage() {
                       <SelectValue placeholder="Select timezone" />
                     </SelectTrigger>
                     <SelectContent className="rounded-2xl">
-                      <SelectItem value="America/New_York" className="font-black uppercase text-[10px] py-3">US Eastern</SelectItem>
-                      <SelectItem value="America/Chicago" className="font-black uppercase text-[10px] py-3">US Central</SelectItem>
-                      <SelectItem value="America/Denver" className="font-black uppercase text-[10px] py-3">US Mountain</SelectItem>
-                      <SelectItem value="America/Los_Angeles" className="font-black uppercase text-[10px] py-3">US Pacific</SelectItem>
-                      <SelectItem value="Europe/London" className="font-black uppercase text-[10px] py-3">London</SelectItem>
-                      <SelectItem value="Europe/Paris" className="font-black uppercase text-[10px] py-3">Paris</SelectItem>
-                      <SelectItem value="Asia/Tokyo" className="font-black uppercase text-[10px] py-3">Tokyo</SelectItem>
-                      <SelectItem value="UTC" className="font-black uppercase text-[10px] py-3">UTC</SelectItem>
+                      {TIMEZONE_OPTIONS.map((timezoneOption) => (
+                        <SelectItem
+                          key={timezoneOption.value}
+                          value={timezoneOption.value}
+                          className="py-3 text-xs font-semibold tracking-normal"
+                        >
+                          {timezoneOption.label}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>

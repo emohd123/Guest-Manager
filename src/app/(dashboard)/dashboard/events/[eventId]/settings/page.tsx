@@ -46,6 +46,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { toast } from "sonner";
+import { TIMEZONE_OPTIONS } from "@/lib/timezones";
 
 function formatDateTimeLocal(dateStr: string): string {
   const d = new Date(dateStr);
@@ -630,14 +631,11 @@ export default function EventSettingsPage({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="America/New_York">Eastern Time</SelectItem>
-                <SelectItem value="America/Chicago">Central Time</SelectItem>
-                <SelectItem value="America/Denver">Mountain Time</SelectItem>
-                <SelectItem value="America/Los_Angeles">Pacific Time</SelectItem>
-                <SelectItem value="Europe/London">London</SelectItem>
-                <SelectItem value="Europe/Paris">Paris</SelectItem>
-                <SelectItem value="Asia/Tokyo">Tokyo</SelectItem>
-                <SelectItem value="UTC">UTC</SelectItem>
+                {TIMEZONE_OPTIONS.map((timezoneOption) => (
+                  <SelectItem key={timezoneOption.value} value={timezoneOption.value}>
+                    {timezoneOption.label}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>

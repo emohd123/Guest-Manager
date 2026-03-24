@@ -20,6 +20,7 @@ import {
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc/client";
 import { cn } from "@/lib/utils";
+import { TIMEZONE_OPTIONS } from "@/lib/timezones";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -215,14 +216,11 @@ function AccountSettings() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="rounded-2xl border border-border bg-popover text-popover-foreground dark:border-white/10 dark:bg-[#1A1C30] dark:text-white">
-                    <SelectItem value="America/New_York">Eastern Time (ET)</SelectItem>
-                    <SelectItem value="America/Chicago">Central Time (CT)</SelectItem>
-                    <SelectItem value="America/Denver">Mountain Time (MT)</SelectItem>
-                    <SelectItem value="America/Los_Angeles">Pacific Time (PT)</SelectItem>
-                    <SelectItem value="Europe/London">London (GMT)</SelectItem>
-                    <SelectItem value="Europe/Paris">Paris (CET)</SelectItem>
-                    <SelectItem value="Asia/Tokyo">Tokyo (JST)</SelectItem>
-                    <SelectItem value="UTC">UTC</SelectItem>
+                    {TIMEZONE_OPTIONS.map((timezoneOption) => (
+                      <SelectItem key={timezoneOption.value} value={timezoneOption.value}>
+                        {timezoneOption.label}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
