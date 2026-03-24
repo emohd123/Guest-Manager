@@ -99,20 +99,20 @@ export default function NewEventPage() {
   };
   const prevStep = () => setStep((s) => Math.max(s - 1, 0));
 
-  const inputClasses = "h-14 bg-white/5 border-white/10 rounded-2xl text-sm font-semibold tracking-[0.04em] text-white focus:ring-primary focus:border-primary transition-all placeholder:text-white/35";
-  const labelClasses = "text-[10px] font-bold uppercase tracking-[0.25em] text-white/55 mb-3 block";
+  const inputClasses = "theme-input h-14 rounded-2xl text-sm font-semibold tracking-[0.04em] shadow-sm";
+  const labelClasses = "theme-label mb-3 block";
 
   return (
     <div className="mx-auto max-w-2xl pb-20 px-2 space-y-12">
       <div className="flex items-center gap-6">
         <Link href="/dashboard/events">
-          <Button variant="ghost" size="icon" className="h-14 w-14 rounded-2xl bg-white/5 border border-white/10 text-white/40 hover:text-white transition-all group">
+          <Button variant="ghost" size="icon" className="theme-ghost-surface h-14 w-14 rounded-2xl border transition-all group">
             <ArrowLeft className="h-6 w-6 group-hover:-translate-x-1 transition-transform" />
           </Button>
         </Link>
         <motion.div initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }}>
-          <h1 className="text-4xl font-black text-white tracking-tighter leading-none">Create Event</h1>
-          <p className="text-white/40 font-bold uppercase tracking-[0.2em] text-[10px] mt-2 flex items-center gap-2">
+          <h1 className="text-4xl font-black text-foreground dark:text-white tracking-tighter leading-none">Create Event</h1>
+          <p className="text-muted-foreground dark:text-white/40 font-bold uppercase tracking-[0.2em] text-[10px] mt-2 flex items-center gap-2">
              <Activity className="h-3 w-3 text-primary animate-pulse" />
              Add the basics, schedule, and registration settings
           </p>
@@ -132,16 +132,16 @@ export default function NewEventPage() {
           >
             <div className={cn(
                "h-1.5 rounded-full transition-all duration-500",
-               i < step ? "bg-green-500" : i === step ? "bg-primary" : "bg-white/10"
+               i < step ? "bg-green-500" : i === step ? "bg-primary" : "bg-border"
             )} />
             <div className="mt-4 text-left">
                <p className={cn(
                   "text-[8px] font-black uppercase tracking-[0.4em] transition-colors",
-                  i === step ? "text-primary" : "text-white/20"
+                  i === step ? "text-primary" : "text-muted-foreground dark:text-white/20"
                )}>PHASE_0{i + 1}</p>
                <p className={cn(
                   "text-[10px] font-black uppercase tracking-tighter transition-colors",
-                  i === step ? "text-white" : "text-white/10"
+                  i === step ? "text-foreground dark:text-white" : "text-muted-foreground/70 dark:text-white/10"
                )}>{s.title}</p>
             </div>
           </button>
@@ -155,11 +155,11 @@ export default function NewEventPage() {
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -20 }}
-            className="space-y-8 rounded-[40px] bg-white/5 border border-white/10 p-10 md:p-12 backdrop-blur-xl shadow-2xl"
+            className="theme-panel space-y-8 p-10 md:p-12 backdrop-blur-xl"
           >
              <div className="mb-10">
                 <p className="text-[10px] font-black text-primary uppercase tracking-[0.4em] mb-2">{steps[step].description}</p>
-                <h2 className="text-2xl font-black text-white uppercase tracking-tighter leading-none">{steps[step].title}</h2>
+                <h2 className="text-2xl font-black text-foreground dark:text-white uppercase tracking-tighter leading-none">{steps[step].title}</h2>
              </div>
 
             {/* Step 1: Details */}
@@ -212,7 +212,7 @@ export default function NewEventPage() {
                     <SelectTrigger className={inputClasses}>
                       <SelectValue placeholder="Select event type" />
                     </SelectTrigger>
-                    <SelectContent className="bg-slate-950 border-white/10 rounded-2xl overflow-hidden">
+                    <SelectContent className="rounded-2xl overflow-hidden">
                       <SelectItem value="single" className="font-black uppercase text-[10px] tracking-widest py-3">Single event</SelectItem>
                       <SelectItem value="recurring" className="font-black uppercase text-[10px] tracking-widest py-3">Recurring event</SelectItem>
                       <SelectItem value="multi_day" className="font-black uppercase text-[10px] tracking-widest py-3">Multi-day event</SelectItem>
@@ -253,7 +253,7 @@ export default function NewEventPage() {
                     <SelectTrigger className={inputClasses}>
                       <SelectValue placeholder="Select timezone" />
                     </SelectTrigger>
-                    <SelectContent className="bg-slate-950 border-white/10 rounded-2xl">
+                    <SelectContent className="rounded-2xl">
                       <SelectItem value="America/New_York" className="font-black uppercase text-[10px] py-3">US Eastern</SelectItem>
                       <SelectItem value="America/Chicago" className="font-black uppercase text-[10px] py-3">US Central</SelectItem>
                       <SelectItem value="America/Denver" className="font-black uppercase text-[10px] py-3">US Mountain</SelectItem>
@@ -266,7 +266,7 @@ export default function NewEventPage() {
                   </Select>
                 </div>
                 <div className="flex justify-between pt-4">
-                  <Button type="button" variant="outline" onClick={prevStep} className="h-14 px-8 rounded-2xl bg-white/5 border-white/10 text-white font-black uppercase tracking-widest text-[10px] flex gap-3">
+                  <Button type="button" variant="outline" onClick={prevStep} className="theme-ghost-surface h-14 px-8 rounded-2xl font-black uppercase tracking-widest text-[10px] flex gap-3">
                     <ArrowLeft className="h-5 w-5" /> Back
                   </Button>
                   <Button type="button" onClick={nextStep} className="h-14 px-10 rounded-2xl bg-primary text-white font-black uppercase tracking-widest transition-all hover:scale-105 active:scale-95 flex gap-3 shadow-2xl shadow-primary/20">
@@ -293,7 +293,7 @@ export default function NewEventPage() {
                     <p className="text-[10px] font-bold text-red-500 uppercase tracking-widest mt-2">{errors.maxCapacity.message}</p>
                   )}
                 </div>
-                <div className="flex items-start gap-6 rounded-[32px] bg-white/3 border border-white/5 p-8 group hover:bg-white/5 transition-all">
+                <div className="theme-panel-subtle flex items-start gap-6 p-8 group hover:bg-muted/60 dark:hover:bg-white/5 transition-all">
                    <div className="pt-1">
                       <Checkbox
                         id="registrationEnabled"
@@ -301,20 +301,20 @@ export default function NewEventPage() {
                         onCheckedChange={(checked) =>
                           setValue("registrationEnabled", !!checked)
                         }
-                        className="h-6 w-6 rounded-lg border-2 border-white/20 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                        className="h-6 w-6 rounded-lg border-2 border-border dark:border-white/20 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
                       />
                    </div>
                   <div className="space-y-1">
-                    <Label htmlFor="registrationEnabled" className="text-sm font-black text-white italic uppercase tracking-tight leading-none">
+                    <Label htmlFor="registrationEnabled" className="text-sm font-black text-foreground dark:text-white italic uppercase tracking-tight leading-none">
                       Enable Registration
                     </Label>
-                    <p className="text-[9px] font-bold text-white/20 uppercase tracking-[0.2em] leading-relaxed">
+                    <p className="text-[9px] font-bold text-muted-foreground dark:text-white/20 uppercase tracking-[0.2em] leading-relaxed">
                       Allow attendees to register or purchase access for this event.
                     </p>
                   </div>
                 </div>
                 <div className="flex justify-between pt-8">
-                  <Button type="button" variant="outline" onClick={prevStep} className="h-14 px-8 rounded-2xl bg-white/5 border-white/10 text-white font-black uppercase tracking-widest text-[10px] flex gap-3">
+                  <Button type="button" variant="outline" onClick={prevStep} className="theme-ghost-surface h-14 px-8 rounded-2xl font-black uppercase tracking-widest text-[10px] flex gap-3">
                     <ArrowLeft className="h-5 w-5" /> Back
                   </Button>
                   <Button
