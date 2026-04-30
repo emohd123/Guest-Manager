@@ -78,6 +78,14 @@ export function MarketingFooter() {
               LinkedIn
             </Link>
             <Link
+              href="https://instagram.com/formbuilder.onestone"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm text-pink-400 hover:text-pink-300"
+            >
+              Instagram
+            </Link>
+            <Link
               href="#"
               className="text-sm text-white/70 hover:text-white"
             >
