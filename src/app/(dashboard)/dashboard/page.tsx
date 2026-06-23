@@ -24,6 +24,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import { SpotlightCard } from "@/components/ui/spotlight-card";
+
 
 export default function DashboardPage() {
   const { data: eventStats, isLoading: eventsLoading } = trpc.events.stats.useQuery();
@@ -159,10 +161,16 @@ export default function DashboardPage() {
             >
               <Link
                 href={stat.href}
-                className="group relative block overflow-hidden rounded-[32px] border border-border bg-card/90 p-8 transition-all hover:-translate-y-1 hover:bg-muted/60 dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/8"
+                className="block"
               >
-                {cardContent}
+                <SpotlightCard
+                  className="group relative overflow-hidden rounded-[32px] border border-border bg-card/90 p-8 transition-all hover:-translate-y-1 hover:bg-muted/60 dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/8"
+                  spotlightColor="rgba(124, 77, 255, 0.15)"
+                >
+                  {cardContent}
+                </SpotlightCard>
               </Link>
+
             </motion.div>
           );
         })}
@@ -173,8 +181,13 @@ export default function DashboardPage() {
           <motion.div
             initial={{ opacity: 0, scale: 0.98 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="relative overflow-hidden rounded-[40px] border border-border bg-card/90 p-10 dark:border-white/10 dark:bg-white/5"
           >
+            <SpotlightCard
+              className="relative overflow-hidden rounded-[40px] border border-border bg-card/90 p-10 dark:border-white/10 dark:bg-white/5"
+              spotlightColor="rgba(124, 77, 255, 0.12)"
+            >
+
+
             <div className="relative z-10 space-y-8">
               <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
                 <div>
@@ -233,13 +246,17 @@ export default function DashboardPage() {
                 ))}
               </div>
             </div>
+            </SpotlightCard>
           </motion.div>
 
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="overflow-hidden rounded-[40px] border border-border bg-card/90 dark:border-white/10 dark:bg-white/5"
           >
+            <SpotlightCard
+              className="overflow-hidden rounded-[40px] border border-border bg-card/90 dark:border-white/10 dark:bg-white/5"
+              spotlightColor="rgba(124, 77, 255, 0.1)"
+            >
             <div className="flex items-center justify-between border-b border-border bg-muted/30 p-8 backdrop-blur-xl dark:border-white/5 dark:bg-white/2">
               <div>
                 <h3 className="mb-2 text-xl font-black italic leading-none text-foreground dark:text-white">
@@ -328,6 +345,7 @@ export default function DashboardPage() {
                 </div>
               )}
             </div>
+            </SpotlightCard>
           </motion.div>
         </div>
 
@@ -335,8 +353,11 @@ export default function DashboardPage() {
           <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
-            className="space-y-6 rounded-[40px] border border-border bg-card/90 p-8 dark:border-white/10 dark:bg-white/5"
           >
+            <SpotlightCard
+              className="space-y-6 rounded-[40px] border border-border bg-card/90 p-8 dark:border-white/10 dark:bg-white/5"
+              spotlightColor="rgba(124, 77, 255, 0.1)"
+            >
             <h3 className="ml-2 text-lg font-black uppercase italic tracking-tighter text-foreground dark:text-white">
               Quick Actions
             </h3>
@@ -365,14 +386,20 @@ export default function DashboardPage() {
                 </Link>
               ))}
             </div>
-          </motion.div>
+          </SpotlightCard>
+        </motion.div>
 
           <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.1 }}
-            className="space-y-8 rounded-[40px] border border-border bg-card/90 p-8 dark:border-white/10 dark:bg-white/5"
           >
+            <SpotlightCard
+              className="space-y-8 rounded-[40px] border border-border bg-card/90 p-8 dark:border-white/10 dark:bg-white/5"
+              spotlightColor="rgba(124, 77, 255, 0.1)"
+            >
+
+
             <div className="ml-2 flex items-center justify-between">
               <h3 className="text-lg font-black uppercase italic tracking-tighter text-foreground dark:text-white">
                 Recent Activity
@@ -404,6 +431,7 @@ export default function DashboardPage() {
                 </p>
               </div>
             )}
+            </SpotlightCard>
           </motion.div>
 
           <motion.div
