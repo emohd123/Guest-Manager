@@ -6,6 +6,7 @@ import { DataTable } from "@/components/shared/data-table";
 import { Button } from "@/components/ui/button";
 import { Plus, Megaphone } from "lucide-react";
 import { motion } from "framer-motion";
+import { EmptyState } from "@/components/shared/empty-state";
 
 export default function CampaignsPage() {
   const { data, isLoading } = trpc.campaigns.list.useQuery({});
@@ -49,24 +50,16 @@ export default function CampaignsPage() {
       </div>
 
       {!isLoading && campaigns.length === 0 ? (
-        <motion.div 
-          initial={{ scale: 0.95, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          className="flex flex-col items-center justify-center rounded-[40px] bg-card/90 dark:bg-white/5 border border-border dark:border-white/10 p-20 text-center space-y-8"
-        >
-          <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-[32px] bg-primary/10 text-primary rotate-12 group-hover:rotate-0 transition-transform">
-            <Megaphone className="h-10 w-10 -rotate-12" />
-          </div>
-          <div className="space-y-2">
-            <h3 className="text-2xl font-black text-foreground dark:text-white italic tracking-tighter uppercase">No Campaigns Yet</h3>
-            <p className="max-w-sm text-[10px] font-bold text-muted-foreground/70 dark:text-white/20 uppercase tracking-widest">
-              Create your first campaign to coordinate outreach across your audience.
-            </p>
-          </div>
-          <Button className="h-14 px-10 rounded-2xl bg-card hover:bg-muted dark:bg-white/10 dark:hover:bg-white/15 text-foreground dark:text-white border border-border dark:border-white/10 font-black italic uppercase tracking-widest transition-all">
-            Create Campaign
-          </Button>
-        </motion.div>
+        <EmptyState
+          icon={Megaphone}
+          title="No Campaigns Yet"
+          description="Create your first campaign to coordinate outreach across your audience."
+          action={
+            <Button className="h-14 px-10 rounded-2xl bg-card hover:bg-muted dark:bg-white/10 dark:hover:bg-white/15 text-foreground dark:text-white border border-border dark:border-white/10 font-black italic uppercase tracking-widest transition-all">
+              Create Campaign
+            </Button>
+          }
+        />
       ) : (
         <motion.div
           initial={{ y: 20, opacity: 0 }}

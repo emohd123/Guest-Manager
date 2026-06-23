@@ -39,6 +39,7 @@ import {
   updateVisitorProfile,
   visitorLogin,
   visitorRegister,
+  setUnauthorizedHandler,
 } from "./src/api/mobileClient";
 import { RoleChoiceScreen } from "./src/screens/RoleChoiceScreen";
 import { StaffChoiceScreen } from "./src/screens/StaffChoiceScreen";
@@ -59,6 +60,7 @@ import { ActivityScreen } from "./src/screens/ActivityScreen";
 import { getCachedGuests, initGuestCache, upsertGuests } from "./src/storage/guestCache";
 import { enqueueMutation, initOfflineQueue, listQueuedMutations } from "./src/storage/offlineQueue";
 import { clearSession, loadSession, saveSession } from "./src/storage/session";
+import { secureSet, secureGet, secureDelete, migrateLegacyKey } from "./src/storage/secureStorage";
 import { replayQueue } from "./src/sync/replay";
 import { FadeSlideIn } from "./src/ui/motion";
 import { AppErrorBoundary } from "./src/ui/app-error-boundary";
@@ -66,6 +68,7 @@ import { BrandLogo } from "./src/ui/brand-logo";
 import { PremiumBackdrop, PremiumCard, PremiumPill } from "./src/ui/primitives";
 import { palette, radii, spacing } from "./src/ui/theme";
 import { getExpoProjectId } from "./src/config";
+import Constants from "expo-constants";
 import type {
   MobileGuest,
   PairingSession,
@@ -92,6 +95,9 @@ type Tab = "home" | "guests" | "scan" | "walkup" | "activity";
 
 // ── Storage keys ─────────────────────────────────────────────────────────────
 const INSTALLATION_ID_KEY = "guest_manager_mobile_v2_installation_id";
+// Real build version from app.json/app.config (falls back to "0.0.0" if unset)
+// so device/fleet telemetry reflects the actual shipped version.
+const APP_VERSION = Constants.expoConfig?.version ?? "0.0.0";
 const VISITOR_SESSION_KEY = "guest_manager_visitor_session";
 const INTRO_COMPLETE_KEY = "guest_manager_mobile_v2_intro_complete";
 
@@ -117,16 +123,20 @@ async function getInstallationId() {
 }
 
 // ── Visitor session helpers ──────────────────────────────────────────────────
+// Tokens are kept in SecureStore (Keychain/Keystore) on native via the shared
+// secureStorage helper; AsyncStorage is only used for the non-sensitive
+// installation id below.
 async function saveVisitorSession(vs: VisitorSession) {
-  await AsyncStorage.setItem(VISITOR_SESSION_KEY, JSON.stringify(vs));
+  await secureSet(VISITOR_SESSION_KEY, JSON.stringify(vs));
 }
 async function loadVisitorSession(): Promise<VisitorSession | null> {
-  const raw = await AsyncStorage.getItem(VISITOR_SESSION_KEY);
+  await migrateLegacyKey(VISITOR_SESSION_KEY);
+  const raw = await secureGet(VISITOR_SESSION_KEY);
   if (!raw) return null;
   try { return JSON.parse(raw) as VisitorSession; } catch { return null; }
 }
 async function clearVisitorSession() {
-  await AsyncStorage.removeItem(VISITOR_SESSION_KEY);
+  await secureDelete(VISITOR_SESSION_KEY);
 }
 
 // ── Main App ─────────────────────────────────────────────────────────────────
@@ -184,12 +194,30 @@ function AppShell() {
       .finally(() => setBooting(false));
   }, []);
 
+  // ── Auto-logout on expired/invalid token ──────────────────────────────────
+  // Registered once. Any 401/403 from the API client (including the background
+  // heartbeat/replay timers) tears down both sessions and returns to the auth
+  // flow instead of silently showing stale cached data forever.
+  useEffect(() => {
+    setUnauthorizedHandler(() => {
+      void clearSession();
+      void clearVisitorSession();
+      setSession(null);
+      setVisitorSession(null);
+      setGuests([]);
+      setSummary(null);
+      setTab("home");
+      setAuthStep("role_choice");
+    });
+    return () => setUnauthorizedHandler(null);
+  }, []);
+
   // ── Staff heartbeat + queue replay ────────────────────────────────────────
   useEffect(() => {
     if (!session) return;
     refreshDashboardData();
     const heartbeatTimer = setInterval(() => {
-      sendHeartbeat(session, { battery: 100, appVersion: "0.1.0" }).catch(() => undefined);
+      sendHeartbeat(session, { battery: 100, appVersion: APP_VERSION }).catch(() => undefined);
     }, 60_000);
     const replayTimer = setInterval(() => {
       replayQueue(session).then(() => setLastSyncAt(new Date().toISOString())).catch(() => undefined);
@@ -207,7 +235,7 @@ function AppShell() {
       platform: Platform.OS,
       model: undefined,
       osVersion: String(Platform.Version),
-      appVersion: "0.1.0",
+      appVersion: APP_VERSION,
     };
   }
 
@@ -536,7 +564,7 @@ function AppShell() {
                 {tab === "scan" && <ScanScreen onSubmitBarcode={manualScan} />}
                 {tab === "walkup" && <WalkupScreen onSubmit={submitWalkup} />}
                 {tab === "activity" && (
-                  <ActivityScreen queueCount={queueCount} lastSyncAt={lastSyncAt} onSyncNow={syncNow} onHeartbeat={() => sendHeartbeat(session, { appVersion: "0.1.0" }).then(() => setLastSyncAt(new Date().toISOString()))} syncing={syncing} />
+                  <ActivityScreen queueCount={queueCount} lastSyncAt={lastSyncAt} onSyncNow={syncNow} onHeartbeat={() => sendHeartbeat(session, { appVersion: APP_VERSION }).then(() => setLastSyncAt(new Date().toISOString()))} syncing={syncing} />
                 )}
               </FadeSlideIn>
             </PremiumCard>

@@ -30,6 +30,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { EmptyState } from "@/components/shared/empty-state";
 
 export default function TicketsPage({ params }: { params: Promise<{ eventId: string }> }) {
   const { eventId } = use(params);
@@ -163,24 +164,16 @@ export default function TicketsPage({ params }: { params: Promise<{ eventId: str
       </div>
 
       {!isLoading && tickets.length === 0 ? (
-        <motion.div 
-          initial={{ scale: 0.95, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          className="flex flex-col items-center justify-center rounded-[40px] bg-white/5 border border-white/10 p-20 text-center space-y-8"
-        >
-          <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-[32px] bg-primary/10 text-primary rotate-12 group-hover:rotate-0 transition-transform">
-            <Ticket className="h-10 w-10 -rotate-12" />
-          </div>
-          <div className="space-y-2">
-            <h3 className="text-2xl font-black text-white italic tracking-tighter uppercase leading-none">No Ticket Types Yet</h3>
-            <p className="max-w-xs mx-auto text-[10px] font-bold text-white/20 uppercase tracking-[0.2em] leading-relaxed">
-              Create ticket tiers for this event so guests can register or staff can issue tickets manually.
-            </p>
-          </div>
-          <Button className="h-14 px-10 rounded-2xl bg-white/10 hover:bg-primary text-white font-black italic uppercase tracking-widest transition-all" onClick={() => { setSelectedTicket(null); setIsModalOpen(true); }}>
-            Create First Ticket Type
-          </Button>
-        </motion.div>
+        <EmptyState
+          icon={Ticket}
+          title="No Ticket Types Yet"
+          description="Create ticket tiers for this event so guests can register or staff can issue tickets manually."
+          action={
+            <Button className="h-14 px-10 rounded-2xl bg-white/10 hover:bg-primary text-white font-black italic uppercase tracking-widest transition-all" onClick={() => { setSelectedTicket(null); setIsModalOpen(true); }}>
+              Create First Ticket Type
+            </Button>
+          }
+        />
       ) : (
         <motion.div
           initial={{ y: 20, opacity: 0 }}

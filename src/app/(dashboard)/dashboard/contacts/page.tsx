@@ -39,6 +39,7 @@ import {
 import { toast } from "sonner";
 
 import { Checkbox } from "@/components/ui/checkbox";
+import { EmptyState } from "@/components/shared/empty-state";
 
 type Contact = {
   id: string;
@@ -52,8 +53,6 @@ type Contact = {
   tags: string[] | null;
   createdAt: string;
 };
-
-import { motion } from "framer-motion";
 
 export default function ContactsPage() {
   const router = useRouter();
@@ -232,33 +231,28 @@ export default function ContactsPage() {
   if (!isLoading && allContacts.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-8">
-        <motion.div
-           initial={{ scale: 0.9, opacity: 0 }}
-           animate={{ scale: 1, opacity: 1 }}
-           className="w-full max-w-xl rounded-[40px] border border-border bg-card p-10 backdrop-blur-3xl"
-        >
-          <div className="mx-auto flex h-24 w-24 items-center justify-center rounded-3xl bg-primary/10 mb-8 group">
-            <Users className="h-12 w-12 text-primary group-hover:scale-110 transition-transform duration-500" />
-          </div>
-          <h1 className="mb-4 text-3xl font-black italic tracking-tight text-foreground">Your Network</h1>
-          <p className="mb-10 text-lg leading-relaxed text-muted-foreground">
-            Your CRM is currently empty. Contacts are automatically created when guests register for events, or you can build your library manually.
-          </p>
-          <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-            <DialogTrigger asChild>
-              <Button size="lg" className="h-14 px-10 rounded-2xl bg-primary hover:bg-primary/90 text-white font-black text-lg shadow-2xl shadow-primary/20 transition-all hover:-translate-y-1">
-                Add Your First Contact
-              </Button>
-            </DialogTrigger>
-            <CreateContactDialog
-              formData={formData}
-              setFormData={setFormData}
-              isPending={createContact.isPending}
-              onSubmit={() => createContact.mutate(formData)}
-              onClose={() => setCreateOpen(false)}
-            />
-          </Dialog>
-        </motion.div>
+        <EmptyState
+          icon={Users}
+          title="Your Network"
+          description="Your CRM is currently empty. Contacts are automatically created when guests register for events, or you can build your library manually."
+          className="w-full max-w-xl"
+          action={
+            <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+              <DialogTrigger asChild>
+                <Button size="lg" className="h-14 px-10 rounded-2xl bg-primary hover:bg-primary/90 text-white font-black text-lg shadow-2xl shadow-primary/20 transition-all hover:-translate-y-1">
+                  Add Your First Contact
+                </Button>
+              </DialogTrigger>
+              <CreateContactDialog
+                formData={formData}
+                setFormData={setFormData}
+                isPending={createContact.isPending}
+                onSubmit={() => createContact.mutate(formData)}
+                onClose={() => setCreateOpen(false)}
+              />
+            </Dialog>
+          }
+        />
       </div>
     );
   }

@@ -101,18 +101,7 @@ export function DashboardTopbar({
 
         {mounted ? (
           <>
-            <div className="flex items-center gap-2 rounded-2xl border border-border bg-card/80 p-1">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="rounded-xl text-muted-foreground hover:bg-muted hover:text-foreground"
-                onClick={() => setTheme(isDark ? "light" : "dark")}
-              >
-                <Sun className="h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-                <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-                <span className="sr-only">Toggle theme</span>
-              </Button>
-            </div>
+
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>

@@ -17,6 +17,30 @@ import { getApiBaseUrl } from "../config";
 
 const baseUrl = getApiBaseUrl();
 
+/** Thrown when the backend rejects the request with 401/403 (expired/invalid token). */
+export class UnauthorizedError extends Error {
+  status: number;
+  constructor(message: string, status: number) {
+    super(message);
+    this.name = "UnauthorizedError";
+    this.status = status;
+  }
+}
+
+// App.tsx registers a handler here so a 401 anywhere (including the background
+// heartbeat/replay timers) tears down the session and returns to the auth flow
+// instead of silently showing stale data forever.
+type UnauthorizedHandler = (status: number) => void;
+let unauthorizedHandler: UnauthorizedHandler | null = null;
+export function setUnauthorizedHandler(handler: UnauthorizedHandler | null) {
+  unauthorizedHandler = handler;
+}
+/** Invoke the registered unauthorized handler (used by the offline replay loop,
+ *  which talks to the backend with raw fetch rather than apiRequest). */
+export function notifyUnauthorized(status: number) {
+  unauthorizedHandler?.(status);
+}
+
 type DeviceInfo = {
   name: string;
   installationId: string;
@@ -47,6 +71,10 @@ async function apiRequest<T>(
       message = data.error ?? message;
     } catch {
       // no-op
+    }
+    if (response.status === 401 || response.status === 403) {
+      unauthorizedHandler?.(response.status);
+      throw new UnauthorizedError(message, response.status);
     }
     throw new Error(message);
   }

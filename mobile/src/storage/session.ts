@@ -1,14 +1,15 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import type { PairingSession } from "../types";
+import { secureSet, secureGet, secureDelete, migrateLegacyKey } from "./secureStorage";
 
 const SESSION_KEY = "guest_manager_mobile_v2_session";
 
 export async function saveSession(session: PairingSession) {
-  await AsyncStorage.setItem(SESSION_KEY, JSON.stringify(session));
+  await secureSet(SESSION_KEY, JSON.stringify(session));
 }
 
 export async function loadSession() {
-  const raw = await AsyncStorage.getItem(SESSION_KEY);
+  await migrateLegacyKey(SESSION_KEY);
+  const raw = await secureGet(SESSION_KEY);
   if (!raw) return null;
   try {
     return JSON.parse(raw) as PairingSession;
@@ -18,6 +19,5 @@ export async function loadSession() {
 }
 
 export async function clearSession() {
-  await AsyncStorage.removeItem(SESSION_KEY);
+  await secureDelete(SESSION_KEY);
 }
-

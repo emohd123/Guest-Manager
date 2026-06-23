@@ -5,6 +5,7 @@ import { DataTable } from "@/components/shared/data-table";
 import { Button } from "@/components/ui/button";
 import { Plus, Tag, Zap, Activity } from "lucide-react";
 import { motion } from "framer-motion";
+import { EmptyState } from "@/components/shared/empty-state";
 
 export default function PromotionsPage() {
   const { data, isLoading } = trpc.promotions.list.useQuery();
@@ -49,24 +50,16 @@ export default function PromotionsPage() {
       </div>
 
       {!isLoading && promotions.length === 0 ? (
-        <motion.div 
-          initial={{ scale: 0.95, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          className="flex flex-col items-center justify-center rounded-[40px] bg-white/5 border border-white/10 p-20 text-center space-y-8"
-        >
-          <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-[32px] bg-primary/10 text-primary rotate-12 group-hover:rotate-0 transition-transform">
-            <Tag className="h-10 w-10 -rotate-12" />
-          </div>
-          <div className="space-y-2">
-            <h3 className="text-2xl font-black text-white italic tracking-tighter uppercase leading-none">No Promotions Yet</h3>
-            <p className="max-w-xs mx-auto text-[10px] font-bold text-white/20 uppercase tracking-[0.2em] leading-relaxed">
-              Create a promotion code to offer discounts for tickets and registrations.
-            </p>
-          </div>
-          <Button className="h-14 px-10 rounded-2xl bg-white/10 hover:bg-primary text-white font-black italic uppercase tracking-widest transition-all">
-            Create Promotion
-          </Button>
-        </motion.div>
+        <EmptyState
+          icon={Tag}
+          title="No Promotions Yet"
+          description="Create a promotion code to offer discounts for tickets and registrations."
+          action={
+            <Button className="h-14 px-10 rounded-2xl bg-white/10 hover:bg-primary text-white font-black italic uppercase tracking-widest transition-all">
+              Create Promotion
+            </Button>
+          }
+        />
       ) : (
         <motion.div
           initial={{ y: 20, opacity: 0 }}

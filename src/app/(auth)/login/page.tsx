@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { BrandWordmark } from "@/components/brand/brand-wordmark";
+import { Eye, EyeOff } from "lucide-react";
 
 export default function LoginPage() {
   return (
@@ -34,6 +35,7 @@ function LoginForm() {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
@@ -130,14 +132,14 @@ function LoginForm() {
         <div className="flex justify-center">
           <Link href="/" aria-label="Events Hub home">
             <BrandWordmark
-              className="gap-2.5"
-              markClassName="h-10 w-10"
-              textClassName="text-[1.7rem]"
+              className="gap-3"
+              markClassName="h-12 w-12"
+              textClassName="text-[2.0rem]"
             />
           </Link>
         </div>
-        <CardTitle className="sr-only">Events Hub</CardTitle>
-        <CardDescription>Sign in to your account</CardDescription>
+        <CardTitle className="mt-4 text-2xl font-bold tracking-tight">Welcome back</CardTitle>
+        <CardDescription>Sign in to manage your events</CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleLogin} className="space-y-4">
@@ -167,14 +169,29 @@ function LoginForm() {
                 Forgot password?
               </Link>
             </div>
-            <Input
-              id="password"
-              type="password"
-              placeholder="Enter your password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
+            <div className="relative">
+              <Input
+                id="password"
+                type={showPassword ? "text" : "password"}
+                placeholder="Enter your password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                className="pr-10"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((v) => !v)}
+                aria-label={showPassword ? "Hide password" : "Show password"}
+                className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground hover:text-foreground"
+              >
+                {showPassword ? (
+                  <EyeOff className="h-4 w-4" />
+                ) : (
+                  <Eye className="h-4 w-4" />
+                )}
+              </button>
+            </div>
           </div>
           <Button type="submit" className="w-full" disabled={loading}>
             {loading ? "Signing in..." : "Sign In"}

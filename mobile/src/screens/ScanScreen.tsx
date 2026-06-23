@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import {
+  Linking,
   Platform,
   ScrollView,
   StyleSheet,
@@ -51,9 +52,21 @@ export function ScanScreen({
 
   async function toggleCamera() {
     if (!cameraMode && !hasPermission) {
+      // If permission was permanently denied, requestPermission() resolves
+      // immediately without a prompt — send the user to Settings instead of
+      // leaving them stuck in manual mode with no path forward.
+      if (permission && !permission.canAskAgain) {
+        setLastMessage("Camera access is blocked. Enable it in Settings to scan.");
+        Linking.openSettings().catch(() => undefined);
+        return;
+      }
       const result = await requestPermission();
       if (!result.granted) {
-        setLastMessage("Camera permission denied.");
+        setLastMessage(
+          result.canAskAgain
+            ? "Camera permission denied."
+            : "Camera access is blocked. Enable it in Settings to scan."
+        );
         return;
       }
     }

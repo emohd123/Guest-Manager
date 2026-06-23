@@ -96,6 +96,8 @@ export type QueueItem = {
   payload: Record<string, unknown>;
   eventId: string;
   createdAt: string;
+  /** Number of failed replay attempts; used to drop poison-pill mutations. */
+  attempts?: number;
 };
 
 export type VisitorTicket = {

@@ -8,6 +8,7 @@ import {
   type TextInputProps,
   View,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { palette, radii, shadows, spacing, type } from "./theme";
 
 export function PremiumBackdrop({
@@ -92,14 +93,17 @@ export function PremiumButton({
 
   return (
     <Pressable
-      style={[
+      style={({ pressed }) => [
         styles.button,
         secondary && styles.buttonSecondary,
         ghost && styles.buttonGhost,
         (disabled || loading) && styles.buttonDisabled,
+        pressed && !disabled && !loading && styles.buttonPressed,
       ]}
       onPress={onPress}
       disabled={disabled || loading}
+      accessibilityRole="button"
+      accessibilityState={{ disabled: disabled || loading }}
     >
       {loading ? (
         <ActivityIndicator color={secondary || ghost ? palette.text : palette.textInverse} />
@@ -130,15 +134,44 @@ export function PremiumField({
   error?: string | null;
   containerStyle?: object;
 }) {
+  // When the field is a password (secureTextEntry), render a show/hide eye
+  // toggle. We track visibility locally and override secureTextEntry so the
+  // caller just passes `secureTextEntry` as before.
+  const isPassword = Boolean(props.secureTextEntry);
+  const [hidden, setHidden] = React.useState(true);
+
   return (
     <View style={[styles.field, containerStyle]}>
       <Text style={styles.fieldLabel}>{label}</Text>
-      <TextInput
-        {...props}
-        multiline={multiline}
-        placeholderTextColor="#9AA2B4"
-        style={[styles.fieldInput, multiline && styles.fieldInputMultiline, props.style]}
-      />
+      <View>
+        <TextInput
+          {...props}
+          secureTextEntry={isPassword ? hidden : props.secureTextEntry}
+          multiline={multiline}
+          placeholderTextColor="#9AA2B4"
+          style={[
+            styles.fieldInput,
+            multiline && styles.fieldInputMultiline,
+            isPassword && styles.fieldInputWithIcon,
+            props.style,
+          ]}
+        />
+        {isPassword ? (
+          <Pressable
+            onPress={() => setHidden((v) => !v)}
+            hitSlop={10}
+            accessibilityRole="button"
+            accessibilityLabel={hidden ? "Show password" : "Hide password"}
+            style={styles.fieldEyeButton}
+          >
+            <Ionicons
+              name={hidden ? "eye-outline" : "eye-off-outline"}
+              size={22}
+              color={palette.textMuted}
+            />
+          </Pressable>
+        ) : null}
+      </View>
       {hint ? <Text style={styles.fieldHint}>{hint}</Text> : null}
       {error ? <PremiumNotice tone="danger" text={error} /> : null}
     </View>
@@ -295,6 +328,10 @@ const styles = StyleSheet.create({
     shadowOpacity: 0,
     elevation: 0,
   },
+  buttonPressed: {
+    opacity: 0.9,
+    transform: [{ scale: 0.98 }],
+  },
   buttonText: {
     color: palette.textInverse,
     fontSize: type.bodyLg,
@@ -325,6 +362,18 @@ const styles = StyleSheet.create({
     color: palette.text,
     fontSize: 16,
     ...shadows.soft,
+  },
+  fieldInputWithIcon: {
+    paddingRight: 52,
+  },
+  fieldEyeButton: {
+    position: "absolute",
+    right: 0,
+    top: 0,
+    bottom: 0,
+    width: 48,
+    alignItems: "center",
+    justifyContent: "center",
   },
   fieldInputMultiline: {
     minHeight: 150,

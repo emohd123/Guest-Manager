@@ -15,7 +15,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { CheckCircle, Mail } from "lucide-react";
+import { CheckCircle, Mail, Eye, EyeOff } from "lucide-react";
 import { BrandWordmark } from "@/components/brand/brand-wordmark";
 
 export default function SignupPage() {
@@ -23,6 +23,7 @@ export default function SignupPage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [companyName, setCompanyName] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -137,14 +138,14 @@ export default function SignupPage() {
         <div className="flex justify-center">
           <Link href="/" aria-label="Events Hub home">
             <BrandWordmark
-              className="gap-2.5"
-              markClassName="h-10 w-10"
-              textClassName="text-[1.7rem]"
+              className="gap-3"
+              markClassName="h-12 w-12"
+              textClassName="text-[2.0rem]"
             />
           </Link>
         </div>
-        <CardTitle className="sr-only">Events Hub</CardTitle>
-        <CardDescription>Create your free account</CardDescription>
+        <CardTitle className="mt-4 text-2xl font-bold tracking-tight">Create your account</CardTitle>
+        <CardDescription>Start managing events in minutes — no credit card required</CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSignup} className="space-y-4">
@@ -188,15 +189,30 @@ export default function SignupPage() {
           </div>
           <div className="space-y-2">
             <Label htmlFor="password">Password</Label>
-            <Input
-              id="password"
-              type="password"
-              placeholder="Minimum 6 characters"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              minLength={6}
-              required
-            />
+            <div className="relative">
+              <Input
+                id="password"
+                type={showPassword ? "text" : "password"}
+                placeholder="Minimum 6 characters"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                minLength={6}
+                required
+                className="pr-10"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((v) => !v)}
+                aria-label={showPassword ? "Hide password" : "Show password"}
+                className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground hover:text-foreground"
+              >
+                {showPassword ? (
+                  <EyeOff className="h-4 w-4" />
+                ) : (
+                  <Eye className="h-4 w-4" />
+                )}
+              </button>
+            </div>
           </div>
           <Button type="submit" className="w-full" disabled={loading}>
             {loading ? "Creating account..." : "Create Account"}

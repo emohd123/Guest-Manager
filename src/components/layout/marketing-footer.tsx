@@ -11,12 +11,12 @@ const footerLinks = {
     { name: "Pricing", href: "/pricing" },
     { name: "Contact Sales", href: "/contact" },
     { name: "Support", href: "/contact" },
-    { name: "Privacy Policy", href: "/privacy-policy" },
+    { name: "Platform Tour", href: "/tour" },
   ],
   Company: [
     { name: "About Events Hub", href: "/" },
-    { name: "Event Check-In App", href: "/event-check-in-app" },
-    { name: "Registration & Ticketing", href: "/registration-ticketing" },
+    { name: "OneStone Network", href: "https://onestoneads.com/" },
+    { name: "Contact Us", href: "/contact" },
   ],
   Legal: [
     { name: "Privacy Policy", href: "/privacy-policy" },
@@ -29,19 +29,20 @@ export function MarketingFooter() {
   return (
     <footer className="border-t border-white/10 bg-black/60 backdrop-blur-xl relative z-20">
       <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
-        <div className="grid gap-12 md:grid-cols-2 lg:grid-cols-5">
+        <div className="grid gap-12 md:grid-cols-2 lg:grid-cols-6">
           {/* Brand */}
-          <div className="lg:col-span-1">
+          <div className="lg:col-span-2">
             <Link href="/" aria-label="Events Hub home">
               <BrandWordmark
-                className="gap-3"
-                markClassName="h-14 w-14"
-                textClassName="text-[2.2rem] text-white"
+                className="gap-3.5"
+                markClassName="h-18 w-18"
+                textClassName="text-[2.6rem] text-white"
+                showSubtitle={true}
               />
             </Link>
-            <p className="mt-4 text-sm text-white/70 leading-relaxed">
+            <p className="mt-6 text-sm text-white/70 leading-relaxed">
               The all-in-one platform for event check-in, ticketing, and guest
-              management.
+              management. An integrated product of the OneStone Ads network.
             </p>
           </div>
 
@@ -67,7 +68,15 @@ export function MarketingFooter() {
 
         <div className="mt-12 flex flex-col items-center justify-between border-t border-white/10 pt-8 md:flex-row">
           <p className="text-sm text-white/70">
-            &copy; {new Date().getFullYear()} Events Hub. All rights reserved.
+            &copy; {new Date().getFullYear()} Events Hub. All rights reserved. Powered by{" "}
+            <a
+              href="https://onestoneads.com/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary hover:underline font-semibold"
+            >
+              OneStone Ads
+            </a>.
           </p>
           <div className="mt-4 flex gap-6 md:mt-0">
             <Link

@@ -42,6 +42,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { EmptyState } from "@/components/shared/empty-state";
 
 const campaignTemplates = [
   { id: "ticket-delivery", name: "Ticket Delivery", description: "Send purchased tickets to attendees", icon: Ticket, color: "text-blue-400", bg: "bg-blue-400/10" },
@@ -212,20 +213,17 @@ export default function CommunicationsPage() {
                   <p className="text-muted-foreground dark:text-white/30 text-[10px] font-bold uppercase tracking-widest">Recent and scheduled campaigns</p>
                </div>
             </div>
-            <div className="p-24 text-center space-y-8">
-              <div className="h-20 w-20 rounded-[32px] bg-muted dark:bg-white/3 border border-border dark:border-white/10 flex items-center justify-center mx-auto text-muted-foreground/40 dark:text-white/10">
-                <Mail className="h-10 w-10 capitalize" />
-              </div>
-              <div className="space-y-2">
-                <h4 className="text-2xl font-black text-foreground dark:text-white italic uppercase tracking-tighter leading-none">No Campaigns Yet</h4>
-                <p className="max-w-xs mx-auto text-[10px] font-bold text-muted-foreground/70 dark:text-white/20 uppercase tracking-[0.2em] leading-relaxed">
-                  Create your first email campaign to start reaching attendees and contacts.
-                </p>
-              </div>
-              <Button className="h-14 px-10 rounded-2xl bg-card dark:bg-white/10 hover:bg-primary text-foreground dark:text-white border border-border dark:border-white/10 font-black italic uppercase tracking-widest transition-all" onClick={() => setCreateOpen(true)}>
-                Create Campaign
-              </Button>
-            </div>
+            <EmptyState
+              icon={Mail}
+              title="No Campaigns Yet"
+              description="Create your first email campaign to start reaching attendees and contacts."
+              className="border-0 bg-transparent"
+              action={
+                <Button className="h-14 px-10 rounded-2xl bg-card dark:bg-white/10 hover:bg-primary text-foreground dark:text-white border border-border dark:border-white/10 font-black italic uppercase tracking-widest transition-all" onClick={() => setCreateOpen(true)}>
+                  Create Campaign
+                </Button>
+              }
+            />
           </motion.div>
         </TabsContent>
 

@@ -1,7 +1,6 @@
 "use client";
 
 import { useId } from "react";
-
 import { cn } from "@/lib/utils";
 
 interface BrandMarkProps {
@@ -10,190 +9,109 @@ interface BrandMarkProps {
 
 export function BrandMark({ className }: BrandMarkProps) {
   const id = useId();
-  const pinGradientId = `${id}-pin-gradient`;
-  const highlightId = `${id}-pin-highlight`;
-  const glowId = `${id}-pin-glow`;
-  const ticketShadowId = `${id}-ticket-shadow`;
-  const checkGradientId = `${id}-check-gradient`;
-  const ticketMaskId = `${id}-ticket-mask`;
+  const brandGradientId = `${id}-brand-gradient`;
+  const glowFilterId = `${id}-glow`;
 
   return (
     <svg
       viewBox="0 0 96 112"
       aria-hidden="true"
-      className={cn("h-11 w-11 shrink-0", className)}
+      className={cn("h-11 w-11 shrink-0 group/logo cursor-pointer", className)}
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
     >
+      <style>{`
+        /* Smooth audio visualizer / soundwave equalizer animation */
+        .eq-bar {
+          transform-origin: 50% 56px;
+          animation: equalize 1.6s ease-in-out infinite;
+          transition: fill 0.3s ease;
+        }
+        .eq-bar-1 { animation-delay: 0.1s; animation-duration: 1.2s; }
+        .eq-bar-2 { animation-delay: 0.4s; animation-duration: 1.6s; }
+        .eq-bar-3 { animation-delay: 0.2s; animation-duration: 1.3s; }
+        .eq-bar-4 { animation-delay: 0.6s; animation-duration: 1.7s; }
+        .eq-bar-5 { animation-delay: 0.3s; animation-duration: 1.4s; }
+        .eq-bar-6 { animation-delay: 0.5s; animation-duration: 1.5s; }
+
+        @keyframes equalize {
+          0%, 100% {
+            transform: scaleY(1);
+          }
+          50% {
+            transform: scaleY(0.3);
+          }
+        }
+
+        /* Interactive logo hover effects */
+        .ticket-path {
+          transform-origin: 48px 56px;
+          transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), filter 0.4s ease;
+        }
+
+        .group\\/logo:hover .ticket-path {
+          transform: scale(1.05) rotate(-2deg);
+        }
+        
+        .group\\/logo:hover .eq-bar {
+          animation-duration: 0.8s; /* Double the visualizer speed on hover! */
+        }
+      `}</style>
+
       <defs>
+        {/* Brand linear gradient (Blue -> Purple -> Pink) */}
         <linearGradient
-          id={pinGradientId}
-          x1="16"
-          y1="10"
+          id={brandGradientId}
+          x1="14"
+          y1="34"
           x2="82"
-          y2="92"
+          y2="78"
           gradientUnits="userSpaceOnUse"
         >
-          <stop stopColor="#FF5A7A" />
-          <stop offset="0.32" stopColor="#FF6B8A" />
-          <stop offset="0.72" stopColor="#7C4DFF" />
-          <stop offset="1" stopColor="#5B3DF5" />
+          <stop stopColor="#2563eb" />
+          <stop offset="0.5" stopColor="#7c3aed" />
+          <stop offset="1" stopColor="#db2777" />
         </linearGradient>
-        <radialGradient
-          id={highlightId}
-          cx="0"
-          cy="0"
-          r="1"
-          gradientUnits="userSpaceOnUse"
-          gradientTransform="translate(34 22) rotate(42.2) scale(42 31)"
-        >
-          <stop stopColor="#FFFFFF" stopOpacity="0.62" />
-          <stop offset="1" stopColor="#FFFFFF" stopOpacity="0" />
-        </radialGradient>
-        <radialGradient
-          id={`${id}-orb-gradient`}
-          cx="0"
-          cy="0"
-          r="1"
-          gradientUnits="userSpaceOnUse"
-          gradientTransform="translate(48 39) rotate(90) scale(29)"
-        >
-          <stop stopColor="#FFFFFF" stopOpacity="0.24" />
-          <stop offset="0.72" stopColor="#FFFFFF" stopOpacity="0.08" />
-          <stop offset="1" stopColor="#FFFFFF" stopOpacity="0" />
-        </radialGradient>
-        <linearGradient
-          id={`${id}-rim-gradient`}
-          x1="20"
-          y1="18"
-          x2="73"
-          y2="98"
-          gradientUnits="userSpaceOnUse"
-        >
-          <stop stopColor="#FFFFFF" stopOpacity="0.34" />
-          <stop offset="0.45" stopColor="#FFFFFF" stopOpacity="0.08" />
-          <stop offset="1" stopColor="#FFFFFF" stopOpacity="0.18" />
-        </linearGradient>
-        <linearGradient
-          id={`${id}-ticket-gradient`}
-          x1="29"
-          y1="27"
-          x2="70"
-          y2="58"
-          gradientUnits="userSpaceOnUse"
-        >
-          <stop stopColor="#FFFFFF" />
-          <stop offset="1" stopColor="#FFF3FA" />
-        </linearGradient>
+
+        {/* Clean neon glow filter */}
         <filter
-          id={glowId}
-          x="2"
-          y="4"
-          width="92"
-          height="104"
+          id={glowFilterId}
+          x="-20%"
+          y="-20%"
+          width="140%"
+          height="140%"
           filterUnits="userSpaceOnUse"
           colorInterpolationFilters="sRGB"
         >
-          <feFlood floodOpacity="0" result="BackgroundImageFix" />
-          <feGaussianBlur in="SourceGraphic" stdDeviation="4.5" result="blurred" />
-          <feColorMatrix
-            in="blurred"
-            type="matrix"
-            values="1 0 0 0 0  0 0.36 0 0 0  0 0 1 0 0  0 0 0 0.22 0"
-            result="shadow"
-          />
-          <feBlend in="shadow" in2="SourceGraphic" mode="normal" />
+          <feGaussianBlur stdDeviation="2.5" result="blur" />
+          <feComponentTransfer in="blur" result="glow">
+            <feFuncA type="linear" slope="0.65" />
+          </feComponentTransfer>
+          <feMerge>
+            <feMergeNode in="glow" />
+            <feMergeNode in="SourceGraphic" />
+          </feMerge>
         </filter>
-        <filter
-          id={ticketShadowId}
-          x="20"
-          y="20"
-          width="56"
-          height="43"
-          filterUnits="userSpaceOnUse"
-          colorInterpolationFilters="sRGB"
-        >
-          <feFlood floodOpacity="0" result="BackgroundImageFix" />
-          <feOffset dy="3" />
-          <feGaussianBlur stdDeviation="2.5" />
-          <feColorMatrix
-            type="matrix"
-            values="0 0 0 0 0.32549 0 0 0 0 0.215686 0 0 0 0 0.921569 0 0 0 0.22 0"
-          />
-          <feBlend in2="BackgroundImageFix" result="effect1_dropShadow_1_1" />
-          <feBlend in="SourceGraphic" in2="effect1_dropShadow_1_1" result="shape" />
-        </filter>
-        <linearGradient
-          id={checkGradientId}
-          x1="39"
-          y1="30"
-          x2="55"
-          y2="46"
-          gradientUnits="userSpaceOnUse"
-        >
-          <stop stopColor="#FF5A7A" />
-          <stop offset="1" stopColor="#7C4DFF" />
-        </linearGradient>
-        <mask id={ticketMaskId}>
-          <rect x="24" y="24" width="48" height="34" rx="10" fill="white" />
-          <circle cx="24" cy="41" r="5" fill="black" />
-          <circle cx="72" cy="41" r="5" fill="black" />
-        </mask>
       </defs>
-      <g filter={`url(#${glowId})`}>
-        <path
-          d="M48 104C45.2 104 42.55 102.77 40.74 100.67C32.73 91.38 16 71.05 16 48C16 30.33 30.33 16 48 16C65.67 16 80 30.33 80 48C80 71.05 63.27 91.38 55.26 100.67C53.45 102.77 50.8 104 48 104Z"
-          fill={`url(#${pinGradientId})`}
-        />
-        <path
-          d="M48 104C45.2 104 42.55 102.77 40.74 100.67C32.73 91.38 16 71.05 16 48C16 30.33 30.33 16 48 16C65.67 16 80 30.33 80 48C80 71.05 63.27 91.38 55.26 100.67C53.45 102.77 50.8 104 48 104Z"
-          fill={`url(#${highlightId})`}
-        />
-        <circle
-          cx="48"
-          cy="41"
-          r="28"
-          fill={`url(#${id}-orb-gradient)`}
-        />
-      </g>
+
+      {/* Ticket Base Outline - transparent fill, with smooth transform classes */}
       <path
-        d="M48 104C45.2 104 42.55 102.77 40.74 100.67C32.73 91.38 16 71.05 16 48C16 30.33 30.33 16 48 16C65.67 16 80 30.33 80 48C80 71.05 63.27 91.38 55.26 100.67C53.45 102.77 50.8 104 48 104Z"
-        stroke={`url(#${id}-rim-gradient)`}
-        strokeWidth="1.5"
-      />
-      <g filter={`url(#${ticketShadowId})`}>
-        <rect
-          x="24"
-          y="24"
-          width="48"
-          height="34"
-          rx="10"
-          fill={`url(#${id}-ticket-gradient)`}
-          mask={`url(#${ticketMaskId})`}
-        />
-      </g>
-      <path
-        d="M30 28.5H58"
-        stroke="white"
-        strokeOpacity="0.62"
-        strokeWidth="2.4"
-        strokeLinecap="round"
-      />
-      <path
-        d="M36.5 40.5L45 48.5L60 32.5"
-        stroke={`url(#${checkGradientId})`}
-        strokeWidth="6"
+        className="ticket-path"
+        d="M 22,34 H 74 Q 82,34 82,42 V 48 A 7,7 0 0,0 82,64 V 70 Q 82,78 74,78 H 22 Q 14,78 14,70 V 64 A 7,7 0 0,0 14,48 V 42 Q 14,34 22,34 Z"
+        stroke={`url(#${brandGradientId})`}
+        strokeWidth="4"
         strokeLinecap="round"
         strokeLinejoin="round"
+        filter={`url(#${glowFilterId})`}
       />
-      <path
-        d="M48 98C44.6 98 41.4 96.5 39.16 93.94C30.9 84.48 21 70.7 21 53.71"
-        stroke="white"
-        strokeOpacity="0.24"
-        strokeWidth="2.7"
-        strokeLinecap="round"
-      />
-      <ellipse cx="48" cy="105.5" rx="15" ry="4.5" fill="#5B3DF5" fillOpacity="0.14" />
+
+      {/* 6 Animated, High-Contrast Soundwave Equalizer Bars */}
+      <rect className="eq-bar eq-bar-1" x="34" y="49" width="4.5" height="14" rx="2.25" fill={`url(#${brandGradientId})`} />
+      <rect className="eq-bar eq-bar-2" x="42" y="43" width="4.5" height="26" rx="2.25" fill={`url(#${brandGradientId})`} />
+      <rect className="eq-bar eq-bar-3" x="50" y="38" width="4.5" height="36" rx="2.25" fill={`url(#${brandGradientId})`} />
+      <rect className="eq-bar eq-bar-4" x="58" y="44" width="4.5" height="24" rx="2.25" fill={`url(#${brandGradientId})`} />
+      <rect className="eq-bar eq-bar-5" x="66" y="41" width="4.5" height="30" rx="2.25" fill={`url(#${brandGradientId})`} />
+      <rect className="eq-bar eq-bar-6" x="74" y="47" width="4.5" height="18" rx="2.25" fill={`url(#${brandGradientId})`} />
     </svg>
   );
 }

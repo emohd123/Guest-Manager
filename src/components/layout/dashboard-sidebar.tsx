@@ -174,11 +174,12 @@ export function DashboardSidebar({ collapsed, onToggle }: DashboardSidebarProps)
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  "flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold transition-all duration-300 relative group",
+                  "flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold transition-all duration-300 relative group outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
                   isActive
                     ? "bg-primary text-white shadow-[0_0_20px_rgba(255,91,106,0.4)]"
                     : "text-muted-foreground hover:bg-muted hover:text-foreground"
                 )}
+                aria-current={isActive ? "page" : undefined}
                 title={collapsed ? item.label : undefined}
               >
                 <item.icon className={cn(
@@ -217,11 +218,12 @@ export function DashboardSidebar({ collapsed, onToggle }: DashboardSidebarProps)
               key={item.href}
               href={item.href}
               className={cn(
-                "flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold transition-all duration-300 group",
+                "flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold transition-all duration-300 group outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
                 isActive
                   ? "bg-muted text-foreground"
                   : "text-muted-foreground hover:bg-muted hover:text-foreground"
               )}
+              aria-current={isActive ? "page" : undefined}
               title={collapsed ? item.label : undefined}
             >
               <item.icon className="h-5 w-5 shrink-0 transition-transform duration-300 group-hover:scale-110" />
@@ -231,7 +233,7 @@ export function DashboardSidebar({ collapsed, onToggle }: DashboardSidebarProps)
         })}
         <button
           onClick={handleSignOut}
-          className="group flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold text-muted-foreground transition-all duration-300 hover:bg-red-500/10 hover:text-red-400"
+          className="group flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold text-muted-foreground transition-all duration-300 outline-none hover:bg-red-500/10 hover:text-red-400 focus-visible:ring-2 focus-visible:ring-red-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
           title={collapsed ? "Sign Out" : undefined}
         >
           <LogOut className="h-5 w-5 shrink-0 transition-transform duration-300 group-hover:-translate-x-1" />

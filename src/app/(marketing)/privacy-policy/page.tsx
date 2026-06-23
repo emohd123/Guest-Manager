@@ -1,4 +1,5 @@
-import { Badge } from "@/components/ui/badge";
+import Link from "next/link";
+import { Shield, Sparkles } from "lucide-react";
 
 const sections = [
   {
@@ -25,27 +26,34 @@ const sections = [
 
 export default function PrivacyPolicyPage() {
   return (
-    <div>
-      <section className="bg-gradient-to-b from-primary/5 to-background px-4 py-16">
-        <div className="mx-auto max-w-4xl text-center">
-          <Badge variant="secondary" className="mb-4">
+    <div className="bg-[#080911] text-white min-h-screen">
+      {/* Hero */}
+      <section className="relative px-4 pt-24 pb-16 overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_50%_at_50%_0%,rgba(124,58,237,0.08),transparent_70%)] pointer-events-none" />
+        <div className="relative mx-auto max-w-4xl text-center">
+          <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-[10px] font-black uppercase tracking-[0.25em] text-white/70 backdrop-blur-md">
+            <Shield className="h-3.5 w-3.5 text-purple-400" />
             Legal
-          </Badge>
-          <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
-            Privacy Policy
+          </div>
+          <h1 className="text-5xl font-black tracking-tighter text-white sm:text-6xl uppercase leading-none">
+            Privacy{" "}
+            <span className="bg-[linear-gradient(110deg,#2563eb,45%,#7c3aed,55%,#db2777)] bg-[length:200%_100%] bg-clip-text text-transparent animate-[shine_6s_linear_infinite]">
+              Policy
+            </span>
           </h1>
-          <p className="mt-4 text-lg text-muted-foreground">
+          <p className="mt-6 text-lg text-white/60 leading-relaxed max-w-2xl mx-auto font-medium">
             This policy explains how Events Hub collects, uses, and protects
             information across the website, dashboard, and mobile app.
           </p>
         </div>
       </section>
 
-      <section className="mx-auto max-w-4xl px-4 py-12 sm:px-6 lg:px-8">
-        <div className="space-y-8 rounded-3xl border border-border/60 bg-card/70 p-8 shadow-sm">
-          <div className="space-y-3">
-            <h2 className="text-2xl font-semibold">Overview</h2>
-            <p className="text-sm leading-7 text-muted-foreground">
+      {/* Content */}
+      <section className="mx-auto max-w-4xl px-4 pb-24 sm:px-6 lg:px-8">
+        <div className="space-y-6 rounded-2xl border border-white/10 bg-[#0c0e17] p-8 shadow-2xl">
+          <div className="space-y-3 pb-6 border-b border-white/5">
+            <h2 className="text-xl font-bold text-white">Overview</h2>
+            <p className="text-sm leading-7 text-white/60">
               Events Hub provides event registration, ticketing, attendee
               engagement, guest management, and on-site check-in tools. By
               using our services, you agree that we may process information as
@@ -53,18 +61,16 @@ export default function PrivacyPolicyPage() {
             </p>
           </div>
 
-          {sections.map((section) => (
-            <div key={section.title} className="space-y-3">
-              <h2 className="text-2xl font-semibold">{section.title}</h2>
-              <p className="text-sm leading-7 text-muted-foreground">
-                {section.body}
-              </p>
+          {sections.map((section, i) => (
+            <div key={section.title} className={`space-y-3 ${i < sections.length - 1 ? "pb-6 border-b border-white/5" : ""}`}>
+              <h2 className="text-xl font-bold text-white">{section.title}</h2>
+              <p className="text-sm leading-7 text-white/60">{section.body}</p>
             </div>
           ))}
 
-          <div id="cookies" className="space-y-3">
-            <h2 className="text-2xl font-semibold">Cookies and Similar Technologies</h2>
-            <p className="text-sm leading-7 text-muted-foreground">
+          <div id="cookies" className="space-y-3 pb-6 border-b border-white/5 scroll-mt-24">
+            <h2 className="text-xl font-bold text-white">Cookies and Similar Technologies</h2>
+            <p className="text-sm leading-7 text-white/60">
               Events Hub uses cookies and related technologies to keep users
               signed in, remember product preferences, measure product
               performance, and improve reliability. Where required, you should
@@ -74,14 +80,22 @@ export default function PrivacyPolicyPage() {
           </div>
 
           <div className="space-y-3">
-            <h2 className="text-2xl font-semibold">Contact</h2>
-            <p className="text-sm leading-7 text-muted-foreground">
-              For privacy or data protection questions, contact our team at
-              <span className="font-medium text-foreground"> info@onestonead.com</span>
-              {" "}or visit the support page on our website.
+            <h2 className="text-xl font-bold text-white">Contact</h2>
+            <p className="text-sm leading-7 text-white/60">
+              For privacy or data protection questions, contact our team at{" "}
+              <Link href="mailto:info@onestonead.com" className="font-semibold text-purple-400 hover:text-purple-300 transition-colors">
+                info@onestonead.com
+              </Link>
+              {" "}or visit the{" "}
+              <Link href="/contact" className="font-semibold text-purple-400 hover:text-purple-300 transition-colors">
+                support page
+              </Link>{" "}
+              on our website.
             </p>
           </div>
         </div>
+
+        <p className="text-center text-xs text-white/30 mt-8">Last updated: June 2026 · Events Hub, a OneStone Ads platform</p>
       </section>
     </div>
   );

@@ -48,11 +48,6 @@ export default function SessionsPage({ params }: { params: Promise<{ eventId: st
 
   const [form, setForm] = useState(emptyForm);
 
-  useEffect(() => {
-    if (!sessions.length || form.id) return;
-    setForm(emptyForm);
-  }, [sessions, form.id]);
-
   const upsertSession = trpc.eventExperience.upsertSession.useMutation({
     onSuccess: async () => {
       toast.success("Session saved");

@@ -5,6 +5,7 @@ import { DataTable } from "@/components/shared/data-table";
 import { Button } from "@/components/ui/button";
 import { Plus, Ticket, Activity } from "lucide-react";
 import { motion } from "framer-motion";
+import { EmptyState } from "@/components/shared/empty-state";
 
 export default function RegistrationTypesPage() {
   const isLoading = false;
@@ -48,24 +49,16 @@ export default function RegistrationTypesPage() {
       </div>
 
       {!isLoading && types.length === 0 ? (
-        <motion.div 
-          initial={{ scale: 0.95, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          className="flex flex-col items-center justify-center rounded-[40px] bg-white/5 border border-white/10 p-20 text-center space-y-8"
-        >
-          <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-[32px] bg-primary/10 text-primary rotate-12 group-hover:rotate-0 transition-transform">
-            <Ticket className="h-10 w-10 -rotate-12" />
-          </div>
-          <div className="space-y-2">
-            <h3 className="text-2xl font-black text-white italic tracking-tighter uppercase leading-none">No Guest Types Yet</h3>
-            <p className="max-w-xs mx-auto text-[10px] font-bold text-white/20 uppercase tracking-[0.2em] leading-relaxed">
-              No guest types have been created yet. Add categories such as VIP, Staff, or Attendee.
-            </p>
-          </div>
-          <Button className="h-14 px-10 rounded-2xl bg-white/10 hover:bg-primary text-white font-black italic uppercase tracking-widest transition-all">
-            Add First Guest Type
-          </Button>
-        </motion.div>
+        <EmptyState
+          icon={Ticket}
+          title="No Guest Types Yet"
+          description="No guest types have been created yet. Add categories such as VIP, Staff, or Attendee."
+          action={
+            <Button className="h-14 px-10 rounded-2xl bg-white/10 hover:bg-primary text-white font-black italic uppercase tracking-widest transition-all">
+              Add First Guest Type
+            </Button>
+          }
+        />
       ) : (
         <motion.div
           initial={{ y: 20, opacity: 0 }}

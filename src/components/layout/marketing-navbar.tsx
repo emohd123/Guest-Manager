@@ -53,7 +53,7 @@ export function MarketingNavbar() {
       <header
         className={`fixed top-0 w-full z-50 transition-all duration-300 ${
           scrolled
-            ? "bg-background/80 backdrop-blur-xl border-b border-border shadow-md"
+            ? "bg-[#080911]/70 backdrop-blur-md border-b border-white/5 shadow-[0_4px_30px_rgba(0,0,0,0.3)]"
             : "bg-transparent border-transparent"
         }`}
       >
@@ -61,9 +61,10 @@ export function MarketingNavbar() {
           <div className="flex items-center gap-8">
             <Link href="/" aria-label="Events Hub home">
               <BrandWordmark
-                className="gap-3"
-                markClassName="h-12 w-12"
-                textClassName="text-[2rem]"
+                className="gap-3.5"
+                markClassName="h-16 w-16"
+                textClassName="text-[2.5rem]"
+                showSubtitle={true}
               />
             </Link>
 
@@ -81,7 +82,7 @@ export function MarketingNavbar() {
                         href={product.href}
                         className="flex items-start gap-4"
                       >
-                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/20 text-primary shadow-[0_0_15px_rgba(99,102,241,0.2)]">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary shadow-[0_0_15px_rgba(124,77,255,0.15)]">
                           <product.icon className="h-5 w-5" />
                         </div>
                         <div>
@@ -126,22 +127,13 @@ export function MarketingNavbar() {
           </div>
 
           <div className="hidden items-center gap-4 md:flex">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="hover:bg-accent hover:text-accent-foreground transition-colors mr-2"
-              onClick={() => setTheme(isDark ? "light" : "dark")}
-            >
-              <Sun className="h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-              <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-              <span className="sr-only">Toggle theme</span>
-            </Button>
+
             <Button asChild variant="ghost" className="hover:bg-accent transition-colors">
               <Link href="/login">Log In</Link>
             </Button>
-            <Button asChild className="shadow-[0_4px_20px_0_rgba(99,102,241,0.5)] hover:shadow-[0_6px_25px_0_rgba(99,102,241,0.7)] transition-all duration-300">
-              <Link href="/signup">Try It Free</Link>
-            </Button>
+             <Button asChild className="shadow-[0_4px_20px_0_rgba(124,77,255,0.4)] hover:shadow-[0_6px_25px_0_rgba(124,77,255,0.55)] transition-all duration-300 bg-brand-gradient hover:opacity-95 text-white">
+               <Link href="/signup">Try It Free</Link>
+             </Button>
           </div>
 
           {/* Mobile menu toggle */}
@@ -157,7 +149,7 @@ export function MarketingNavbar() {
 
       {/* Mobile menu */}
       {mobileOpen && (
-        <div className="border-t bg-background px-4 py-4 md:hidden">
+        <div className="border-b border-white/5 bg-[#080911]/95 backdrop-blur-xl px-4 py-4 md:hidden">
           <nav className="flex flex-col gap-2">
             {products.map((product) => (
               <Link
@@ -199,16 +191,7 @@ export function MarketingNavbar() {
             </Link>
             <hr className="my-2" />
             <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="icon"
-                className="shrink-0"
-                onClick={() => setTheme(isDark ? "light" : "dark")}
-              >
-                <Sun className="h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-                <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-                <span className="sr-only">Toggle theme</span>
-              </Button>
+
               <Button asChild variant="outline" className="flex-1 w-full">
                 <Link href="/login" onClick={() => setMobileOpen(false)}>
                   Log In

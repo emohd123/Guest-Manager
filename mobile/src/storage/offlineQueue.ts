@@ -33,9 +33,18 @@ function ensureQueueTable() {
       method TEXT NOT NULL,
       payload_json TEXT NOT NULL,
       event_id TEXT NOT NULL,
-      created_at TEXT NOT NULL
+      created_at TEXT NOT NULL,
+      attempts INTEGER NOT NULL DEFAULT 0
     );
   `);
+  // Migrate older tables created before the attempts column existed.
+  try {
+    activeDb.execSync(
+      `ALTER TABLE mobile_mutation_queue ADD COLUMN attempts INTEGER NOT NULL DEFAULT 0`
+    );
+  } catch {
+    // Column already exists — expected on every run after the first migration.
+  }
 }
 
 function toRow(item: QueueItem) {
@@ -46,6 +55,7 @@ function toRow(item: QueueItem) {
     payload_json: JSON.stringify(item.payload),
     event_id: item.eventId,
     created_at: item.createdAt,
+    attempts: item.attempts ?? 0,
   };
 }
 
@@ -62,10 +72,32 @@ export function enqueueMutation(item: QueueItem) {
   ensureQueueTable();
   const row = toRow(item);
   activeDb.runSync(
-    `INSERT OR REPLACE INTO mobile_mutation_queue (id, endpoint, method, payload_json, event_id, created_at)
-     VALUES (?, ?, ?, ?, ?, ?)`,
-    [row.id, row.endpoint, row.method, row.payload_json, row.event_id, row.created_at]
+    `INSERT OR REPLACE INTO mobile_mutation_queue (id, endpoint, method, payload_json, event_id, created_at, attempts)
+     VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    [row.id, row.endpoint, row.method, row.payload_json, row.event_id, row.created_at, row.attempts]
   );
+}
+
+// Increment the retry counter for a queued mutation and return the new count.
+// Falls back to mutating the in-memory queue when SQLite is unavailable.
+export function bumpQueuedMutationAttempt(id: string): number {
+  const activeDb = getDb();
+  if (!activeDb) {
+    const item = memoryQueue.find((q) => q.id === id);
+    if (!item) return 0;
+    item.attempts = (item.attempts ?? 0) + 1;
+    return item.attempts;
+  }
+  ensureQueueTable();
+  activeDb.runSync(
+    `UPDATE mobile_mutation_queue SET attempts = attempts + 1 WHERE id = ?`,
+    [id]
+  );
+  const row = activeDb.getFirstSync(
+    `SELECT attempts FROM mobile_mutation_queue WHERE id = ?`,
+    [id]
+  ) as { attempts: number } | null;
+  return row?.attempts ?? 0;
 }
 
 export function listQueuedMutations(): QueueItem[] {
@@ -74,10 +106,14 @@ export function listQueuedMutations(): QueueItem[] {
     return [...memoryQueue];
   }
   ensureQueueTable();
+  // Order by SQLite's implicit monotonic rowid (true insertion order) rather
+  // than created_at — two mutations enqueued in the same millisecond share a
+  // created_at and would otherwise replay in arbitrary order, which can cause
+  // a check-out to replay before its check-in (lost update).
   const rows = activeDb.getAllSync(
-    `SELECT id, endpoint, method, payload_json, event_id, created_at
+    `SELECT id, endpoint, method, payload_json, event_id, created_at, attempts
      FROM mobile_mutation_queue
-     ORDER BY created_at ASC`
+     ORDER BY rowid ASC`
   ) as Array<{
     id: string;
     endpoint: string;
@@ -85,6 +121,7 @@ export function listQueuedMutations(): QueueItem[] {
     payload_json: string;
     event_id: string;
     created_at: string;
+    attempts: number | null;
   }>;
 
   return rows.map((row) => ({
@@ -94,6 +131,7 @@ export function listQueuedMutations(): QueueItem[] {
     payload: JSON.parse(row.payload_json),
     eventId: row.event_id,
     createdAt: row.created_at,
+    attempts: row.attempts ?? 0,
   }));
 }
 

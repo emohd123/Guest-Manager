@@ -125,19 +125,7 @@ export function CommandPalette() {
             <CreditCard className="mr-2 h-4 w-4" />
             Billing & Plans
           </CommandItem>
-          <CommandItem
-            onSelect={() => {
-              setTheme(theme === "dark" ? "light" : "dark");
-              setOpen(false);
-            }}
-          >
-            {theme === "dark" ? (
-              <Sun className="mr-2 h-4 w-4" />
-            ) : (
-              <Moon className="mr-2 h-4 w-4" />
-            )}
-            Toggle {theme === "dark" ? "Light" : "Dark"} Mode
-          </CommandItem>
+
         </CommandGroup>
       </CommandList>
     </CommandDialog>

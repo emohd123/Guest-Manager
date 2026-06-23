@@ -6,6 +6,7 @@ import { DataTable } from "@/components/shared/data-table";
 import { FileText, Activity } from "lucide-react";
 import { format } from "date-fns";
 import { motion } from "framer-motion";
+import { EmptyState } from "@/components/shared/empty-state";
 
 export default function FormResponsesPage() {
   const { data, isLoading } = trpc.formResponses.list.useQuery({});
@@ -50,21 +51,11 @@ export default function FormResponsesPage() {
       </div>
 
       {!isLoading && responses.length === 0 ? (
-        <motion.div 
-          initial={{ scale: 0.95, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          className="flex flex-col items-center justify-center rounded-[40px] bg-white/5 border border-white/10 p-20 text-center space-y-8"
-        >
-          <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-[32px] bg-primary/10 text-primary rotate-12 group-hover:rotate-0 transition-transform">
-            <FileText className="h-10 w-10 -rotate-12" />
-          </div>
-          <div className="space-y-2">
-            <h3 className="text-2xl font-black text-white italic tracking-tighter uppercase leading-none">No Responses Yet</h3>
-            <p className="max-w-xs mx-auto text-[10px] font-bold text-white/20 uppercase tracking-[0.2em] leading-relaxed">
-              Responses submitted through your event forms will appear here.
-            </p>
-          </div>
-        </motion.div>
+        <EmptyState
+          icon={FileText}
+          title="No Responses Yet"
+          description="Responses submitted through your event forms will appear here."
+        />
       ) : (
         <motion.div
           initial={{ y: 20, opacity: 0 }}
