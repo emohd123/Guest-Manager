@@ -1,19 +1,17 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Building2,
   CreditCard,
   Users,
-  Key,
   Plus,
   Mail,
   Check,
   Zap,
   Camera,
   Trash2,
-  ExternalLink,
   ChevronRight,
   Globe
 } from "lucide-react";
@@ -66,10 +64,6 @@ export default function SettingsPage() {
             <Users className="h-4 w-4" />
             <span className="hidden sm:inline">Team</span>
           </TabsTrigger>
-          <TabsTrigger value="api" className="rounded-xl px-8 py-3 font-black text-xs uppercase tracking-widest data-[state=active]:bg-primary data-[state=active]:text-white transition-all italic flex gap-2">
-            <Key className="h-4 w-4" />
-            <span className="hidden sm:inline">API</span>
-          </TabsTrigger>
         </TabsList>
 
         <AnimatePresence mode="wait" initial={false}>
@@ -89,9 +83,6 @@ export default function SettingsPage() {
             <TabsContent value="team" className="mt-0 outline-none">
               <TeamSettings />
             </TabsContent>
-            <TabsContent value="api" className="mt-0 outline-none">
-              <ApiSettings />
-            </TabsContent>
           </motion.div>
         </AnimatePresence>
       </Tabs>
@@ -100,6 +91,23 @@ export default function SettingsPage() {
 }
 
 function AccountSettings() {
+  const logoInputRef = useRef<HTMLInputElement>(null);
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
+
+  const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 4 * 1024 * 1024) {
+      toast.error("Logo must be under 4MB");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setLogoPreview(reader.result as string);
+      toast.success("Logo preview updated");
+    };
+    reader.readAsDataURL(file);
+  };
   const utils = trpc.useUtils();
   const { data: company, isLoading: companyLoading } = trpc.settings.getCompany.useQuery();
   const { data: user, isLoading: userLoading } = trpc.settings.getUser.useQuery();
@@ -165,16 +173,40 @@ function AccountSettings() {
 
           <div className="flex items-center gap-8 py-4">
              <div className="relative group/avatar">
-               <div className="flex h-24 w-24 items-center justify-center rounded-[32px] border border-border bg-card text-muted-foreground group-hover/avatar:bg-muted transition-all dark:border-white/10 dark:bg-white/5 dark:text-white/20 dark:group-hover/avatar:bg-white/8">
-                  <Building2 className="h-10 w-10" />
+               <div className="flex h-24 w-24 items-center justify-center rounded-[32px] border border-border bg-card text-muted-foreground group-hover/avatar:bg-muted transition-all dark:border-white/10 dark:bg-white/5 dark:text-white/20 dark:group-hover/avatar:bg-white/8 overflow-hidden">
+                  {logoPreview ? (
+                    <img src={logoPreview} alt="Company logo" className="h-full w-full object-cover" />
+                  ) : (
+                    <Building2 className="h-10 w-10" />
+                  )}
                </div>
-               <button className="absolute -bottom-2 -right-2 h-10 w-10 rounded-xl bg-primary text-white flex items-center justify-center shadow-2xl hover:scale-110 transition-transform">
+               <input
+                 ref={logoInputRef}
+                 type="file"
+                 accept="image/svg+xml,image/png,image/webp,image/jpeg"
+                 className="hidden"
+                 onChange={handleLogoChange}
+               />
+               <button
+                 type="button"
+                 onClick={() => logoInputRef.current?.click()}
+                 className="absolute -bottom-2 -right-2 h-10 w-10 rounded-xl bg-primary text-white flex items-center justify-center shadow-2xl hover:scale-110 transition-transform"
+               >
                   <Camera className="h-5 w-5" />
                </button>
              </div>
              <div className="space-y-1">
                <p className="text-sm font-black text-foreground dark:text-white italic">Company Logo</p>
                <p className="text-[10px] font-bold text-muted-foreground dark:text-white/20 uppercase tracking-tighter">SVG, PNG or WebP - Max 4MB</p>
+               {logoPreview && (
+                 <button
+                   type="button"
+                   onClick={() => { setLogoPreview(null); if (logoInputRef.current) logoInputRef.current.value = ""; }}
+                   className="text-[10px] font-bold text-red-400 uppercase tracking-tighter hover:text-red-300 transition-colors"
+                 >
+                   Remove
+                 </button>
+               )}
              </div>
           </div>
 
@@ -638,7 +670,8 @@ function TeamSettings() {
   );
 }
 
-function ApiSettings() {
+// ApiSettings removed — API tab is no longer exposed in the UI
+function _ApiSettings_UNUSED() {
   return (
     <div className="space-y-12">
       <div className="grid gap-8 lg:grid-cols-2">
