@@ -31,13 +31,9 @@ export default function DashboardLayout({
   return (
     <div
       suppressHydrationWarning
-      className={cn(
-        "dashboard-theme-scope flex h-screen relative overflow-hidden text-foreground transition-colors duration-300",
-        mounted && isDark
-          ? "bg-modychat"
-          : "bg-[radial-gradient(circle_at_top_left,_rgba(255,91,106,0.10),_transparent_22%),linear-gradient(180deg,_#f8fafc_0%,_#eef2f7_100%)]"
-      )}
+      className="dashboard-theme-scope dark flex h-screen relative overflow-hidden text-foreground bg-modychat transition-colors duration-300"
     >
+
       {mounted ? <CommandPalette /> : null}
 
       {/* Desktop sidebar - Absolute to let background show through the glass */}
