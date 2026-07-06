@@ -44,19 +44,36 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // Protect dashboard routes
-  if (!user && request.nextUrl.pathname.startsWith("/dashboard")) {
+  let hasDashboardAccess = false;
+  if (user) {
+    const { data: appUser } = await supabase
+      .from("users")
+      .select("id, company_id")
+      .eq("id", user.id)
+      .maybeSingle();
+    hasDashboardAccess = Boolean(appUser?.company_id);
+  }
+
+  // Protect dashboard routes for internal/admin users only. Buyer/visitor
+  // accounts can share Supabase auth, but they must not auto-enter admin tools.
+  if (request.nextUrl.pathname.startsWith("/dashboard") && (!user || !hasDashboardAccess)) {
     const url = request.nextUrl.clone();
-    url.pathname = "/login";
+    url.pathname = user ? "/account" : "/login";
     url.searchParams.set("redirectTo", request.nextUrl.pathname);
     return NextResponse.redirect(url);
   }
 
-  // Redirect authenticated users away from login page.
-  // Keep /signup accessible so marketing CTAs can always land there.
+  // Redirect authenticated users away from admin login according to their realm.
   if (user && request.nextUrl.pathname === "/login") {
     const url = request.nextUrl.clone();
-    url.pathname = "/dashboard";
+    url.pathname = hasDashboardAccess ? "/dashboard" : "/account";
+    return NextResponse.redirect(url);
+  }
+
+  if (request.nextUrl.pathname === "/signup") {
+    const url = request.nextUrl.clone();
+    url.pathname = "/contact";
+    url.searchParams.set("source", "admin-access");
     return NextResponse.redirect(url);
   }
 

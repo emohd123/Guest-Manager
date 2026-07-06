@@ -2,6 +2,7 @@ import type {
   MobileGuest,
   PairingSession,
   SummaryMetrics,
+  DiscoverEvent,
   VisitorEvent,
   VisitorGuestListItem,
   VisitorHomeData,
@@ -509,5 +510,34 @@ export async function joinEventByCode(token: string, eventCode: string) {
       body: JSON.stringify({ eventCode: eventCode.trim().toUpperCase() }),
     },
     token
+  );
+}
+
+export async function fetchDiscoverEvents() {
+  return apiRequest<{ events: DiscoverEvent[] }>(
+    "/api/mobile/v1/events/discover",
+    { method: "GET" }
+  );
+}
+
+export async function createPublicOrder(payload: {
+  companySlug: string;
+  eventSlug: string;
+  attendeeName: string;
+  attendeeEmail: string;
+  cartItems: Array<{
+    ticketTypeId: string;
+    name: string;
+    price: number;
+    currency: string;
+    quantity: number;
+  }>;
+}) {
+  return apiRequest<{ success?: boolean; orderId?: string; checkoutUrl?: string; error?: string }>(
+    "/api/orders",
+    {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }
   );
 }

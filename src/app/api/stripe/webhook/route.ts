@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic";
 import crypto from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { getStripeClient } from "@/lib/stripe";
+import { fromStripeUnitAmount } from "@/lib/marketplace";
 import { getDb } from "@/server/db";
 import { orders, orderItems, ticketTypes, guests, tickets, events } from "@/server/db/schema";
 import { eq, inArray, and, sql } from "drizzle-orm";
@@ -22,6 +23,12 @@ type CartItem = {
   currency: string;
   quantity: number;
 };
+
+function normalizeQuantity(value: unknown) {
+  return typeof value === "number" && Number.isInteger(value) && value > 0 && value <= 50 ? value : null;
+}
+
+class CheckoutFulfillmentError extends Error {}
 
 export async function POST(request: NextRequest) {
   const body = await request.text();
@@ -96,10 +103,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ received: true });
     }
 
-    const subtotal = cartItems.reduce(
-      (sum, item) => sum + item.price * item.quantity,
-      0
-    );
+    if (cartItems.some((item) => normalizeQuantity(item.quantity) == null)) {
+      console.error("Invalid quantity in Stripe metadata:", { sessionId: session.id });
+      return NextResponse.json({ received: true });
+    }
+
+    const checkoutCurrency = (session.currency ?? cartItems[0]?.currency ?? "BHD").toUpperCase();
+    const subtotal = fromStripeUnitAmount(session.amount_subtotal ?? session.amount_total ?? 0, checkoutCurrency);
+    const total = fromStripeUnitAmount(session.amount_total ?? session.amount_subtotal ?? 0, checkoutCurrency);
     const db = getDb();
 
     try {
@@ -120,14 +131,60 @@ export async function POST(request: NextRequest) {
       const ticketTypeIds = [...new Set(cartItems.map((item) => item.ticketTypeId))];
       const ticketTypeRows = ticketTypeIds.length
         ? await db
-            .select({ id: ticketTypes.id, name: ticketTypes.name })
+            .select({
+              id: ticketTypes.id,
+              name: ticketTypes.name,
+              price: ticketTypes.price,
+              currency: ticketTypes.currency,
+              status: ticketTypes.status,
+              quantityTotal: ticketTypes.quantityTotal,
+              quantitySold: ticketTypes.quantitySold,
+              saleStartsAt: ticketTypes.saleStartsAt,
+              saleEndsAt: ticketTypes.saleEndsAt,
+              minPerOrder: ticketTypes.minPerOrder,
+              maxPerOrder: ticketTypes.maxPerOrder,
+            })
             .from(ticketTypes)
-            .where(and(inArray(ticketTypes.id, ticketTypeIds), eq(ticketTypes.companyId, companyId)))
+            .where(and(inArray(ticketTypes.id, ticketTypeIds), eq(ticketTypes.companyId, companyId), eq(ticketTypes.eventId, eventId)))
         : [];
 
       const ticketTypeNameById = new Map(
         ticketTypeRows.map((row) => [row.id, row.name ?? "Ticket"])
       );
+      const ticketTypeById = new Map(ticketTypeRows.map((row) => [row.id, row]));
+
+      const now = new Date();
+      for (const item of cartItems) {
+        const ticketType = ticketTypeById.get(item.ticketTypeId);
+        if (!ticketType) {
+          throw new CheckoutFulfillmentError("Stripe session references an invalid ticket type.");
+        }
+        const saleStartsAt = ticketType.saleStartsAt ? new Date(ticketType.saleStartsAt) : null;
+        const saleEndsAt = ticketType.saleEndsAt ? new Date(ticketType.saleEndsAt) : null;
+        const remaining =
+          ticketType.quantityTotal == null
+            ? Number.POSITIVE_INFINITY
+            : ticketType.quantityTotal - (ticketType.quantitySold ?? 0);
+        const minPerOrder = ticketType.minPerOrder ?? 1;
+        const maxPerOrder = ticketType.maxPerOrder ?? 10;
+
+        if (ticketType.status !== "active") {
+          throw new CheckoutFulfillmentError(`${ticketType.name} is not available.`);
+        }
+        if (saleStartsAt && saleStartsAt > now) {
+          throw new CheckoutFulfillmentError(`${ticketType.name} is not on sale yet.`);
+        }
+        if (saleEndsAt && saleEndsAt < now) {
+          throw new CheckoutFulfillmentError(`${ticketType.name} sales have ended.`);
+        }
+        if (item.quantity < minPerOrder || item.quantity > maxPerOrder || item.quantity > remaining) {
+          throw new CheckoutFulfillmentError(`${ticketType.name} is no longer available in that quantity.`);
+        }
+
+        item.name = ticketType.name ?? item.name;
+        item.price = ticketType.price ?? item.price;
+        item.currency = ticketType.currency ?? checkoutCurrency;
+      }
 
       const [eventRow] = await db
         .select({
@@ -140,96 +197,120 @@ export async function POST(request: NextRequest) {
         .limit(1);
 
       const orderNumber = generateOrderNumber();
+      const ticketTasks: Array<{
+        ticketId: string;
+        barcode: string;
+        ticketTypeName: string;
+      }> = [];
 
-      const [order] = await db
-        .insert(orders)
-        .values({
-          companyId,
-          eventId,
-          orderNumber,
-          status: "completed",
-          email: attendeeEmail,
-          name: attendeeName ?? "Guest",
-          subtotal,
-          total: subtotal,
-          currency: cartItems[0]?.currency ?? "USD",
-          paymentMethod: "card",
-          stripePaymentIntentId: paymentIntentId,
-          completedAt: new Date(),
-        })
-        .returning();
-
-      await db.insert(orderItems).values(
-        cartItems.map((item) => ({
-          orderId: order.id,
-          ticketTypeId: item.ticketTypeId,
-          quantity: item.quantity,
-          unitPrice: item.price,
-          total: item.price * item.quantity,
-        }))
-      );
-
-      // Increment quantitySold
-      for (const item of cartItems) {
-        await db
-          .update(ticketTypes)
-          .set({
-            quantitySold: sql`${ticketTypes.quantitySold} + ${item.quantity}`,
-            updatedAt: new Date(),
-          })
-          .where(eq(ticketTypes.id, item.ticketTypeId));
-
-        // Paid checkouts also need attendee/guest/ticket records.
-        for (let i = 0; i < item.quantity; i++) {
-          const [firstName, ...lastNameParts] = (attendeeName ?? "Guest")
-            .trim()
-            .split(/\s+/)
-            .filter(Boolean);
-
-          const [guest] = await db
-            .insert(guests)
-            .values({
-              companyId,
-              eventId,
-              firstName: firstName || "Guest",
-              lastName: lastNameParts.join(" "),
-              email: attendeeEmail,
-              status: "confirmed",
-              guestType: ticketTypeNameById.get(item.ticketTypeId) ?? item.name,
-            })
-            .returning();
-
-          const barcode = `TKT-${crypto.randomBytes(6).toString("hex").toUpperCase()}`;
-          const [ticket] = await db
-            .insert(tickets)
-            .values({
-              companyId,
-              eventId,
-              ticketTypeId: item.ticketTypeId,
-              orderId: order.id,
-              guestId: guest.id,
-              barcode,
-              attendeeName: attendeeName ?? "Guest",
-              attendeeEmail,
-              status: "valid",
-            })
-            .returning({ id: tickets.id });
-
-          generateAndSendTicket({
-            ticketId: ticket.id,
-            toEmail: attendeeEmail,
-            attendeeName: attendeeName ?? "Guest",
-            ticketTypeName: ticketTypeNameById.get(item.ticketTypeId) ?? item.name,
+      await db.transaction(async (tx) => {
+        const [order] = await tx
+          .insert(orders)
+          .values({
+            companyId,
+            eventId,
             orderNumber,
-            barcode,
-            eventName: eventRow?.title ?? metadata.eventTitle ?? "Event",
-            eventStartsAt: eventRow?.startsAt ?? new Date(),
-            appBaseUrl: process.env.NEXT_PUBLIC_APP_URL ?? request.nextUrl.origin,
-            eventSettings: eventRow?.settings,
-          }).catch((emailErr) => {
-            console.error("Failed to generate/send paid ticket email:", emailErr);
-          });
+            status: "completed",
+            email: attendeeEmail,
+            name: attendeeName ?? "Guest",
+            subtotal,
+            total,
+            currency: checkoutCurrency,
+            paymentMethod: "card",
+            stripePaymentIntentId: paymentIntentId,
+            completedAt: new Date(),
+          })
+          .returning();
+
+        await tx.insert(orderItems).values(
+          cartItems.map((item) => ({
+            orderId: order.id,
+            ticketTypeId: item.ticketTypeId,
+            quantity: item.quantity,
+            unitPrice: item.price,
+            total: item.price * item.quantity,
+          }))
+        );
+
+        for (const item of cartItems) {
+          const updatedTicketType = await tx
+            .update(ticketTypes)
+            .set({
+              quantitySold: sql`${ticketTypes.quantitySold} + ${item.quantity}`,
+              updatedAt: new Date(),
+            })
+            .where(
+              and(
+                eq(ticketTypes.id, item.ticketTypeId),
+                eq(ticketTypes.status, "active"),
+                sql`(${ticketTypes.quantityTotal} IS NULL OR ${ticketTypes.quantitySold} + ${item.quantity} <= ${ticketTypes.quantityTotal})`
+              )
+            )
+            .returning({ id: ticketTypes.id });
+
+          if (!updatedTicketType[0]) {
+            throw new CheckoutFulfillmentError(`${item.name} is no longer available.`);
+          }
+
+          for (let i = 0; i < item.quantity; i++) {
+            const [firstName, ...lastNameParts] = (attendeeName ?? "Guest")
+              .trim()
+              .split(/\s+/)
+              .filter(Boolean);
+
+            const [guest] = await tx
+              .insert(guests)
+              .values({
+                companyId,
+                eventId,
+                firstName: firstName || "Guest",
+                lastName: lastNameParts.join(" "),
+                email: attendeeEmail,
+                status: "confirmed",
+                guestType: ticketTypeNameById.get(item.ticketTypeId) ?? item.name,
+              })
+              .returning();
+
+            const barcode = `TKT-${crypto.randomBytes(6).toString("hex").toUpperCase()}`;
+            const [ticket] = await tx
+              .insert(tickets)
+              .values({
+                companyId,
+                eventId,
+                ticketTypeId: item.ticketTypeId,
+                orderId: order.id,
+                guestId: guest.id,
+                barcode,
+                attendeeName: attendeeName ?? "Guest",
+                attendeeEmail,
+                status: "valid",
+              })
+              .returning({ id: tickets.id });
+
+            ticketTasks.push({
+              ticketId: ticket.id,
+              barcode,
+              ticketTypeName: ticketTypeNameById.get(item.ticketTypeId) ?? item.name,
+            });
+          }
         }
+      });
+
+      for (const task of ticketTasks) {
+        generateAndSendTicket({
+          ticketId: task.ticketId,
+          toEmail: attendeeEmail,
+          attendeeName: attendeeName ?? "Guest",
+          ticketTypeName: task.ticketTypeName,
+          orderNumber,
+          barcode: task.barcode,
+          eventName: eventRow?.title ?? metadata.eventTitle ?? "Event",
+          eventStartsAt: eventRow?.startsAt ?? new Date(),
+          appBaseUrl: process.env.NEXT_PUBLIC_APP_URL ?? request.nextUrl.origin,
+          eventSettings: eventRow?.settings,
+        }).catch((emailErr) => {
+          console.error("Failed to generate/send paid ticket email:", emailErr);
+        });
       }
 
       // Send confirmation email
@@ -246,8 +327,10 @@ export async function POST(request: NextRequest) {
             name: item.name,
             quantity: item.quantity,
             price: item.price,
+            currency: item.currency,
           })),
-          total: subtotal,
+          total,
+          currency: checkoutCurrency,
           isFree: false,
         });
       } catch (emailError) {
@@ -256,6 +339,13 @@ export async function POST(request: NextRequest) {
 
       console.log(`Order ${orderNumber} created for session ${session.id}`);
     } catch (dbError) {
+      if (dbError instanceof CheckoutFulfillmentError) {
+        console.error("Failed to fulfill paid checkout:", {
+          sessionId: session.id,
+          reason: dbError.message,
+        });
+        return NextResponse.json({ received: true });
+      }
       console.error("Failed to create order from webhook:", dbError);
       return NextResponse.json({ error: "Database error" }, { status: 500 });
     }

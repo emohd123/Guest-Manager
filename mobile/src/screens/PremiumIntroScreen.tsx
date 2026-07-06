@@ -59,9 +59,8 @@ export function PremiumIntroScreen({
               <Text style={styles.previewEyebrow}>{slide.eyebrow}</Text>
               <View style={styles.previewRows}>
                 <View style={styles.previewHero}>
-                  <BrandLogo size={136} variant="tile" />
+                  <BrandLogo size={48} showWordmark />
                   <View style={styles.previewCopy}>
-                    <Text style={styles.previewTitle}>Events Hub</Text>
                     <Text style={styles.previewBody}>Premium check-in, ticketing, and attendee flow in one polished product.</Text>
                   </View>
                 </View>
@@ -198,12 +197,6 @@ const styles = StyleSheet.create({
   previewCopy: {
     flex: 1,
     gap: 8,
-  },
-  previewTitle: {
-    color: palette.textInverse,
-    fontSize: 22,
-    fontWeight: "900",
-    letterSpacing: -0.6,
   },
   previewBody: {
     color: "rgba(255,255,255,0.68)",

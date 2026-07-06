@@ -15,11 +15,11 @@ const inter = Inter({
 export const metadata: Metadata = {
   metadataBase: getAppUrlObject(),
   title: {
-    default: "Events Hub - Event Check-In & Ticketing Software",
+    default: "Events Hub - Bahrain Events, Tickets & Managed Event Services",
     template: "%s | Events Hub",
   },
   description:
-    "Event management software for guest check-in, ticket scanning, CRM, and online ticketing. Manage events of any size with real-time sync across unlimited devices.",
+    "Discover Bahrain events, buy tickets, manage QR passes, and work with Events Hub for ticketing, check-in, staffing, and managed event operations.",
   icons: {
     icon: "/icon.svg",
     shortcut: "/icon.svg",

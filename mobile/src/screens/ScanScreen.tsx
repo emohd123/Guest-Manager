@@ -103,6 +103,7 @@ export function ScanScreen({
           <View style={styles.control}>
             <PremiumButton
               label={cameraMode ? "Hide Camera" : "Use Camera"}
+              icon={cameraMode ? "eye-off-outline" : "camera-outline"}
               tone="secondary"
               onPress={toggleCamera}
             />
@@ -111,6 +112,7 @@ export function ScanScreen({
             <View style={styles.control}>
               <PremiumButton
                 label={`Use ${facing === "back" ? "Front" : "Back"} Lens`}
+                icon="camera-reverse-outline"
                 tone="ghost"
                 onPress={toggleFacing}
               />
@@ -154,7 +156,7 @@ export function ScanScreen({
             onChangeText={setBarcodeInput}
             placeholder="Enter barcode"
           />
-          <PremiumButton label="Submit Barcode" onPress={() => submit(barcodeInput)} />
+          <PremiumButton label="Submit Barcode" icon="checkmark-circle-outline" onPress={() => submit(barcodeInput)} />
           {lastMessage ? <PremiumNotice text={lastMessage} /> : null}
         </PremiumCard>
       </FadeSlideIn>

@@ -148,7 +148,7 @@ export const ordersRouter = router({
         contactId: z.string().uuid().optional(),
         email: z.string().email().optional(),
         name: z.string().optional(),
-        currency: z.string().length(3).default("USD"),
+        currency: z.string().length(3).default("BHD"),
         items: z.array(
           z.object({
             ticketTypeId: z.string().uuid(),

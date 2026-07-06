@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
 
     // Note: We don't create a guest record here — guests.eventId and guests.companyId are required
     // and a self-registered visitor doesn't belong to a specific event yet.
-    // When the organizer adds the attendee's email to an event, they'll have a guest+ticket record
+    // When the Events Hub team links the attendee's email to an event, they'll have a guest+ticket record.
     // that the visitor can find by entering the event code.
 
     return NextResponse.json({

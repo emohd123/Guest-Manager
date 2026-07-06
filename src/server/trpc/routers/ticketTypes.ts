@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { router, protectedProcedure, publicProcedure } from "../index";
+import { createSupabaseAdminClient } from "@/server/supabase/admin";
 
 type TicketTypeRow = {
   id: string;
@@ -58,7 +59,8 @@ export const ticketTypesRouter = router({
   listPublic: publicProcedure
     .input(z.object({ eventId: z.string().uuid() }))
     .query(async ({ ctx, input }) => {
-      const { data: event, error: eventError } = await ctx.supabase
+      const supabase = createSupabaseAdminClient();
+      const { data: event, error: eventError } = await supabase
         .from("events")
         .select("id")
         .eq("id", input.eventId)
@@ -67,7 +69,7 @@ export const ticketTypesRouter = router({
       if (eventError) throw new Error(eventError.message);
       if (!event) return [];
 
-      const { data, error } = await ctx.supabase
+      const { data, error } = await supabase
         .from("ticket_types")
         .select("*")
         .eq("event_id", input.eventId)
@@ -156,7 +158,7 @@ export const ticketTypesRouter = router({
         name: z.string().min(1).max(255),
         description: z.string().optional(),
         price: z.number().int().min(0).default(0),
-        currency: z.string().length(3).default("USD"),
+        currency: z.string().length(3).default("BHD"),
         quantityTotal: z.number().int().positive().optional(),
         saleStartsAt: z.string().optional(),
         saleEndsAt: z.string().optional(),

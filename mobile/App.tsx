@@ -472,9 +472,8 @@ function AppShell() {
         <PremiumBackdrop>
           <View style={styles.bootShell}>
             <PremiumCard tone="glass" style={styles.bootCard}>
-              <BrandLogo size={138} />
+              <BrandLogo size={48} showWordmark />
               <PremiumPill label="Launching" tone="live" />
-              <Text style={styles.bootTitle}>Events Hub</Text>
               <Text style={styles.bootBody}>
                 Preparing attendee and operations experiences.
               </Text>

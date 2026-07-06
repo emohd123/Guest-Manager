@@ -105,13 +105,12 @@ export function BrandMark({ className }: BrandMarkProps) {
         filter={`url(#${glowFilterId})`}
       />
 
-      {/* 6 Animated, High-Contrast Soundwave Equalizer Bars */}
-      <rect className="eq-bar eq-bar-1" x="34" y="49" width="4.5" height="14" rx="2.25" fill={`url(#${brandGradientId})`} />
-      <rect className="eq-bar eq-bar-2" x="42" y="43" width="4.5" height="26" rx="2.25" fill={`url(#${brandGradientId})`} />
-      <rect className="eq-bar eq-bar-3" x="50" y="38" width="4.5" height="36" rx="2.25" fill={`url(#${brandGradientId})`} />
-      <rect className="eq-bar eq-bar-4" x="58" y="44" width="4.5" height="24" rx="2.25" fill={`url(#${brandGradientId})`} />
-      <rect className="eq-bar eq-bar-5" x="66" y="41" width="4.5" height="30" rx="2.25" fill={`url(#${brandGradientId})`} />
-      <rect className="eq-bar eq-bar-6" x="74" y="47" width="4.5" height="18" rx="2.25" fill={`url(#${brandGradientId})`} />
+      {/* Balanced soundwave bars centered inside the ticket */}
+      <rect className="eq-bar eq-bar-1" x="34" y="48" width="4.5" height="16" rx="2.25" fill={`url(#${brandGradientId})`} />
+      <rect className="eq-bar eq-bar-2" x="42.5" y="42" width="4.5" height="28" rx="2.25" fill={`url(#${brandGradientId})`} />
+      <rect className="eq-bar eq-bar-3" x="51" y="37" width="4.5" height="38" rx="2.25" fill={`url(#${brandGradientId})`} />
+      <rect className="eq-bar eq-bar-4" x="59.5" y="44" width="4.5" height="24" rx="2.25" fill={`url(#${brandGradientId})`} />
+      <rect className="eq-bar eq-bar-5" x="68" y="47" width="4.5" height="18" rx="2.25" fill={`url(#${brandGradientId})`} />
     </svg>
   );
 }

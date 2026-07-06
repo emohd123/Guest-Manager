@@ -12,8 +12,15 @@ import {
   StyleSheet,
   Text,
   TextInput,
+  TouchableOpacity,
+  useWindowDimensions,
   View,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
+import { BrandLogo } from "../ui/brand-logo";
+import { FloatingLines } from "../ui/FloatingLines";
+import type { DiscoverEvent } from "../types";
 import type {
   VisitorChatThread,
   VisitorEvent,
@@ -28,9 +35,18 @@ import type {
   VisitorTicket,
 } from "../types";
 import type { VisitorMessage } from "../api/mobileClient";
-import { updateVisitorSessionState as updateVisitorSessionStateRequest } from "../api/mobileClient";
+import { fetchDiscoverEvents, updateVisitorSessionState as updateVisitorSessionStateRequest } from "../api/mobileClient";
+import { getApiBaseUrl } from "../config";
 
-type VisitorTab = "home" | "agenda" | "networking" | "inbox" | "ticket";
+const DISCOVER_GRADIENTS: [string, string][] = [
+  ["#0f172a", "#3730a3"],
+  ["#0f172a", "#be185d"],
+  ["#164e63", "#0ea5e9"],
+  ["#3b0764", "#a21caf"],
+  ["#1e1b4b", "#7c3aed"],
+];
+
+type VisitorTab = "home" | "discover" | "agenda" | "networking" | "inbox" | "ticket";
 
 interface Props {
   session: VisitorSession;
@@ -155,21 +171,27 @@ function TabBtn({
   onPress,
 }: {
   label: string;
-  icon: string;
+  icon: keyof typeof Ionicons.glyphMap;
   active: boolean;
   badge?: number;
   onPress: () => void;
 }) {
   return (
-    <Pressable style={[styles.tabBtn, active && styles.tabBtnActive]} onPress={onPress}>
-      <Text style={[styles.tabIcon, active && styles.tabIconActive]}>{icon}</Text>
+    <TouchableOpacity
+      activeOpacity={0.76}
+      style={[styles.tabBtn, active && styles.tabBtnActive]}
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityState={{ selected: active }}
+    >
+      <Ionicons name={icon} size={20} color={active ? "#FFFFFF" : "#8D98C5"} />
       <Text style={[styles.tabLabel, active && styles.tabLabelActive]}>{label}</Text>
       {badge && badge > 0 ? (
         <View style={styles.tabBadge}>
           <Text style={styles.tabBadgeText}>{badge > 9 ? "9+" : badge}</Text>
         </View>
       ) : null}
-    </Pressable>
+    </TouchableOpacity>
   );
 }
 
@@ -206,6 +228,66 @@ function InfoChip({ label, value, accent }: { label: string; value: string; acce
   );
 }
 
+function formatDiscoverPrice(event: DiscoverEvent) {
+  if (!event.hasTickets) return "Open";
+  if (event.minPrice === null || event.minPrice <= 0) return "Free";
+  try {
+    return new Intl.NumberFormat("en-BH", {
+      style: "currency",
+      currency: event.currency || "BHD",
+      minimumFractionDigits: (event.currency || "BHD").toUpperCase() === "BHD" ? 3 : 2,
+      maximumFractionDigits: (event.currency || "BHD").toUpperCase() === "BHD" ? 3 : 2,
+    }).format(event.minPrice / 100);
+  } catch {
+    return `${event.currency} ${event.minPrice}`;
+  }
+}
+
+function DiscoverRow({ event, index }: { event: DiscoverEvent; index: number }) {
+  const gradient = DISCOVER_GRADIENTS[index % DISCOVER_GRADIENTS.length];
+  const host = event.category ?? event.organizerName ?? event.companyName;
+  const day = (() => {
+    try {
+      return new Date(event.startsAt)
+        .toLocaleDateString("en-US", { month: "short", day: "2-digit" })
+        .toUpperCase();
+    } catch {
+      return "";
+    }
+  })();
+  const openEvent = () => {
+    const path = event.buyUrl || event.publicUrl;
+    const url = path.startsWith("http") ? path : `${getApiBaseUrl().replace(/\/$/, "")}${path}`;
+    Linking.openURL(url).catch(() => {});
+  };
+  return (
+    <Pressable
+      onPress={openEvent}
+      style={({ pressed }) => [styles.discoverRow, pressed && { opacity: 0.85 }]}
+      accessibilityRole="button"
+      accessibilityLabel={`Open ${event.title}`}
+    >
+      <View style={styles.discoverThumb}>
+        <LinearGradient colors={gradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
+        {event.coverImageUrl ? (
+          <Image source={{ uri: event.coverImageUrl }} style={StyleSheet.absoluteFill} resizeMode="cover" />
+        ) : null}
+        <Text style={styles.discoverThumbDate}>{day}</Text>
+      </View>
+      <View style={styles.discoverBody}>
+        <Text style={styles.discoverHost} numberOfLines={1}>{host}</Text>
+        <Text style={styles.discoverTitle} numberOfLines={1}>{event.title}</Text>
+        <View style={styles.discoverMeta}>
+          <Text style={styles.discoverPrice}>{formatDiscoverPrice(event)}</Text>
+          <View style={styles.discoverBuy}>
+            <Text style={styles.discoverBuyText}>{event.hasTickets ? "Buy Ticket" : "Open"}</Text>
+          </View>
+        </View>
+      </View>
+    </Pressable>
+  );
+}
+
 export function VisitorDashboardScreen({
   session,
   onSignOut,
@@ -229,6 +311,7 @@ export function VisitorDashboardScreen({
   const [tab, setTab] = useState<VisitorTab>("home");
   const [ticket, setTicket] = useState<VisitorTicket | null>(null);
   const [events, setEvents] = useState<VisitorEvent[]>([]);
+  const [discover, setDiscover] = useState<DiscoverEvent[]>([]);
   const [home, setHome] = useState<VisitorHomeData | null>(null);
   const [agenda, setAgenda] = useState<VisitorSessionItem[]>([]);
   const [networking, setNetworking] = useState<{
@@ -261,6 +344,8 @@ export function VisitorDashboardScreen({
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
   const [profileDraft, setProfileDraft] = useState<VisitorNetworkingProfile | null>(null);
   const [requestMessage, setRequestMessage] = useState<Record<string, string>>({});
+  const { width } = useWindowDimensions();
+  const compactHome = width < 760;
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(22)).current;
@@ -342,14 +427,29 @@ export function VisitorDashboardScreen({
 
   useEffect(() => {
     let mounted = true;
+    fetchDiscoverEvents()
+      .then((result) => {
+        if (mounted) setDiscover(result.events ?? []);
+      })
+      .catch(() => {
+        if (mounted) setDiscover([]);
+      });
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let mounted = true;
+    const useNativeDriver = Platform.OS !== "web";
     async function run() {
       if (mounted) setLoading(true);
       await loadBase();
       if (mounted) {
         setLoading(false);
         Animated.parallel([
-          Animated.timing(fadeAnim, { toValue: 1, duration: 500, useNativeDriver: true }),
-          Animated.spring(slideAnim, { toValue: 0, tension: 40, friction: 8, useNativeDriver: true }),
+          Animated.timing(fadeAnim, { toValue: 1, duration: 500, useNativeDriver }),
+          Animated.spring(slideAnim, { toValue: 0, tension: 40, friction: 8, useNativeDriver }),
         ]).start();
       }
     }
@@ -526,9 +626,17 @@ export function VisitorDashboardScreen({
 
   return (
     <View style={styles.screen}>
+      <FloatingLines
+        enabledWaves={["top", "middle", "bottom"]}
+        lineCount={[7, 10, 12]}
+        lineDistance={[9, 7, 6]}
+        linesGradient={["#2563EB", "#7C3AED", "#DB2777"]}
+        animationSpeed={0.8}
+      />
       <View style={styles.headerShell}>
         <View style={styles.headerRow}>
           <View style={styles.headerLeft}>
+            <BrandLogo size={38} showWordmark />
             <Text style={styles.headerEyebrow}>{activeEventName}</Text>
             <Text style={styles.headerTitle}>{home?.settings.homeHeadline ?? "Live event companion"}</Text>
             <Text style={styles.headerSubtitle}>
@@ -565,35 +673,43 @@ export function VisitorDashboardScreen({
             contentContainerStyle={styles.scrollContent}
           >
             <View style={styles.heroCard}>
-              {home?.event.coverImageUrl ? (
-                <Image source={{ uri: home.event.coverImageUrl }} style={styles.heroImage} resizeMode="cover" />
-              ) : null}
-              <View style={styles.heroOverlay} />
-              <View style={styles.heroContent}>
-                <Text style={styles.heroDate}>{fmtFullDate(home?.event.startsAt ?? ticket?.event.startsAt)}</Text>
-                <Text style={styles.heroTitle}>{activeEventName}</Text>
-                <Text style={styles.heroBody}>
-                  {home?.event.shortDescription ??
-                    home?.event.description ??
-                    "Your ticket, agenda, and networking are ready."}
-                </Text>
-                <View style={styles.heroStats}>
-                  <InfoChip label="RSVP" value={getConfirmationLabel(ticket?.rsvpStatus)} accent />
-                  <InfoChip label="Agenda" value={`${agenda.length} sessions`} />
-                  <InfoChip label="Networking" value={`${home?.networking.recommendationCount ?? 0} matches`} />
+              <View style={styles.heroGlow} />
+              <View style={[styles.heroContent, compactHome && styles.heroContentCompact]}>
+                <View style={[styles.heroCopy, compactHome && styles.heroCopyCompact]}>
+                  <Text style={styles.heroDate}>{fmtFullDate(home?.event.startsAt ?? ticket?.event.startsAt)}</Text>
+                  <Text style={styles.heroTitle}>{activeEventName}</Text>
+                  <Text style={styles.heroBody}>
+                    {home?.event.shortDescription ??
+                      home?.event.description ??
+                      "Your ticket, agenda, and updates are ready."}
+                  </Text>
+                  <View style={styles.heroStats}>
+                    <InfoChip label="RSVP" value={getConfirmationLabel(ticket?.rsvpStatus)} accent />
+                    <InfoChip label="Agenda" value={`${agenda.length} sessions`} />
+                    <InfoChip label="Updates" value={`${unreadCount} unread`} />
+                  </View>
+                  <View style={styles.heroActions}>
+                    <TouchableOpacity activeOpacity={0.82} style={styles.primaryButton} onPress={() => setTab("agenda")}>
+                      <Text style={styles.primaryButtonText}>View Agenda</Text>
+                    </TouchableOpacity>
+                    {home?.settings.liveStream?.url ? (
+                      <Pressable
+                        style={styles.outlineButton}
+                        onPress={() => handleLiveOpen(home.settings.liveStream?.url, home.liveSession?.id)}
+                      >
+                        <Text style={styles.outlineButtonText}>{liveLabel}</Text>
+                      </Pressable>
+                    ) : null}
+                  </View>
                 </View>
-                <View style={styles.heroActions}>
-                  <Pressable style={styles.primaryButton} onPress={() => setTab("agenda")}>
-                    <Text style={styles.primaryButtonText}>View Agenda</Text>
-                  </Pressable>
-                  {home?.settings.liveStream?.url ? (
-                    <Pressable
-                      style={styles.outlineButton}
-                      onPress={() => handleLiveOpen(home.settings.liveStream?.url, home.liveSession?.id)}
-                    >
-                      <Text style={styles.outlineButtonText}>{liveLabel}</Text>
-                    </Pressable>
-                  ) : null}
+                <View style={[styles.heroMedia, compactHome && styles.heroMediaCompact]}>
+                  {home?.event.coverImageUrl ? (
+                    <Image source={{ uri: home.event.coverImageUrl }} style={styles.heroImage} resizeMode="cover" />
+                  ) : (
+                    <View style={styles.heroImageFallback}>
+                      <Ionicons name="calendar-outline" size={30} color="#FFFFFF" />
+                    </View>
+                  )}
                 </View>
               </View>
             </View>
@@ -611,6 +727,20 @@ export function VisitorDashboardScreen({
               </View>
             </View>
 
+            {discover.length ? (
+              <View style={styles.discoverSection}>
+                <View style={styles.discoverHead}>
+                  <Text style={styles.discoverEyebrow}>Discover events</Text>
+                  <Text style={styles.discoverSub}>More Bahrain events on Events Hub</Text>
+                </View>
+                <View style={styles.discoverList}>
+                  {discover.slice(0, 6).map((ev, index) => (
+                    <DiscoverRow key={ev.id} event={ev} index={index} />
+                  ))}
+                </View>
+              </View>
+            ) : null}
+
             {home?.announcements?.length ? (
               <View style={styles.sectionCard}>
                 <Text style={styles.sectionTitle}>Announcements</Text>
@@ -626,29 +756,6 @@ export function VisitorDashboardScreen({
                 ))}
               </View>
             ) : null}
-
-            <View style={styles.sectionCard}>
-              <View style={styles.sectionHeader}>
-                <Text style={styles.sectionTitle}>Networking snapshot</Text>
-                <Pressable onPress={() => setTab("networking")}>
-                  <Text style={styles.sectionLink}>Open</Text>
-                </Pressable>
-              </View>
-              <View style={styles.metricsRow}>
-                <View style={styles.smallMetricCard}>
-                  <Text style={styles.smallMetricValue}>{home?.networking.recommendationCount ?? 0}</Text>
-                  <Text style={styles.smallMetricLabel}>Smart matches</Text>
-                </View>
-                <View style={styles.smallMetricCard}>
-                  <Text style={styles.smallMetricValue}>{home?.networking.pendingRequestCount ?? 0}</Text>
-                  <Text style={styles.smallMetricLabel}>Pending requests</Text>
-                </View>
-                <View style={styles.smallMetricCard}>
-                  <Text style={styles.smallMetricValue}>{home?.networking.meetingsCount ?? 0}</Text>
-                  <Text style={styles.smallMetricLabel}>Meetings</Text>
-                </View>
-              </View>
-            </View>
 
             {home?.featuredSponsors?.length ? (
               <View style={styles.sectionCard}>
@@ -680,6 +787,31 @@ export function VisitorDashboardScreen({
           </ScrollView>
         ) : null}
 
+        {tab === "discover" ? (
+          <ScrollView
+            style={styles.tabContent}
+            refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}
+            contentContainerStyle={styles.scrollContent}
+          >
+            <View style={styles.discoverHead}>
+              <Text style={styles.discoverEyebrow}>Discover events</Text>
+              <Text style={styles.discoverSub}>Browse and buy tickets to Bahrain events</Text>
+            </View>
+            {discover.length === 0 ? (
+              <View style={styles.sectionCard}>
+                <Text style={styles.sectionTitle}>No public events yet</Text>
+                <Text style={styles.discoverSub}>Published events will appear here automatically.</Text>
+              </View>
+            ) : (
+              <View style={styles.discoverList}>
+                {discover.map((ev, index) => (
+                  <DiscoverRow key={ev.id} event={ev} index={index} />
+                ))}
+              </View>
+            )}
+          </ScrollView>
+        ) : null}
+
         {tab === "agenda" ? (
           <ScrollView
             style={styles.tabContent}
@@ -689,7 +821,7 @@ export function VisitorDashboardScreen({
             {agenda.length === 0 ? (
               <EmptyState
                 title="No sessions published yet"
-                body="Once the organizer publishes the agenda, your full schedule and live links will appear here."
+                body="Once the Events Hub team publishes the agenda, your full schedule and live links will appear here."
               />
             ) : (
               agenda.map((sessionItem) => (
@@ -1050,7 +1182,7 @@ export function VisitorDashboardScreen({
           >
             <View style={styles.sectionCard}>
               <View style={styles.sectionHeader}>
-                <Text style={styles.sectionTitle}>Organizer inbox</Text>
+                <Text style={styles.sectionTitle}>Event updates</Text>
                 <Pressable onPress={onComposeMessage}>
                   <Text style={styles.sectionLink}>New message</Text>
                 </Pressable>
@@ -1058,7 +1190,7 @@ export function VisitorDashboardScreen({
               {notifications.length === 0 ? (
                 <EmptyState
                   title="No updates yet"
-                  body="Organizer announcements, session reminders, networking alerts, and replies will show here."
+                  body="Event announcements, session reminders, networking alerts, and replies will show here."
                 />
               ) : (
                 notifications.map((notification) => (
@@ -1084,7 +1216,7 @@ export function VisitorDashboardScreen({
               {messages.length === 0 ? (
                 <EmptyState
                   title="No message history"
-                  body="Start a conversation with the organizer for access help, guest updates, or VIP requests."
+                  body="Start a conversation with the Events Hub team for access help, guest updates, or VIP requests."
                 />
               ) : (
                 messages.map((message) => (
@@ -1093,11 +1225,11 @@ export function VisitorDashboardScreen({
                     <Text style={styles.messageBody}>{message.body}</Text>
                     {message.adminReply ? (
                       <View style={styles.replyCard}>
-                        <Text style={styles.replyLabel}>Organizer reply</Text>
+                        <Text style={styles.replyLabel}>Events Hub reply</Text>
                         <Text style={styles.replyBody}>{message.adminReply}</Text>
                       </View>
                     ) : (
-                      <Text style={styles.pendingReply}>Awaiting organizer reply</Text>
+                      <Text style={styles.pendingReply}>Awaiting Events Hub reply</Text>
                     )}
                     <Text style={styles.notificationMeta}>
                       {[message.eventName, fmtDate(message.createdAt)].filter(Boolean).join(" • ")}
@@ -1217,11 +1349,11 @@ export function VisitorDashboardScreen({
 
       <View style={styles.tabBarWrap}>
         <View style={styles.tabBar}>
-          <TabBtn icon="H" label="Home" active={tab === "home"} onPress={() => setTab("home")} />
-          <TabBtn icon="A" label="Agenda" active={tab === "agenda"} onPress={() => setTab("agenda")} />
-          <TabBtn icon="N" label="Network" active={tab === "networking"} onPress={() => setTab("networking")} />
+          <TabBtn icon="home-outline" label="Home" active={tab === "home"} onPress={() => setTab("home")} />
+          <TabBtn icon="compass-outline" label="Discover" active={tab === "discover"} onPress={() => setTab("discover")} />
+          <TabBtn icon="calendar-outline" label="Agenda" active={tab === "agenda"} onPress={() => setTab("agenda")} />
           <TabBtn
-            icon="I"
+            icon="chatbubble-ellipses-outline"
             label="Inbox"
             active={tab === "inbox"}
             badge={unreadCount}
@@ -1231,7 +1363,7 @@ export function VisitorDashboardScreen({
               setUnreadCount(0);
             }}
           />
-          <TabBtn icon="T" label="Ticket" active={tab === "ticket"} onPress={() => setTab("ticket")} />
+          <TabBtn icon="ticket-outline" label="Ticket" active={tab === "ticket"} onPress={() => setTab("ticket")} />
         </View>
       </View>
     </View>
@@ -1239,76 +1371,121 @@ export function VisitorDashboardScreen({
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: "#0B1021" },
+  screen: { flex: 1, backgroundColor: "#081020" },
   loadingContainer: {
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#0B1021",
+    backgroundColor: "#081020",
     gap: 14,
   },
   loadingText: { color: "#96A0C4", fontSize: 14, fontWeight: "600" },
   headerShell: {
     paddingTop: Platform.OS === "ios" ? 58 : 38,
-    paddingHorizontal: 22,
-    paddingBottom: 20,
-    backgroundColor: "#0F1630",
-    borderBottomLeftRadius: 34,
-    borderBottomRightRadius: 34,
+    paddingHorizontal: 28,
+    paddingBottom: 26,
+    backgroundColor: "rgba(15,22,48,0.74)",
+    borderBottomLeftRadius: 38,
+    borderBottomRightRadius: 38,
+    borderWidth: 1,
+    borderTopWidth: 0,
+    borderColor: "rgba(255,255,255,0.1)",
   },
-  headerRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", gap: 16 },
-  headerLeft: { flex: 1 },
+  headerRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", gap: 16, width: "100%", maxWidth: 1180, alignSelf: "center" },
+  headerLeft: { flex: 1, gap: 8 },
   headerEyebrow: {
-    color: "#FF8F8B",
+    color: "#DB2777",
     fontSize: 12,
     fontWeight: "800",
     letterSpacing: 1.4,
     textTransform: "uppercase",
   },
-  headerTitle: { color: "#FFFFFF", fontSize: 28, fontWeight: "900", marginTop: 8, letterSpacing: -1 },
-  headerSubtitle: { color: "#A6B0D2", fontSize: 14, lineHeight: 21, marginTop: 10, maxWidth: 320 },
+  headerTitle: { color: "#FFFFFF", fontSize: 30, fontWeight: "900", marginTop: 2, letterSpacing: -1 },
+  headerSubtitle: { color: "rgba(255,255,255,0.72)", fontSize: 14, lineHeight: 21, marginTop: 2, maxWidth: 420 },
   signOutBtn: {
-    borderRadius: 14,
-    backgroundColor: "rgba(255,255,255,0.08)",
+    borderRadius: 999,
+    backgroundColor: "rgba(255,255,255,0.1)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.12)",
     paddingHorizontal: 14,
     paddingVertical: 10,
   },
   signOutText: { color: "#FFFFFF", fontSize: 12, fontWeight: "800" },
-  eventSwitcher: { gap: 10, paddingTop: 16 },
+  eventSwitcher: { gap: 10, paddingTop: 16, width: "100%", maxWidth: 1180, alignSelf: "center" },
   eventPill: {
     borderRadius: 16,
     paddingHorizontal: 14,
     paddingVertical: 8,
     backgroundColor: "rgba(255,255,255,0.08)",
   },
-  eventPillActive: { backgroundColor: "#FF6A6F" },
+  eventPillActive: { backgroundColor: "#7C3AED" },
   eventPillText: { color: "#CBD2EE", fontSize: 12, fontWeight: "700" },
   eventPillTextActive: { color: "#FFFFFF" },
   content: { flex: 1 },
   tabContent: { flex: 1 },
-  scrollContent: { paddingHorizontal: 20, paddingTop: 18, paddingBottom: 120, gap: 16 },
+  scrollContent: { width: "100%", maxWidth: 1180, alignSelf: "center", paddingHorizontal: 18, paddingTop: 18, paddingBottom: 128, gap: 16 },
   heroCard: {
-    borderRadius: 30,
-    minHeight: 280,
+    borderRadius: 28,
+    minHeight: 270,
     overflow: "hidden",
-    backgroundColor: "#171F44",
+    backgroundColor: "rgba(255,255,255,0.08)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.12)",
     position: "relative",
   },
-  heroImage: { position: "absolute", top: 0, right: 0, bottom: 0, left: 0, opacity: 0.36 },
-  heroOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(11,16,33,0.28)",
+  heroGlow: {
+    position: "absolute",
+    bottom: -120,
+    height: 220,
+    left: "18%",
+    right: "18%",
+    backgroundColor: "rgba(219,39,119,0.16)",
+    borderRadius: 999,
   },
-  heroContent: { padding: 24, gap: 14 },
+  heroContent: {
+    alignItems: "stretch",
+    flexDirection: "row",
+    gap: 22,
+    justifyContent: "space-between",
+    padding: 24,
+  },
+  heroContentCompact: {
+    flexDirection: "column",
+  },
+  heroCopy: { flex: 1, gap: 15, maxWidth: 520 },
+  heroCopyCompact: {
+    maxWidth: undefined,
+  },
+  heroMedia: {
+    alignSelf: "stretch",
+    borderColor: "rgba(255,255,255,0.12)",
+    borderRadius: 24,
+    borderWidth: 1,
+    flex: 1,
+    maxWidth: 460,
+    minHeight: 220,
+    overflow: "hidden",
+  },
+  heroMediaCompact: {
+    maxWidth: undefined,
+    minHeight: 160,
+  },
+  heroImage: { height: "100%", opacity: 0.78, width: "100%" },
+  heroImageFallback: {
+    alignItems: "center",
+    backgroundColor: "rgba(124,58,237,0.24)",
+    flex: 1,
+    justifyContent: "center",
+  },
   heroDate: {
-    color: "#FFD7C6",
+    color: "#C4B5FD",
     fontSize: 12,
     fontWeight: "800",
     letterSpacing: 1.1,
     textTransform: "uppercase",
   },
-  heroTitle: { color: "#FFFFFF", fontSize: 30, fontWeight: "900", letterSpacing: -1.2, maxWidth: 260 },
-  heroBody: { color: "#D9E0F8", fontSize: 14, lineHeight: 22, maxWidth: 300 },
+  heroTitle: { color: "#FFFFFF", fontSize: 34, fontWeight: "900", letterSpacing: -1.2, maxWidth: 500 },
+  heroBody: { color: "rgba(255,255,255,0.76)", fontSize: 14, lineHeight: 22, maxWidth: 390 },
   heroStats: { flexDirection: "row", gap: 10, flexWrap: "wrap" },
   heroActions: { flexDirection: "row", gap: 10, flexWrap: "wrap", marginTop: 2 },
   infoChip: {
@@ -1318,7 +1495,7 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255,255,255,0.1)",
     minWidth: 92,
   },
-  infoChipAccent: { backgroundColor: "#FF6A6F" },
+  infoChipAccent: { backgroundColor: "#7C3AED" },
   infoChipLabel: {
     color: "#ACB7DC",
     fontSize: 10,
@@ -1330,7 +1507,7 @@ const styles = StyleSheet.create({
   infoChipValue: { color: "#FFFFFF", fontSize: 13, fontWeight: "800", marginTop: 4 },
   infoChipValueAccent: { color: "#FFFFFF" },
   primaryButton: {
-    backgroundColor: "#FF6A6F",
+    backgroundColor: "#7C3AED",
     borderRadius: 18,
     paddingHorizontal: 16,
     paddingVertical: 14,
@@ -1358,36 +1535,82 @@ const styles = StyleSheet.create({
   },
   secondaryButtonText: { color: "#FFFFFF", fontSize: 14, fontWeight: "800" },
   metricsRow: { flexDirection: "row", gap: 12, flexWrap: "wrap" },
+  discoverSection: { gap: 12 },
+  discoverHead: { gap: 3 },
+  discoverEyebrow: {
+    color: "#38BDF8",
+    fontSize: 10,
+    fontWeight: "900",
+    letterSpacing: 1.6,
+    textTransform: "uppercase",
+  },
+  discoverSub: { color: "rgba(255,255,255,0.42)", fontSize: 12, fontWeight: "700" },
+  discoverList: { gap: 12 },
+  discoverRow: {
+    flexDirection: "row",
+    gap: 14,
+    padding: 12,
+    borderRadius: 20,
+    backgroundColor: "rgba(255,255,255,0.05)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.1)",
+  },
+  discoverThumb: { width: 84, height: 84, borderRadius: 15, overflow: "hidden" },
+  discoverThumbDate: {
+    position: "absolute",
+    left: 8,
+    bottom: 8,
+    color: "#A5F3FC",
+    fontSize: 9,
+    fontWeight: "900",
+  },
+  discoverBody: { flex: 1, minWidth: 0, justifyContent: "center" },
+  discoverHost: {
+    color: "#a78bfa",
+    fontSize: 9,
+    fontWeight: "900",
+    letterSpacing: 1.2,
+    textTransform: "uppercase",
+  },
+  discoverTitle: { color: "#FFFFFF", fontSize: 16, fontWeight: "900", lineHeight: 19, marginTop: 4 },
+  discoverMeta: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 10 },
+  discoverPrice: { color: "#FFFFFF", fontSize: 14, fontWeight: "900", fontStyle: "italic" },
+  discoverBuy: { backgroundColor: "#7C3AED", borderRadius: 999, paddingHorizontal: 15, paddingVertical: 7 },
+  discoverBuyText: { color: "#FFFFFF", fontSize: 11, fontWeight: "900", textTransform: "uppercase" },
   metricCard: {
     flex: 1,
     minWidth: 150,
-    borderRadius: 24,
-    backgroundColor: "#111830",
+    borderRadius: 22,
+    backgroundColor: "rgba(255,255,255,0.08)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.1)",
     padding: 18,
   },
   metricLabel: { color: "#96A0C4", fontSize: 10, fontWeight: "800", letterSpacing: 1.1, textTransform: "uppercase" },
   metricValue: { color: "#FFFFFF", fontSize: 17, fontWeight: "900", marginTop: 8 },
   metricMeta: { color: "#AEB7D6", fontSize: 12, marginTop: 6 },
   sectionCard: {
-    borderRadius: 28,
-    backgroundColor: "#111830",
+    borderRadius: 24,
+    backgroundColor: "rgba(255,255,255,0.08)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.1)",
     padding: 18,
     gap: 14,
   },
   sectionHeader: { gap: 6 },
   sectionTitle: { color: "#FFFFFF", fontSize: 18, fontWeight: "900", letterSpacing: -0.4 },
-  sectionLink: { color: "#FF9F8E", fontSize: 13, fontWeight: "800" },
+  sectionLink: { color: "#C4B5FD", fontSize: 13, fontWeight: "900" },
   helperText: { color: "#98A3C9", fontSize: 13, lineHeight: 20 },
   timelineItem: { flexDirection: "row", gap: 12 },
-  timelineDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: "#FF6A6F", marginTop: 7 },
+  timelineDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: "#7C3AED", marginTop: 7 },
   timelineBody: { flex: 1 },
   timelineTitle: { color: "#FFFFFF", fontSize: 15, fontWeight: "800" },
   timelineText: { color: "#AEB7D6", fontSize: 13, lineHeight: 20, marginTop: 4 },
   timelineMeta: { color: "#7F8AB2", fontSize: 11, marginTop: 8, fontWeight: "700" },
-  smallMetricCard: { flex: 1, minWidth: 90, borderRadius: 20, backgroundColor: "#0D1430", padding: 14 },
+  smallMetricCard: { flex: 1, minWidth: 90, borderRadius: 18, backgroundColor: "rgba(8,16,32,0.58)", padding: 14 },
   smallMetricValue: { color: "#FFFFFF", fontSize: 22, fontWeight: "900" },
   smallMetricLabel: { color: "#A1ADD2", fontSize: 11, fontWeight: "700", marginTop: 6 },
-  sessionCard: { borderRadius: 26, backgroundColor: "#111830", padding: 18, gap: 12 },
+  sessionCard: { borderRadius: 24, backgroundColor: "rgba(255,255,255,0.08)", borderWidth: 1, borderColor: "rgba(255,255,255,0.1)", padding: 18, gap: 12 },
   sessionHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: 12 },
   sessionStatus: {
     borderRadius: 12,
@@ -1395,7 +1618,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 6,
   },
-  sessionStatusLive: { backgroundColor: "#FF6A6F" },
+  sessionStatusLive: { backgroundColor: "#DB2777" },
   sessionStatusText: { color: "#D2D9F1", fontSize: 11, fontWeight: "800", letterSpacing: 0.9 },
   sessionStatusTextLive: { color: "#FFFFFF" },
   sessionTime: { color: "#98A3C9", fontSize: 12, fontWeight: "700" },
@@ -1407,7 +1630,7 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     paddingHorizontal: 10,
     paddingVertical: 6,
-    backgroundColor: "#0D1430",
+    backgroundColor: "rgba(255,255,255,0.08)",
     color: "#D8E0FA",
     fontSize: 12,
     overflow: "hidden",
@@ -1422,16 +1645,16 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255,255,255,0.03)",
   },
   ghostButtonActive: {
-    backgroundColor: "rgba(255,106,111,0.12)",
-    borderColor: "rgba(255,106,111,0.42)",
+    backgroundColor: "rgba(124,58,237,0.2)",
+    borderColor: "rgba(124,58,237,0.56)",
   },
   ghostButtonText: { color: "#FFFFFF", fontSize: 13, fontWeight: "800" },
-  ghostButtonTextActive: { color: "#FFAAAB" },
+  ghostButtonTextActive: { color: "#C4B5FD" },
   primaryButtonSmall: {
     borderRadius: 16,
     paddingHorizontal: 14,
     paddingVertical: 12,
-    backgroundColor: "#FF6A6F",
+    backgroundColor: "#7C3AED",
   },
   primaryButtonSmallText: { color: "#FFFFFF", fontSize: 13, fontWeight: "800" },
   toggleRow: { flexDirection: "row", gap: 10, flexWrap: "wrap" },
@@ -1439,16 +1662,16 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     paddingHorizontal: 14,
     paddingVertical: 10,
-    backgroundColor: "#0D1430",
+    backgroundColor: "rgba(255,255,255,0.08)",
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.08)",
   },
-  toggleChipActive: { backgroundColor: "#FF6A6F", borderColor: "#FF6A6F" },
+  toggleChipActive: { backgroundColor: "#7C3AED", borderColor: "#7C3AED" },
   toggleChipText: { color: "#D6DDF6", fontSize: 13, fontWeight: "800" },
   toggleChipTextActive: { color: "#FFFFFF" },
   input: {
     borderRadius: 16,
-    backgroundColor: "#0D1430",
+    backgroundColor: "rgba(255,255,255,0.08)",
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.08)",
     paddingHorizontal: 14,
@@ -1457,13 +1680,13 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   inputMultiline: { minHeight: 96, textAlignVertical: "top" },
-  networkCard: { borderRadius: 22, backgroundColor: "#0D1430", padding: 16, gap: 12 },
+  networkCard: { borderRadius: 22, backgroundColor: "rgba(8,16,32,0.58)", borderWidth: 1, borderColor: "rgba(255,255,255,0.08)", padding: 16, gap: 12 },
   networkHeader: { flexDirection: "row", alignItems: "center", gap: 12 },
   avatarCircle: {
     width: 46,
     height: 46,
     borderRadius: 23,
-    backgroundColor: "#FF6A6F",
+    backgroundColor: "#7C3AED",
     alignItems: "center",
     justifyContent: "center",
   },
@@ -1473,32 +1696,32 @@ const styles = StyleSheet.create({
   networkRole: { color: "#9DA7CC", fontSize: 12, marginTop: 4 },
   matchScore: {
     borderRadius: 16,
-    backgroundColor: "rgba(255,106,111,0.14)",
+    backgroundColor: "rgba(124,58,237,0.22)",
     paddingHorizontal: 12,
     paddingVertical: 8,
   },
-  matchScoreText: { color: "#FFB2B4", fontSize: 14, fontWeight: "900" },
-  networkHeadline: { color: "#FFD2C5", fontSize: 13, fontWeight: "700" },
+  matchScoreText: { color: "#C4B5FD", fontSize: 14, fontWeight: "900" },
+  networkHeadline: { color: "#C4B5FD", fontSize: 13, fontWeight: "700" },
   networkBio: { color: "#AEB7D6", fontSize: 13, lineHeight: 20 },
   reasonRow: { flexDirection: "row", gap: 8, flexWrap: "wrap" },
   reasonChip: {
     color: "#DCE3FB",
-    backgroundColor: "#111830",
+    backgroundColor: "rgba(255,255,255,0.08)",
     borderRadius: 14,
     paddingHorizontal: 10,
     paddingVertical: 6,
     fontSize: 11,
     overflow: "hidden",
   },
-  requestCard: { borderRadius: 22, backgroundColor: "#0D1430", padding: 16, gap: 8 },
+  requestCard: { borderRadius: 22, backgroundColor: "rgba(8,16,32,0.58)", padding: 16, gap: 8 },
   requestTitle: { color: "#FFFFFF", fontSize: 15, fontWeight: "900" },
   requestMeta: { color: "#9DA7CC", fontSize: 12, lineHeight: 18 },
   requestMessage: { color: "#DCE3FB", fontSize: 13, lineHeight: 20 },
   requestActions: { flexDirection: "row", gap: 10, flexWrap: "wrap", marginTop: 6 },
-  notificationCard: { borderRadius: 20, backgroundColor: "#0D1430", padding: 16, gap: 8 },
-  notificationCardUnread: { borderWidth: 1, borderColor: "rgba(255,106,111,0.35)" },
+  notificationCard: { borderRadius: 20, backgroundColor: "rgba(8,16,32,0.58)", borderWidth: 1, borderColor: "rgba(255,255,255,0.08)", padding: 16, gap: 8 },
+  notificationCardUnread: { borderWidth: 1, borderColor: "rgba(124,58,237,0.5)" },
   notificationType: {
-    color: "#FFB1AB",
+    color: "#C4B5FD",
     fontSize: 11,
     fontWeight: "800",
     letterSpacing: 1,
@@ -1507,12 +1730,12 @@ const styles = StyleSheet.create({
   notificationTitle: { color: "#FFFFFF", fontSize: 15, fontWeight: "900" },
   notificationBody: { color: "#C7D1F3", fontSize: 13, lineHeight: 20 },
   notificationMeta: { color: "#8190BA", fontSize: 11, fontWeight: "700" },
-  messageCard: { borderRadius: 22, backgroundColor: "#0D1430", padding: 16, gap: 10 },
+  messageCard: { borderRadius: 22, backgroundColor: "rgba(8,16,32,0.58)", borderWidth: 1, borderColor: "rgba(255,255,255,0.08)", padding: 16, gap: 10 },
   messageSubject: { color: "#FFFFFF", fontSize: 15, fontWeight: "900" },
   messageBody: { color: "#C7D1F3", fontSize: 13, lineHeight: 20 },
   replyCard: { borderRadius: 16, backgroundColor: "rgba(255,255,255,0.05)", padding: 12, gap: 6 },
   replyLabel: {
-    color: "#FFB1AB",
+    color: "#C4B5FD",
     fontSize: 11,
     fontWeight: "800",
     textTransform: "uppercase",
@@ -1520,9 +1743,9 @@ const styles = StyleSheet.create({
   },
   replyBody: { color: "#FFFFFF", fontSize: 13, lineHeight: 20 },
   pendingReply: { color: "#9DA7CC", fontSize: 12, fontWeight: "700" },
-  ticketCard: { borderRadius: 30, backgroundColor: "#111830", padding: 22, gap: 14 },
+  ticketCard: { borderRadius: 28, backgroundColor: "rgba(255,255,255,0.08)", borderWidth: 1, borderColor: "rgba(255,255,255,0.1)", padding: 22, gap: 14 },
   ticketEyebrow: {
-    color: "#FF9F8E",
+    color: "#C4B5FD",
     fontSize: 12,
     fontWeight: "800",
     textTransform: "uppercase",
@@ -1531,7 +1754,7 @@ const styles = StyleSheet.create({
   ticketTitle: { color: "#FFFFFF", fontSize: 26, fontWeight: "900", letterSpacing: -1 },
   ticketDate: { color: "#DCE3FB", fontSize: 14, fontWeight: "700" },
   ticketLocation: { color: "#98A3C9", fontSize: 13 },
-  confirmationPanel: { borderRadius: 22, backgroundColor: "#0D1430", padding: 16, gap: 10 },
+  confirmationPanel: { borderRadius: 22, backgroundColor: "rgba(8,16,32,0.58)", padding: 16, gap: 10 },
   confirmationLabel: {
     color: "#96A0C4",
     fontSize: 10,
@@ -1542,27 +1765,29 @@ const styles = StyleSheet.create({
   confirmationValue: { color: "#FFFFFF", fontSize: 20, fontWeight: "900" },
   ticketDivider: { height: 1, backgroundColor: "rgba(255,255,255,0.08)", marginVertical: 4 },
   ticketMetaGrid: { flexDirection: "row", gap: 10, flexWrap: "wrap" },
-  portalCodeCard: { borderRadius: 20, backgroundColor: "rgba(255,106,111,0.12)", padding: 16, gap: 8 },
+  portalCodeCard: { borderRadius: 20, backgroundColor: "rgba(124,58,237,0.2)", padding: 16, gap: 8 },
   portalCodeLabel: {
-    color: "#FFB1AB",
+    color: "#C4B5FD",
     fontSize: 11,
     fontWeight: "800",
     textTransform: "uppercase",
     letterSpacing: 1.1,
   },
   portalCodeValue: { color: "#FFFFFF", fontSize: 26, fontWeight: "900", letterSpacing: 4 },
-  portalCodeHelp: { color: "#FFD9D3", fontSize: 12, lineHeight: 18 },
+  portalCodeHelp: { color: "rgba(255,255,255,0.72)", fontSize: 12, lineHeight: 18 },
   disabledButton: { opacity: 0.55 },
-  emptyState: { borderRadius: 26, backgroundColor: "#111830", padding: 24, alignItems: "center", gap: 10 },
+  emptyState: { borderRadius: 24, backgroundColor: "rgba(255,255,255,0.08)", borderWidth: 1, borderColor: "rgba(255,255,255,0.1)", padding: 24, alignItems: "center", gap: 10 },
   emptyStateTitle: { color: "#FFFFFF", fontSize: 20, fontWeight: "900", textAlign: "center" },
   emptyStateBody: { color: "#AEB7D6", fontSize: 14, lineHeight: 21, textAlign: "center" },
   tabBarWrap: { position: "absolute", left: 16, right: 16, bottom: 22, alignItems: "center" },
   tabBar: {
     flexDirection: "row",
-    backgroundColor: "#111830",
-    borderRadius: 32,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
+    backgroundColor: "rgba(10,16,32,0.92)",
+    borderRadius: 30,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.12)",
+    paddingHorizontal: 8,
+    paddingVertical: 8,
     shadowColor: "#000",
     shadowOpacity: 0.28,
     shadowOffset: { width: 0, height: 12 },
@@ -1570,18 +1795,17 @@ const styles = StyleSheet.create({
     elevation: 10,
   },
   tabBtn: {
-    flex: 1,
+    width: 66,
     alignItems: "center",
     justifyContent: "center",
-    paddingHorizontal: 6,
+    gap: 3,
+    paddingHorizontal: 4,
     paddingVertical: 8,
     position: "relative",
   },
-  tabBtnActive: { borderRadius: 18, backgroundColor: "#1A2347" },
-  tabIcon: { color: "#8490B8", fontSize: 12, fontWeight: "900" },
-  tabIconActive: { color: "#FFFFFF" },
-  tabLabel: { color: "#8490B8", fontSize: 10, fontWeight: "800", marginTop: 4 },
-  tabLabelActive: { color: "#FF9F8E" },
+  tabBtnActive: { borderRadius: 22, backgroundColor: "rgba(124,58,237,0.34)" },
+  tabLabel: { color: "#8D98C5", fontSize: 10, fontWeight: "800", marginTop: 2 },
+  tabLabelActive: { color: "#FFFFFF" },
   tabBadge: {
     position: "absolute",
     top: 0,
@@ -1589,7 +1813,7 @@ const styles = StyleSheet.create({
     minWidth: 18,
     height: 18,
     borderRadius: 9,
-    backgroundColor: "#FF6A6F",
+    backgroundColor: "#DB2777",
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: 4,

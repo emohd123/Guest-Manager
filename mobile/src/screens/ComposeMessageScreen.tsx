@@ -66,8 +66,8 @@ export function ComposeMessageScreen({
     <AuthScreenLayout
       onBack={onBack}
       icon="Mail"
-      eyebrow="Organizer Inbox"
-      title="Send a message to the organizer"
+      eyebrow="Events Hub Inbox"
+      title="Send a message to the event team"
       subtitle="Use the same premium attendee shell to send questions, requests, or event support notes."
     >
       <KeyboardAvoidingView

@@ -8,6 +8,7 @@ import {
   Text,
   View,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { FadeSlideIn } from "./motion";
 import { PremiumBackdrop, PremiumCard, PremiumPill } from "./primitives";
 import { palette, radii, shadows, spacing, type } from "./theme";
@@ -39,7 +40,8 @@ export function AuthScreenLayout({
         <View style={styles.heroPanel}>
           <View style={styles.heroTopRow}>
             {onBack ? (
-              <Pressable style={styles.backBtn} onPress={onBack}>
+              <Pressable style={styles.backBtn} onPress={onBack} accessibilityRole="button">
+                <Ionicons name="chevron-back" size={18} color="#FFFFFF" />
                 <Text style={styles.backText}>Back</Text>
               </Pressable>
             ) : (
@@ -49,18 +51,22 @@ export function AuthScreenLayout({
           </View>
 
           <View style={styles.top}>
-            {icon ? <Text style={styles.icon}>{icon}</Text> : null}
+            {icon ? (
+              <View style={styles.iconBadge}>
+                <Text style={styles.icon}>{icon}</Text>
+              </View>
+            ) : null}
             <Text style={styles.title}>{title}</Text>
             <Text style={styles.subtitle}>{subtitle}</Text>
             <View style={styles.miniStats}>
               <View style={styles.miniStat}>
                 <Text style={styles.miniStatLabel}>Experience</Text>
-                <Text style={styles.miniStatValue}>Premium Mobile</Text>
+                <Text style={styles.miniStatValue}>Live Event</Text>
               </View>
               <View style={styles.miniStatDivider} />
               <View style={styles.miniStat}>
                 <Text style={styles.miniStatLabel}>Surface</Text>
-                <Text style={styles.miniStatValue}>Attendee + Staff</Text>
+                <Text style={styles.miniStatValue}>Ticket + Agenda</Text>
               </View>
             </View>
           </View>
@@ -98,7 +104,7 @@ const styles = StyleSheet.create({
   heroPanel: {
     paddingTop: Platform.OS === "ios" ? 58 : 38,
     paddingHorizontal: spacing.xl,
-    paddingBottom: spacing.lg,
+    paddingBottom: spacing.xl,
   },
   heroTopRow: {
     flexDirection: "row",
@@ -111,10 +117,13 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   backBtn: {
+    alignItems: "center",
     alignSelf: "flex-start",
+    flexDirection: "row",
+    gap: 4,
     paddingHorizontal: 14,
     paddingVertical: 9,
-    borderRadius: radii.sm,
+    borderRadius: radii.pill,
     backgroundColor: "rgba(255,255,255,0.08)",
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.12)",
@@ -127,11 +136,21 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     fontSize: 13,
   },
-  icon: {
-    fontSize: 34,
+  iconBadge: {
+    alignItems: "center",
+    backgroundColor: "rgba(255,255,255,0.08)",
+    borderColor: "rgba(255,255,255,0.14)",
+    borderRadius: radii.lg,
+    borderWidth: 1,
+    height: 58,
+    justifyContent: "center",
     marginBottom: 8,
+    width: 58,
+  },
+  icon: {
+    fontSize: 22,
     color: palette.textInverse,
-    fontWeight: "800",
+    fontWeight: "900",
   },
   title: {
     fontSize: type.hero,
@@ -153,9 +172,9 @@ const styles = StyleSheet.create({
     gap: spacing.md,
     padding: spacing.lg,
     borderRadius: radii.lg,
-    backgroundColor: "rgba(255,255,255,0.06)",
+    backgroundColor: "rgba(255,255,255,0.075)",
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.1)",
+    borderColor: "rgba(255,255,255,0.13)",
   },
   miniStat: {
     flex: 1,

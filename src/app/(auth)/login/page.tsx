@@ -138,8 +138,8 @@ function LoginForm() {
             />
           </Link>
         </div>
-        <CardTitle className="mt-4 text-2xl font-bold tracking-tight">Welcome back</CardTitle>
-        <CardDescription>Sign in to manage your events</CardDescription>
+        <CardTitle className="mt-4 text-2xl font-bold tracking-tight">Admin sign in</CardTitle>
+        <CardDescription>For internal Events Hub dashboard access only</CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleLogin} className="space-y-4">
@@ -231,12 +231,19 @@ function LoginForm() {
           </svg>
           {googleLoading ? "Redirecting to Google..." : "Continue with Google"}
         </Button>
+        <p className="mt-4 text-center text-xs text-muted-foreground">
+          Looking for your tickets?{" "}
+          <Link href="/account/login" className="text-primary hover:underline">
+            Use buyer login
+          </Link>
+          .
+        </p>
       </CardContent>
       <CardFooter className="flex flex-col gap-3">
-        <p className="text-sm text-muted-foreground">
-          Don&apos;t have an account?{" "}
-          <Link href="/signup" className="text-primary hover:underline">
-            Sign up free
+        <p className="text-center text-sm text-muted-foreground">
+          Need internal dashboard access?{" "}
+          <Link href="/contact?source=admin-access" className="text-primary hover:underline">
+            Contact Events Hub
           </Link>
         </p>
         <Link

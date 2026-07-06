@@ -1,17 +1,25 @@
 export const dynamic = "force-dynamic";
-import { NextRequest, NextResponse } from "next/server";
-import { getDb } from "@/server/db";
-import { companies, events, guests, orders, orderItems, ticketTypes, tickets } from "@/server/db/schema";
-import { eq, and, sql } from "drizzle-orm";
-import { getStripeClient } from "@/lib/stripe";
-import { generateAndSendTicket } from "@/server/actions/generateAndSendTicket";
+
 import crypto from "crypto";
+import { NextRequest, NextResponse } from "next/server";
+import { and, eq, sql } from "drizzle-orm";
+import { getStripeClient } from "@/lib/stripe";
+import { toStripeUnitAmount } from "@/lib/marketplace";
+import { getDb } from "@/server/db";
+import { companies, events, guests, orderItems, orders, ticketTypes, tickets } from "@/server/db/schema";
+import { generateAndSendTicket } from "@/server/actions/generateAndSendTicket";
 
 function generateOrderNumber(): string {
   const timestamp = Date.now().toString(36).toUpperCase();
   const random = Math.random().toString(36).substring(2, 6).toUpperCase();
   return `ORD-${timestamp}-${random}`;
 }
+
+function normalizeQuantity(value: unknown) {
+  return typeof value === "number" && Number.isInteger(value) && value > 0 && value <= 50 ? value : null;
+}
+
+class CheckoutValidationError extends Error {}
 
 export async function POST(request: NextRequest) {
   try {
@@ -35,8 +43,6 @@ export async function POST(request: NextRequest) {
     }
 
     const db = getDb();
-
-    // Look up company
     const company = await db
       .select({ id: companies.id, name: companies.name })
       .from(companies)
@@ -47,17 +53,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Company not found" }, { status: 404 });
     }
 
-    // Look up event
     const event = await db
       .select()
       .from(events)
-      .where(
-        and(
-          eq(events.companyId, company[0].id),
-          eq(events.slug, eventSlug),
-          eq(events.status, "published")
-        )
-      )
+      .where(and(eq(events.companyId, company[0].id), eq(events.slug, eventSlug), eq(events.status, "published")))
       .limit(1);
 
     if (!event[0]) {
@@ -73,49 +72,88 @@ export async function POST(request: NextRequest) {
         ? (event[0].settings as Record<string, any>)
         : {};
     const isPaidEvent = eventSettings.publicPage?.isPaidEvent !== false;
+    if (cartItems.some((item) => normalizeQuantity(item.quantity) == null)) {
+      return NextResponse.json({ error: "Please choose a valid ticket quantity." }, { status: 400 });
+    }
 
-    // Validate ticket types belong to this event
-    const ticketTypeIds = cartItems.map((item) => item.ticketTypeId);
-    const validTicketTypes = await db
-      .select()
-      .from(ticketTypes)
-      .where(and(eq(ticketTypes.eventId, event[0].id)));
+    const aggregatedCart = Array.from(
+      cartItems.reduce((itemsByTicketType, item) => {
+        const quantity = normalizeQuantity(item.quantity) ?? 0;
+        const existing = itemsByTicketType.get(item.ticketTypeId);
+        itemsByTicketType.set(item.ticketTypeId, {
+          ...item,
+          quantity: (existing?.quantity ?? 0) + quantity,
+        });
+        return itemsByTicketType;
+      }, new Map<string, (typeof cartItems)[number]>()).values()
+    );
 
-    const validIds = new Set(validTicketTypes.map((tt) => tt.id));
+    if (aggregatedCart.length === 0) {
+      return NextResponse.json({ error: "Please choose a valid ticket quantity." }, { status: 400 });
+    }
+
+    const ticketTypeIds = aggregatedCart.map((item) => item.ticketTypeId);
+    const validTicketTypes = await db.select().from(ticketTypes).where(and(eq(ticketTypes.eventId, event[0].id)));
+    const validIds = new Set(validTicketTypes.map((ticketType) => ticketType.id));
+
     for (const id of ticketTypeIds) {
       if (!validIds.has(id)) {
         return NextResponse.json({ error: "Invalid ticket type" }, { status: 400 });
       }
     }
 
-    const normalizedCartItems = cartItems.map((item) => {
-      const ticketType = validTicketTypes.find((tt) => tt.id === item.ticketTypeId);
+    const now = new Date();
+    const normalizedCartItems = aggregatedCart.map((item) => {
+      const ticketType = validTicketTypes.find((record) => record.id === item.ticketTypeId);
+      if (!ticketType) return null;
+      const minPerOrder = ticketType.minPerOrder ?? 1;
+      const maxPerOrder = ticketType.maxPerOrder ?? 10;
+      const quantitySold = ticketType.quantitySold ?? 0;
+      const remaining =
+        ticketType.quantityTotal == null ? Number.POSITIVE_INFINITY : ticketType.quantityTotal - quantitySold;
+      const saleStartsAt = ticketType.saleStartsAt ? new Date(ticketType.saleStartsAt) : null;
+      const saleEndsAt = ticketType.saleEndsAt ? new Date(ticketType.saleEndsAt) : null;
+
+      if (ticketType.status !== "active") {
+        throw new CheckoutValidationError(`${ticketType.name} is not available.`);
+      }
+      if (saleStartsAt && saleStartsAt > now) {
+        throw new CheckoutValidationError(`${ticketType.name} is not on sale yet.`);
+      }
+      if (saleEndsAt && saleEndsAt < now) {
+        throw new CheckoutValidationError(`${ticketType.name} sales have ended.`);
+      }
+      if (item.quantity < minPerOrder || item.quantity > maxPerOrder) {
+        throw new CheckoutValidationError(`${ticketType.name} allows ${minPerOrder}-${maxPerOrder} tickets per order.`);
+      }
+      if (item.quantity > remaining) {
+        throw new CheckoutValidationError(`${ticketType.name} is sold out or has limited availability.`);
+      }
+
       return {
         ...item,
-        name: ticketType?.name ?? item.name,
-        currency: ticketType?.currency ?? item.currency,
-        price: isPaidEvent ? ticketType?.price ?? item.price : 0,
+        name: ticketType.name ?? item.name,
+        currency: ticketType.currency ?? item.currency,
+        price: isPaidEvent ? ticketType.price ?? item.price : 0,
       };
-    });
+    }).filter(Boolean) as Array<(typeof aggregatedCart)[number] & { price: number; currency: string; name: string }>;
 
-    const subtotal = normalizedCartItems.reduce(
-      (sum, item) => sum + item.price * item.quantity,
-      0
-    );
-    const isFree = subtotal === 0;
+    const subtotal = normalizedCartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+    const currencies = [...new Set(normalizedCartItems.map((item) => item.currency.toUpperCase()))];
+    if (currencies.length > 1) {
+      return NextResponse.json({ error: "Please checkout one currency at a time." }, { status: 400 });
+    }
 
-    // For paid orders, create a Stripe Checkout Session instead
-    if (!isFree) {
+    if (subtotal > 0) {
       const stripe = getStripeClient();
       const origin = request.nextUrl.origin;
-
       const lineItems = normalizedCartItems.map((item) => ({
         price_data: {
           currency: item.currency.toLowerCase(),
           product_data: {
-            name: `${item.name} — ${event[0].title}`,
+            name: `${item.name} - ${event[0].title}`,
           },
-          unit_amount: item.price,
+          unit_amount: toStripeUnitAmount(item.price, item.currency),
         },
         quantity: item.quantity,
       }));
@@ -139,17 +177,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ checkoutUrl: session.url });
     }
 
-    // Free order — create atomically in a transaction
     const orderNumber = generateOrderNumber();
     const origin = request.nextUrl.origin;
-
-    type TicketTask = {
+    const ticketTasks: Array<{
       ticketId: string;
       barcode: string;
       ticketTypeName: string;
-    };
+    }> = [];
     let orderId = "";
-    const ticketTasks: TicketTask[] = [];
 
     await db.transaction(async (tx) => {
       const [order] = await tx
@@ -163,7 +198,7 @@ export async function POST(request: NextRequest) {
           name: attendeeName,
           subtotal: 0,
           total: 0,
-          currency: normalizedCartItems[0]?.currency ?? "USD",
+          currency: normalizedCartItems[0]?.currency ?? "BHD",
           completedAt: new Date(),
         })
         .returning();
@@ -180,20 +215,30 @@ export async function POST(request: NextRequest) {
       );
 
       for (const item of normalizedCartItems) {
-        await tx
+        const updatedTicketType = await tx
           .update(ticketTypes)
           .set({
             quantitySold: sql`${ticketTypes.quantitySold} + ${item.quantity}`,
             updatedAt: new Date(),
           })
-          .where(eq(ticketTypes.id, item.ticketTypeId));
+          .where(
+            and(
+              eq(ticketTypes.id, item.ticketTypeId),
+              eq(ticketTypes.status, "active"),
+              sql`(${ticketTypes.quantityTotal} IS NULL OR ${ticketTypes.quantitySold} + ${item.quantity} <= ${ticketTypes.quantityTotal})`
+            )
+          )
+          .returning({ id: ticketTypes.id });
 
-        const ticketType = validTicketTypes.find((tt) => tt.id === item.ticketTypeId);
+        if (!updatedTicketType[0]) {
+          throw new CheckoutValidationError(`${item.name} is no longer available.`);
+        }
+
+        const ticketType = validTicketTypes.find((record) => record.id === item.ticketTypeId);
         const [firstName, ...lastNameParts] = attendeeName.trim().split(/\s+/).filter(Boolean);
 
         for (let i = 0; i < item.quantity; i++) {
           const barcode = `TKT-${crypto.randomBytes(6).toString("hex").toUpperCase()}`;
-
           const [newGuest] = await tx
             .insert(guests)
             .values({
@@ -232,7 +277,6 @@ export async function POST(request: NextRequest) {
       }
     });
 
-    // Fire emails after the transaction commits
     for (const task of ticketTasks) {
       generateAndSendTicket({
         ticketId: task.ticketId,
@@ -245,7 +289,7 @@ export async function POST(request: NextRequest) {
         eventStartsAt: event[0].startsAt,
         appBaseUrl: origin,
         eventSettings: event[0].settings,
-      }).catch((e) => console.error("[orders] ticket send failed:", e));
+      }).catch((error) => console.error("[orders] ticket send failed:", error));
     }
 
     return NextResponse.json({
@@ -254,6 +298,9 @@ export async function POST(request: NextRequest) {
       orderId,
     });
   } catch (error) {
+    if (error instanceof CheckoutValidationError) {
+      return NextResponse.json({ error: error.message }, { status: 400 });
+    }
     console.error("Order creation error:", error);
     return NextResponse.json({ error: "Failed to create order" }, { status: 500 });
   }

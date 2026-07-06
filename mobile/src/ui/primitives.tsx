@@ -1,6 +1,9 @@
 import React from "react";
 import {
   ActivityIndicator,
+  Animated,
+  Easing,
+  Platform,
   Pressable,
   StyleSheet,
   Text,
@@ -27,26 +30,6 @@ export function PremiumBackdrop({
         { backgroundColor: dark ? palette.bg : palette.surface },
       ]}
     >
-      <View
-        style={[
-          styles.glow,
-          styles.glowTop,
-          { backgroundColor: dark ? "rgba(255,110,98,0.18)" : "rgba(255,110,98,0.12)" },
-        ]}
-      />
-      <View
-        style={[
-          styles.glow,
-          styles.glowBottom,
-          { backgroundColor: dark ? "rgba(127,139,255,0.16)" : "rgba(127,139,255,0.1)" },
-        ]}
-      />
-      <View
-        style={[
-          styles.mesh,
-          { borderColor: dark ? "rgba(255,255,255,0.04)" : "rgba(19,26,42,0.04)" },
-        ]}
-      />
       {children}
     </View>
   );
@@ -81,43 +64,114 @@ export function PremiumButton({
   loading,
   disabled,
   tone = "primary",
+  icon,
 }: {
   label: string;
   onPress: () => void;
   loading?: boolean;
   disabled?: boolean;
   tone?: "primary" | "secondary" | "ghost";
+  icon?: keyof typeof Ionicons.glyphMap;
 }) {
   const secondary = tone === "secondary";
   const ghost = tone === "ghost";
+  const pressScale = React.useRef(new Animated.Value(1)).current;
+  const shimmer = React.useRef(new Animated.Value(0)).current;
+
+  React.useEffect(() => {
+    if (secondary || ghost || disabled || loading) {
+      shimmer.setValue(0);
+      return;
+    }
+
+    const animation = Animated.loop(
+      Animated.sequence([
+        Animated.timing(shimmer, {
+          toValue: 1,
+          duration: 1900,
+          easing: Easing.inOut(Easing.cubic),
+          useNativeDriver: Platform.OS !== "web",
+        }),
+        Animated.delay(1100),
+        Animated.timing(shimmer, {
+          toValue: 0,
+          duration: 0,
+          useNativeDriver: Platform.OS !== "web",
+        }),
+      ])
+    );
+
+    animation.start();
+    return () => animation.stop();
+  }, [disabled, ghost, loading, secondary, shimmer]);
+
+  function animatePress(toValue: number) {
+    Animated.spring(pressScale, {
+      toValue,
+      speed: 32,
+      bounciness: 6,
+      useNativeDriver: Platform.OS !== "web",
+    }).start();
+  }
 
   return (
-    <Pressable
-      style={({ pressed }) => [
-        styles.button,
-        secondary && styles.buttonSecondary,
-        ghost && styles.buttonGhost,
-        (disabled || loading) && styles.buttonDisabled,
-        pressed && !disabled && !loading && styles.buttonPressed,
-      ]}
-      onPress={onPress}
-      disabled={disabled || loading}
-      accessibilityRole="button"
-      accessibilityState={{ disabled: disabled || loading }}
-    >
-      {loading ? (
-        <ActivityIndicator color={secondary || ghost ? palette.text : palette.textInverse} />
-      ) : (
-        <Text
-          style={[
-            styles.buttonText,
-            (secondary || ghost) && styles.buttonTextSecondary,
-          ]}
-        >
-          {label}
-        </Text>
-      )}
-    </Pressable>
+    <Animated.View style={{ transform: [{ scale: pressScale }] }}>
+      <Pressable
+        style={[
+          styles.button,
+          secondary && styles.buttonSecondary,
+          ghost && styles.buttonGhost,
+          (disabled || loading) && styles.buttonDisabled,
+        ]}
+        onPress={onPress}
+        onPressIn={() => !disabled && !loading && animatePress(0.975)}
+        onPressOut={() => !disabled && !loading && animatePress(1)}
+        disabled={disabled || loading}
+        accessibilityRole="button"
+        accessibilityState={{ disabled: disabled || loading }}
+      >
+        {!secondary && !ghost && !disabled && !loading ? (
+          <Animated.View
+            pointerEvents="none"
+            style={[
+              styles.buttonShimmer,
+              {
+                transform: [
+                  {
+                    translateX: shimmer.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [-220, 260],
+                    }),
+                  },
+                  { rotate: "18deg" },
+                ],
+              },
+            ]}
+          />
+        ) : null}
+        {loading ? (
+          <ActivityIndicator color={secondary || ghost ? palette.text : palette.textInverse} />
+        ) : (
+          <View style={styles.buttonContent}>
+            {icon ? (
+              <Ionicons
+                name={icon}
+                size={18}
+                color={secondary || ghost ? palette.text : palette.textInverse}
+              />
+            ) : null}
+            <Text
+              style={[
+                styles.buttonText,
+                (secondary || ghost) && styles.buttonTextSecondary,
+              ]}
+            >
+              {label}
+            </Text>
+          </View>
+        )}
+      </Pressable>
+    </Animated.View>
   );
 }
 
@@ -262,29 +316,6 @@ const styles = StyleSheet.create({
     flex: 1,
     overflow: "hidden",
   },
-  glow: {
-    position: "absolute",
-    borderRadius: radii.pill,
-  },
-  glowTop: {
-    width: 260,
-    height: 260,
-    top: -80,
-    right: -70,
-  },
-  glowBottom: {
-    width: 280,
-    height: 280,
-    left: -100,
-    bottom: 90,
-  },
-  mesh: {
-    ...StyleSheet.absoluteFillObject,
-    margin: 18,
-    borderRadius: 28,
-    borderWidth: 1,
-    opacity: 0.75,
-  },
   card: {
     backgroundColor: palette.surfaceRaised,
     borderRadius: radii.lg,
@@ -294,12 +325,12 @@ const styles = StyleSheet.create({
     ...shadows.soft,
   },
   cardDark: {
-    backgroundColor: palette.bgElevated,
+    backgroundColor: "#0D1733",
     borderColor: palette.lineInverse,
   },
   cardGlass: {
-    backgroundColor: "rgba(255,255,255,0.08)",
-    borderColor: "rgba(255,255,255,0.12)",
+    backgroundColor: "rgba(255,255,255,0.075)",
+    borderColor: "rgba(255,255,255,0.14)",
   },
   button: {
     minHeight: 60,
@@ -307,8 +338,16 @@ const styles = StyleSheet.create({
     backgroundColor: palette.accent,
     alignItems: "center",
     justifyContent: "center",
+    overflow: "hidden",
     paddingHorizontal: spacing.lg,
     ...shadows.glow,
+  },
+  buttonShimmer: {
+    position: "absolute",
+    bottom: -24,
+    top: -24,
+    width: 84,
+    backgroundColor: "rgba(255,255,255,0.24)",
   },
   buttonSecondary: {
     backgroundColor: palette.surfaceRaised,
@@ -317,9 +356,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.06,
   },
   buttonGhost: {
-    backgroundColor: "rgba(255,255,255,0.08)",
+    backgroundColor: "rgba(255,255,255,0.09)",
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.12)",
+    borderColor: "rgba(255,255,255,0.14)",
     shadowOpacity: 0,
     elevation: 0,
   },
@@ -332,11 +371,17 @@ const styles = StyleSheet.create({
     opacity: 0.9,
     transform: [{ scale: 0.98 }],
   },
+  buttonContent: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 9,
+    justifyContent: "center",
+  },
   buttonText: {
     color: palette.textInverse,
     fontSize: type.bodyLg,
-    fontWeight: "800",
-    letterSpacing: 0.4,
+    fontWeight: "900",
+    letterSpacing: 0.2,
   },
   buttonTextSecondary: {
     color: palette.text,
@@ -388,9 +433,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 12,
     borderRadius: radii.sm,
-    backgroundColor: "rgba(19,26,42,0.06)",
+    backgroundColor: "rgba(37,99,235,0.07)",
     borderWidth: 1,
-    borderColor: "rgba(19,26,42,0.08)",
+    borderColor: "rgba(37,99,235,0.1)",
   },
   noticeDanger: {
     backgroundColor: "rgba(243,94,115,0.12)",
@@ -417,10 +462,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: radii.pill,
-    backgroundColor: "rgba(19,26,42,0.08)",
+    backgroundColor: "rgba(37,99,235,0.1)",
   },
   pillLive: {
-    backgroundColor: palette.accentLive,
+    backgroundColor: palette.accent,
   },
   pillSuccess: {
     backgroundColor: palette.success,
@@ -445,7 +490,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   sectionEyebrow: {
-    color: palette.accentStrong,
+    color: palette.accentCool,
     fontSize: type.eyebrow,
     fontWeight: "900",
     letterSpacing: 1.4,

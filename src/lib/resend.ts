@@ -1,5 +1,6 @@
 import { Resend } from "resend";
 import { getAppUrl } from "@/lib/app-urls";
+import { formatMoney } from "@/lib/marketplace";
 
 export interface RegistrationEmailData {
   to: string;
@@ -8,9 +9,10 @@ export interface RegistrationEmailData {
   eventDate: string;
   eventLocation?: string;
   orderNumber: string;
-  tickets: Array<{ name: string; quantity: number; price: number }>;
+  tickets: Array<{ name: string; quantity: number; price: number; currency?: string }>;
   total: number;
   isFree: boolean;
+  currency?: string;
 }
 
 function getResendClient() {
@@ -40,7 +42,7 @@ export async function sendRegistrationConfirmation(data: RegistrationEmailData) 
         <tr>
           <td style="padding: 8px 0; border-bottom: 1px solid #f0f0f0;">${ticket.name} x ${ticket.quantity}</td>
           <td style="padding: 8px 0; border-bottom: 1px solid #f0f0f0; text-align: right;">
-            ${ticket.price === 0 ? "Free" : `$${((ticket.price * ticket.quantity) / 100).toFixed(2)}`}
+            ${ticket.price === 0 ? "Free" : formatMoney(ticket.price * ticket.quantity, ticket.currency ?? data.currency ?? "BHD")}
           </td>
         </tr>`
     )
@@ -95,7 +97,7 @@ export async function sendRegistrationConfirmation(data: RegistrationEmailData) 
                   <tr>
                     <td style="padding: 12px 0 0; font-weight: 700; color: #111827;">Total</td>
                     <td style="padding: 12px 0 0; font-weight: 700; color: #111827; text-align: right;">
-                      ${data.isFree ? "Free" : `$${(data.total / 100).toFixed(2)}`}
+                      ${data.isFree ? "Free" : formatMoney(data.total, data.currency ?? data.tickets[0]?.currency ?? "BHD")}
                     </td>
                   </tr>
                 </tfoot>
@@ -117,8 +119,8 @@ export async function sendRegistrationConfirmation(data: RegistrationEmailData) 
 </html>`;
 
   const text = `You're registered for ${data.eventTitle}!\n\nHi ${data.attendeeName},\n\nThanks for registering!\n\nEvent: ${data.eventTitle}\nDate: ${data.eventDate}\n${data.eventLocation ? `Location: ${data.eventLocation}\n` : ""}Order #${data.orderNumber}\n\nTickets:\n${data.tickets
-    .map((ticket) => `- ${ticket.name} x ${ticket.quantity}: ${ticket.price === 0 ? "Free" : `$${((ticket.price * ticket.quantity) / 100).toFixed(2)}`}`)
-    .join("\n")}\n\nTotal: ${data.isFree ? "Free" : `$${(data.total / 100).toFixed(2)}`}\n\nPowered by Events Hub`;
+    .map((ticket) => `- ${ticket.name} x ${ticket.quantity}: ${ticket.price === 0 ? "Free" : formatMoney(ticket.price * ticket.quantity, ticket.currency ?? data.currency ?? "BHD")}`)
+    .join("\n")}\n\nTotal: ${data.isFree ? "Free" : formatMoney(data.total, data.currency ?? data.tickets[0]?.currency ?? "BHD")}\n\nPowered by Events Hub`;
 
   return resend.emails.send({
     from: fromEmail,

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Minus, Plus, ShoppingCart } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { formatMoney } from "@/lib/marketplace";
 
 interface TicketType {
   id: string;
@@ -24,6 +25,7 @@ interface TicketWidgetProps {
   checkoutLabel?: string;
   amountLabel?: string;
   freeEvent?: boolean;
+  locale?: string;
 }
 
 export function TicketWidget({
@@ -33,6 +35,7 @@ export function TicketWidget({
   checkoutLabel,
   amountLabel,
   freeEvent,
+  locale = "en",
 }: TicketWidgetProps) {
   const [quantities, setQuantities] = useState<Record<string, number>>({});
 
@@ -55,8 +58,8 @@ export function TicketWidget({
   const totalPrice = ticketTypes.reduce((acc, t) => acc + (quantities[t.id] || 0) * (t.price ?? 0), 0);
 
   return (
-    <div className="space-y-6">
-      <div className="space-y-4">
+    <div className="space-y-4">
+      <div className="space-y-3">
         {ticketTypes.map((ticket) => {
           const quantity = quantities[ticket.id] || 0;
           const remaining =
@@ -73,39 +76,37 @@ export function TicketWidget({
             <div 
               key={ticket.id} 
               className={cn(
-                "p-6 rounded-3xl border-2 transition-all duration-300",
+                "rounded-xl border p-4 transition-all duration-200",
                 quantity > 0 
-                  ? "border-primary bg-primary/5 shadow-lg shadow-primary/5" 
-                  : "border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-950 hover:border-zinc-200 dark:hover:border-zinc-700",
+                  ? "border-violet-500 bg-violet-50" 
+                  : "border-zinc-200 bg-white hover:border-zinc-300",
                 isSoldOut && "opacity-60 grayscale pointer-events-none"
               )}
             >
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
-                <div className="space-y-2 grow">
+              <div className="flex flex-col gap-4">
+                <div className="space-y-2">
                   <div className="flex items-center gap-2">
-                    <h3 className="text-xl font-bold tracking-tight">{ticket.name}</h3>
+                    <h3 className="text-base font-black tracking-tight text-zinc-950">{ticket.name}</h3>
                     {isSoldOut && (
-                      <span className="px-2 py-0.5 rounded-full bg-zinc-100 dark:bg-zinc-800 text-[10px] font-black uppercase text-zinc-500">Sold Out</span>
+                      <span className="px-2 py-0.5 rounded-full bg-zinc-100 text-[10px] font-black uppercase text-zinc-500">Sold Out</span>
                     )}
                   </div>
                   {ticket.description && (
-                    <p className="text-sm text-muted-foreground leading-relaxed max-w-md">{ticket.description}</p>
+                    <p className="text-xs leading-5 text-zinc-500">{ticket.description}</p>
                   )}
-                  <div className="flex items-center gap-4 pt-1">
-                    <span className="text-2xl font-black text-primary">
-                      {freeEvent || (ticket.price ?? 0) === 0
-                        ? "FREE"
-                        : `$${((ticket.price ?? 0) / 100).toFixed(2)}`}
+                  <div className="flex items-center gap-3 pt-1">
+                    <span className="text-lg font-black text-zinc-950">
+                      {freeEvent ? "FREE" : formatMoney(ticket.price ?? 0, ticket.currency ?? "BHD", locale)}
                     </span>
                     {ticket.quantityTotal && (
-                      <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest bg-zinc-100 dark:bg-zinc-800 px-2 py-1 rounded-lg">
+                      <span className="rounded-md bg-zinc-100 px-2 py-1 text-[10px] font-black uppercase tracking-widest text-zinc-500">
                         {Math.max(0, ticket.quantityTotal - (ticket.quantitySold ?? 0))} Left
                       </span>
                     )}
                   </div>
                 </div>
 
-                <div className="flex items-center gap-4 bg-zinc-50 dark:bg-zinc-900 p-2 rounded-2xl border border-zinc-100 dark:border-zinc-800">
+                <div className="flex w-fit items-center gap-2 rounded-xl border border-zinc-200 bg-zinc-50 p-1.5">
                   <Button
                     variant="ghost"
                     size="icon"
@@ -118,11 +119,11 @@ export function TicketWidget({
                       )
                     }
                     disabled={quantity === 0}
-                    className="h-10 w-10 rounded-xl hover:bg-white dark:hover:bg-zinc-800 shadow-sm"
+                    className="h-8 w-8 rounded-lg bg-white hover:bg-zinc-100"
                   >
                     <Minus className="h-4 w-4" />
                   </Button>
-                  <span className="w-8 text-center font-mono text-lg font-bold">
+                  <span className="w-7 text-center font-mono text-base font-black">
                     {quantity}
                   </span>
                   <Button
@@ -137,7 +138,7 @@ export function TicketWidget({
                       )
                     }
                     disabled={isSoldOut || quantity >= maxAllowed}
-                    className="h-10 w-10 rounded-xl hover:bg-white dark:hover:bg-zinc-800 shadow-sm"
+                    className="h-8 w-8 rounded-lg bg-white hover:bg-zinc-100"
                   >
                     <Plus className="h-4 w-4" />
                   </Button>
@@ -148,14 +149,14 @@ export function TicketWidget({
         })}
       </div>
 
-      <div className="sticky bottom-6 p-1 rounded-[2rem] bg-zinc-900/10 backdrop-blur-xl border border-white/20">
-        <div className="p-6 rounded-[1.75rem] bg-zinc-950 text-white shadow-2xl flex items-center justify-between gap-4">
+      <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-3">
+        <div className="flex items-center justify-between gap-3">
           <div className="flex flex-col">
-            <span className="text-zinc-500 text-[10px] font-black uppercase tracking-widest">
+            <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">
               {amountLabel ?? "Total Amount"}
             </span>
-            <span className="text-2xl font-black tracking-tighter">
-              {freeEvent || totalPrice === 0 ? "FREE" : `$${(totalPrice / 100).toFixed(2)}`}
+            <span className="text-xl font-black tracking-tight text-zinc-950">
+              {freeEvent ? "FREE" : formatMoney(totalPrice, ticketTypes[0]?.currency ?? "BHD", locale)}
             </span>
           </div>
           
@@ -163,12 +164,12 @@ export function TicketWidget({
             size="lg"
             disabled={totalItems === 0 || isLoading}
             onClick={() => onCheckout(quantities)}
-            className="rounded-2xl h-14 px-8 font-black text-lg gap-3 bg-white text-zinc-950 hover:bg-zinc-200 transition-all active:scale-95 disabled:opacity-50"
+            className="h-11 rounded-xl bg-zinc-950 px-4 text-sm font-black text-white gap-2 hover:bg-zinc-800 transition-all active:scale-95 disabled:opacity-50"
           >
             {isLoading ? (
-              <span className="animate-spin h-5 w-5 border-2 border-zinc-950 border-t-transparent rounded-full" />
+              <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
             ) : (
-              <ShoppingCart className="h-5 w-5 fill-zinc-950" />
+              <ShoppingCart className="h-4 w-4" />
             )}
             {checkoutLabel ?? "Proceed to Checkout"}
           </Button>

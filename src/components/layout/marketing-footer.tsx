@@ -2,16 +2,16 @@ import Link from "next/link";
 import { BrandWordmark } from "@/components/brand/brand-wordmark";
 
 const footerLinks = {
-  Products: [
-    { name: "Event Check-In App", href: "/event-check-in-app" },
-    { name: "Ticket Studio", href: "/ticket-studio" },
-    { name: "Registration & Ticketing", href: "/registration-ticketing" },
+  Marketplace: [
+    { name: "Browse Events", href: "/events" },
+    { name: "My Tickets", href: "/account" },
+    { name: "Buyer Login", href: "/account/login" },
   ],
-  Resources: [
-    { name: "Pricing", href: "/pricing" },
-    { name: "Contact Sales", href: "/contact" },
-    { name: "Support", href: "/contact" },
-    { name: "Platform Tour", href: "/tour" },
+  Services: [
+    { name: "Corporate Events", href: "/contact?service=corporate" },
+    { name: "Exhibitions", href: "/contact?service=exhibitions" },
+    { name: "Ticketing Services", href: "/contact?service=ticketing-services" },
+    { name: "Staffing", href: "/contact?service=staffing" },
   ],
   Company: [
     { name: "About Events Hub", href: "/" },
@@ -28,7 +28,7 @@ const footerLinks = {
 export function MarketingFooter() {
   return (
     <footer className="border-t border-white/10 bg-black/60 backdrop-blur-xl relative z-20">
-      <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-none px-4 py-16 sm:px-8 lg:px-12 2xl:px-20">
         <div className="grid gap-12 md:grid-cols-2 lg:grid-cols-6">
           {/* Brand */}
           <div className="lg:col-span-2">
@@ -41,8 +41,8 @@ export function MarketingFooter() {
               />
             </Link>
             <p className="mt-6 text-sm text-white/70 leading-relaxed">
-              The all-in-one platform for event check-in, ticketing, and guest
-              management. An integrated product of the OneStone Ads network.
+              Bahrain event discovery, ticketing, check-in, and managed event operations.
+              Built by the Events Hub team for public and corporate experiences.
             </p>
           </div>
 

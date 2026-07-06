@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { router, protectedProcedure, publicProcedure } from "../index";
 import { nanoid } from "nanoid";
+import { createSupabaseAdminClient } from "@/server/supabase/admin";
 
 type EventRow = {
   id: string;
@@ -305,7 +306,8 @@ export const eventsRouter = router({
   getBySlug: publicProcedure
     .input(z.object({ companySlug: z.string(), eventSlug: z.string() }))
     .query(async ({ ctx, input }) => {
-      const { data: company, error: companyError } = await ctx.supabase
+      const supabase = createSupabaseAdminClient();
+      const { data: company, error: companyError } = await supabase
         .from("companies")
         .select("id,slug")
         .eq("slug", input.companySlug)
@@ -314,7 +316,7 @@ export const eventsRouter = router({
       if (companyError) throw new Error(companyError.message);
       if (!company) return null;
 
-      let query = ctx.supabase
+      let query = supabase
         .from("events")
         .select("*")
         .eq("company_id", company.id)

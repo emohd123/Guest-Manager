@@ -1,0 +1,384 @@
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+import { format } from "date-fns";
+import { Bell, CalendarDays, Heart, LayoutDashboard, LogOut, MessageSquare, QrCode, ReceiptText, Ticket, UserRound } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
+import { Button } from "@/components/ui/button";
+import { formatMoney } from "@/lib/marketplace";
+
+type AccountSummary = {
+  profile: { email: string; name: string };
+  orders: Array<Record<string, any>>;
+  tickets: Array<Record<string, any>>;
+  notifications: Array<Record<string, any>>;
+  messages: Array<Record<string, any>>;
+  unreadCount: number;
+  adminAccess: null | {
+    role: string;
+    companyId: string;
+    company: { id: string; name: string; slug: string } | Array<{ id: string; name: string; slug: string }> | null;
+  };
+};
+
+export default function AccountPage() {
+  const [summary, setSummary] = useState<AccountSummary | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [favorites, setFavorites] = useState<string[]>([]);
+
+  useEffect(() => {
+    setFavorites(JSON.parse(localStorage.getItem("events-hub-favorites") ?? "[]") as string[]);
+    fetch("/api/account/summary")
+      .then(async (response) => {
+        if (!response.ok) {
+          const data = await response.json().catch(() => ({}));
+          throw new Error(data.error ?? "Sign in to view your account.");
+        }
+        return response.json();
+      })
+      .then((data: AccountSummary) => setSummary(data))
+      .catch((err) => setError(err instanceof Error ? err.message : "Unable to load account."))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const upcomingTickets = useMemo(
+    () =>
+      (summary?.tickets ?? []).filter((ticket) => {
+        const startsAt = ticket.events?.starts_at;
+        return startsAt ? new Date(startsAt) >= new Date() : true;
+      }),
+    [summary?.tickets]
+  );
+
+  async function signOut() {
+    await createClient().auth.signOut();
+    window.location.assign("/");
+  }
+
+  if (loading) {
+    return <AccountShell title="Loading your tickets..." />;
+  }
+
+  if (error) {
+    return (
+      <AccountShell title="Your tickets and orders">
+        <p className="mx-auto mt-4 max-w-xl text-white/60">{error}</p>
+        <Button asChild className="mt-8 rounded-full bg-white px-8 font-black text-black hover:bg-white/90">
+          <Link href="/account/login">Sign in or create buyer account</Link>
+        </Button>
+      </AccountShell>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-[#070910] px-4 py-28 text-white sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-7xl">
+        <div className="flex flex-col justify-between gap-6 border-b border-white/10 pb-8 md:flex-row md:items-end">
+          <div>
+            <p className="text-xs font-black uppercase tracking-[0.28em] text-cyan-200">
+              {summary?.adminAccess ? "Admin and buyer account" : "Buyer account"}
+            </p>
+            <h1 className="mt-3 text-4xl font-black tracking-tight sm:text-6xl">
+              {summary?.profile.name}
+            </h1>
+            <p className="mt-3 text-white/60">{summary?.profile.email}</p>
+          </div>
+          <div className="flex flex-wrap gap-3">
+            {summary?.adminAccess ? (
+              <Button asChild className="rounded-full bg-cyan-200 px-6 font-black text-black hover:bg-cyan-100">
+                <Link href="/dashboard">
+                  <LayoutDashboard className="mr-2 h-4 w-4" />
+                  Open admin dashboard
+                </Link>
+              </Button>
+            ) : null}
+            <Button asChild variant="outline" className="rounded-full border-white/15 bg-white/5 text-white hover:bg-white/10">
+              <Link href="/events">Browse events</Link>
+            </Button>
+            <Button onClick={signOut} variant="outline" className="rounded-full border-white/15 bg-white/5 text-white hover:bg-white/10">
+              <LogOut className="mr-2 h-4 w-4" />
+              Sign out
+            </Button>
+          </div>
+        </div>
+
+        <div className="mt-10 grid gap-5 md:grid-cols-3">
+          <Stat icon={Ticket} label="Tickets" value={summary?.tickets.length ?? 0} />
+          <Stat icon={ReceiptText} label="Orders" value={summary?.orders.length ?? 0} />
+          <Stat icon={Bell} label="Unread updates" value={summary?.unreadCount ?? 0} />
+        </div>
+
+        <section className="mt-10 grid gap-4 md:grid-cols-5">
+          <AccountTool href="/account/tickets" icon={Ticket} title="Tickets" body="Open QR tickets linked to your email." />
+          <AccountTool href="/account/orders" icon={ReceiptText} title="Orders" body="Review registration and checkout history." />
+          <AccountTool href="/account/favorites" icon={Heart} title="Favorites" body="Saved events from this browser." />
+          <AccountTool href="/account/notifications" icon={Bell} title="Updates" body="Event updates and ticket notices." />
+          <AccountTool href="/account/messages" icon={MessageSquare} title="Messages" body="Support conversations with Events Hub." />
+        </section>
+
+        {summary?.adminAccess ? (
+          <section className="mt-10 rounded-[1.5rem] border border-cyan-200/25 bg-cyan-200/[0.08] p-6">
+            <div className="flex flex-col justify-between gap-5 md:flex-row md:items-center">
+              <div>
+                <p className="text-xs font-black uppercase tracking-[0.24em] text-cyan-200">Internal access</p>
+                <h2 className="mt-2 text-2xl font-black">Events Hub admin dashboard is enabled</h2>
+                <p className="mt-2 text-sm text-white/60">
+                  Manage company-created events, tickets, guests, orders, scans, reports, and messages.
+                </p>
+              </div>
+              <Button asChild className="rounded-full bg-cyan-200 px-7 font-black text-black hover:bg-cyan-100">
+                <Link href="/dashboard">Open dashboard</Link>
+              </Button>
+            </div>
+          </section>
+        ) : null}
+
+        <section className="mt-12 grid gap-4 lg:grid-cols-[0.8fr_1.2fr]">
+          <div className="rounded-[1.5rem] border border-white/10 bg-white/[0.04] p-6">
+            <div className="flex items-center gap-3">
+              <UserRound className="h-5 w-5 text-cyan-200" />
+              <h2 className="text-2xl font-black">Profile</h2>
+            </div>
+            <p className="mt-4 text-sm leading-6 text-white/60">
+              Buyer profiles are linked by email. Use the same email at checkout and your tickets and orders will appear here automatically.
+            </p>
+            <div className="mt-5 rounded-2xl bg-black/25 p-4 text-sm text-white/70">
+              <p className="font-black text-white">{summary?.profile.name}</p>
+              <p>{summary?.profile.email}</p>
+            </div>
+          </div>
+          <div className="rounded-[1.5rem] border border-white/10 bg-white/[0.04] p-6">
+            <div className="flex items-center gap-3">
+              <Heart className="h-5 w-5 text-pink-300" />
+              <h2 className="text-2xl font-black">Saved favorites</h2>
+            </div>
+            {favorites.length > 0 ? (
+              <div className="mt-5 flex flex-wrap gap-2">
+                {favorites.slice(0, 12).map((id) => (
+                  <span key={id} className="rounded-full border border-white/10 bg-black/25 px-3 py-2 font-mono text-xs text-white/55">
+                    {id.slice(0, 8)}
+                  </span>
+                ))}
+              </div>
+            ) : (
+              <p className="mt-4 text-sm leading-6 text-white/60">
+                Save events from the marketplace and they will appear here on this device.
+              </p>
+            )}
+            <Button asChild variant="outline" className="mt-5 rounded-full border-white/15 bg-white/5 text-white hover:bg-white/10">
+              <Link href="/events">Browse events</Link>
+            </Button>
+          </div>
+        </section>
+
+        <section className="mt-12">
+          <h2 className="text-2xl font-black">Upcoming tickets</h2>
+          <div className="mt-5 grid gap-4 lg:grid-cols-2">
+            {upcomingTickets.length > 0 ? (
+              upcomingTickets.map((ticket) => <TicketRow key={ticket.id} ticket={ticket} />)
+            ) : (
+              <EmptyPanel icon={Ticket} title="No upcoming tickets" body="Buy or register for an event and tickets linked to this email will appear here." />
+            )}
+          </div>
+        </section>
+
+        <section className="mt-12">
+          <h2 className="text-2xl font-black">Order history</h2>
+          <div className="mt-5 space-y-3">
+            {(summary?.orders ?? []).length > 0 ? (
+              summary?.orders.map((order) => <OrderRow key={order.id} order={order} />)
+            ) : (
+              <EmptyPanel icon={ReceiptText} title="No orders yet" body="Completed registrations and paid checkout orders will show here." />
+            )}
+          </div>
+        </section>
+
+        <section className="mt-12 grid gap-4 lg:grid-cols-2">
+          <div>
+            <h2 className="text-2xl font-black">Notifications</h2>
+            <div className="mt-5 space-y-3">
+              {(summary?.notifications ?? []).length > 0 ? (
+                summary?.notifications.map((notification) => (
+                  <NotificationRow key={notification.id} notification={notification} />
+                ))
+              ) : (
+                <EmptyPanel
+                  icon={Bell}
+                  title="No notifications yet"
+                  body="Event reminders, schedule changes, and ticket updates linked to your email will appear here."
+                />
+              )}
+            </div>
+          </div>
+          <div>
+            <h2 className="text-2xl font-black">Messages</h2>
+            <div className="mt-5 space-y-3">
+              {(summary?.messages ?? []).length > 0 ? (
+                summary?.messages.map((message) => <MessageRow key={message.id} message={message} />)
+              ) : (
+                <EmptyPanel
+                  icon={MessageSquare}
+                  title="No messages yet"
+                  body="Messages with the Events Hub team linked to your attendee email will appear here."
+                />
+              )}
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+  );
+}
+
+function AccountShell({ title, children }: { title: string; children?: React.ReactNode }) {
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-[#070910] px-4 py-28 text-center text-white">
+      <div>
+        <Ticket className="mx-auto h-12 w-12 text-cyan-200" />
+        <h1 className="mt-5 text-4xl font-black">{title}</h1>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function Stat({ icon: Icon, label, value }: { icon: LucideIcon; label: string; value: number }) {
+  return (
+    <div className="rounded-[1.5rem] border border-white/10 bg-white/[0.05] p-5">
+      <Icon className="h-5 w-5 text-cyan-200" />
+      <p className="mt-5 text-3xl font-black">{value}</p>
+      <p className="text-sm font-bold text-white/45">{label}</p>
+    </div>
+  );
+}
+
+function AccountTool({
+  href,
+  icon: Icon,
+  title,
+  body,
+}: {
+  href: string;
+  icon: LucideIcon;
+  title: string;
+  body: string;
+}) {
+  return (
+    <Link href={href} className="rounded-[1.25rem] border border-white/10 bg-white/[0.045] p-4 transition hover:border-cyan-200/35 hover:bg-white/[0.07]">
+      <Icon className="h-5 w-5 text-cyan-200" />
+      <p className="mt-4 font-black">{title}</p>
+      <p className="mt-2 text-xs leading-5 text-white/50">{body}</p>
+    </Link>
+  );
+}
+
+function TicketRow({ ticket }: { ticket: Record<string, any> }) {
+  const event = ticket.events;
+  const ticketType = ticket.ticket_types;
+  const url = event?.companies?.slug && event?.slug ? `/e/${event.companies.slug}/${event.slug}` : "/events";
+  return (
+    <div className="rounded-[1.5rem] border border-white/10 bg-white/[0.05] p-5">
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <p className="text-xs font-black uppercase tracking-[0.24em] text-cyan-200">{ticketType?.name ?? "Ticket"}</p>
+          <h3 className="mt-2 text-xl font-black">{event?.title ?? "Event"}</h3>
+          {event?.starts_at ? (
+            <p className="mt-2 flex items-center gap-2 text-sm text-white/55">
+              <CalendarDays className="h-4 w-4" />
+              {format(new Date(event.starts_at), "EEE, MMM d - h:mm a")}
+            </p>
+          ) : null}
+        </div>
+        <div className="rounded-2xl bg-white p-3 text-black">
+          <QrCode className="h-8 w-8" />
+        </div>
+      </div>
+      <p className="mt-5 rounded-2xl bg-black/30 p-3 font-mono text-xs text-white/60">{ticket.barcode}</p>
+      <Button asChild className="mt-4 w-full rounded-full bg-white font-black text-black hover:bg-white/90">
+        <Link href={url}>Open event</Link>
+      </Button>
+    </div>
+  );
+}
+
+function OrderRow({ order }: { order: Record<string, any> }) {
+  return (
+    <div className="flex flex-col justify-between gap-3 rounded-[1.25rem] border border-white/10 bg-white/[0.04] p-4 sm:flex-row sm:items-center">
+      <div>
+        <p className="font-black">{order.order_number}</p>
+        <p className="text-sm text-white/55">{order.events?.title ?? "Event"} · {order.status}</p>
+      </div>
+      <p className="font-black">{formatMoney(order.total ?? 0, order.currency ?? "BHD")}</p>
+    </div>
+  );
+}
+
+function NotificationRow({ notification }: { notification: Record<string, any> }) {
+  const event = notification.events;
+  const eventUrl = event?.companies?.slug && event?.slug ? `/e/${event.companies.slug}/${event.slug}` : "/events";
+
+  return (
+    <div className="rounded-[1.25rem] border border-white/10 bg-white/[0.04] p-4">
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <p className="text-xs font-black uppercase tracking-[0.22em] text-cyan-200">
+            {notification.is_read ? "Update" : "New update"}
+          </p>
+          <h3 className="mt-2 font-black">{notification.title ?? "Event update"}</h3>
+          {notification.body ? <p className="mt-2 text-sm leading-6 text-white/60">{notification.body}</p> : null}
+        </div>
+        <Bell className={notification.is_read ? "h-5 w-5 text-white/35" : "h-5 w-5 text-cyan-200"} />
+      </div>
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-xs text-white/45">
+        <span>{[event?.title, formatOptionalDate(notification.created_at)].filter(Boolean).join(" - ")}</span>
+        <Link href={eventUrl} className="font-black text-cyan-200">
+          Open event
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+function MessageRow({ message }: { message: Record<string, any> }) {
+  const event = message.events;
+  const eventUrl = event?.companies?.slug && event?.slug ? `/e/${event.companies.slug}/${event.slug}` : "/events";
+
+  return (
+    <div className="rounded-[1.25rem] border border-white/10 bg-white/[0.04] p-4">
+      <p className="text-xs font-black uppercase tracking-[0.22em] text-cyan-200">
+        {message.admin_reply ? "Events Hub replied" : "Awaiting Events Hub reply"}
+      </p>
+      <h3 className="mt-2 font-black">{message.subject ?? "Message"}</h3>
+      <p className="mt-2 text-sm leading-6 text-white/60">{message.body}</p>
+      {message.admin_reply ? (
+        <div className="mt-4 rounded-2xl bg-black/25 p-4">
+          <p className="text-xs font-black uppercase tracking-[0.18em] text-white/40">Reply</p>
+          <p className="mt-2 text-sm leading-6 text-white/75">{message.admin_reply}</p>
+        </div>
+      ) : null}
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-xs text-white/45">
+        <span>{[event?.title, formatOptionalDate(message.created_at)].filter(Boolean).join(" - ")}</span>
+        <Link href={eventUrl} className="font-black text-cyan-200">
+          Open event
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+function formatOptionalDate(value: string | null | undefined) {
+  return value ? format(new Date(value), "MMM d, yyyy") : "";
+}
+
+function EmptyPanel({ icon: Icon, title, body }: { icon: LucideIcon; title: string; body: string }) {
+  return (
+    <div className="rounded-[1.5rem] border border-white/10 bg-white/[0.04] p-8 text-center">
+      <Icon className="mx-auto h-8 w-8 text-white/40" />
+      <h3 className="mt-4 text-xl font-black">{title}</h3>
+      <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-white/55">{body}</p>
+    </div>
+  );
+}

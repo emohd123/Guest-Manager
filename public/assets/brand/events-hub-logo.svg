@@ -1,29 +1,32 @@
 <svg width="540" height="144" viewBox="0 0 540 144" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <rect width="540" height="144" rx="32" fill="#FFFFFF"/>
-  <g transform="translate(26 16)">
+  <rect width="540" height="144" rx="32" fill="#201638"/>
+  <g transform="translate(28 16) scale(1.05)">
     <defs>
-      <linearGradient id="logoPinGradient" x1="16" y1="10" x2="82" y2="92" gradientUnits="userSpaceOnUse">
-        <stop stop-color="#FF5A7A"/>
-        <stop offset="0.32" stop-color="#FF6B8A"/>
-        <stop offset="0.72" stop-color="#7C4DFF"/>
-        <stop offset="1" stop-color="#5B3DF5"/>
+      <linearGradient id="brandGradient" x1="14" y1="34" x2="82" y2="78" gradientUnits="userSpaceOnUse">
+        <stop stop-color="#2563eb"/>
+        <stop offset="0.5" stop-color="#7c3aed"/>
+        <stop offset="1" stop-color="#db2777"/>
       </linearGradient>
-      <linearGradient id="logoCheckGradient" x1="39" y1="30" x2="55" y2="46" gradientUnits="userSpaceOnUse">
-        <stop stop-color="#FF5A7A"/>
-        <stop offset="1" stop-color="#7C4DFF"/>
-      </linearGradient>
-      <mask id="logoTicketMask">
-        <rect x="24" y="24" width="48" height="34" rx="10" fill="white"/>
-        <circle cx="24" cy="41" r="5" fill="black"/>
-        <circle cx="72" cy="41" r="5" fill="black"/>
-      </mask>
+      <filter id="glow" x="-20%" y="-20%" width="140%" height="140%" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+        <feGaussianBlur stdDeviation="2.5" result="blur"/>
+        <feComponentTransfer in="blur" result="softGlow"><feFuncA type="linear" slope="0.65"/></feComponentTransfer>
+        <feMerge><feMergeNode in="softGlow"/><feMergeNode in="SourceGraphic"/></feMerge>
+      </filter>
     </defs>
-    <path d="M48 104C45.2 104 42.55 102.77 40.74 100.67C32.73 91.38 16 71.05 16 48C16 30.33 30.33 16 48 16C65.67 16 80 30.33 80 48C80 71.05 63.27 91.38 55.26 100.67C53.45 102.77 50.8 104 48 104Z" fill="url(#logoPinGradient)"/>
-    <circle cx="48" cy="41" r="28" fill="white" fill-opacity="0.12"/>
-    <rect x="24" y="24" width="48" height="34" rx="10" fill="white" fill-opacity="0.98" mask="url(#logoTicketMask)"/>
-    <path d="M30 28.5H58" stroke="white" stroke-opacity="0.6" stroke-width="2.4" stroke-linecap="round"/>
-    <path d="M36.5 40.5L45 48.5L60 32.5" stroke="url(#logoCheckGradient)" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M22 34H74Q82 34 82 42V48A7 7 0 0 0 82 64V70Q82 78 74 78H22Q14 78 14 70V64A7 7 0 0 0 14 48V42Q14 34 22 34Z" stroke="url(#brandGradient)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" filter="url(#glow)"/>
+    <rect x="34" y="48" width="4.5" height="16" rx="2.25" fill="url(#brandGradient)"/>
+    <rect x="42.5" y="42" width="4.5" height="28" rx="2.25" fill="url(#brandGradient)"/>
+    <rect x="51" y="37" width="4.5" height="38" rx="2.25" fill="url(#brandGradient)"/>
+    <rect x="59.5" y="44" width="4.5" height="24" rx="2.25" fill="url(#brandGradient)"/>
+    <rect x="68" y="47" width="4.5" height="18" rx="2.25" fill="url(#brandGradient)"/>
   </g>
-  <text x="136" y="82" fill="#101828" font-family="Poppins, Arial, sans-serif" font-size="54" font-weight="800" letter-spacing="-2.6">Events</text>
-  <text x="336" y="82" fill="#101828" font-family="Poppins, Arial, sans-serif" font-size="54" font-weight="800" letter-spacing="-2.6">Hub</text>
+  <defs>
+    <linearGradient id="eventsText" x1="132" y1="34" x2="320" y2="104" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#2563eb"/>
+      <stop offset="0.5" stop-color="#7c3aed"/>
+      <stop offset="1" stop-color="#db2777"/>
+    </linearGradient>
+  </defs>
+  <text x="128" y="88" fill="url(#eventsText)" font-family="Inter, Arial, sans-serif" font-size="54" font-weight="900" letter-spacing="-3">Events</text>
+  <text x="326" y="88" fill="#FFFFFF" font-family="Inter, Arial, sans-serif" font-size="54" font-weight="900" letter-spacing="-3">Hub</text>
 </svg>

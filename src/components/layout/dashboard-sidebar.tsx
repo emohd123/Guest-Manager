@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import {
+  LayoutDashboard,
   CalendarDays,
   Ticket,
   ShoppingCart,
@@ -28,6 +29,12 @@ import { BrandMark } from "@/components/brand/brand-mark";
 import { BrandWordmark } from "@/components/brand/brand-wordmark";
 
 const navigation = [
+  {
+    label: "Dashboard",
+    href: "/dashboard",
+    icon: LayoutDashboard,
+    exact: true,
+  },
   {
     label: "Events",
     href: "/dashboard/events",
@@ -165,9 +172,10 @@ export function DashboardSidebar({ collapsed, onToggle }: DashboardSidebarProps)
       {/* Navigation */}
       <ScrollArea className="flex-1 px-3 py-2">
         <nav className="space-y-1.5">
-          {navigation.map((item, idx) => {
-            const isActive =
-              pathname === item.href || pathname.startsWith(item.href + "/");
+          {navigation.map((item) => {
+            const isActive = (item as { exact?: boolean }).exact
+              ? pathname === item.href
+              : pathname === item.href || pathname.startsWith(item.href + "/");
             const showBadge = (item as { badge?: boolean }).badge && !isActive && messagesUnread > 0;
             return (
               <Link
@@ -176,7 +184,7 @@ export function DashboardSidebar({ collapsed, onToggle }: DashboardSidebarProps)
                 className={cn(
                   "flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold transition-all duration-300 relative group outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
                   isActive
-                    ? "bg-primary text-white shadow-[0_0_20px_rgba(255,91,106,0.4)]"
+                    ? "bg-primary text-white shadow-[0_0_22px_rgba(124,58,237,0.45)]"
                     : "text-muted-foreground hover:bg-muted hover:text-foreground"
                 )}
                 aria-current={isActive ? "page" : undefined}

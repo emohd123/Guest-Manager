@@ -1,10 +1,13 @@
 // Shared canvas textures for the 3D event-space scene. Pure 2D-canvas drawing
-// (no fonts/network) -> fully offline and deterministic. Callers wrap the
-// returned canvas in a THREE.CanvasTexture.
+// (no network) -> fully offline. Callers wrap the returned canvas in a
+// THREE.CanvasTexture.
+import QRCode from "qrcode";
 
 type QrPalette = {
   dark?: string;
   light?: string;
+  /** When set, renders a real, scannable QR encoding this value. */
+  text?: string;
 };
 
 /** A Stone-style branded ticket face matching the homepage reference pass. */
@@ -125,8 +128,12 @@ export function makeTicketCanvas(): HTMLCanvasElement {
   drawField(ctx, "VENUE", "OneStone Grand Hall\nLondon, UK", 60, 515, "#a2b2ee", "#ffffff");
   drawField(ctx, "ATTENDEE", "ALEX RIVERA", 360, 515, "#a2b2ee", "#ffffff");
 
-  // QR Code with glowing cyan pixels on dark background
-  drawQr(ctx, 1000, 375, 140, 19, { dark: "#00f0ff", light: "#0b0d1e" });
+  // QR Code with glowing cyan pixels on dark background (real, scannable)
+  drawQr(ctx, 1000, 375, 140, 19, {
+    dark: "#00f0ff",
+    light: "#0b0d1e",
+    text: "https://app.eventshub.com/t/9021882",
+  });
   ctx.fillStyle = "#8b9bb4";
   ctx.font = "600 14px Arial";
   ctx.fillText("PASS ID: 9021882", 1005, 545);
@@ -151,8 +158,12 @@ export function makeTicketCanvas(): HTMLCanvasElement {
   ctx.font = "600 14px Arial";
   ctx.fillText("Scan QR or enter code in visitor app for real-time schedule & updates", 60, 732);
 
-  // App download QR
-  drawQr(ctx, 848, 635, 64, 31, { dark: "#00f0ff", light: "#0b0d1e" });
+  // App download QR (real, scannable)
+  drawQr(ctx, 848, 635, 64, 31, {
+    dark: "#00f0ff",
+    light: "#0b0d1e",
+    text: "https://app.eventshub.com/download",
+  });
   ctx.fillStyle = "#8b9bb4";
   ctx.font = "600 13px Arial";
   ctx.fillText("DOWNLOAD APP", 823, 725);
@@ -295,13 +306,20 @@ export function makeQrCanvas(seed = 11): HTMLCanvasElement {
   ctx.textAlign = "left";
 
   const pad = 90;
-  // Swap colors for glowing tech QR
-  drawQr(ctx, pad, pad + 28, s - 2 * pad, seed, { dark: "#00f0ff", light: "#0b0d1e" });
+  // Real, scannable glowing tech QR
+  drawQr(ctx, pad, pad + 28, s - 2 * pad, seed, {
+    dark: "#00f0ff",
+    light: "#0b0d1e",
+    text: "https://app.eventshub.com/scan",
+  });
 
   return c;
 }
 
-/** Draw a deterministic QR-like matrix (with finder squares) into a context. */
+/**
+ * Draw a QR into a context. When `palette.text` is set, renders a REAL scannable
+ * QR (via the `qrcode` lib); otherwise falls back to a deterministic faux matrix.
+ */
 function drawQr(
   ctx: CanvasRenderingContext2D,
   x: number,
@@ -310,13 +328,31 @@ function drawQr(
   seedInit: number,
   palette: QrPalette = {}
 ) {
-  const cells = 15;
-  const cell = size / cells;
   const light = palette.light ?? "#ffffff";
   const dark = palette.dark ?? "#0e1326";
   ctx.fillStyle = light;
   ctx.fillRect(x - 10, y - 10, size + 20, size + 20);
   ctx.fillStyle = dark;
+
+  if (palette.text) {
+    // Real, scannable QR.
+    const qr = QRCode.create(palette.text, { errorCorrectionLevel: "M" });
+    const n = qr.modules.size;
+    const data = qr.modules.data;
+    const cell = size / n;
+    for (let r = 0; r < n; r++) {
+      for (let c = 0; c < n; c++) {
+        if (data[r * n + c]) {
+          ctx.fillRect(x + c * cell, y + r * cell, Math.ceil(cell), Math.ceil(cell));
+        }
+      }
+    }
+    return;
+  }
+
+  // Faux fallback.
+  const cells = 15;
+  const cell = size / cells;
   let seed = seedInit;
   const rnd = () => ((seed = (seed * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff);
   for (let gy = 0; gy < cells; gy++) {

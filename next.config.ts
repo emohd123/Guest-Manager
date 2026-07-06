@@ -15,6 +15,41 @@ const nextConfig: NextConfig = {
     "canvas",
     "pdfkit",
   ],
+
+  async redirects() {
+    return [
+      {
+        source: "/pricing",
+        destination: "/contact?service=managed-events",
+        permanent: false,
+      },
+      {
+        source: "/registration-ticketing",
+        destination: "/contact?service=ticketing-services",
+        permanent: false,
+      },
+      {
+        source: "/ticket-studio",
+        destination: "/contact?service=ticketing-services",
+        permanent: false,
+      },
+      {
+        source: "/event-check-in-app",
+        destination: "/contact?service=check-in",
+        permanent: false,
+      },
+      {
+        source: "/tour",
+        destination: "/events",
+        permanent: false,
+      },
+      {
+        source: "/tour/:path*",
+        destination: "/events",
+        permanent: false,
+      },
+    ];
+  },
 };
 
 export default nextConfig;

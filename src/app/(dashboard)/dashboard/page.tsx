@@ -45,6 +45,8 @@ export default function DashboardPage() {
       value: eventsLoading ? "-" : totalEvents.toString(),
       icon: CalendarDays,
       sub: "Active and archived",
+      accentBg: "bg-[rgba(124,58,237,0.15)]",
+      accentText: "text-[#a78bfa]",
       delay: 0,
       href: "/dashboard/events",
     },
@@ -53,6 +55,8 @@ export default function DashboardPage() {
       value: eventsLoading ? "-" : totalGuests.toString(),
       icon: Users,
       sub: "Across all events",
+      accentBg: "bg-[rgba(96,165,250,0.15)]",
+      accentText: "text-[#60a5fa]",
       delay: 0.1,
       href: "/dashboard/contacts",
     },
@@ -61,6 +65,8 @@ export default function DashboardPage() {
       value: eventsLoading ? "-" : totalCheckIns.toString(),
       icon: CheckCircle,
       sub: "Checked in across events",
+      accentBg: "bg-[rgba(52,211,153,0.15)]",
+      accentText: "text-[#34d399]",
       delay: 0.2,
       href: "/dashboard/scans",
     },
@@ -69,6 +75,9 @@ export default function DashboardPage() {
       value: "84%",
       icon: TrendingUp,
       sub: "Engagement rate",
+      accentBg: "bg-[rgba(244,114,182,0.15)]",
+      accentText: "text-[#f472b6]",
+      progress: 84,
       delay: 0.3,
       href: "/dashboard/reports",
     },
@@ -135,7 +144,11 @@ export default function DashboardPage() {
           const cardContent = (
             <>
               <div className="relative z-10">
-                <div className="mb-6 w-fit rounded-2xl bg-primary/10 p-3 text-primary transition-transform duration-500 group-hover:scale-110">
+                <div className={cn(
+                  "mb-6 w-fit rounded-2xl p-3 transition-transform duration-500 group-hover:scale-110",
+                  stat.accentBg,
+                  stat.accentText,
+                )}>
                   <stat.icon className="h-6 w-6" />
                 </div>
                 <p className="mb-1 text-[10px] font-black uppercase tracking-widest text-muted-foreground dark:text-white/30">
@@ -144,9 +157,20 @@ export default function DashboardPage() {
                 <h2 className="text-3xl font-black italic tracking-tight text-foreground dark:text-white">
                   {stat.value}
                 </h2>
-                <p className="mt-4 text-[10px] font-bold uppercase tracking-tighter text-muted-foreground/70 dark:text-white/10">
-                  {stat.sub}
-                </p>
+                {stat.progress != null ? (
+                  <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-black/5 dark:bg-white/10">
+                    <motion.div
+                      initial={{ width: 0 }}
+                      animate={{ width: `${stat.progress}%` }}
+                      transition={{ delay: stat.delay + 0.2, duration: 0.9, ease: [0.2, 0.75, 0.2, 1] }}
+                      className="h-full rounded-full bg-linear-to-r from-[#7c3aed] to-[#db2777]"
+                    />
+                  </div>
+                ) : (
+                  <p className="mt-4 text-[10px] font-bold uppercase tracking-tighter text-muted-foreground/70 dark:text-white/10">
+                    {stat.sub}
+                  </p>
+                )}
               </div>
               <div className="absolute -right-4 -bottom-4 h-24 w-24 rounded-full bg-primary/5 blur-3xl transition-colors group-hover:bg-primary/10" />
             </>

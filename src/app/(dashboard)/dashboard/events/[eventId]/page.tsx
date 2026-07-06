@@ -71,7 +71,7 @@ export default function EventOverviewPage({
       ? (event.settings as { publicPage?: { enabled?: boolean } }).publicPage?.enabled !== false
       : true;
   const canOpenPublicEventPage =
-    event.registrationEnabled && !!event.companySlug && event.status === "published" && publicPageEnabled;
+    !!event.companySlug && event.status === "published" && publicPageEnabled;
 
   return (
     <div className="space-y-12 pb-20 px-2">
@@ -88,26 +88,28 @@ export default function EventOverviewPage({
           </p>
         </motion.div>
         <div className="flex items-center gap-4">
-          {event.registrationEnabled && (
-            canOpenPublicEventPage ? (
-              <Button
-                asChild
-                variant="outline"
-                className="theme-ghost-surface h-14 px-6 rounded-2xl font-black italic uppercase tracking-widest text-[10px] transition-all flex gap-3"
-              >
-                <Link href={`/e/${event.companySlug}/${event.slug}`} target="_blank" rel="noreferrer">
-                  Event Page <ExternalLink className="h-4 w-4" />
-                </Link>
-              </Button>
-            ) : (
-              <Button
-                variant="outline"
-                disabled
-                className="theme-ghost-surface h-14 px-6 rounded-2xl font-black italic uppercase tracking-widest text-[10px] transition-all flex gap-3"
-              >
-                {event.status !== "published" ? "Publish Event First" : "Event Page Unavailable"} <ExternalLink className="h-4 w-4" />
-              </Button>
-            )
+          {canOpenPublicEventPage ? (
+            <Button
+              asChild
+              variant="outline"
+              className="theme-ghost-surface h-14 px-6 rounded-2xl font-black italic uppercase tracking-widest text-[10px] transition-all flex gap-3"
+            >
+              <Link href={`/e/${event.companySlug}/${event.slug}`} target="_blank" rel="noreferrer">
+                Preview Public Page <ExternalLink className="h-4 w-4" />
+              </Link>
+            </Button>
+          ) : (
+            <Button
+              variant="outline"
+              disabled
+              className="theme-ghost-surface h-14 px-6 rounded-2xl font-black italic uppercase tracking-widest text-[10px] transition-all flex gap-3"
+            >
+              {event.status !== "published"
+                ? "Publish Event First"
+                : publicPageEnabled
+                  ? "Public Page Unavailable"
+                  : "Public Page Disabled"} <ExternalLink className="h-4 w-4" />
+            </Button>
           )}
           <Button
             asChild

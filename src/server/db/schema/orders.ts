@@ -26,7 +26,7 @@ export const orders = pgTable("orders", {
   serviceFee: integer("service_fee").default(0),
   discount: integer("discount").default(0),
   total: integer("total").default(0),
-  currency: varchar("currency", { length: 3 }).default("USD"),
+  currency: varchar("currency", { length: 3 }).default("BHD"),
   paymentMethod: varchar("payment_method", { length: 50 }),
   stripePaymentIntentId: varchar("stripe_payment_intent_id", { length: 255 }),
   stripeChargeId: varchar("stripe_charge_id", { length: 255 }),

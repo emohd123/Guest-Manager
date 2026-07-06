@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, Pressable, StyleSheet, Animated } from "react-native";
+import { View, Text, Pressable, StyleSheet, Animated, Platform } from "react-native";
 
 export function AuthChoiceScreen({
   onSelectCodePin,
@@ -14,9 +14,10 @@ export function AuthChoiceScreen({
   const [fadeAnim] = useState(() => new Animated.Value(0));
 
   useEffect(() => {
+    const useNativeDriver = Platform.OS !== "web";
     Animated.parallel([
-      Animated.timing(fadeAnim, { toValue: 1, duration: 600, useNativeDriver: true }),
-      Animated.timing(slideAnim, { toValue: 0, duration: 600, useNativeDriver: true })
+      Animated.timing(fadeAnim, { toValue: 1, duration: 600, useNativeDriver }),
+      Animated.timing(slideAnim, { toValue: 0, duration: 600, useNativeDriver })
     ]).start();
   }, [fadeAnim, slideAnim]);
 

@@ -518,7 +518,7 @@ async function resolveWalkupTicketType(
       description: "Auto-created for walkups",
       status: "active",
       price: 0,
-      currency: "USD",
+      currency: "BHD",
     })
     .returning();
 

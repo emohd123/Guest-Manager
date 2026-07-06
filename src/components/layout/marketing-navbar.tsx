@@ -12,26 +12,26 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { BrandWordmark } from "@/components/brand/brand-wordmark";
-import { Menu, X, ChevronDown, CheckCircle, Ticket, Globe, Sun, Moon } from "lucide-react";
+import { Menu, X, ChevronDown, BriefcaseBusiness, CalendarDays, Ticket } from "lucide-react";
 
 const products = [
   {
-    name: "Event Check-In App",
-    description: "Real-time guest check-in across unlimited devices",
-    href: "/event-check-in-app",
-    icon: CheckCircle,
+    name: "Browse Events",
+    description: "Concerts, exhibitions, family shows, business events, and more",
+    href: "/events",
+    icon: CalendarDays,
   },
   {
-    name: "Ticket Studio",
-    description: "Design, distribute, and scan tickets",
-    href: "/ticket-studio",
+    name: "My Tickets",
+    description: "Open buyer account, orders, QR tickets, and saved events",
+    href: "/account",
     icon: Ticket,
   },
   {
-    name: "Registration & Ticketing",
-    description: "Online event pages with ticket sales",
-    href: "/registration-ticketing",
-    icon: Globe,
+    name: "Managed Event Services",
+    description: "Ticketing, staffing, check-in operations, and guest support",
+    href: "/contact",
+    icon: BriefcaseBusiness,
   },
 ];
 
@@ -57,13 +57,13 @@ export function MarketingNavbar() {
             : "bg-transparent border-transparent"
         }`}
       >
-        <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+        <div className="mx-auto flex h-20 max-w-none items-center justify-between px-4 sm:px-8 lg:px-12 2xl:px-20">
           <div className="flex items-center gap-8">
             <Link href="/" aria-label="Events Hub home">
               <BrandWordmark
                 className="gap-3.5"
-                markClassName="h-16 w-16"
-                textClassName="text-[2.5rem]"
+                markClassName="h-12 w-12 sm:h-16 sm:w-16"
+                textClassName="text-[1.8rem] sm:text-[2.5rem]"
                 showSubtitle={true}
               />
             </Link>
@@ -72,7 +72,7 @@ export function MarketingNavbar() {
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="gap-1 hover:bg-black/5 dark:hover:bg-white/5 transition-colors text-foreground">
-                    Products <ChevronDown className="h-3.5 w-3.5 opacity-70" />
+                    Explore <ChevronDown className="h-3.5 w-3.5 opacity-70" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="start" className="w-[320px] p-2 glass-panel border-border">
@@ -97,21 +97,21 @@ export function MarketingNavbar() {
                 </DropdownMenuContent>
               </DropdownMenu>
 
-              <Link href="/tour">
+              <Link href="/events">
                 <Button
                   variant="ghost"
-                  className={`hover:bg-black/5 dark:hover:bg-white/5 transition-colors text-foreground ${pathname?.startsWith("/tour") ? "text-primary text-glow font-medium" : ""}`}
+                  className={`hover:bg-black/5 dark:hover:bg-white/5 transition-colors text-foreground ${pathname?.startsWith("/events") ? "text-primary text-glow font-medium" : ""}`}
                 >
-                  Tour
+                  Events
                 </Button>
               </Link>
 
-              <Link href="/pricing">
+              <Link href="/account">
                 <Button
                   variant="ghost"
-                  className={`hover:bg-black/5 dark:hover:bg-white/5 transition-colors text-foreground ${pathname === "/pricing" ? "text-primary text-glow font-medium" : ""}`}
+                  className={`hover:bg-black/5 dark:hover:bg-white/5 transition-colors text-foreground ${pathname?.startsWith("/account") ? "text-primary text-glow font-medium" : ""}`}
                 >
-                  Pricing
+                  My Tickets
                 </Button>
               </Link>
 
@@ -129,10 +129,10 @@ export function MarketingNavbar() {
           <div className="hidden items-center gap-4 md:flex">
 
             <Button asChild variant="ghost" className="hover:bg-accent transition-colors">
-              <Link href="/login">Log In</Link>
+              <Link href="/account/login">Buyer Login</Link>
             </Button>
              <Button asChild className="shadow-[0_4px_20px_0_rgba(124,77,255,0.4)] hover:shadow-[0_6px_25px_0_rgba(124,77,255,0.55)] transition-all duration-300 bg-brand-gradient hover:opacity-95 text-white">
-               <Link href="/signup">Try It Free</Link>
+               <Link href="/events">Browse Events</Link>
              </Button>
           </div>
 
@@ -169,18 +169,18 @@ export function MarketingNavbar() {
             ))}
             <hr className="my-2" />
             <Link
-              href="/tour"
+              href="/events"
               className="rounded-lg p-3 hover:bg-accent"
               onClick={() => setMobileOpen(false)}
             >
-              Tour
+              Events
             </Link>
             <Link
-              href="/pricing"
+              href="/account"
               className="rounded-lg p-3 hover:bg-accent"
               onClick={() => setMobileOpen(false)}
             >
-              Pricing
+              My Tickets
             </Link>
             <Link
               href="/contact"
@@ -193,13 +193,13 @@ export function MarketingNavbar() {
             <div className="flex gap-2">
 
               <Button asChild variant="outline" className="flex-1 w-full">
-                <Link href="/login" onClick={() => setMobileOpen(false)}>
-                  Log In
+                <Link href="/account/login" onClick={() => setMobileOpen(false)}>
+                  Buyer Login
                 </Link>
               </Button>
               <Button asChild className="flex-1 w-full">
-                <Link href="/signup" onClick={() => setMobileOpen(false)}>
-                  Try It Free
+                <Link href="/events" onClick={() => setMobileOpen(false)}>
+                  Browse
                 </Link>
               </Button>
             </div>

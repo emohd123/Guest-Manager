@@ -5,6 +5,7 @@ export interface DesignSettings {
   customCss?: string;
   publicPage?: {
     enabled?: boolean;
+    showInApp?: boolean;
     isPaidEvent?: boolean;
     heroLabel?: string;
     headline?: string;

@@ -53,7 +53,7 @@ const emptyForm = {
   name: "",
   description: "",
   price: 0,
-  currency: "USD",
+  currency: "BHD",
   quantityTotal: "" as string | number,
   saleStartsAt: "",
   saleEndsAt: "",
@@ -73,8 +73,8 @@ export function TicketTypeModal({ open, onOpenChange, eventId, ticketType, onSuc
       setForm({
         name: ticketType.name,
         description: ticketType.description ?? "",
-        price: (ticketType.price ?? 0) / 100, // Convert cents to dollars for UI
-        currency: ticketType.currency ?? "USD",
+        price: (ticketType.price ?? 0) / 100,
+        currency: ticketType.currency ?? "BHD",
         quantityTotal: ticketType.quantityTotal ?? "",
         saleStartsAt: ticketType.saleStartsAt ? new Date(ticketType.saleStartsAt).toISOString().slice(0, 16) : "",
         saleEndsAt: ticketType.saleEndsAt ? new Date(ticketType.saleEndsAt).toISOString().slice(0, 16) : "",

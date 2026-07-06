@@ -18,7 +18,7 @@ export const ticketTypes = pgTable("ticket_types", {
   name: varchar("name", { length: 255 }).notNull(),
   description: text("description"),
   price: integer("price").default(0),
-  currency: varchar("currency", { length: 3 }).default("USD"),
+  currency: varchar("currency", { length: 3 }).default("BHD"),
   quantityTotal: integer("quantity_total"),
   quantitySold: integer("quantity_sold").default(0),
   saleStartsAt: timestamp("sale_starts_at"),

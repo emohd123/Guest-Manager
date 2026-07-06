@@ -55,8 +55,18 @@ export function ActivityScreen({
       </FadeSlideIn>
       <FadeSlideIn delay={140}>
         <View style={styles.actions}>
-          <PremiumButton label={syncing ? "Syncing..." : "Sync Now"} onPress={onSyncNow} disabled={syncing} />
-          <PremiumButton label="Send Heartbeat" tone="secondary" onPress={onHeartbeat} />
+          <PremiumButton
+            label={syncing ? "Syncing..." : "Sync Now"}
+            icon="sync-outline"
+            onPress={onSyncNow}
+            disabled={syncing}
+          />
+          <PremiumButton
+            label="Send Heartbeat"
+            icon="pulse-outline"
+            tone="secondary"
+            onPress={onHeartbeat}
+          />
         </View>
       </FadeSlideIn>
     </ScrollView>

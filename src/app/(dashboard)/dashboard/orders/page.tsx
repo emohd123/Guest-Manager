@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/select";
 
 import { cn } from "@/lib/utils";
+import { formatMoney } from "@/lib/marketplace";
 import { trpc } from "@/lib/trpc/client";
 import { format } from "date-fns";
 import { motion } from "framer-motion";
@@ -191,8 +192,7 @@ export default function OrdersPage() {
                       </td>
                       <td className="py-6 px-8">
                         <span className="font-black text-foreground dark:text-white italic">
-                          ${((order.total ?? 0) / 100).toFixed(2)}
-                          <span className="text-[10px] opacity-20 ml-1 not-italic">USD</span>
+                          {formatMoney(order.total ?? 0, order.currency ?? "BHD")}
                         </span>
                       </td>
                       <td className="py-6 px-8 text-sm">

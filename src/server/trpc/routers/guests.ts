@@ -673,7 +673,7 @@ export const guestsRouter = router({
               name: "General Admission",
               description: "Auto-created for guest ticket delivery",
               price: 0,
-              currency: "USD",
+              currency: "BHD",
               status: "active",
             })
             .select("id,name,description,price,currency,status,created_at")

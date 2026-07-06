@@ -217,6 +217,15 @@
     border-color: #7c3aed;
   }
 
+  .scrollbar-hide {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
   .mody-card {
     @apply bg-white/5 backdrop-blur-3xl border border-white/10 rounded-[40px] shadow-2xl;
   }

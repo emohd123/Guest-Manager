@@ -1,9 +1,33 @@
-import React from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import React, { useEffect, useState } from "react";
+import {
+  ActivityIndicator,
+  Image,
+  Linking,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  useWindowDimensions,
+  View,
+} from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
+import { createPublicOrder, fetchDiscoverEvents } from "../api/mobileClient";
 import { FadeSlideIn } from "../ui/motion";
-import { BrandLogo } from "../ui/brand-logo";
-import { PremiumBackdrop, PremiumCard, PremiumPill } from "../ui/primitives";
+import { FloatingLines } from "../ui/FloatingLines";
+import { PremiumBackdrop } from "../ui/primitives";
 import { palette, radii, shadows, spacing, type } from "../ui/theme";
+import type { DiscoverEvent } from "../types";
+
+// Rotating gradient art for event thumbnails (matches the design's card palette).
+const THUMB_GRADIENTS: [string, string][] = [
+  ["#0f172a", "#3730a3"],
+  ["#0f172a", "#be185d"],
+  ["#164e63", "#0ea5e9"],
+  ["#3b0764", "#a21caf"],
+  ["#1e1b4b", "#7c3aed"],
+];
 
 export function RoleChoiceScreen({
   onSelectStaff,
@@ -12,194 +36,1408 @@ export function RoleChoiceScreen({
   onSelectStaff: () => void;
   onSelectVisitor: () => void;
 }) {
+  const [showOptions, setShowOptions] = useState(false);
+  const [events, setEvents] = useState<DiscoverEvent[]>([]);
+  const [eventsLoading, setEventsLoading] = useState(true);
+  const [eventView, setEventView] = useState<"home" | "list" | "detail">("home");
+  const [selectedEvent, setSelectedEvent] = useState<DiscoverEvent | null>(null);
+  const [query, setQuery] = useState("");
+  const { width } = useWindowDimensions();
+  const isWide = width >= 760;
+
+  const CATEGORIES = ["All", "Concerts", "Dining", "Family", "Comedy", "Attractions"];
+
+  useEffect(() => {
+    let mounted = true;
+    fetchDiscoverEvents()
+      .then((result) => {
+        if (mounted) setEvents(result.events ?? []);
+      })
+      .catch(() => {
+        if (mounted) setEvents([]);
+      })
+      .finally(() => {
+        if (mounted) setEventsLoading(false);
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  function openEvent(event: DiscoverEvent) {
+    setSelectedEvent(event);
+    setEventView("detail");
+  }
+
+  const filtered = query.trim()
+    ? events.filter((e) => e.title.toLowerCase().includes(query.trim().toLowerCase()))
+    : events;
+  const featured = filtered[0] ?? null;
+  const rows = eventView === "list" ? filtered : filtered.slice(1);
+
   return (
     <PremiumBackdrop>
       <View style={styles.container}>
-        <FadeSlideIn style={styles.inner}>
-          <View style={styles.headerArea}>
-            <BrandLogo size={124} />
-            <PremiumPill label="Events Hub" tone="live" />
-            <Text style={styles.title}>Choose how this device should move through the event</Text>
-            <Text style={styles.subtitle}>
-              One premium shell for attendees and a sharper operational shell for floor staff.
-            </Text>
-          </View>
-
-          <PremiumCard style={styles.whiteCard}>
-            <View style={styles.cards}>
-              <Pressable style={styles.staffCard} onPress={onSelectStaff}>
-                <View style={styles.cardHeader}>
-                  <PremiumPill label="Staff" />
-                  <View style={styles.staffArrow}>
-                    <Text style={styles.staffArrowText}>Operate</Text>
-                  </View>
+        <FloatingLines
+          enabledWaves={["top", "middle", "bottom"]}
+          lineCount={[12, 18, 22]}
+          lineDistance={[8, 6, 4]}
+          linesGradient={["#3B82F6", "#8B5CF6", "#EC4899"]}
+          animationSpeed={1.05}
+          topWavePosition={{ x: isWide ? 0.5 : -2.8, y: 0.64, rotate: -0.16 }}
+          middleWavePosition={{ x: isWide ? -0.8 : -3.2, y: 0.08, rotate: 0.12 }}
+          bottomWavePosition={{ x: isWide ? -1.5 : -3.6, y: -0.62, rotate: -0.22 }}
+        />
+        <ScrollView
+          style={styles.scroll}
+          contentContainerStyle={[styles.scrollContent, isWide && styles.scrollContentWide]}
+          showsVerticalScrollIndicator={false}
+        >
+          <FadeSlideIn style={[styles.inner, isWide && styles.innerWide]}>
+          {eventView === "detail" && selectedEvent ? (
+            <EventDetailPanel event={selectedEvent} onBack={() => setEventView("home")} />
+          ) : (
+            <View style={styles.mkt}>
+              <View style={styles.mktHeader}>
+                <View style={styles.mktHeaderCopy}>
+                  <Text style={styles.mktKicker}>Bahrain · Tonight</Text>
+                  <Text style={styles.mktTitle}>{eventView === "list" ? "All events" : "Discover events"}</Text>
                 </View>
-                <Text style={styles.staffCardTitle}>Check-In Operations</Text>
-                <Text style={styles.staffCardDescription}>
-                  Pair the device, scan arrivals, manage walk-ins, and stay synced with the queue.
-                </Text>
-              </Pressable>
-
-              <Pressable style={styles.visitorCard} onPress={onSelectVisitor}>
-                <View style={styles.cardHeader}>
-                  <PremiumPill label="Attendee" />
-                  <View style={styles.visitorArrow}>
-                    <Text style={styles.visitorArrowText}>Enter</Text>
-                  </View>
+                <View style={styles.mktHeaderRight}>
+                  <Pressable
+                    onPress={() => setShowOptions((value) => !value)}
+                    style={({ pressed }) => [styles.mktGear, pressed && styles.pressed]}
+                    accessibilityRole="button"
+                    accessibilityLabel="Open app options"
+                  >
+                    <Ionicons name="settings-outline" size={19} color="#FFFFFF" />
+                  </Pressable>
+                  <Pressable
+                    onPress={onSelectVisitor}
+                    style={({ pressed }) => [styles.mktAvatar, pressed && styles.pressed]}
+                    accessibilityRole="button"
+                    accessibilityLabel="Open attendee portal"
+                  >
+                    <Text style={styles.mktAvatarText}>LA</Text>
+                  </Pressable>
                 </View>
-                <Text style={styles.visitorCardTitle}>Live Event Experience</Text>
-                <Text style={styles.visitorCardDescription}>
-                  Tickets, agenda, live sessions, networking, inbox, and event updates in one place.
-                </Text>
-              </Pressable>
-            </View>
+              </View>
 
-            <View style={styles.footerRow}>
-              <Text style={styles.footerLabel}>Premium Event Platform</Text>
-              <Text style={styles.footerValue}>Attendee + Ops</Text>
+              {showOptions ? (
+                <View style={styles.optionsPanel}>
+                  <Pressable
+                    onPress={onSelectStaff}
+                    style={({ pressed }) => [styles.optionRow, pressed && styles.pressed]}
+                    accessibilityRole="button"
+                    accessibilityLabel="Open check-in operations"
+                  >
+                    <View style={styles.optionIcon}>
+                      <Ionicons name="scan-outline" size={20} color="#FFFFFF" />
+                    </View>
+                    <View style={styles.optionCopy}>
+                      <Text style={styles.optionTitle}>Check-in operations</Text>
+                      <Text style={styles.optionBody}>Pair this device for staff scanning, walk-ins, and sync tools.</Text>
+                    </View>
+                    <Ionicons name="chevron-forward" size={18} color="rgba(255,255,255,0.62)" />
+                  </Pressable>
+                </View>
+              ) : null}
+
+              <View style={styles.mktSearch}>
+                <Ionicons name="search" size={17} color="rgba(255,255,255,0.45)" />
+                <TextInput
+                  value={query}
+                  onChangeText={setQuery}
+                  placeholder="Search events, venues, artists…"
+                  placeholderTextColor="rgba(255,255,255,0.4)"
+                  style={styles.mktSearchInput}
+                />
+              </View>
+
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.mktPills}
+              >
+                {CATEGORIES.map((cat, index) => (
+                  <View key={cat} style={[styles.mktPill, index === 0 && styles.mktPillActive]}>
+                    <Text style={[styles.mktPillText, index === 0 && styles.mktPillTextActive]}>{cat}</Text>
+                  </View>
+                ))}
+              </ScrollView>
+
+              {featured && eventView === "home" ? (
+                <FeaturedHero event={featured} onOpen={openEvent} />
+              ) : null}
+
+              {eventsLoading || rows.length > 0 || eventView === "list" || !featured ? (
+              <>
+              <View style={styles.mktSectionHead}>
+                <Text style={styles.mktSectionEyebrow}>{eventView === "list" ? "All events" : "Recent events"}</Text>
+                {eventView === "home" ? (
+                  <Pressable onPress={() => setEventView("list")} accessibilityRole="button" accessibilityLabel="See all events">
+                    <Text style={styles.mktSeeAll}>See all</Text>
+                  </Pressable>
+                ) : (
+                  <Pressable onPress={() => setEventView("home")} accessibilityRole="button" accessibilityLabel="Back to home">
+                    <Text style={styles.mktSeeAll}>Back</Text>
+                  </Pressable>
+                )}
+              </View>
+
+              {eventsLoading ? (
+                <View style={styles.eventSkeleton}>
+                  <Text style={styles.eventSkeletonText}>Loading public events…</Text>
+                </View>
+              ) : rows.length === 0 ? (
+                <View style={styles.eventEmpty}>
+                  <Ionicons name="calendar-clear-outline" size={22} color="rgba(255,255,255,0.72)" />
+                  <Text style={styles.eventEmptyTitle}>No public events yet</Text>
+                  <Text style={styles.eventEmptyBody}>Published events with public pages will appear here automatically.</Text>
+                </View>
+              ) : (
+                <View style={styles.mktList}>
+                  {rows.map((event, index) => (
+                    <MarketplaceRow key={event.id} event={event} index={index} onOpen={openEvent} />
+                  ))}
+                </View>
+              )}
+              </>
+              ) : null}
             </View>
-          </PremiumCard>
+          )}
         </FadeSlideIn>
+        </ScrollView>
+        {eventView !== "detail" ? <BottomTabBar onAccount={onSelectVisitor} /> : null}
       </View>
     </PremiumBackdrop>
+  );
+}
+
+function FeaturedHero({ event, onOpen }: { event: DiscoverEvent; onOpen: (event: DiscoverEvent) => void }) {
+  const host = event.organizerName ?? event.companyName;
+  const price = formatPrice(event);
+  return (
+    <View style={styles.featured}>
+      <LinearGradient
+        colors={["#1e1b4b", "#7c3aed", "#db2777"]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={StyleSheet.absoluteFill}
+      />
+      {event.coverImageUrl ? (
+        <Image source={{ uri: event.coverImageUrl }} style={StyleSheet.absoluteFill} resizeMode="cover" />
+      ) : null}
+      <LinearGradient
+        colors={["rgba(0,0,0,0.9)", "rgba(0,0,0,0.1)", "transparent"]}
+        start={{ x: 0, y: 1 }}
+        end={{ x: 0, y: 0 }}
+        style={StyleSheet.absoluteFill}
+      />
+      <View style={styles.featuredBadge}>
+        <Text style={styles.featuredBadgeText}>Featured</Text>
+      </View>
+      <View style={styles.featuredBody}>
+        <Text style={styles.featuredDate}>{formatEventDate(event.startsAt)}</Text>
+        <Text style={styles.featuredTitle} numberOfLines={2}>{event.title}</Text>
+        <Text style={styles.featuredMeta} numberOfLines={1}>
+          {host}{price ? ` · from ${price}` : ""}
+        </Text>
+        <View style={styles.featuredActions}>
+          <Pressable
+            onPress={() => onOpen(event)}
+            style={({ pressed }) => [styles.featuredBuy, pressed && styles.pressed]}
+            accessibilityRole="button"
+            accessibilityLabel={`Buy tickets for ${event.title}`}
+          >
+            <Text style={styles.featuredBuyText}>{event.hasTickets ? "Buy Ticket" : "Open"}</Text>
+          </Pressable>
+          <Pressable
+            onPress={() => onOpen(event)}
+            style={({ pressed }) => [styles.featuredDetails, pressed && styles.pressed]}
+            accessibilityRole="button"
+            accessibilityLabel={`Details for ${event.title}`}
+          >
+            <Text style={styles.featuredDetailsText}>Details</Text>
+          </Pressable>
+        </View>
+      </View>
+    </View>
+  );
+}
+
+function MarketplaceRow({
+  event,
+  index,
+  onOpen,
+}: {
+  event: DiscoverEvent;
+  index: number;
+  onOpen: (event: DiscoverEvent) => void;
+}) {
+  const host = event.organizerName ?? event.companyName;
+  const gradient = THUMB_GRADIENTS[index % THUMB_GRADIENTS.length];
+  const day = (() => {
+    try {
+      return new Date(event.startsAt)
+        .toLocaleDateString("en-US", { month: "short", day: "2-digit" })
+        .toUpperCase();
+    } catch {
+      return "";
+    }
+  })();
+  return (
+    <Pressable
+      onPress={() => onOpen(event)}
+      style={({ pressed }) => [styles.row, pressed && styles.pressed]}
+      accessibilityRole="button"
+      accessibilityLabel={`Open ${event.title}`}
+    >
+      <View style={styles.rowThumb}>
+        <LinearGradient colors={gradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
+        {event.coverImageUrl ? (
+          <Image source={{ uri: event.coverImageUrl }} style={StyleSheet.absoluteFill} resizeMode="cover" />
+        ) : null}
+        <Text style={styles.rowThumbDate}>{day}</Text>
+      </View>
+      <View style={styles.rowBody}>
+        <Text style={styles.rowHost} numberOfLines={1}>{host}</Text>
+        <Text style={styles.rowTitle} numberOfLines={1}>{event.title}</Text>
+        <View style={styles.rowMeta}>
+          <Text style={styles.rowPrice}>{formatPrice(event)}</Text>
+          <View style={styles.rowBuy}>
+            <Text style={styles.rowBuyText}>{event.hasTickets ? "Buy Ticket" : "Open"}</Text>
+          </View>
+        </View>
+      </View>
+    </Pressable>
+  );
+}
+
+function BottomTabBar({ onAccount }: { onAccount: () => void }) {
+  return (
+    <View style={styles.tabBar}>
+      <View style={styles.tabItem}>
+        <Ionicons name="home" size={21} color={palette.accentCyan} />
+        <Text style={[styles.tabLabel, styles.tabLabelActive]}>Discover</Text>
+      </View>
+      <Pressable style={styles.tabItem} onPress={onAccount} accessibilityRole="button" accessibilityLabel="My tickets">
+        <Ionicons name="ticket-outline" size={21} color="rgba(255,255,255,0.4)" />
+        <Text style={styles.tabLabel}>Tickets</Text>
+      </Pressable>
+      <View style={styles.tabItem}>
+        <Ionicons name="heart-outline" size={21} color="rgba(255,255,255,0.4)" />
+        <Text style={styles.tabLabel}>Saved</Text>
+      </View>
+      <Pressable style={styles.tabItem} onPress={onAccount} accessibilityRole="button" accessibilityLabel="Account">
+        <Ionicons name="person-outline" size={21} color="rgba(255,255,255,0.4)" />
+        <Text style={styles.tabLabel}>Account</Text>
+      </Pressable>
+    </View>
+  );
+}
+
+function formatEventDate(value: string) {
+  try {
+    return new Date(value).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  } catch {
+    return value;
+  }
+}
+
+function formatPrice(event: DiscoverEvent) {
+  if (!event.hasTickets) return "Explore";
+  if (event.minPrice === null || event.minPrice <= 0) return "Free";
+  try {
+    return new Intl.NumberFormat("en-BH", {
+      style: "currency",
+      currency: event.currency || "BHD",
+      minimumFractionDigits: (event.currency || "BHD").toUpperCase() === "BHD" ? 3 : 2,
+      maximumFractionDigits: (event.currency || "BHD").toUpperCase() === "BHD" ? 3 : 2,
+    }).format(event.minPrice / 100);
+  } catch {
+    return `${event.currency} ${event.minPrice}`;
+  }
+}
+
+function DiscoverEventCard({
+  event,
+  onOpen,
+  wide,
+}: {
+  event: DiscoverEvent;
+  onOpen: (event: DiscoverEvent) => void;
+  wide?: boolean;
+}) {
+  return (
+    <View style={[styles.eventCard, wide && styles.eventCardWide]}>
+      {event.coverImageUrl ? (
+        <Image source={{ uri: event.coverImageUrl }} style={styles.eventImage} resizeMode="cover" />
+      ) : (
+        <View style={styles.eventImageFallback}>
+          <Ionicons name="sparkles-outline" size={28} color="#FFFFFF" />
+        </View>
+      )}
+      <View style={styles.eventCardBody}>
+        <Text style={styles.eventDate}>{formatEventDate(event.startsAt)}</Text>
+        <Text style={styles.eventName} numberOfLines={2}>{event.title}</Text>
+        <Text style={styles.eventHost} numberOfLines={1}>{event.organizerName ?? event.companyName}</Text>
+        {event.shortDescription ? (
+          <Text style={styles.eventDescription} numberOfLines={2}>{event.shortDescription}</Text>
+        ) : null}
+        <View style={styles.eventMetaRow}>
+          <View style={styles.eventPricePill}>
+            <Text style={styles.eventPriceText}>{formatPrice(event)}</Text>
+          </View>
+          <Text style={styles.eventTicketText}>
+            {event.hasTickets ? `${event.availableTicketCount} ticket types` : "Event page"}
+          </Text>
+        </View>
+        <View style={styles.eventActions}>
+          <Pressable
+            onPress={() => onOpen(event)}
+            style={({ pressed }) => [styles.eventSecondaryButton, pressed && styles.pressed]}
+            accessibilityRole="button"
+            accessibilityLabel={`Explore ${event.title}`}
+          >
+            <Text style={styles.eventSecondaryText}>Explore</Text>
+          </Pressable>
+          <Pressable
+            onPress={() => onOpen(event)}
+            style={({ pressed }) => [styles.eventPrimaryButton, pressed && styles.pressed]}
+            accessibilityRole="button"
+            accessibilityLabel={`Buy tickets for ${event.title}`}
+          >
+            <Ionicons name="ticket-outline" size={16} color="#FFFFFF" />
+            <Text style={styles.eventPrimaryText}>{event.hasTickets ? "Buy tickets" : "Open"}</Text>
+          </Pressable>
+        </View>
+      </View>
+    </View>
+  );
+}
+
+function EventDetailPanel({
+  event,
+  onBack,
+}: {
+  event: DiscoverEvent;
+  onBack: () => void;
+}) {
+  const [selectedTickets, setSelectedTickets] = useState<Record<string, number>>({});
+  const [attendeeName, setAttendeeName] = useState("");
+  const [attendeeEmail, setAttendeeEmail] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+  const [checkoutUrl, setCheckoutUrl] = useState<string | null>(null);
+  const [companySlug, eventSlug] = event.publicUrl.replace(/^\/e\//, "").split("/");
+
+  function setTicketQuantity(ticketId: string, quantity: number) {
+    setSelectedTickets((current) => ({ ...current, [ticketId]: Math.max(0, quantity) }));
+  }
+
+  const cartItems = event.ticketTypes
+    .map((ticket) => ({
+      ticketTypeId: ticket.id,
+      name: ticket.name,
+      price: ticket.price,
+      currency: ticket.currency,
+      quantity: selectedTickets[ticket.id] ?? 0,
+    }))
+    .filter((item) => item.quantity > 0);
+
+  const total = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+
+  async function submitOrder() {
+    setMessage(null);
+    setCheckoutUrl(null);
+    if (!attendeeName.trim() || !attendeeEmail.trim()) {
+      setMessage("Add your name and email to continue.");
+      return;
+    }
+    if (cartItems.length === 0) {
+      setMessage("Select at least one ticket.");
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const result = await createPublicOrder({
+        companySlug,
+        eventSlug,
+        attendeeName: attendeeName.trim(),
+        attendeeEmail: attendeeEmail.trim(),
+        cartItems,
+      });
+      if (result.checkoutUrl) {
+        setCheckoutUrl(result.checkoutUrl);
+        setMessage("Opening secure payment checkout...");
+        await Linking.openURL(result.checkoutUrl);
+      } else if (result.success) {
+        setMessage("Registration complete. Tickets will be sent by email.");
+        setSelectedTickets({});
+      } else {
+        setMessage("Checkout response was not recognized.");
+      }
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Could not create ticket order.");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <View style={styles.detailPanel}>
+      <Pressable onPress={onBack} style={({ pressed }) => [styles.detailBack, pressed && styles.pressed]}>
+        <Ionicons name="chevron-back" size={17} color="#FFFFFF" />
+        <Text style={styles.detailBackText}>Events</Text>
+      </Pressable>
+
+      {event.coverImageUrl ? (
+        <Image source={{ uri: event.coverImageUrl }} style={styles.detailImage} resizeMode="cover" />
+      ) : (
+        <View style={styles.detailImageFallback}>
+          <Ionicons name="sparkles-outline" size={34} color="#FFFFFF" />
+        </View>
+      )}
+      <Text style={styles.eventDate}>{formatEventDate(event.startsAt)}</Text>
+      <Text style={styles.detailTitle}>{event.title}</Text>
+      <Text style={styles.eventHost}>{event.companyName}</Text>
+      {event.shortDescription ? <Text style={styles.detailDescription}>{event.shortDescription}</Text> : null}
+
+      <View style={styles.ticketBox}>
+        <Text style={styles.ticketBoxTitle}>Tickets</Text>
+        {event.ticketTypes.length === 0 ? (
+          <Text style={styles.eventDescription}>No tickets are available for this event yet.</Text>
+        ) : (
+          event.ticketTypes.map((ticket) => {
+            const quantity = selectedTickets[ticket.id] ?? 0;
+            return (
+              <View key={ticket.id} style={styles.ticketRow}>
+                <View style={styles.ticketCopy}>
+                  <Text style={styles.ticketName}>{ticket.name}</Text>
+                  {ticket.description ? <Text style={styles.ticketDesc}>{ticket.description}</Text> : null}
+                  <Text style={styles.ticketPrice}>{formatTicketPrice(ticket.price, ticket.currency)}</Text>
+                </View>
+                <View style={styles.stepper}>
+                  <Pressable onPress={() => setTicketQuantity(ticket.id, quantity - 1)} style={styles.stepperBtn}>
+                    <Text style={styles.stepperText}>-</Text>
+                  </Pressable>
+                  <Text style={styles.stepperValue}>{quantity}</Text>
+                  <Pressable
+                    disabled={!ticket.available || quantity >= ticket.maxPerOrder}
+                    onPress={() => setTicketQuantity(ticket.id, quantity + 1)}
+                    style={[styles.stepperBtn, !ticket.available && styles.disabled]}
+                  >
+                    <Text style={styles.stepperText}>+</Text>
+                  </Pressable>
+                </View>
+              </View>
+            );
+          })
+        )}
+      </View>
+
+      <View style={styles.checkoutBox}>
+        <TextInput
+          value={attendeeName}
+          onChangeText={setAttendeeName}
+          placeholder="Full name"
+          placeholderTextColor="rgba(255,255,255,0.5)"
+          style={styles.checkoutInput}
+        />
+        <TextInput
+          value={attendeeEmail}
+          onChangeText={setAttendeeEmail}
+          placeholder="Email address"
+          placeholderTextColor="rgba(255,255,255,0.5)"
+          keyboardType="email-address"
+          autoCapitalize="none"
+          style={styles.checkoutInput}
+        />
+        <Pressable
+          disabled={submitting || event.ticketTypes.length === 0}
+          onPress={submitOrder}
+          style={({ pressed }) => [styles.checkoutButton, pressed && styles.pressed, submitting && styles.disabled]}
+        >
+          {submitting ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.checkoutButtonText}>{total > 0 ? "Prepare checkout" : "Reserve tickets"}</Text>}
+        </Pressable>
+        {message ? <Text style={styles.checkoutMessage}>{message}</Text> : null}
+        {checkoutUrl ? (
+          <Pressable
+            onPress={() => Linking.openURL(checkoutUrl)}
+            style={({ pressed }) => [styles.paymentLinkButton, pressed && styles.pressed]}
+          >
+            <Text style={styles.paymentLinkText}>Open secure payment</Text>
+          </Pressable>
+        ) : null}
+      </View>
+    </View>
+  );
+}
+
+function formatTicketPrice(price: number, currency: string) {
+  if (price <= 0) return "Free";
+  try {
+    return new Intl.NumberFormat("en-BH", {
+      style: "currency",
+      currency: currency || "BHD",
+      minimumFractionDigits: (currency || "BHD").toUpperCase() === "BHD" ? 3 : 2,
+      maximumFractionDigits: (currency || "BHD").toUpperCase() === "BHD" ? 3 : 2,
+    }).format(price / 100);
+  } catch {
+    return `${currency} ${price}`;
+  }
+}
+
+function Feature({
+  icon,
+  label,
+}: {
+  icon: keyof typeof Ionicons.glyphMap;
+  label: string;
+}) {
+  return (
+    <View style={styles.feature}>
+      <Ionicons name={icon} size={18} color={palette.text} />
+      <Text style={styles.featureText}>{label}</Text>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    alignItems: "center",
+  },
+  scroll: {
+    flex: 1,
+    width: "100%",
+  },
+  scrollContent: {
+    flexGrow: 1,
+  },
+  scrollContentWide: {
+    alignItems: "center",
   },
   inner: {
-    flex: 1,
+    width: "100%",
+    minHeight: "100%",
     paddingHorizontal: spacing.xl,
     paddingTop: 52,
     paddingBottom: spacing.xl,
   },
-  headerArea: {
-    flex: 0.44,
+  innerWide: {
+    maxWidth: 1180,
+    paddingHorizontal: spacing.xxl,
+    paddingTop: 44,
+  },
+  topBar: {
+    alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+  gearButton: {
+    alignItems: "center",
+    backgroundColor: "rgba(255,255,255,0.08)",
+    borderColor: "rgba(255,255,255,0.14)",
+    borderRadius: radii.pill,
+    borderWidth: 1,
+    height: 46,
     justifyContent: "center",
+    width: 46,
+  },
+  pressed: {
+    opacity: 0.72,
+    transform: [{ scale: 0.98 }],
+  },
+  optionsPanel: {
+    backgroundColor: "rgba(255,255,255,0.08)",
+    borderColor: "rgba(255,255,255,0.14)",
+    borderRadius: radii.lg,
+    borderWidth: 1,
+    marginTop: spacing.lg,
+    padding: spacing.md,
+    maxWidth: 520,
+  },
+  optionRow: {
+    alignItems: "center",
+    flexDirection: "row",
     gap: spacing.md,
-    alignItems: "flex-start",
+  },
+  optionIcon: {
+    alignItems: "center",
+    backgroundColor: "rgba(127,139,255,0.24)",
+    borderRadius: radii.md,
+    height: 46,
+    justifyContent: "center",
+    width: 46,
+  },
+  optionCopy: {
+    flex: 1,
+    gap: 4,
+  },
+  optionTitle: {
+    color: palette.textInverse,
+    fontSize: 15,
+    fontWeight: "900",
+  },
+  optionBody: {
+    color: "rgba(255,255,255,0.66)",
+    fontSize: 12,
+    fontWeight: "600",
+    lineHeight: 17,
+  },
+  main: {
+    minHeight: 560,
+    justifyContent: "center",
+    gap: spacing.xl,
+  },
+  mainWide: {
+    alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    gap: spacing.xxxl,
+  },
+  hero: {
+    flex: 1,
+    gap: spacing.md,
+    maxWidth: 660,
   },
   title: {
-    fontSize: type.hero,
-    fontWeight: "900",
     color: palette.textInverse,
-    letterSpacing: -1,
+    fontSize: type.hero + 6,
+    fontWeight: "900",
+    letterSpacing: -1.2,
+    lineHeight: 43,
+  },
+  titleWide: {
+    fontSize: 48,
+    lineHeight: 54,
+    maxWidth: 720,
   },
   subtitle: {
-    fontSize: type.bodyLg,
     color: "rgba(255,255,255,0.74)",
+    fontSize: type.bodyLg,
     lineHeight: 23,
-    maxWidth: 360,
+    maxWidth: 390,
   },
-  whiteCard: {
-    flex: 0.56,
-    borderTopLeftRadius: 38,
-    borderTopRightRadius: 38,
-    paddingTop: spacing.xl,
-    justifyContent: "space-between",
-  },
-  cards: {
-    width: "100%",
+  actionCard: {
     gap: spacing.lg,
-  },
-  cardHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginBottom: spacing.lg,
-  },
-  staffCard: {
-    backgroundColor: palette.bgElevated,
-    borderRadius: radii.lg,
     padding: spacing.xl,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.08)",
-    ...shadows.strong,
   },
-  staffCardTitle: {
-    fontSize: 22,
-    fontWeight: "800",
-    color: palette.textInverse,
-    marginBottom: 8,
+  actionCardWide: {
+    width: 430,
+  },
+  eventPreview: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: spacing.md,
+  },
+  previewIcon: {
+    alignItems: "center",
+    backgroundColor: "rgba(127,139,255,0.12)",
+    borderRadius: radii.md,
+    height: 58,
+    justifyContent: "center",
+    width: 58,
+  },
+  previewCopy: {
+    flex: 1,
+    gap: 6,
+  },
+  previewTitle: {
+    color: palette.text,
+    fontSize: 19,
+    fontWeight: "900",
     letterSpacing: -0.4,
   },
-  staffCardDescription: {
-    fontSize: 14,
-    color: "rgba(255,255,255,0.66)",
-    lineHeight: 21,
-  },
-  staffArrow: {
-    minWidth: 82,
-    height: 38,
-    borderRadius: radii.pill,
-    backgroundColor: palette.accent,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: 14,
-  },
-  staffArrowText: {
-    color: palette.textInverse,
-    fontWeight: "800",
-    fontSize: 11,
-    letterSpacing: 0.7,
-    textTransform: "uppercase",
-  },
-  visitorCard: {
-    backgroundColor: palette.surfaceTint,
-    borderRadius: radii.lg,
-    padding: spacing.xl,
-    borderWidth: 1,
-    borderColor: palette.line,
-  },
-  visitorCardTitle: {
-    fontSize: 22,
-    fontWeight: "800",
-    color: palette.text,
-    marginBottom: 8,
-    letterSpacing: -0.4,
-  },
-  visitorCardDescription: {
-    fontSize: 14,
+  previewBody: {
     color: palette.textMuted,
-    lineHeight: 21,
-  },
-  visitorArrow: {
-    minWidth: 76,
-    height: 38,
-    borderRadius: radii.pill,
-    backgroundColor: "rgba(19,26,42,0.08)",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: 12,
-  },
-  visitorArrowText: {
-    color: palette.text,
-    fontWeight: "800",
-    fontSize: 11,
-    letterSpacing: 0.7,
-    textTransform: "uppercase",
-  },
-  footerRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginTop: spacing.lg,
-    paddingTop: spacing.md,
-    borderTopWidth: 1,
-    borderTopColor: palette.line,
-  },
-  footerLabel: {
-    fontSize: 12,
-    color: palette.textMuted,
-    fontWeight: "700",
-    textTransform: "uppercase",
-    letterSpacing: 1,
-  },
-  footerValue: {
     fontSize: 13,
+    fontWeight: "600",
+    lineHeight: 19,
+  },
+  featureGrid: {
+    flexDirection: "row",
+    gap: spacing.sm,
+  },
+  feature: {
+    alignItems: "center",
+    backgroundColor: palette.surfaceTint,
+    borderColor: palette.line,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    flex: 1,
+    gap: spacing.xs,
+    minHeight: 76,
+    justifyContent: "center",
+    ...shadows.soft,
+  },
+  featureText: {
     color: palette.text,
+    fontSize: 12,
+    fontWeight: "900",
+  },
+  eventsSection: {
+    gap: spacing.md,
+    paddingBottom: spacing.xl,
+  },
+  eventsHeader: {
+    alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    gap: spacing.md,
+  },
+  eventsHeaderCopy: {
+    gap: 4,
+  },
+  eventsEyebrow: {
+    color: palette.accentLive,
+    fontSize: 11,
+    fontWeight: "900",
+    letterSpacing: 1.2,
+    textTransform: "uppercase",
+  },
+  eventsTitle: {
+    color: palette.textInverse,
+    fontSize: 22,
+    fontWeight: "900",
+    letterSpacing: -0.4,
+  },
+  eventRail: {
+    gap: spacing.md,
+    paddingRight: spacing.xl,
+  },
+  eventCard: {
+    backgroundColor: "rgba(255,255,255,0.1)",
+    borderColor: "rgba(255,255,255,0.14)",
+    borderRadius: radii.lg,
+    borderWidth: 1,
+    overflow: "hidden",
+    width: 310,
+    ...shadows.soft,
+  },
+  eventCardWide: {
+    width: "100%",
+  },
+  eventImage: {
+    height: 132,
+    width: "100%",
+  },
+  eventImageFallback: {
+    alignItems: "center",
+    backgroundColor: "rgba(124,58,237,0.28)",
+    height: 132,
+    justifyContent: "center",
+    width: "100%",
+  },
+  eventCardBody: {
+    gap: spacing.sm,
+    padding: spacing.lg,
+  },
+  eventDate: {
+    color: "rgba(255,255,255,0.58)",
+    fontSize: 11,
+    fontWeight: "900",
+    letterSpacing: 1,
+    textTransform: "uppercase",
+  },
+  eventName: {
+    color: palette.textInverse,
+    fontSize: 19,
+    fontWeight: "900",
+    letterSpacing: -0.3,
+    lineHeight: 23,
+  },
+  eventHost: {
+    color: "rgba(255,255,255,0.68)",
+    fontSize: 12,
     fontWeight: "800",
+  },
+  eventDescription: {
+    color: "rgba(255,255,255,0.7)",
+    fontSize: 13,
+    fontWeight: "600",
+    lineHeight: 18,
+    minHeight: 36,
+  },
+  eventMetaRow: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: spacing.sm,
+  },
+  eventPricePill: {
+    backgroundColor: "rgba(124,58,237,0.4)",
+    borderRadius: radii.pill,
+    paddingHorizontal: 11,
+    paddingVertical: 7,
+  },
+  eventPriceText: {
+    color: palette.textInverse,
+    fontSize: 12,
+    fontWeight: "900",
+  },
+  eventTicketText: {
+    color: "rgba(255,255,255,0.58)",
+    flex: 1,
+    fontSize: 12,
+    fontWeight: "700",
+  },
+  eventActions: {
+    flexDirection: "row",
+    gap: spacing.sm,
+    marginTop: 4,
+  },
+  eventPrimaryButton: {
+    alignItems: "center",
+    backgroundColor: palette.accent,
+    borderRadius: radii.md,
+    flex: 1,
+    flexDirection: "row",
+    gap: 7,
+    justifyContent: "center",
+    minHeight: 46,
+  },
+  eventPrimaryText: {
+    color: palette.textInverse,
+    fontSize: 13,
+    fontWeight: "900",
+  },
+  eventSecondaryButton: {
+    alignItems: "center",
+    backgroundColor: "rgba(255,255,255,0.08)",
+    borderColor: "rgba(255,255,255,0.14)",
+    borderRadius: radii.md,
+    borderWidth: 1,
+    justifyContent: "center",
+    minHeight: 46,
+    paddingHorizontal: spacing.md,
+  },
+  eventSecondaryText: {
+    color: palette.textInverse,
+    fontSize: 13,
+    fontWeight: "900",
+  },
+  eventSkeleton: {
+    alignItems: "center",
+    backgroundColor: "rgba(255,255,255,0.08)",
+    borderColor: "rgba(255,255,255,0.14)",
+    borderRadius: radii.lg,
+    borderWidth: 1,
+    minHeight: 120,
+    justifyContent: "center",
+  },
+  eventSkeletonText: {
+    color: palette.textSoft,
+    fontSize: 13,
+    fontWeight: "800",
+  },
+  eventEmpty: {
+    alignItems: "center",
+    backgroundColor: "rgba(255,255,255,0.08)",
+    borderColor: "rgba(255,255,255,0.14)",
+    borderRadius: radii.lg,
+    borderWidth: 1,
+    gap: spacing.sm,
+    padding: spacing.xl,
+  },
+  eventEmptyTitle: {
+    color: palette.textInverse,
+    fontSize: 16,
+    fontWeight: "900",
+  },
+  eventEmptyBody: {
+    color: palette.textSoft,
+    fontSize: 13,
+    fontWeight: "600",
+    lineHeight: 19,
+    textAlign: "center",
+  },
+  eventGrid: {
+    gap: spacing.md,
+  },
+  exploreMoreButton: {
+    alignItems: "center",
+    alignSelf: "flex-start",
+    backgroundColor: "rgba(255,255,255,0.1)",
+    borderColor: "rgba(255,255,255,0.16)",
+    borderRadius: radii.pill,
+    borderWidth: 1,
+    flexDirection: "row",
+    gap: spacing.sm,
+    minHeight: 48,
+    paddingHorizontal: spacing.lg,
+  },
+  exploreMoreText: {
+    color: palette.textInverse,
+    fontSize: 13,
+    fontWeight: "900",
+  },
+  backToHomeButton: {
+    alignItems: "center",
+    alignSelf: "flex-start",
+    flexDirection: "row",
+    gap: 7,
+    paddingVertical: spacing.sm,
+  },
+  backToHomeText: {
+    color: palette.textSoft,
+    fontSize: 13,
+    fontWeight: "900",
+  },
+  detailPanel: {
+    backgroundColor: "rgba(255,255,255,0.1)",
+    borderColor: "rgba(255,255,255,0.14)",
+    borderRadius: radii.lg,
+    borderWidth: 1,
+    gap: spacing.md,
+    overflow: "hidden",
+    padding: spacing.lg,
+  },
+  detailBack: {
+    alignItems: "center",
+    alignSelf: "flex-start",
+    flexDirection: "row",
+    gap: 7,
+  },
+  detailBackText: {
+    color: palette.textInverse,
+    fontSize: 13,
+    fontWeight: "900",
+  },
+  detailImage: {
+    borderRadius: radii.md,
+    height: 210,
+    width: "100%",
+  },
+  detailImageFallback: {
+    alignItems: "center",
+    backgroundColor: "rgba(124,58,237,0.28)",
+    borderRadius: radii.md,
+    height: 210,
+    justifyContent: "center",
+    width: "100%",
+  },
+  detailTitle: {
+    color: palette.textInverse,
+    fontSize: 30,
+    fontWeight: "900",
+    letterSpacing: -0.8,
+    lineHeight: 35,
+  },
+  detailDescription: {
+    color: palette.textSoft,
+    fontSize: 14,
+    fontWeight: "600",
+    lineHeight: 21,
+  },
+  ticketBox: {
+    backgroundColor: "rgba(255,255,255,0.08)",
+    borderColor: "rgba(255,255,255,0.12)",
+    borderRadius: radii.md,
+    borderWidth: 1,
+    gap: spacing.md,
+    padding: spacing.lg,
+  },
+  ticketBoxTitle: {
+    color: palette.textInverse,
+    fontSize: 18,
+    fontWeight: "900",
+  },
+  ticketRow: {
+    alignItems: "center",
+    borderTopColor: "rgba(255,255,255,0.1)",
+    borderTopWidth: 1,
+    flexDirection: "row",
+    gap: spacing.md,
+    paddingTop: spacing.md,
+  },
+  ticketCopy: {
+    flex: 1,
+    gap: 4,
+  },
+  ticketName: {
+    color: palette.textInverse,
+    fontSize: 15,
+    fontWeight: "900",
+  },
+  ticketDesc: {
+    color: palette.textSoft,
+    fontSize: 12,
+    lineHeight: 17,
+  },
+  ticketPrice: {
+    color: "#C4B5FD",
+    fontSize: 13,
+    fontWeight: "900",
+  },
+  stepper: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: spacing.sm,
+  },
+  stepperBtn: {
+    alignItems: "center",
+    backgroundColor: "rgba(255,255,255,0.12)",
+    borderRadius: radii.pill,
+    height: 34,
+    justifyContent: "center",
+    width: 34,
+  },
+  stepperText: {
+    color: palette.textInverse,
+    fontSize: 18,
+    fontWeight: "900",
+  },
+  stepperValue: {
+    color: palette.textInverse,
+    fontSize: 15,
+    fontWeight: "900",
+    minWidth: 18,
+    textAlign: "center",
+  },
+  disabled: {
+    opacity: 0.5,
+  },
+  checkoutBox: {
+    gap: spacing.sm,
+  },
+  checkoutInput: {
+    backgroundColor: "rgba(255,255,255,0.1)",
+    borderColor: "rgba(255,255,255,0.14)",
+    borderRadius: radii.md,
+    borderWidth: 1,
+    color: palette.textInverse,
+    fontSize: 15,
+    minHeight: 54,
+    paddingHorizontal: spacing.lg,
+  },
+  checkoutButton: {
+    alignItems: "center",
+    backgroundColor: palette.accent,
+    borderRadius: radii.md,
+    justifyContent: "center",
+    minHeight: 54,
+  },
+  checkoutButtonText: {
+    color: palette.textInverse,
+    fontSize: 15,
+    fontWeight: "900",
+  },
+  checkoutMessage: {
+    color: palette.textSoft,
+    fontSize: 12,
+    fontWeight: "700",
+    lineHeight: 18,
+  },
+  paymentLinkButton: {
+    alignItems: "center",
+    alignSelf: "flex-start",
+    backgroundColor: "rgba(255,255,255,0.12)",
+    borderColor: "rgba(255,255,255,0.18)",
+    borderRadius: radii.pill,
+    borderWidth: 1,
+    minHeight: 42,
+    justifyContent: "center",
+    paddingHorizontal: spacing.lg,
+  },
+  paymentLinkText: {
+    color: palette.textInverse,
+    fontSize: 13,
+    fontWeight: "900",
+  },
+
+  // ---- Home · Marketplace (design) ----
+  mkt: {
+    gap: spacing.md,
+    paddingBottom: 130,
+  },
+  mktHeader: {
+    alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+  mktHeaderCopy: {
+    gap: 3,
+  },
+  mktKicker: {
+    color: "rgba(255,255,255,0.5)",
+    fontSize: 11,
+    fontWeight: "800",
+  },
+  mktTitle: {
+    color: palette.textInverse,
+    fontSize: 24,
+    fontStyle: "italic",
+    fontWeight: "900",
+    letterSpacing: -0.5,
+  },
+  mktHeaderRight: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: spacing.sm,
+  },
+  mktGear: {
+    alignItems: "center",
+    backgroundColor: "rgba(255,255,255,0.05)",
+    borderColor: "rgba(255,255,255,0.12)",
+    borderRadius: 13,
+    borderWidth: 1,
+    height: 44,
+    justifyContent: "center",
+    width: 44,
+  },
+  mktAvatar: {
+    alignItems: "center",
+    backgroundColor: palette.accent,
+    borderRadius: 14,
+    height: 44,
+    justifyContent: "center",
+    width: 44,
+  },
+  mktAvatarText: {
+    color: palette.textInverse,
+    fontSize: 14,
+    fontWeight: "800",
+  },
+  mktSearch: {
+    alignItems: "center",
+    backgroundColor: "rgba(255,255,255,0.05)",
+    borderColor: "rgba(255,255,255,0.12)",
+    borderRadius: 15,
+    borderWidth: 1,
+    flexDirection: "row",
+    gap: spacing.sm,
+    minHeight: 50,
+    paddingHorizontal: 16,
+  },
+  mktSearchInput: {
+    color: palette.textInverse,
+    flex: 1,
+    fontSize: 13,
+    fontWeight: "600",
+    paddingVertical: 0,
+  },
+  mktPills: {
+    gap: spacing.sm,
+    paddingVertical: 2,
+  },
+  mktPill: {
+    backgroundColor: "rgba(255,255,255,0.05)",
+    borderColor: "rgba(255,255,255,0.12)",
+    borderRadius: radii.pill,
+    borderWidth: 1,
+    paddingHorizontal: 16,
+    paddingVertical: 9,
+  },
+  mktPillActive: {
+    backgroundColor: palette.accentCyanSoft,
+    borderColor: palette.accentCyanSoft,
+  },
+  mktPillText: {
+    color: "rgba(255,255,255,0.7)",
+    fontSize: 12,
+    fontWeight: "900",
+  },
+  mktPillTextActive: {
+    color: "#000000",
+  },
+  mktSectionHead: {
+    alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 4,
+  },
+  mktSectionEyebrow: {
+    color: "rgba(255,255,255,0.42)",
+    fontSize: 10,
+    fontWeight: "900",
+    letterSpacing: 1.6,
+    textTransform: "uppercase",
+  },
+  mktSeeAll: {
+    color: palette.accentCyan,
+    fontSize: 12,
+    fontWeight: "900",
+  },
+  mktList: {
+    gap: 14,
+  },
+  featured: {
+    aspectRatio: 16 / 13,
+    borderRadius: 24,
+    maxHeight: 460,
+    overflow: "hidden",
+    ...shadows.glow,
+  },
+  featuredBadge: {
+    backgroundColor: palette.accentCyanSoft,
+    borderRadius: radii.pill,
+    left: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    position: "absolute",
+    top: 16,
+  },
+  featuredBadgeText: {
+    color: "#000000",
+    fontSize: 10,
+    fontWeight: "900",
+    letterSpacing: 0.5,
+    textTransform: "uppercase",
+  },
+  featuredBody: {
+    bottom: 18,
+    left: 18,
+    position: "absolute",
+    right: 18,
+  },
+  featuredDate: {
+    color: palette.accentCyanSoft,
+    fontSize: 10,
+    fontWeight: "900",
+    letterSpacing: 1.8,
+    textTransform: "uppercase",
+  },
+  featuredTitle: {
+    color: palette.textInverse,
+    fontSize: 27,
+    fontStyle: "italic",
+    fontWeight: "900",
+    letterSpacing: -0.4,
+    lineHeight: 29,
+    marginTop: 7,
+  },
+  featuredMeta: {
+    color: "rgba(255,255,255,0.75)",
+    fontSize: 12,
+    fontWeight: "700",
+    marginTop: 8,
+  },
+  featuredActions: {
+    flexDirection: "row",
+    gap: 9,
+    marginTop: 14,
+  },
+  featuredBuy: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: radii.pill,
+    paddingHorizontal: 22,
+    paddingVertical: 11,
+  },
+  featuredBuyText: {
+    color: "#000000",
+    fontSize: 13,
+    fontWeight: "900",
+  },
+  featuredDetails: {
+    backgroundColor: "rgba(0,0,0,0.25)",
+    borderColor: "rgba(255,255,255,0.3)",
+    borderRadius: radii.pill,
+    borderWidth: 1,
+    paddingHorizontal: 20,
+    paddingVertical: 11,
+  },
+  featuredDetailsText: {
+    color: palette.textInverse,
+    fontSize: 13,
+    fontWeight: "900",
+  },
+  row: {
+    backgroundColor: palette.bgMuted,
+    borderColor: "rgba(255,255,255,0.1)",
+    borderRadius: 20,
+    borderWidth: 1,
+    flexDirection: "row",
+    gap: 14,
+    padding: 12,
+  },
+  rowThumb: {
+    borderRadius: 15,
+    height: 88,
+    overflow: "hidden",
+    width: 88,
+  },
+  rowThumbDate: {
+    bottom: 8,
+    color: palette.accentCyanSoft,
+    fontSize: 9,
+    fontWeight: "900",
+    left: 8,
+    position: "absolute",
+  },
+  rowBody: {
+    flex: 1,
+    justifyContent: "center",
+    minWidth: 0,
+  },
+  rowHost: {
+    color: "#a78bfa",
+    fontSize: 9,
+    fontWeight: "900",
+    letterSpacing: 1.2,
+    textTransform: "uppercase",
+  },
+  rowTitle: {
+    color: palette.textInverse,
+    fontSize: 16,
+    fontWeight: "900",
+    lineHeight: 19,
+    marginTop: 4,
+  },
+  rowMeta: {
+    alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 10,
+  },
+  rowPrice: {
+    color: palette.textInverse,
+    fontSize: 14,
+    fontStyle: "italic",
+    fontWeight: "900",
+  },
+  rowBuy: {
+    backgroundColor: palette.accent,
+    borderRadius: radii.pill,
+    paddingHorizontal: 15,
+    paddingVertical: 7,
+  },
+  rowBuyText: {
+    color: palette.textInverse,
+    fontSize: 11,
+    fontWeight: "900",
+    textTransform: "uppercase",
+  },
+  tabBar: {
+    backgroundColor: "rgba(12,16,32,0.94)",
+    borderTopColor: "rgba(255,255,255,0.08)",
+    borderTopWidth: 1,
+    bottom: 0,
+    flexDirection: "row",
+    justifyContent: "space-around",
+    left: 0,
+    paddingBottom: 20,
+    paddingTop: 12,
+    position: "absolute",
+    right: 0,
+  },
+  tabItem: {
+    alignItems: "center",
+    gap: 5,
+  },
+  tabLabel: {
+    color: "rgba(255,255,255,0.4)",
+    fontSize: 9,
+    fontWeight: "800",
+  },
+  tabLabelActive: {
+    color: palette.accentCyan,
   },
 });

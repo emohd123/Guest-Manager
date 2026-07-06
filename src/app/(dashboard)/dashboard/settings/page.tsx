@@ -13,7 +13,9 @@ import {
   Camera,
   Trash2,
   ChevronRight,
-  Globe
+  Globe,
+  Key,
+  ExternalLink
 } from "lucide-react";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc/client";

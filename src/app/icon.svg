@@ -1,31 +1,37 @@
 <svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
   <defs>
-    <linearGradient id="siteIconBgHd" x1="68" y1="42" x2="444" y2="458" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#FF7A96"/>
-      <stop offset="0.26" stop-color="#FF6B8A"/>
-      <stop offset="0.72" stop-color="#7C4DFF"/>
-      <stop offset="1" stop-color="#4F35F1"/>
+    <linearGradient id="tileBg" x1="68" y1="42" x2="444" y2="458" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#EFF6FF"/>
+      <stop offset="0.46" stop-color="#F5F3FF"/>
+      <stop offset="1" stop-color="#FDF2F8"/>
     </linearGradient>
-    <radialGradient id="siteIconHighlightHd" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(176 118) rotate(48) scale(238 188)">
-      <stop stop-color="#FFFFFF" stop-opacity="0.32"/>
-      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
+    <radialGradient id="tileGlow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(256 243) rotate(90) scale(210)">
+      <stop stop-color="#7c3aed" stop-opacity="0.24"/>
+      <stop offset="0.5" stop-color="#2563eb" stop-opacity="0.14"/>
+      <stop offset="1" stop-color="#db2777" stop-opacity="0"/>
     </radialGradient>
-    <linearGradient id="siteIconCheckHd" x1="206" y1="202" x2="302" y2="290" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#FF5A7A"/>
-      <stop offset="1" stop-color="#7C4DFF"/>
+    <linearGradient id="brandGradient" x1="74" y1="154" x2="438" y2="358" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#2563eb"/>
+      <stop offset="0.5" stop-color="#7c3aed"/>
+      <stop offset="1" stop-color="#db2777"/>
     </linearGradient>
-    <mask id="siteIconTicketMaskHd">
-      <rect x="164" y="158" width="184" height="96" rx="24" fill="white"/>
-      <circle cx="164" cy="206" r="14" fill="black"/>
-      <circle cx="348" cy="206" r="14" fill="black"/>
-    </mask>
+    <filter id="glow" x="38" y="114" width="436" height="284" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="12" result="blur"/>
+      <feComponentTransfer in="blur" result="softGlow">
+        <feFuncA type="linear" slope="0.62"/>
+      </feComponentTransfer>
+      <feMerge>
+        <feMergeNode in="softGlow"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
   </defs>
-  <rect width="512" height="512" rx="128" fill="#F4F0FF"/>
-  <rect x="34" y="34" width="444" height="444" rx="112" fill="url(#siteIconBgHd)"/>
-  <rect x="34" y="34" width="444" height="444" rx="112" fill="url(#siteIconHighlightHd)"/>
-  <path d="M256 410C243.969 410 232.509 404.748 224.47 395.848C200.025 368.785 120 271.93 120 186.881C120 111.82 180.82 51 255.881 51C330.942 51 391.762 111.82 391.762 186.881C391.762 271.93 311.737 368.785 287.292 395.848C279.253 404.748 267.793 410 256 410Z" fill="url(#siteIconBgHd)"/>
-  <circle cx="256" cy="188" r="116" fill="white" fill-opacity="0.12"/>
-  <rect x="164" y="158" width="184" height="96" rx="24" fill="white" fill-opacity="0.98" mask="url(#siteIconTicketMaskHd)"/>
-  <path d="M188 172H292" stroke="white" stroke-opacity="0.5" stroke-width="10" stroke-linecap="round"/>
-  <path d="M206 204L240 236L302 173" stroke="url(#siteIconCheckHd)" stroke-width="22" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect width="512" height="512" fill="url(#tileBg)"/>
+  <rect width="512" height="512" fill="url(#tileGlow)"/>
+  <path d="M117 155H395Q437 155 437 198V226A37 37 0 0 0 437 286V314Q437 357 395 357H117Q75 357 75 314V286A37 37 0 0 0 75 226V198Q75 155 117 155Z" stroke="url(#brandGradient)" stroke-width="21" stroke-linecap="round" stroke-linejoin="round" filter="url(#glow)"/>
+  <rect x="181" y="219" width="24" height="73" rx="12" fill="url(#brandGradient)"/>
+  <rect x="227" y="192" width="24" height="128" rx="12" fill="url(#brandGradient)"/>
+  <rect x="272" y="169" width="24" height="174" rx="12" fill="url(#brandGradient)"/>
+  <rect x="317" y="201" width="24" height="110" rx="12" fill="url(#brandGradient)"/>
+  <rect x="363" y="215" width="24" height="83" rx="12" fill="url(#brandGradient)"/>
 </svg>

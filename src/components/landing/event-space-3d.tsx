@@ -2,6 +2,7 @@
 
 import { useMemo, useRef } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
+import { Environment, Lightformer } from "@react-three/drei";
 import type { MotionValue } from "framer-motion";
 import * as THREE from "three";
 import { makeTicketBackCanvas, makeTicketCanvas } from "./ticket-texture";
@@ -42,7 +43,7 @@ function TicketPass({
         clearcoatRoughness: 0.05,
         transparent: true,
         side: THREE.FrontSide,
-        envMapIntensity: 0.6,
+        envMapIntensity: 1.0,
       }),
     [front]
   );
@@ -56,7 +57,7 @@ function TicketPass({
         clearcoatRoughness: 0.05,
         transparent: true,
         side: THREE.FrontSide,
-        envMapIntensity: 0.6,
+        envMapIntensity: 1.0,
       }),
     [back]
   );
@@ -210,6 +211,16 @@ function Scene({
       {/* Subtle colored fill lights for reflections on the card */}
       <pointLight position={[8, 2, -6]} intensity={3} color="#db2777" distance={14} decay={2} />
       <pointLight position={[3, -1, -10]} intensity={4} color="#2563eb" distance={16} decay={2} />
+
+      {/* Procedural studio environment → real reflections on the glossy card.
+          Rendered to an offscreen cubemap (no network/HDR fetch). */}
+      <Environment resolution={256} frames={1}>
+        <color attach="background" args={["#05060d"]} />
+        <Lightformer intensity={3} color="#ffffff" position={[0, 2, -6]} scale={[8, 3, 1]} />
+        <Lightformer intensity={4} color="#db2777" position={[-5, 1, -4]} scale={[3, 6, 1]} rotation={[0, Math.PI / 2, 0]} />
+        <Lightformer intensity={4} color="#2563eb" position={[5, -1, -4]} scale={[3, 6, 1]} rotation={[0, -Math.PI / 2, 0]} />
+        <Lightformer intensity={2} color="#7c3aed" position={[0, -3, -3]} scale={[6, 2, 1]} />
+      </Environment>
 
       <Rig progress={progress} animate={animate} />
 

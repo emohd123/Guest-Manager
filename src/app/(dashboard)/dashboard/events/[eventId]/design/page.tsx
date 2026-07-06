@@ -39,6 +39,7 @@ export default function DesignSetupPage({
   const [backgroundColor, setBackgroundColor] = useState("#FFFFFF");
   const [customCss, setCustomCss] = useState("");
   const [publicPageEnabled, setPublicPageEnabled] = useState(true);
+  const [showInApp, setShowInApp] = useState(true);
   const [isPaidEvent, setIsPaidEvent] = useState(false);
   const [heroLabel, setHeroLabel] = useState("Event Page");
   const [pageHeadline, setPageHeadline] = useState("");
@@ -93,6 +94,7 @@ export default function DesignSetupPage({
         setBackgroundColor(settings.backgroundColor || "#FFFFFF");
         setCustomCss(settings.customCss || "");
         setPublicPageEnabled(settings.publicPage?.enabled !== false);
+        setShowInApp(settings.publicPage?.showInApp !== false);
         setIsPaidEvent(Boolean(settings.publicPage?.isPaidEvent));
         setHeroLabel(settings.publicPage?.heroLabel || "Event Page");
         setPageHeadline(settings.publicPage?.headline || "");
@@ -153,6 +155,7 @@ export default function DesignSetupPage({
         customCss,
         publicPage: {
           enabled: publicPageEnabled,
+          showInApp,
           isPaidEvent,
           heroLabel,
           headline: pageHeadline,
@@ -282,7 +285,7 @@ export default function DesignSetupPage({
                     <h2 className="theme-section-title">Landing Page Content</h2>
                   </div>
 
-                  <div className="grid gap-6 md:grid-cols-2">
+                  <div className="grid gap-6 md:grid-cols-3">
                     <div className="space-y-3">
                       <Label className="text-[9px] font-black uppercase tracking-[0.3em] text-muted-foreground dark:text-white/40 italic">PUBLIC PAGE</Label>
                       <Button
@@ -296,6 +299,22 @@ export default function DesignSetupPage({
                       >
                         <Globe className="mr-2 h-4 w-4" />
                         {publicPageEnabled ? "Public Page On" : "Public Page Off"}
+                      </Button>
+                    </div>
+
+                    <div className="space-y-3">
+                      <Label className="text-[9px] font-black uppercase tracking-[0.3em] text-muted-foreground dark:text-white/40 italic">APP DISCOVERY</Label>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className={cn(
+                          "h-14 w-full rounded-2xl border-border dark:border-white/10 font-black uppercase tracking-widest text-[10px]",
+                          showInApp ? "bg-primary/20 text-foreground dark:text-white" : "bg-card text-muted-foreground dark:bg-white/5 dark:text-white/60"
+                        )}
+                        onClick={() => setShowInApp((value) => !value)}
+                      >
+                        <Globe className="mr-2 h-4 w-4" />
+                        {showInApp ? "Show In App" : "Hide From App"}
                       </Button>
                     </div>
 
