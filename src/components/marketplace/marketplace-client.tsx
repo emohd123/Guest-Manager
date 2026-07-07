@@ -390,9 +390,9 @@ export function MarketplaceClient({
                   src={serviceImage(item.slug)}
                   alt=""
                   loading="lazy"
-                  className="absolute inset-0 h-full w-full object-cover opacity-35 transition duration-500 group-hover:scale-105 group-hover:opacity-50"
+                  className="absolute inset-0 h-full w-full object-cover opacity-70 transition duration-500 group-hover:scale-105 group-hover:opacity-90"
                 />
-                <div className="absolute inset-0 bg-gradient-to-tr from-black/90 via-black/75 to-black/55" />
+                <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/55 to-black/25" />
                 <div className="relative">
                   <p className="text-lg font-black">{locale === "ar" ? item.labelAr : item.label}</p>
                   <p className="mt-2 text-sm leading-6 text-white/70">
