@@ -32,13 +32,16 @@ const valueProps = [
   { icon: BarChart3, title: "Know your numbers", body: "Live dashboards for attendance, revenue, pace, and scans across every event you run." },
 ];
 
+const img = (id: string, w = 640, h = 420) =>
+  `https://images.unsplash.com/photo-${id}?w=${w}&h=${h}&fit=crop&auto=format&q=70`;
+
 const industries = [
-  { icon: Music4, title: "Entertainment events", body: "Concerts, festivals, and live shows with reserved or general admission." },
-  { icon: MapPin, title: "Attractions & tours", body: "Museums, experiences, and recurring daily entry ticketing." },
-  { icon: Trophy, title: "Sports events", body: "Stadiums, marathons, and tournaments with fast gate scanning." },
-  { icon: Briefcase, title: "Business & education", body: "Conferences, seminars, and multi-day agendas with session check-in." },
-  { icon: Building2, title: "Venue ticketing", body: "Theatres and venues with repeat shows and seat mapping." },
-  { icon: Users, title: "Organisers & providers", body: "Agencies and providers running events for their own clients." },
+  { icon: Music4, title: "Entertainment events", body: "Concerts, festivals, and live shows with reserved or general admission.", img: img("1470229722913-7c0e2dbbafd3") },
+  { icon: MapPin, title: "Attractions & tours", body: "Museums, experiences, and recurring daily entry ticketing.", img: img("1513889961551-628c1e5e2ee9") },
+  { icon: Trophy, title: "Sports events", body: "Stadiums, marathons, and tournaments with fast gate scanning.", img: img("1461896836934-ffe607ba8211") },
+  { icon: Briefcase, title: "Business & education", body: "Conferences, seminars, and multi-day agendas with session check-in.", img: img("1540575467063-178a50c2df87") },
+  { icon: Building2, title: "Venue ticketing", body: "Theatres and venues with repeat shows and seat mapping.", img: img("1503095396549-807759245b35") },
+  { icon: Users, title: "Organisers & providers", body: "Agencies and providers running events for their own clients.", img: img("1522071820081-009f0129c71c") },
 ];
 
 const stats = [
@@ -50,12 +53,12 @@ const stats = [
 ];
 
 const services = [
-  { icon: Headphones, title: "Support", body: "A dedicated ticketing team from setup to the final scan." },
-  { icon: Building2, title: "Venues", body: "Help choosing and securing the right venue for your event." },
-  { icon: FileCheck2, title: "Permits", body: "Guidance and support with local event permit applications." },
-  { icon: Sparkles, title: "Consultation", body: "Tailored advice on pricing, capacity, and audience growth." },
-  { icon: Users, title: "Staffing", body: "Trained door staff, scanners, and on-site coordinators." },
-  { icon: Wrench, title: "Equipment", body: "Scanners, printers, and check-in hardware for the door." },
+  { icon: Headphones, title: "Support", body: "A dedicated ticketing team from setup to the final scan.", img: img("1556761175-b413da4baf72", 240, 240) },
+  { icon: Building2, title: "Venues", body: "Help choosing and securing the right venue for your event.", img: img("1519167758481-83f550bb49b3", 240, 240) },
+  { icon: FileCheck2, title: "Permits", body: "Guidance and support with local event permit applications.", img: img("1450101499163-c8848c66ca85", 240, 240) },
+  { icon: Sparkles, title: "Consultation", body: "Tailored advice on pricing, capacity, and audience growth.", img: img("1600880292203-757bb62b4baf", 240, 240) },
+  { icon: Users, title: "Staffing", body: "Trained door staff, scanners, and on-site coordinators.", img: img("1521737604893-d14cc237f11d", 240, 240) },
+  { icon: Wrench, title: "Equipment", body: "Scanners, printers, and check-in hardware for the door.", img: img("1526374965328-7f61d4dc18c5", 240, 240) },
 ];
 
 const testimonials = [
@@ -173,14 +176,16 @@ export function ServicesForOrganisers() {
           <h2 className="mt-3 text-3xl font-black tracking-tight sm:text-5xl">Industries we power</h2>
           <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {industries.map((i) => (
-              <div key={i.title} className="group rounded-2xl border border-white/10 bg-white/[0.04] p-6 transition hover:border-cyan-200/40 hover:bg-white/[0.07]">
-                <div className="flex items-center gap-3">
-                  <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-fuchsia-400/15 text-fuchsia-300">
+              <div key={i.title} className="group overflow-hidden rounded-[1.5rem] border border-white/10 bg-white/[0.04] transition hover:border-cyan-200/40">
+                <div className="relative aspect-[16/9] overflow-hidden">
+                  <img src={i.img} alt={i.title} loading="lazy" className="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-105" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-transparent" />
+                  <span className="absolute left-4 top-4 flex h-10 w-10 items-center justify-center rounded-xl border border-white/20 bg-black/40 text-cyan-200 backdrop-blur">
                     <i.icon className="h-5 w-5" />
                   </span>
-                  <h3 className="text-lg font-black">{i.title}</h3>
+                  <h3 className="absolute inset-x-4 bottom-3 text-lg font-black">{i.title}</h3>
                 </div>
-                <p className="mt-4 text-sm leading-6 text-white/60">{i.body}</p>
+                <p className="p-5 text-sm leading-6 text-white/60">{i.body}</p>
               </div>
             ))}
           </div>
@@ -220,12 +225,18 @@ export function ServicesForOrganisers() {
           <h2 className="mt-3 text-3xl font-black tracking-tight sm:text-5xl">Built-in services for successful events</h2>
           <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {services.map((s) => (
-              <div key={s.title} className="rounded-2xl border border-white/10 bg-white/[0.04] p-6 transition hover:border-cyan-200/40 hover:bg-white/[0.07]">
-                <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-300/15 text-emerald-300">
-                  <s.icon className="h-5 w-5" />
-                </span>
-                <h3 className="mt-5 text-lg font-black">{s.title}</h3>
-                <p className="mt-2 text-sm leading-6 text-white/60">{s.body}</p>
+              <div key={s.title} className="group flex items-center gap-4 rounded-2xl border border-white/10 bg-white/[0.04] p-4 transition hover:border-cyan-200/40 hover:bg-white/[0.07]">
+                <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl">
+                  <img src={s.img} alt={s.title} loading="lazy" className="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-110" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
+                  <span className="absolute left-2 top-2 flex h-7 w-7 items-center justify-center rounded-lg bg-black/50 text-emerald-300 backdrop-blur">
+                    <s.icon className="h-4 w-4" />
+                  </span>
+                </div>
+                <div className="min-w-0">
+                  <h3 className="text-lg font-black">{s.title}</h3>
+                  <p className="mt-1 text-sm leading-6 text-white/60">{s.body}</p>
+                </div>
               </div>
             ))}
           </div>
