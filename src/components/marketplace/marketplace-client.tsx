@@ -83,6 +83,13 @@ export function MarketplaceClient({
     .slice(0, 8);
   const attractionEvents = events.filter((event) => event.categorySlug === "attractions").slice(0, 8);
   const featured = useMemo(() => events[0], [events]);
+  const soonEvents = useMemo(
+    () =>
+      [...events]
+        .sort((a, b) => new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime())
+        .slice(0, 4),
+    [events],
+  );
   const copy = locale === "ar" ? arCopy : enCopy;
   const dateOptions = locale === "ar" ? arDateOptions : enDateOptions;
   const promptCards = locale === "ar" ? arPromptCards : enPromptCards;
@@ -200,25 +207,43 @@ export function MarketplaceClient({
                 ))}
               </div>
 
-              <div className="mt-8 grid gap-3 sm:grid-cols-3">
-                {promptCards.map((item) => (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className="group rounded-2xl border border-white/14 bg-[#090d19]/75 p-4 shadow-[0_18px_50px_rgba(0,0,0,0.26)] backdrop-blur transition hover:border-cyan-200/45 hover:bg-[#0d1323]/85"
-                  >
-                    <div className="flex items-start gap-3">
-                      <span className="rounded-full bg-cyan-300/15 p-2 text-cyan-200">
-                        <Sparkles className="h-4 w-4" />
-                      </span>
-                      <span>
-                        <span className="block text-sm font-black">{item.title}</span>
-                        <span className="mt-1 block text-xs leading-5 text-white/68">{item.body}</span>
-                      </span>
-                    </div>
-                  </Link>
-                ))}
-              </div>
+              {soonEvents.length > 0 ? (
+                <div className="mt-8">
+                  <div className="mb-3 flex items-center gap-2">
+                    <span className="h-2 w-2 animate-pulse rounded-full bg-cyan-300" />
+                    <p className="text-[11px] font-black uppercase tracking-[0.22em] text-white/55">
+                      {locale === "ar" ? "قريبًا" : "Happening soon"}
+                    </p>
+                  </div>
+                  <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                    {soonEvents.map((event, index) => (
+                      <Link
+                        key={event.id}
+                        href={event.buyUrl}
+                        className="group flex items-center gap-3 rounded-2xl border border-white/12 bg-[#090d19]/75 p-3 backdrop-blur transition hover:border-cyan-200/45 hover:bg-[#0d1323]/85"
+                      >
+                        <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl">
+                          {event.coverImageUrl ? (
+                            <img src={event.coverImageUrl} alt="" loading="lazy" className="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-110" />
+                          ) : (
+                            <div className="absolute inset-0 bg-[linear-gradient(135deg,#1e1b4b,#7c3aed)]" />
+                          )}
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/75 to-transparent" />
+                          <span className="absolute inset-x-0 bottom-0.5 text-center text-[9px] font-black uppercase text-cyan-100">
+                            {format(new Date(event.startsAt), "MMM d")}
+                          </span>
+                        </div>
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-black text-white">{event.title}</p>
+                          <p className="mt-0.5 text-xs font-bold text-white/55">
+                            {formatMoney(event.minPrice, event.currency, locale)}
+                          </p>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
             </div>
 
             {featured ? (
