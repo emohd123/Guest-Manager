@@ -31,6 +31,21 @@ function categoryImage(slug: string): string {
   return `https://images.unsplash.com/photo-${id}?w=440&h=330&fit=crop&auto=format&q=70`;
 }
 
+// Subject-relevant backgrounds for the managed-services cards.
+const SERVICE_IMAGE_IDS: Record<string, string> = {
+  conferences: "1540575467063-178a50c2df87",
+  corporate: "1517048676732-d65bc937f952",
+  launches: "1475721027785-f74eccf877e2",
+  "private-events": "1519225421980-715cb0215aed",
+  staffing: "1522071820081-009f0129c71c",
+  "ticketing-services": "1459749411175-04bf5292ceea",
+};
+
+function serviceImage(slug: string): string {
+  const id = SERVICE_IMAGE_IDS[slug] ?? SERVICE_IMAGE_IDS.conferences;
+  return `https://images.unsplash.com/photo-${id}?w=560&h=360&fit=crop&auto=format&q=70`;
+}
+
 type MarketplaceClientProps = {
   initialData: MarketplaceDiscoveryResponse;
   initialLocale?: LocaleCode;
@@ -369,12 +384,21 @@ export function MarketplaceClient({
               <Link
                 key={item.slug}
                 href={`/contact?service=${item.slug}`}
-                className="rounded-2xl border border-white/10 bg-white/[0.04] p-5 transition hover:border-cyan-200/40 hover:bg-white/[0.07]"
+                className="group relative overflow-hidden rounded-2xl border border-white/10 p-5 transition hover:border-cyan-200/40"
               >
-                <p className="text-lg font-black">{locale === "ar" ? item.labelAr : item.label}</p>
-                <p className="mt-2 text-sm leading-6 text-white/55">
-                  {serviceBlurbs[item.slug]?.[locale] ?? copy.managedService}
-                </p>
+                <img
+                  src={serviceImage(item.slug)}
+                  alt=""
+                  loading="lazy"
+                  className="absolute inset-0 h-full w-full object-cover opacity-35 transition duration-500 group-hover:scale-105 group-hover:opacity-50"
+                />
+                <div className="absolute inset-0 bg-gradient-to-tr from-black/90 via-black/75 to-black/55" />
+                <div className="relative">
+                  <p className="text-lg font-black">{locale === "ar" ? item.labelAr : item.label}</p>
+                  <p className="mt-2 text-sm leading-6 text-white/70">
+                    {serviceBlurbs[item.slug]?.[locale] ?? copy.managedService}
+                  </p>
+                </div>
               </Link>
             ))}
           </div>
