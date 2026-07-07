@@ -211,6 +211,17 @@ export function MarketingNavbar() {
             >
               Contact
             </Link>
+            <div className="flex items-center justify-between rounded-lg border border-border p-3">
+              <span className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-[0.14em] text-muted-foreground">
+                <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-400" />
+                Live in Bahrain
+              </span>
+              <Button asChild variant="outline" size="sm" className="rounded-full px-4 font-bold">
+                <Link href={`${pathname || "/"}?locale=${nextLang}`} onClick={() => setMobileOpen(false)}>
+                  {lang === "ar" ? "English" : "العربية"}
+                </Link>
+              </Button>
+            </div>
             <hr className="my-2" />
             <div className="flex gap-2">
 
