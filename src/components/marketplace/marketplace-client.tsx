@@ -149,33 +149,6 @@ export function MarketplaceClient({
         </div>
 
         <div className="relative z-10 mx-auto flex max-w-none flex-col justify-end">
-          {/* Top utility strip: brand status (left) + language / tickets (right) */}
-          <div className="mb-8 flex flex-wrap items-center justify-between gap-3 rounded-full border border-white/10 bg-[#080c18]/70 px-3 py-2 backdrop-blur">
-            <div className="flex flex-wrap items-center gap-2.5">
-              <p className="rounded-full border border-cyan-100/20 bg-cyan-100/[0.09] px-4 py-1.5 text-xs font-black uppercase tracking-[0.24em] text-cyan-50">
-                {copy.eyebrow}
-              </p>
-              <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.06] px-4 py-1.5 text-xs font-black uppercase tracking-[0.16em] text-white/85">
-                <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-300" />
-                {copy.liveInBahrain}
-              </span>
-            </div>
-            <div className="flex flex-wrap items-center gap-2.5">
-              <button
-                onClick={() => setLocale(locale === "ar" ? "en" : "ar")}
-                className="rounded-full border border-white/15 bg-white/10 px-4 py-1.5 text-sm font-bold text-white transition hover:bg-white/20"
-              >
-                {locale === "ar" ? "English" : "\u0627\u0644\u0639\u0631\u0628\u064a\u0629"}
-              </button>
-              <Link
-                href="/account"
-                className="rounded-full border border-cyan-200/30 bg-cyan-300/15 px-4 py-1.5 text-sm font-bold text-cyan-100 transition hover:bg-cyan-300/25"
-              >
-                {copy.myTickets}
-              </Link>
-            </div>
-          </div>
-
           <div className="grid items-start gap-10 lg:grid-cols-[1.08fr_0.92fr]">
             <div className="min-w-0">
               <h1 className="text-4xl font-black leading-[0.96] tracking-[-0.03em] text-white sm:text-5xl lg:text-[3.35rem]">

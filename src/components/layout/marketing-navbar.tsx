@@ -38,15 +38,22 @@ const products = [
 export function MarketingNavbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [lang, setLang] = useState<"en" | "ar">("en");
   const pathname = usePathname();
   const { setTheme, resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
+  const nextLang = lang === "ar" ? "en" : "ar";
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 10);
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    setLang(params.get("locale") === "ar" ? "ar" : "en");
+  }, [pathname]);
 
   return (
     <>
@@ -126,8 +133,14 @@ export function MarketingNavbar() {
             </nav>
           </div>
 
-          <div className="hidden items-center gap-4 md:flex">
-
+          <div className="hidden items-center gap-3 md:flex">
+            <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.06] px-3.5 py-1.5 text-[11px] font-black uppercase tracking-[0.14em] text-foreground/80">
+              <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-400" />
+              Live in Bahrain
+            </span>
+            <Button asChild variant="ghost" className="rounded-full border border-white/15 px-4 font-bold hover:bg-black/5 dark:hover:bg-white/10">
+              <Link href={`${pathname || "/"}?locale=${nextLang}`}>{lang === "ar" ? "English" : "العربية"}</Link>
+            </Button>
             <Button asChild variant="ghost" className="hover:bg-accent transition-colors">
               <Link href="/account/login">Buyer Login</Link>
             </Button>
