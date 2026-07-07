@@ -205,7 +205,7 @@ export function MarketplaceClient({
                     ))}
                   </select>
                   <Button asChild className="min-h-14 rounded-[1.4rem] bg-white px-7 font-black text-black hover:bg-white/90">
-                    <Link href={`/events?${new URLSearchParams({ q: query, category, date: dateFilter }).toString()}`}>
+                    <Link href={`/?${new URLSearchParams({ q: query, category, date: dateFilter }).toString()}`}>
                       {copy.explore}
                     </Link>
                   </Button>
@@ -769,7 +769,7 @@ function RailSection({
           <p className="text-xs font-black uppercase tracking-[0.28em] text-cyan-200">{eyebrow}</p>
           <h2 className="mt-2 text-2xl font-black tracking-tight sm:text-4xl">{title}</h2>
         </div>
-        <Link href="/events" className="inline-flex items-center gap-2 text-sm font-black text-cyan-200">
+        <Link href="/" className="inline-flex items-center gap-2 text-sm font-black text-cyan-200">
           {locale === "ar" ? "\u0639\u0631\u0636 \u0627\u0644\u0643\u0644" : "View all"}
           <ChevronRight className="h-4 w-4" />
         </Link>
@@ -831,7 +831,7 @@ function ThingsToDo({ copy, locale }: { copy: typeof enCopy; locale: LocaleCode 
           <p className="text-xs font-black uppercase tracking-[0.28em] text-pink-300">{copy.thingsEyebrow}</p>
           <h2 className="mt-2 text-2xl font-black tracking-tight sm:text-4xl">{copy.thingsTitle}</h2>
         </div>
-        <Link href="/events" className="inline-flex items-center gap-2 text-sm font-black text-cyan-200">
+        <Link href="/" className="inline-flex items-center gap-2 text-sm font-black text-cyan-200">
           {copy.explore}
           <ChevronRight className="h-4 w-4" />
         </Link>

@@ -3,9 +3,10 @@ import { BrandWordmark } from "@/components/brand/brand-wordmark";
 
 const footerLinks = {
   Marketplace: [
-    { name: "Browse Events", href: "/events" },
+    { name: "Browse Events", href: "/" },
     { name: "My Tickets", href: "/account" },
     { name: "Buyer Login", href: "/account/login" },
+    { name: "Our Services", href: "/events" },
   ],
   Services: [
     { name: "Corporate Events", href: "/contact?service=corporate" },

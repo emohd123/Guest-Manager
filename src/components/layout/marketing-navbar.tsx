@@ -18,7 +18,7 @@ const products = [
   {
     name: "Browse Events",
     description: "Concerts, exhibitions, family shows, business events, and more",
-    href: "/events",
+    href: "/",
     icon: CalendarDays,
   },
   {
@@ -28,9 +28,9 @@ const products = [
     icon: Ticket,
   },
   {
-    name: "Managed Event Services",
+    name: "Our Services",
     description: "Ticketing, staffing, check-in operations, and guest support",
-    href: "/contact",
+    href: "/events",
     icon: BriefcaseBusiness,
   },
 ];
@@ -109,7 +109,7 @@ export function MarketingNavbar() {
                   variant="ghost"
                   className={`hover:bg-black/5 dark:hover:bg-white/5 transition-colors text-foreground ${pathname?.startsWith("/events") ? "text-primary text-glow font-medium" : ""}`}
                 >
-                  Events
+                  Our Services
                 </Button>
               </Link>
 
@@ -145,7 +145,7 @@ export function MarketingNavbar() {
               <Link href="/account/login">Buyer Login</Link>
             </Button>
              <Button asChild className="shadow-[0_4px_20px_0_rgba(124,77,255,0.4)] hover:shadow-[0_6px_25px_0_rgba(124,77,255,0.55)] transition-all duration-300 bg-brand-gradient hover:opacity-95 text-white">
-               <Link href="/events">Browse Events</Link>
+               <Link href="/">Browse Events</Link>
              </Button>
           </div>
 
@@ -186,7 +186,7 @@ export function MarketingNavbar() {
               className="rounded-lg p-3 hover:bg-accent"
               onClick={() => setMobileOpen(false)}
             >
-              Events
+              Our Services
             </Link>
             <Link
               href="/account"
@@ -211,7 +211,7 @@ export function MarketingNavbar() {
                 </Link>
               </Button>
               <Button asChild className="flex-1 w-full">
-                <Link href="/events" onClick={() => setMobileOpen(false)}>
+                <Link href="/" onClick={() => setMobileOpen(false)}>
                   Browse
                 </Link>
               </Button>
