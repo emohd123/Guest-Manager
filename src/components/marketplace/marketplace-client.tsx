@@ -256,6 +256,9 @@ export function MarketplaceClient({
                               {format(new Date(event.startsAt), "EEE, MMM d")}
                             </span>
                           )}
+                          <span className="absolute right-3 top-3 rounded-full border border-white/20 bg-black/55 px-3 py-1 text-xs font-black text-white backdrop-blur">
+                            {formatMoney(event.minPrice, event.currency, locale)}
+                          </span>
                           <div className="absolute inset-x-3 bottom-3">
                             <h3 className="line-clamp-1 text-base font-black text-white">{event.title}</h3>
                             <p className="text-xs font-bold text-white/65">{event.venueName || event.locationText || "Bahrain"}</p>
@@ -268,13 +271,10 @@ export function MarketplaceClient({
                           <Button
                             type="button"
                             onClick={() => setQuickViewEvent(event)}
-                            className="h-10 rounded-full border border-white/25 bg-white/10 px-4 text-sm font-black text-white hover:bg-white/20"
+                            className="h-10 flex-1 rounded-full border border-white/25 bg-white/10 text-sm font-black text-white hover:bg-white/20"
                           >
                             {locale === "ar" ? "تفاصيل" : "Details"}
                           </Button>
-                          <span className="shrink-0 rounded-full border border-white/12 bg-black/30 px-3 py-1.5 text-xs font-black text-white">
-                            {formatMoney(event.minPrice, event.currency, locale)}
-                          </span>
                         </div>
                       </div>
                     ))}
