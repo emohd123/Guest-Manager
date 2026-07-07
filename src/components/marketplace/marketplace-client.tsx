@@ -149,33 +149,35 @@ export function MarketplaceClient({
         </div>
 
         <div className="relative z-10 mx-auto flex max-w-none flex-col justify-end">
-          <div className="mb-8 flex flex-wrap items-center gap-3">
-            <button
-              onClick={() => setLocale(locale === "ar" ? "en" : "ar")}
-              className="rounded-full border border-white/15 bg-white/10 px-4 py-2 text-sm font-bold text-white backdrop-blur transition hover:bg-white/15"
-            >
-              {locale === "ar" ? "English" : "\u0627\u0644\u0639\u0631\u0628\u064a\u0629"}
-            </button>
-            <Link
-              href="/account"
-              className="rounded-full border border-white/15 bg-white/10 px-4 py-2 text-sm font-bold text-white backdrop-blur transition hover:bg-white/15"
-            >
-              {copy.myTickets}
-            </Link>
+          {/* Top utility strip: brand status (left) + language / tickets (right) */}
+          <div className="mb-8 flex flex-wrap items-center justify-between gap-3 rounded-full border border-white/10 bg-[#080c18]/70 px-3 py-2 backdrop-blur">
+            <div className="flex flex-wrap items-center gap-2.5">
+              <p className="rounded-full border border-cyan-100/20 bg-cyan-100/[0.09] px-4 py-1.5 text-xs font-black uppercase tracking-[0.24em] text-cyan-50">
+                {copy.eyebrow}
+              </p>
+              <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.06] px-4 py-1.5 text-xs font-black uppercase tracking-[0.16em] text-white/85">
+                <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-300" />
+                {copy.liveInBahrain}
+              </span>
+            </div>
+            <div className="flex flex-wrap items-center gap-2.5">
+              <button
+                onClick={() => setLocale(locale === "ar" ? "en" : "ar")}
+                className="rounded-full border border-white/15 bg-white/10 px-4 py-1.5 text-sm font-bold text-white transition hover:bg-white/20"
+              >
+                {locale === "ar" ? "English" : "\u0627\u0644\u0639\u0631\u0628\u064a\u0629"}
+              </button>
+              <Link
+                href="/account"
+                className="rounded-full border border-cyan-200/30 bg-cyan-300/15 px-4 py-1.5 text-sm font-bold text-cyan-100 transition hover:bg-cyan-300/25"
+              >
+                {copy.myTickets}
+              </Link>
+            </div>
           </div>
 
           <div className="grid items-start gap-10 lg:grid-cols-[1.08fr_0.92fr]">
             <div className="min-w-0">
-              <div className="mb-5 flex flex-wrap items-center gap-3">
-                <p className="rounded-full border border-cyan-100/20 bg-cyan-100/[0.09] px-4 py-2 text-xs font-black uppercase tracking-[0.28em] text-cyan-50 shadow-[0_0_24px_rgba(34,211,238,0.08)]">
-                  {copy.eyebrow}
-                </p>
-                <span className="inline-flex items-center gap-2 rounded-full border border-white/18 bg-white/[0.09] px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-white/85 backdrop-blur">
-                  <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-300" />
-                  {copy.liveInBahrain}
-                </span>
-              </div>
-
               <h1 className="text-4xl font-black leading-[0.96] tracking-[-0.03em] text-white sm:text-5xl lg:text-[3.35rem]">
                 {copy.titleLead}{" "}
                 <span className="bg-gradient-to-r from-cyan-400 via-fuchsia-400 to-amber-400 bg-[length:200%_auto] bg-clip-text text-transparent animate-[shine_5s_linear_infinite]">
@@ -488,6 +490,7 @@ const serviceBlurbs: Record<string, { en: string; ar: string }> = {
 function HeroFeature({
   event,
   locale,
+  onQuickView,
 }: {
   event: MarketplaceEvent;
   locale: LocaleCode;
@@ -528,9 +531,16 @@ function HeroFeature({
             <MapPin className="h-4 w-4 shrink-0 text-cyan-200" />
             {event.venueName || event.locationText || "Bahrain"}
           </p>
-          <div className="mt-5 flex items-center gap-3">
+          <div className="mt-5 flex flex-wrap items-center gap-3">
             <Button asChild className="rounded-full bg-white px-6 font-black text-black hover:bg-white/90">
               <Link href={event.buyUrl}>{buy}</Link>
+            </Button>
+            <Button
+              type="button"
+              onClick={() => onQuickView(event)}
+              className="rounded-full border border-white/30 bg-white/15 px-5 font-black text-white backdrop-blur hover:bg-white/25"
+            >
+              {locale === "ar" ? "تفاصيل" : "Details"}
             </Button>
             <span className="rounded-full border border-white/15 bg-white/10 px-4 py-2 text-sm font-black text-white backdrop-blur">
               {formatMoney(event.minPrice, event.currency, locale)}
@@ -640,9 +650,8 @@ function EventCard({
           </Button>
           <Button
             type="button"
-            variant="outline"
             onClick={() => onQuickView(event)}
-            className="rounded-full border-white/15 bg-white/[0.04] px-5 font-black text-white hover:bg-white/[0.08]"
+            className="rounded-full border border-white/30 bg-white/15 px-5 font-black text-white hover:bg-white/25"
           >
             {locale === "ar" ? "\u062a\u0641\u0627\u0635\u064a\u0644" : "Details"}
           </Button>
@@ -874,8 +883,8 @@ const enCopy = {
   eyebrow: "Events Hub Bahrain",
   liveInBahrain: "Live in Bahrain",
   titleLead: "Every event in Bahrain,",
-  titleAccent: "one hub.",
-  title: "Every event in Bahrain, one hub.",
+  titleAccent: "ONE HUB",
+  title: "Every event in Bahrain, ONE HUB",
   subtitle:
     "Browse curated events, reserve QR tickets, and let our team run ticketing, check-in, and guest ops end to end.",
   quickStats: ["BHD payments", "Arabic + English", "QR tickets", "Managed by Events Hub"],

@@ -17,7 +17,7 @@ export function BrandWordmark({
   showSubtitle = false,
 }: BrandWordmarkProps) {
   return (
-    <div className={cn("inline-grid grid-cols-[auto_1fr] items-center gap-x-3", className)}>
+    <div className={cn("inline-grid grid-cols-[auto_1fr] items-center gap-x-4", className)}>
       <div className="col-start-1 row-start-1 flex items-center justify-center">
         <BrandMark className={markClassName} />
       </div>

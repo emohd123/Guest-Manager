@@ -61,9 +61,9 @@ export function MarketingNavbar() {
           <div className="flex items-center gap-8">
             <Link href="/" aria-label="Events Hub home">
               <BrandWordmark
-                className="gap-3.5"
-                markClassName="h-12 w-12 sm:h-16 sm:w-16"
-                textClassName="text-[1.8rem] sm:text-[2.5rem]"
+                className="gap-x-5"
+                markClassName="h-11 w-11 sm:h-14 sm:w-14"
+                textClassName="text-[1.7rem] sm:text-[2.35rem]"
                 showSubtitle={true}
               />
             </Link>
