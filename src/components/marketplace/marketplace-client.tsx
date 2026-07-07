@@ -83,13 +83,25 @@ export function MarketplaceClient({
     .slice(0, 8);
   const attractionEvents = events.filter((event) => event.categorySlug === "attractions").slice(0, 8);
   const featured = useMemo(() => events[0], [events]);
-  const soonEvents = useMemo(
-    () =>
-      [...events]
-        .sort((a, b) => new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime())
-        .slice(0, 4),
-    [events],
-  );
+  // "Happening soon" — events starting within 10 hours float to the top for
+  // fast purchase, then the rest by soonest start date.
+  const soonEvents = useMemo(() => {
+    const now = Date.now();
+    const withTime = events.map((event) => ({
+      event,
+      hours: (new Date(event.startsAt).getTime() - now) / 3_600_000,
+    }));
+    const fast = withTime
+      .filter((x) => x.hours > 0 && x.hours <= 10)
+      .sort((a, b) => a.hours - b.hours);
+    const rest = withTime
+      .filter((x) => !(x.hours > 0 && x.hours <= 10))
+      .sort((a, b) => new Date(a.event.startsAt).getTime() - new Date(b.event.startsAt).getTime());
+    return [...fast, ...rest]
+      .slice(0, 3)
+      .map((x) => ({ event: x.event, fast: x.hours > 0 && x.hours <= 10, hours: x.hours }));
+  }, [events]);
+  const hasFast = soonEvents.some((s) => s.fast);
   const copy = locale === "ar" ? arCopy : enCopy;
   const dateOptions = locale === "ar" ? arDateOptions : enDateOptions;
   const promptCards = locale === "ar" ? arPromptCards : enPromptCards;
@@ -209,37 +221,62 @@ export function MarketplaceClient({
 
               {soonEvents.length > 0 ? (
                 <div className="mt-8">
-                  <div className="mb-3 flex items-center gap-2">
-                    <span className="h-2 w-2 animate-pulse rounded-full bg-cyan-300" />
+                  <div className="mb-4 flex items-center gap-2">
+                    <span className={`h-2 w-2 animate-pulse rounded-full ${hasFast ? "bg-rose-400" : "bg-cyan-300"}`} />
                     <p className="text-[11px] font-black uppercase tracking-[0.22em] text-white/55">
-                      {locale === "ar" ? "قريبًا" : "Happening soon"}
+                      {hasFast
+                        ? locale === "ar" ? "الشراء السريع" : "Fast purchase"
+                        : locale === "ar" ? "قريبًا" : "Happening soon"}
                     </p>
                   </div>
-                  <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                    {soonEvents.map((event, index) => (
-                      <Link
+                  <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                    {soonEvents.map(({ event, fast, hours }) => (
+                      <div
                         key={event.id}
-                        href={event.buyUrl}
-                        className="group flex items-center gap-3 rounded-2xl border border-white/12 bg-[#090d19]/75 p-3 backdrop-blur transition hover:border-cyan-200/45 hover:bg-[#0d1323]/85"
+                        className={`group overflow-hidden rounded-[1.5rem] border bg-[#090d19]/75 backdrop-blur transition ${
+                          fast ? "border-rose-400/45 shadow-[0_0_28px_rgba(251,113,133,0.22)]" : "border-white/12 hover:border-cyan-200/45"
+                        }`}
                       >
-                        <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl">
+                        <div className="relative aspect-[16/9] overflow-hidden">
                           {event.coverImageUrl ? (
-                            <img src={event.coverImageUrl} alt="" loading="lazy" className="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-110" />
+                            <img src={event.coverImageUrl} alt="" loading="lazy" className="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-105" />
                           ) : (
                             <div className="absolute inset-0 bg-[linear-gradient(135deg,#1e1b4b,#7c3aed)]" />
                           )}
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/75 to-transparent" />
-                          <span className="absolute inset-x-0 bottom-0.5 text-center text-[9px] font-black uppercase text-cyan-100">
-                            {format(new Date(event.startsAt), "MMM d")}
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/25 to-transparent" />
+                          {fast ? (
+                            <span className="absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-full bg-rose-500 px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-white shadow-lg">
+                              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-white" />
+                              {hours < 1
+                                ? locale === "ar" ? "يبدأ الآن" : "Starting now"
+                                : `${Math.round(hours)}h ${locale === "ar" ? "متبقّي" : "left"}`}
+                            </span>
+                          ) : (
+                            <span className="absolute left-3 top-3 rounded-full bg-black/50 px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-cyan-100 backdrop-blur">
+                              {format(new Date(event.startsAt), "EEE, MMM d")}
+                            </span>
+                          )}
+                          <div className="absolute inset-x-3 bottom-3">
+                            <h3 className="line-clamp-1 text-base font-black text-white">{event.title}</h3>
+                            <p className="text-xs font-bold text-white/65">{event.venueName || event.locationText || "Bahrain"}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 p-3">
+                          <Button asChild className={`h-10 flex-1 rounded-full text-sm font-black ${fast ? "bg-rose-500 text-white hover:bg-rose-400" : "bg-white text-black hover:bg-white/90"}`}>
+                            <Link href={event.buyUrl}>{fast ? (locale === "ar" ? "شراء سريع" : "Fast buy") : (locale === "ar" ? "شراء" : "Buy tickets")}</Link>
+                          </Button>
+                          <Button
+                            type="button"
+                            onClick={() => setQuickViewEvent(event)}
+                            className="h-10 rounded-full border border-white/25 bg-white/10 px-4 text-sm font-black text-white hover:bg-white/20"
+                          >
+                            {locale === "ar" ? "تفاصيل" : "Details"}
+                          </Button>
+                          <span className="shrink-0 rounded-full border border-white/12 bg-black/30 px-3 py-1.5 text-xs font-black text-white">
+                            {formatMoney(event.minPrice, event.currency, locale)}
                           </span>
                         </div>
-                        <div className="min-w-0">
-                          <p className="truncate text-sm font-black text-white">{event.title}</p>
-                          <p className="mt-0.5 text-xs font-bold text-white/55">
-                            {formatMoney(event.minPrice, event.currency, locale)}
-                          </p>
-                        </div>
-                      </Link>
+                      </div>
                     ))}
                   </div>
                 </div>
