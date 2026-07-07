@@ -8,6 +8,17 @@ import { Button } from "@/components/ui/button";
 import { FloatingLines } from "@/components/visual/floating-lines";
 import { eventCategories, formatMoney, normalizeLocale, type LocaleCode } from "@/lib/marketplace";
 import type { MarketplaceDiscoveryResponse, MarketplaceEvent } from "@/types/marketplace";
+import { cn } from "@/lib/utils";
+
+// Shared filter-chip styles. `chip-flash` triggers a one-shot white blink whenever a
+// chip becomes active (keyframes in globals.css); the active chips also render an
+// inline check icon via `chip-check` so the selection is unmistakable.
+const chipBase =
+  "group inline-flex shrink-0 items-center gap-2 rounded-full px-5 py-3 text-sm font-black transition-all duration-200 cursor-pointer select-none active:scale-95 [-webkit-tap-highlight-color:transparent] touch-manipulation focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60";
+const chipActiveWhite = "chip-flash bg-white text-black shadow-[0_0_20px_rgba(255,255,255,0.25)]";
+const chipActiveCyan = "chip-flash bg-cyan-300 text-black shadow-[0_0_20px_rgba(103,232,249,0.35)]";
+const chipInactive =
+  "border border-white/10 bg-white/[0.05] text-white/75 hover:border-white/25 hover:text-white";
 
 // Subject-relevant, curated category imagery (stable Unsplash photos).
 const CATEGORY_IMAGE_IDS: Record<string, string> = {
@@ -294,42 +305,36 @@ export function MarketplaceClient({
 
       <main className="relative z-10 mx-auto max-w-none px-4 py-14 before:pointer-events-none before:absolute before:inset-x-0 before:-top-24 before:bottom-0 before:-z-10 before:bg-gradient-to-b before:from-transparent before:via-[#050712]/72 before:to-[#050712]/88 sm:px-8 lg:px-12 2xl:px-20">
         <section className="mb-10 space-y-5">
-          <div className="flex flex-wrap gap-3">
+          <div className="flex flex-wrap justify-center gap-3">
             {dateOptions.map((option) => (
               <button
                 key={option.value || "all"}
+                type="button"
                 onClick={() => setDateFilter(option.value)}
-                className={
-                  dateFilter === option.value
-                    ? "shrink-0 rounded-full bg-white px-5 py-3 text-sm font-black text-black"
-                    : "shrink-0 rounded-full border border-white/10 bg-white/[0.05] px-5 py-3 text-sm font-black text-white/75 transition hover:border-white/25 hover:text-white"
-                }
+                className={cn(chipBase, dateFilter === option.value ? chipActiveWhite : chipInactive)}
               >
+                {dateFilter === option.value ? <BadgeCheck className="chip-check h-4 w-4" /> : null}
                 {option.label}
               </button>
             ))}
           </div>
-          <div className="flex flex-wrap gap-3">
+          <div className="flex flex-wrap justify-center gap-3">
             <button
+              type="button"
               onClick={() => setCategory("")}
-              className={
-                !category
-                  ? "shrink-0 rounded-full bg-cyan-300 px-5 py-3 text-sm font-black text-black"
-                  : "shrink-0 rounded-full border border-white/10 bg-white/[0.05] px-5 py-3 text-sm font-black text-white/75"
-              }
+              className={cn(chipBase, !category ? chipActiveCyan : chipInactive)}
             >
+              {!category ? <BadgeCheck className="chip-check h-4 w-4" /> : null}
               {copy.allCategories}
             </button>
             {publicCategories.map((item) => (
               <button
                 key={item.slug}
+                type="button"
                 onClick={() => setCategory(item.slug)}
-                className={
-                  category === item.slug
-                    ? "shrink-0 rounded-full bg-cyan-300 px-5 py-3 text-sm font-black text-black"
-                    : "shrink-0 rounded-full border border-white/10 bg-white/[0.05] px-5 py-3 text-sm font-black text-white/75"
-                }
+                className={cn(chipBase, category === item.slug ? chipActiveCyan : chipInactive)}
               >
+                {category === item.slug ? <BadgeCheck className="chip-check h-4 w-4" /> : null}
                 {locale === "ar" ? item.labelAr : item.label}
               </button>
             ))}
