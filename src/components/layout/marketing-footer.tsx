@@ -36,11 +36,18 @@ export function MarketingFooter() {
             <Link href="/" aria-label="Events Hub home">
               <BrandWordmark
                 className="gap-3.5"
-                markClassName="h-18 w-18"
-                textClassName="text-[2.6rem] text-white"
-                showSubtitle={true}
+                markClassName="h-16 w-16 sm:h-18 sm:w-18"
+                textClassName="text-[2.1rem] text-white sm:text-[2.6rem]"
               />
             </Link>
+            <a
+              href="https://onestoneads.com/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-2 inline-block text-[10px] font-black uppercase tracking-[0.24em] text-white/45 transition-colors hover:text-cyan-300"
+            >
+              A OneStone Platform
+            </a>
             <p className="mt-6 text-sm text-white/70 leading-relaxed">
               Bahrain event discovery, ticketing, check-in, and managed event operations.
               Built by the Events Hub team for public and corporate experiences.

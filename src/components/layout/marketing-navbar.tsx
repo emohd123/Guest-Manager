@@ -66,14 +66,23 @@ export function MarketingNavbar() {
       >
         <div className="mx-auto flex h-20 max-w-none items-center justify-between px-4 sm:px-8 lg:px-12 2xl:px-20">
           <div className="flex items-center gap-8">
-            <Link href="/" aria-label="Events Hub home">
-              <BrandWordmark
-                className="gap-x-5"
-                markClassName="h-11 w-11 sm:h-14 sm:w-14"
-                textClassName="text-[1.7rem] sm:text-[2.35rem]"
-                showSubtitle={true}
-              />
-            </Link>
+            <div className="flex flex-col">
+              <Link href="/" aria-label="Events Hub home">
+                <BrandWordmark
+                  className="gap-x-5"
+                  markClassName="h-10 w-10 sm:h-14 sm:w-14"
+                  textClassName="text-[1.5rem] sm:text-[2.35rem]"
+                />
+              </Link>
+              <a
+                href="https://onestoneads.com/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-1 w-fit pl-1 text-[9px] font-black uppercase tracking-[0.24em] text-muted-foreground/60 transition-colors hover:text-cyan-300 sm:text-[10px]"
+              >
+                A OneStone Platform
+              </a>
+            </div>
 
             <nav className="hidden items-center gap-2 md:flex">
               <DropdownMenu>
