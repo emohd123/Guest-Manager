@@ -9,6 +9,28 @@ import { FloatingLines } from "@/components/visual/floating-lines";
 import { eventCategories, formatMoney, normalizeLocale, type LocaleCode } from "@/lib/marketplace";
 import type { MarketplaceDiscoveryResponse, MarketplaceEvent } from "@/types/marketplace";
 
+// Subject-relevant, curated category imagery (stable Unsplash photos).
+const CATEGORY_IMAGE_IDS: Record<string, string> = {
+  concerts: "1470229722913-7c0e2dbbafd3",
+  comedy: "1527224857830-43a7acc85260",
+  theatre: "1503095396549-807759245b35",
+  sports: "1461896836934-ffe607ba8211",
+  nightlife: "1566737236500-c8ac43014a67",
+  dining: "1517248135467-4c7edcad34c4",
+  family: "1502086223501-7ea6ecd79368",
+  exhibitions: "1531058020387-3be344556be6",
+  workshops: "1524178232363-1fb2b075b655",
+  attractions: "1513889961551-628c1e5e2ee9",
+  conferences: "1540575467063-178a50c2df87",
+  launches: "1475721027785-f74eccf877e2",
+  staffing: "1522071820081-009f0129c71c",
+};
+
+function categoryImage(slug: string): string {
+  const id = CATEGORY_IMAGE_IDS[slug] ?? CATEGORY_IMAGE_IDS.concerts;
+  return `https://images.unsplash.com/photo-${id}?w=440&h=330&fit=crop&auto=format&q=70`;
+}
+
 type MarketplaceClientProps = {
   initialData: MarketplaceDiscoveryResponse;
   initialLocale?: LocaleCode;
@@ -304,8 +326,9 @@ export function MarketplaceClient({
                   className="group relative aspect-[4/3] overflow-hidden rounded-2xl border border-white/10 text-left"
                 >
                   <img
-                    src={`https://picsum.photos/seed/eh-cat-${item.slug}/420/320`}
-                    alt=""
+                    src={categoryImage(item.slug)}
+                    alt={item.label}
+                    loading="lazy"
                     className="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-110"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/15 to-black/10 transition group-hover:from-black/75" />
