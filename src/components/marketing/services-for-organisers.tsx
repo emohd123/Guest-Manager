@@ -121,17 +121,21 @@ export function ServicesForOrganisers() {
           <div className="relative rounded-[2rem] border border-white/12 bg-[#0a0f1d]/70 p-6 shadow-[0_30px_100px_rgba(0,0,0,0.5)] backdrop-blur">
             <div className="grid grid-cols-2 gap-4">
               {[
-                { icon: Ticket, label: "Ticketing" },
-                { icon: QrCode, label: "QR tickets" },
-                { icon: ScanLine, label: "Live check-in" },
-                { icon: BarChart3, label: "Reports" },
-                { icon: Megaphone, label: "Campaigns" },
-                { icon: ShieldCheck, label: "Secure pay" },
+                { icon: Ticket, label: "Ticketing", img: img("1459749411175-04bf5292ceea", 160, 160) },
+                { icon: QrCode, label: "QR tickets", img: img("1512428559087-560fa5ceab42", 160, 160) },
+                { icon: ScanLine, label: "Live check-in", img: img("1516450360452-9312f5e86fc7", 160, 160) },
+                { icon: BarChart3, label: "Reports", img: img("1551288049-bebda4e38f71", 160, 160) },
+                { icon: Megaphone, label: "Campaigns", img: img("1557200134-90327ee9fafa", 160, 160) },
+                { icon: ShieldCheck, label: "Secure pay", img: img("1556742502-ec7c0e9f34b1", 160, 160) },
               ].map((f) => (
-                <div key={f.label} className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.04] p-4">
-                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-cyan-300/15 text-cyan-200">
-                    <f.icon className="h-5 w-5" />
-                  </span>
+                <div key={f.label} className="group flex items-center gap-3 overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04] p-3">
+                  <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-xl">
+                    <img src={f.img} alt="" loading="lazy" className="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-110" />
+                    <div className="absolute inset-0 bg-black/45" />
+                    <span className="absolute inset-0 flex items-center justify-center text-cyan-100">
+                      <f.icon className="h-5 w-5" />
+                    </span>
+                  </div>
                   <span className="text-sm font-black">{f.label}</span>
                 </div>
               ))}
