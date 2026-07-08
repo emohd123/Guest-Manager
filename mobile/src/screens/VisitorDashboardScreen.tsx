@@ -219,6 +219,107 @@ function EmptyState({
   );
 }
 
+const NATIVE_DRIVER = Platform.OS !== "web";
+
+/** Staggered mount entrance: fade + rise + subtle scale. `delay` in ms. */
+function AnimatedEntrance({
+  delay = 0,
+  from = 16,
+  style,
+  children,
+}: {
+  delay?: number;
+  from?: number;
+  style?: any;
+  children: React.ReactNode;
+}) {
+  const progress = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    const anim = Animated.timing(progress, {
+      toValue: 1,
+      duration: 460,
+      delay,
+      useNativeDriver: NATIVE_DRIVER,
+    });
+    anim.start();
+    return () => anim.stop();
+  }, [delay, progress]);
+  return (
+    <Animated.View
+      style={[
+        style,
+        {
+          opacity: progress,
+          transform: [
+            { translateY: progress.interpolate({ inputRange: [0, 1], outputRange: [from, 0] }) },
+            { scale: progress.interpolate({ inputRange: [0, 1], outputRange: [0.97, 1] }) },
+          ],
+        },
+      ]}
+    >
+      {children}
+    </Animated.View>
+  );
+}
+
+/** Softly breathing dot used for the LIVE indicator. */
+function PulseDot({ color = "#F43F5E", size = 9 }: { color?: string; size?: number }) {
+  const pulse = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulse, { toValue: 1, duration: 900, useNativeDriver: NATIVE_DRIVER }),
+        Animated.timing(pulse, { toValue: 0, duration: 900, useNativeDriver: NATIVE_DRIVER }),
+      ])
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [pulse]);
+  return (
+    <View style={{ width: size, height: size, alignItems: "center", justifyContent: "center" }}>
+      <Animated.View
+        style={{
+          position: "absolute",
+          width: size,
+          height: size,
+          borderRadius: size,
+          backgroundColor: color,
+          opacity: pulse.interpolate({ inputRange: [0, 1], outputRange: [0.55, 0] }),
+          transform: [{ scale: pulse.interpolate({ inputRange: [0, 1], outputRange: [1, 2.6] }) }],
+        }}
+      />
+      <View style={{ width: size, height: size, borderRadius: size, backgroundColor: color }} />
+    </View>
+  );
+}
+
+/** Slowly pulsing radial glow that gives the hero a living feel. */
+function AnimatedGlow({ style }: { style?: any }) {
+  const glow = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(glow, { toValue: 1, duration: 2600, useNativeDriver: NATIVE_DRIVER }),
+        Animated.timing(glow, { toValue: 0, duration: 2600, useNativeDriver: NATIVE_DRIVER }),
+      ])
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [glow]);
+  return (
+    <Animated.View
+      pointerEvents="none"
+      style={[
+        style,
+        {
+          opacity: glow.interpolate({ inputRange: [0, 1], outputRange: [0.45, 0.95] }),
+          transform: [{ scale: glow.interpolate({ inputRange: [0, 1], outputRange: [0.9, 1.15] }) }],
+        },
+      ]}
+    />
+  );
+}
+
 function InfoChip({ label, value, accent }: { label: string; value: string; accent?: boolean }) {
   return (
     <View style={[styles.infoChip, accent && styles.infoChipAccent]}>
@@ -260,31 +361,48 @@ function DiscoverRow({ event, index }: { event: DiscoverEvent; index: number }) 
     const url = path.startsWith("http") ? path : `${getApiBaseUrl().replace(/\/$/, "")}${path}`;
     Linking.openURL(url).catch(() => {});
   };
+  const scale = useRef(new Animated.Value(1)).current;
+  const springTo = (to: number) =>
+    Animated.spring(scale, { toValue: to, useNativeDriver: NATIVE_DRIVER, tension: 220, friction: 12 }).start();
   return (
-    <Pressable
-      onPress={openEvent}
-      style={({ pressed }) => [styles.discoverRow, pressed && { opacity: 0.85 }]}
-      accessibilityRole="button"
-      accessibilityLabel={`Open ${event.title}`}
-    >
-      <View style={styles.discoverThumb}>
-        <LinearGradient colors={gradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
-        {event.coverImageUrl ? (
-          <Image source={{ uri: event.coverImageUrl }} style={StyleSheet.absoluteFill} resizeMode="cover" />
-        ) : null}
-        <Text style={styles.discoverThumbDate}>{day}</Text>
-      </View>
-      <View style={styles.discoverBody}>
-        <Text style={styles.discoverHost} numberOfLines={1}>{host}</Text>
-        <Text style={styles.discoverTitle} numberOfLines={1}>{event.title}</Text>
-        <View style={styles.discoverMeta}>
-          <Text style={styles.discoverPrice}>{formatDiscoverPrice(event)}</Text>
-          <View style={styles.discoverBuy}>
-            <Text style={styles.discoverBuyText}>{event.hasTickets ? "Buy Ticket" : "Open"}</Text>
+    <AnimatedEntrance delay={120 + index * 70}>
+      <Pressable
+        onPress={openEvent}
+        onPressIn={() => springTo(0.975)}
+        onPressOut={() => springTo(1)}
+        accessibilityRole="button"
+        accessibilityLabel={`Open ${event.title}`}
+      >
+        <Animated.View style={[styles.discoverRow, { transform: [{ scale }] }]}>
+          <View style={styles.discoverThumb}>
+            <LinearGradient colors={gradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
+            {event.coverImageUrl ? (
+              <Image source={{ uri: event.coverImageUrl }} style={StyleSheet.absoluteFill} resizeMode="cover" />
+            ) : null}
+            <View style={styles.discoverThumbScrim} />
+            <View style={styles.discoverThumbDatePill}>
+              <Text style={styles.discoverThumbDate}>{day}</Text>
+            </View>
           </View>
-        </View>
-      </View>
-    </Pressable>
+          <View style={styles.discoverBody}>
+            <Text style={styles.discoverHost} numberOfLines={1}>{host}</Text>
+            <Text style={styles.discoverTitle} numberOfLines={1}>{event.title}</Text>
+            <View style={styles.discoverMeta}>
+              <Text style={styles.discoverPrice}>{formatDiscoverPrice(event)}</Text>
+              <LinearGradient
+                colors={["#8B5CF6", "#DB2777"]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.discoverBuy}
+              >
+                <Text style={styles.discoverBuyText}>{event.hasTickets ? "Buy Ticket" : "Open"}</Text>
+                <Ionicons name="arrow-forward" size={11} color="#FFFFFF" style={{ marginLeft: 4 }} />
+              </LinearGradient>
+            </View>
+          </View>
+        </Animated.View>
+      </Pressable>
+    </AnimatedEntrance>
   );
 }
 
@@ -672,8 +790,15 @@ export function VisitorDashboardScreen({
             refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}
             contentContainerStyle={styles.scrollContent}
           >
-            <View style={styles.heroCard}>
-              <View style={styles.heroGlow} />
+            <AnimatedEntrance delay={0} from={22} style={styles.heroCard}>
+              <LinearGradient
+                colors={["rgba(124,58,237,0.28)", "rgba(37,99,235,0.10)", "rgba(219,39,119,0.20)"]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={StyleSheet.absoluteFill}
+              />
+              <AnimatedGlow style={styles.heroGlow} />
+              <AnimatedGlow style={styles.heroGlowTop} />
               <View style={[styles.heroContent, compactHome && styles.heroContentCompact]}>
                 <View style={[styles.heroCopy, compactHome && styles.heroCopyCompact]}>
                   <Text style={styles.heroDate}>{fmtFullDate(home?.event.startsAt ?? ticket?.event.startsAt)}</Text>
@@ -712,26 +837,43 @@ export function VisitorDashboardScreen({
                   )}
                 </View>
               </View>
-            </View>
+            </AnimatedEntrance>
 
             <View style={styles.metricsRow}>
-              <View style={styles.metricCard}>
-                <Text style={styles.metricLabel}>NEXT SESSION</Text>
-                <Text style={styles.metricValue}>{home?.nextSession?.title ?? "No upcoming session"}</Text>
-                <Text style={styles.metricMeta}>{fmtDate(home?.nextSession?.startsAt)}</Text>
-              </View>
-              <View style={styles.metricCard}>
-                <Text style={styles.metricLabel}>LIVE NOW</Text>
-                <Text style={styles.metricValue}>{home?.liveSession?.title ?? "No live stream"}</Text>
-                <Text style={styles.metricMeta}>{home?.liveSession?.location ?? liveLabel}</Text>
-              </View>
+              <AnimatedEntrance delay={90} style={styles.metricFlex}>
+                <View style={styles.metricCard}>
+                  <View style={styles.metricHeadRow}>
+                    <Ionicons name="time-outline" size={13} color="#8FA0D8" />
+                    <Text style={styles.metricLabel}>NEXT SESSION</Text>
+                  </View>
+                  <Text style={styles.metricValue} numberOfLines={2}>{home?.nextSession?.title ?? "No upcoming session"}</Text>
+                  <Text style={styles.metricMeta}>{fmtDate(home?.nextSession?.startsAt)}</Text>
+                </View>
+              </AnimatedEntrance>
+              <AnimatedEntrance delay={160} style={styles.metricFlex}>
+                <View style={[styles.metricCard, home?.liveSession ? styles.metricCardLive : null]}>
+                  <View style={styles.metricHeadRow}>
+                    {home?.liveSession ? (
+                      <PulseDot />
+                    ) : (
+                      <Ionicons name="radio-outline" size={13} color="#8FA0D8" />
+                    )}
+                    <Text style={[styles.metricLabel, home?.liveSession ? styles.metricLabelLive : null]}>LIVE NOW</Text>
+                  </View>
+                  <Text style={styles.metricValue} numberOfLines={2}>{home?.liveSession?.title ?? "No live stream"}</Text>
+                  <Text style={styles.metricMeta}>{home?.liveSession?.location ?? liveLabel}</Text>
+                </View>
+              </AnimatedEntrance>
             </View>
 
             {discover.length ? (
               <View style={styles.discoverSection}>
                 <View style={styles.discoverHead}>
-                  <Text style={styles.discoverEyebrow}>Discover events</Text>
-                  <Text style={styles.discoverSub}>More Bahrain events on Events Hub</Text>
+                  <View style={styles.sectionAccentBar} />
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.discoverEyebrow}>Discover events</Text>
+                    <Text style={styles.discoverSub}>More Bahrain events on Events Hub</Text>
+                  </View>
                 </View>
                 <View style={styles.discoverList}>
                   {discover.slice(0, 6).map((ev, index) => (
@@ -1435,11 +1577,20 @@ const styles = StyleSheet.create({
   },
   heroGlow: {
     position: "absolute",
-    bottom: -120,
+    bottom: -140,
+    height: 260,
+    left: "12%",
+    right: "12%",
+    backgroundColor: "rgba(219,39,119,0.22)",
+    borderRadius: 999,
+  },
+  heroGlowTop: {
+    position: "absolute",
+    top: -120,
     height: 220,
-    left: "18%",
-    right: "18%",
-    backgroundColor: "rgba(219,39,119,0.16)",
+    left: "-6%",
+    width: 260,
+    backgroundColor: "rgba(37,99,235,0.22)",
     borderRadius: 999,
   },
   heroContent: {
@@ -1535,8 +1686,11 @@ const styles = StyleSheet.create({
   },
   secondaryButtonText: { color: "#FFFFFF", fontSize: 14, fontWeight: "800" },
   metricsRow: { flexDirection: "row", gap: 12, flexWrap: "wrap" },
+  metricFlex: { flex: 1, minWidth: 150 },
+  metricHeadRow: { flexDirection: "row", alignItems: "center", gap: 7 },
   discoverSection: { gap: 12 },
-  discoverHead: { gap: 3 },
+  discoverHead: { flexDirection: "row", alignItems: "center", gap: 12 },
+  sectionAccentBar: { width: 4, height: 34, borderRadius: 999, backgroundColor: "#38BDF8" },
   discoverEyebrow: {
     color: "#38BDF8",
     fontSize: 10,
@@ -1556,13 +1710,24 @@ const styles = StyleSheet.create({
     borderColor: "rgba(255,255,255,0.1)",
   },
   discoverThumb: { width: 84, height: 84, borderRadius: 15, overflow: "hidden" },
-  discoverThumbDate: {
+  discoverThumbScrim: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(8,16,32,0.28)",
+  },
+  discoverThumbDatePill: {
     position: "absolute",
-    left: 8,
-    bottom: 8,
+    left: 6,
+    bottom: 6,
+    backgroundColor: "rgba(8,16,32,0.7)",
+    borderRadius: 8,
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+  },
+  discoverThumbDate: {
     color: "#A5F3FC",
     fontSize: 9,
     fontWeight: "900",
+    letterSpacing: 0.5,
   },
   discoverBody: { flex: 1, minWidth: 0, justifyContent: "center" },
   discoverHost: {
@@ -1575,19 +1740,28 @@ const styles = StyleSheet.create({
   discoverTitle: { color: "#FFFFFF", fontSize: 16, fontWeight: "900", lineHeight: 19, marginTop: 4 },
   discoverMeta: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 10 },
   discoverPrice: { color: "#FFFFFF", fontSize: 14, fontWeight: "900", fontStyle: "italic" },
-  discoverBuy: { backgroundColor: "#7C3AED", borderRadius: 999, paddingHorizontal: 15, paddingVertical: 7 },
+  discoverBuy: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderRadius: 999,
+    paddingHorizontal: 15,
+    paddingVertical: 7,
+  },
   discoverBuyText: { color: "#FFFFFF", fontSize: 11, fontWeight: "900", textTransform: "uppercase" },
   metricCard: {
-    flex: 1,
-    minWidth: 150,
     borderRadius: 22,
     backgroundColor: "rgba(255,255,255,0.08)",
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.1)",
     padding: 18,
   },
+  metricCardLive: {
+    backgroundColor: "rgba(244,63,94,0.12)",
+    borderColor: "rgba(244,63,94,0.4)",
+  },
   metricLabel: { color: "#96A0C4", fontSize: 10, fontWeight: "800", letterSpacing: 1.1, textTransform: "uppercase" },
-  metricValue: { color: "#FFFFFF", fontSize: 17, fontWeight: "900", marginTop: 8 },
+  metricLabelLive: { color: "#FDA4AF" },
+  metricValue: { color: "#FFFFFF", fontSize: 17, fontWeight: "900", marginTop: 10 },
   metricMeta: { color: "#AEB7D6", fontSize: 12, marginTop: 6 },
   sectionCard: {
     borderRadius: 24,
