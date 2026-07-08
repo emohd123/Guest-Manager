@@ -371,7 +371,7 @@ export function MarketplaceClient({
                 {locale === "ar" ? "تصفّح حسب الفئة" : "Browse by category"}
               </h2>
             </div>
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5 2xl:grid-cols-6">
+            <div className="flex flex-wrap justify-center gap-3">
               {publicCategories.map((item) => (
                 <button
                   key={item.slug}
@@ -380,7 +380,7 @@ export function MarketplaceClient({
                     setCategory(item.slug);
                     window.scrollTo({ top: 0, behavior: "smooth" });
                   }}
-                  className="group relative aspect-[4/3] overflow-hidden rounded-2xl border border-white/10 text-left"
+                  className="group relative aspect-[4/3] w-[calc(50%-0.375rem)] overflow-hidden rounded-2xl border border-white/10 text-left sm:w-[calc(33.333%-0.5rem)] lg:w-[calc(20%-0.6rem)]"
                 >
                   <img
                     src={categoryImage(item.slug)}
