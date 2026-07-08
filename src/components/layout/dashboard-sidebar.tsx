@@ -8,15 +8,12 @@ import {
   LayoutDashboard,
   CalendarDays,
   Ticket,
-  ShoppingCart,
   BarChart3,
   Settings,
   ChevronLeft,
   LogOut,
   Contact,
-  Tag,
   ScanLine,
-  Megaphone,
   FileText,
   MessageSquare,
 } from "lucide-react";
@@ -46,16 +43,6 @@ const navigation = [
     icon: Contact,
   },
   {
-    label: "Orders",
-    href: "/dashboard/orders",
-    icon: ShoppingCart,
-  },
-  {
-    label: "Promotions",
-    href: "/dashboard/promotions",
-    icon: Tag, // Make sure to import Tag
-  },
-  {
     label: "Tickets",
     href: "/dashboard/tickets",
     icon: Ticket,
@@ -64,11 +51,6 @@ const navigation = [
     label: "Scans",
     href: "/dashboard/scans",
     icon: ScanLine, // Make sure to import ScanLine
-  },
-  {
-    label: "Campaigns",
-    href: "/dashboard/campaigns",
-    icon: Megaphone, // Make sure to import Megaphone
   },
   {
     label: "Form Responses",
