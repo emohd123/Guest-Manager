@@ -23,6 +23,7 @@ import {
   Wrench,
 } from "lucide-react";
 import { FallingSparkles } from "@/components/visual/falling-sparkles";
+import { Reveal } from "@/components/visual/reactbits";
 
 const valueProps = [
   { icon: Ticket, title: "Sell more tickets", body: "A fast, mobile-first checkout in BHD with Benefit, Visa, Mastercard, Apple Pay & Google Pay." },
@@ -163,6 +164,7 @@ export function ServicesForOrganisers() {
         </section>
 
         {/* STATS */}
+        <Reveal>
         <section className="mt-20 rounded-[2rem] border border-white/12 bg-white/[0.04] px-6 py-10 backdrop-blur">
           <div className="grid gap-8 sm:grid-cols-3 lg:grid-cols-5">
             {stats.map((s) => (
@@ -173,6 +175,7 @@ export function ServicesForOrganisers() {
             ))}
           </div>
         </section>
+        </Reveal>
 
         {/* INDUSTRIES */}
         <section className="mt-24">

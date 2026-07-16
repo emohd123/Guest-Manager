@@ -410,3 +410,13 @@ html:not(.dark) .public-theme-scope .text-white:not([class*="bg-primary"]) {
     animation: none;
   }
 }
+
+/* ReactBits StarBorder: orbiting glow segment around a pill button. */
+@keyframes starOrbit {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}

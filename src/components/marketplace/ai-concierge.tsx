@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Sparkles, Send, X, BadgeCheck } from "lucide-react";
 import { formatMoney, type LocaleCode } from "@/lib/marketplace";
+import { StarBorder } from "@/components/visual/reactbits";
 import type { MarketplaceEvent } from "@/types/marketplace";
 
 type ChatMessage = {
@@ -109,14 +110,16 @@ export function AiConcierge({ locale }: { locale: LocaleCode }) {
     <>
       {/* FAB */}
       {!open ? (
-        <button
-          type="button"
-          onClick={() => setOpen(true)}
-          className="fixed bottom-6 right-6 z-40 inline-flex items-center gap-2 rounded-full border border-cyan-300/40 bg-[#0b1224]/95 px-5 py-3.5 text-sm font-black text-white shadow-[0_10px_40px_rgba(34,211,238,0.35)] backdrop-blur transition hover:scale-105 hover:border-cyan-300/70"
-        >
-          <Sparkles className="h-4 w-4 text-cyan-300" />
-          {ar ? "اسأل الذكاء" : "Ask AI"}
-        </button>
+        <StarBorder className="fixed bottom-6 right-6 z-40 shadow-[0_10px_40px_rgba(34,211,238,0.35)]">
+          <button
+            type="button"
+            onClick={() => setOpen(true)}
+            className="inline-flex items-center gap-2 rounded-full px-5 py-3.5 text-sm font-black text-white transition hover:scale-[1.03]"
+          >
+            <Sparkles className="h-4 w-4 text-cyan-300" />
+            {ar ? "اسأل الذكاء" : "Ask AI"}
+          </button>
+        </StarBorder>
       ) : null}
 
       {/* Panel */}

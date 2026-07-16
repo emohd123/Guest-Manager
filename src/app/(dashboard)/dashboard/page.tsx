@@ -26,6 +26,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { SpotlightCard } from "@/components/ui/spotlight-card";
 import { AiToolsCard } from "@/components/dashboard/ai-tools-card";
+import { CountUp } from "@/components/visual/reactbits";
 
 
 export default function DashboardPage() {
@@ -156,7 +157,7 @@ export default function DashboardPage() {
                   {stat.title}
                 </p>
                 <h2 className="text-3xl font-black italic tracking-tight text-foreground dark:text-white">
-                  {stat.value}
+                  {/^\d+$/.test(stat.value) ? <CountUp value={Number(stat.value)} /> : stat.value}
                 </h2>
                 {stat.progress != null ? (
                   <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-black/5 dark:bg-white/10">

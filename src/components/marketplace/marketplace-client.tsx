@@ -7,6 +7,7 @@ import { BadgeCheck, CalendarDays, ChevronRight, Headphones, Heart, MapPin, Sear
 import { Button } from "@/components/ui/button";
 import { FallingSparkles } from "@/components/visual/falling-sparkles";
 import { AiConcierge } from "@/components/marketplace/ai-concierge";
+import { Reveal, Spotlight } from "@/components/visual/reactbits";
 import { eventCategories, formatMoney, normalizeLocale, type LocaleCode } from "@/lib/marketplace";
 import type { MarketplaceDiscoveryResponse, MarketplaceEvent } from "@/types/marketplace";
 import { cn } from "@/lib/utils";
@@ -351,14 +352,14 @@ export function MarketplaceClient({
 
         {mode === "home" && publicCategories.length > 0 ? (
           <section className="mb-16">
-            <div className="mb-6">
+            <Reveal className="mb-6">
               <p className="text-xs font-black uppercase tracking-[0.28em] text-cyan-200">
                 {locale === "ar" ? "تصفّح" : "Browse"}
               </p>
               <h2 className="mt-2 text-2xl font-black tracking-tight sm:text-4xl">
                 {locale === "ar" ? "تصفّح حسب الفئة" : "Browse by category"}
               </h2>
-            </div>
+            </Reveal>
             <div className="flex flex-wrap justify-center gap-3">
               {publicCategories.map((item) => (
                 <button
@@ -617,6 +618,7 @@ function EventCard({
   }
 
   return (
+    <Spotlight className="rounded-[1.6rem]">
     <article className="group overflow-hidden rounded-[1.6rem] border border-white/12 bg-[#0a0f1d]/80 shadow-[0_20px_70px_rgba(0,0,0,0.28)] backdrop-blur transition duration-300 hover:-translate-y-1 hover:border-cyan-200/35 hover:bg-[#0d1426]/90">
       <button type="button" onClick={() => onQuickView(event)} className="block w-full text-left">
         <div className="relative aspect-[16/11] overflow-hidden bg-slate-900">
@@ -688,6 +690,7 @@ function EventCard({
         </div>
       </div>
     </article>
+    </Spotlight>
   );
 }
 
@@ -838,10 +841,10 @@ function RailSection({
   return (
     <section className="mb-16">
       <div className="mb-6 flex items-center justify-between gap-5">
-        <div>
+        <Reveal>
           <p className="text-xs font-black uppercase tracking-[0.28em] text-cyan-200">{eyebrow}</p>
           <h2 className="mt-2 text-2xl font-black tracking-tight sm:text-4xl">{title}</h2>
-        </div>
+        </Reveal>
         <Link href="/" className="inline-flex items-center gap-2 text-sm font-black text-cyan-200">
           {locale === "ar" ? "\u0639\u0631\u0636 \u0627\u0644\u0643\u0644" : "View all"}
           <ChevronRight className="h-4 w-4" />
