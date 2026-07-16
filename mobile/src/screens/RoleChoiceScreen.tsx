@@ -2,6 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import React, { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   Animated,
   BackHandler,
   Image,
@@ -9,6 +10,7 @@ import {
   Platform,
   Pressable,
   ScrollView,
+  Share,
   StyleSheet,
   Text,
   TextInput,
@@ -17,6 +19,19 @@ import {
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { createPublicOrder, fetchDiscoverEvents } from "../api/mobileClient";
+import {
+  buildCalendarUrl,
+  cancelEventReminder,
+  countdownLabel,
+  detectNewEvents,
+  eventPublicLink,
+  getReminders,
+  getSavedIds,
+  notifyNewEvents,
+  scheduleEventReminder,
+  toggleSaved,
+  type ReminderMap,
+} from "../features/eventExtras";
 import { AiConciergeSheet } from "../ui/AiConciergeSheet";
 import { FadeSlideIn } from "../ui/motion";
 import { FallingSparkles } from "../ui/FallingSparkles";
@@ -45,10 +60,13 @@ export function RoleChoiceScreen({
   const [aiOpen, setAiOpen] = useState(false);
   const [events, setEvents] = useState<DiscoverEvent[]>([]);
   const [eventsLoading, setEventsLoading] = useState(true);
-  const [eventView, setEventView] = useState<"home" | "list" | "detail">("home");
+  const [eventView, setEventView] = useState<"home" | "list" | "saved" | "detail">("home");
   const [selectedEvent, setSelectedEvent] = useState<DiscoverEvent | null>(null);
   const [query, setQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState("All");
+  const [savedIds, setSavedIds] = useState<string[]>([]);
+  const [reminders, setReminders] = useState<ReminderMap>({});
+  const [newIds, setNewIds] = useState<string[]>([]);
   const { width } = useWindowDimensions();
   const isWide = width >= 760;
 
@@ -58,7 +76,15 @@ export function RoleChoiceScreen({
     let mounted = true;
     fetchDiscoverEvents()
       .then((result) => {
-        if (mounted) setEvents(result.events ?? []);
+        if (!mounted) return;
+        const list = result.events ?? [];
+        setEvents(list);
+        // Surface anything published since the last visit.
+        detectNewEvents(list).then((fresh) => {
+          if (!mounted || fresh.length === 0) return;
+          setNewIds(fresh);
+          void notifyNewEvents(list.filter((e) => fresh.includes(e.id)));
+        });
       })
       .catch(() => {
         if (mounted) setEvents([]);
@@ -67,10 +93,43 @@ export function RoleChoiceScreen({
         if (mounted) setEventsLoading(false);
       });
 
+    getSavedIds().then((ids) => mounted && setSavedIds(ids));
+    getReminders().then((map) => mounted && setReminders(map));
+
     return () => {
       mounted = false;
     };
   }, []);
+
+  async function handleToggleSaved(eventId: string) {
+    setSavedIds(await toggleSaved(eventId));
+  }
+
+  async function handleToggleReminder(event: DiscoverEvent) {
+    if (reminders[event.id]) {
+      await cancelEventReminder(event.id);
+      setReminders(await getReminders());
+      Alert.alert("Reminder removed", `You won't be notified about ${event.title}.`);
+      return;
+    }
+    const result = await scheduleEventReminder(event);
+    setReminders(await getReminders());
+    Alert.alert(result.ok ? "Reminder set" : "Couldn't set reminder", result.message);
+  }
+
+  async function handleShare(event: DiscoverEvent) {
+    try {
+      await Share.share({ message: `${event.title} · ${formatEventDate(event.startsAt)}\n${eventPublicLink(event)}` });
+    } catch {
+      // User dismissed the share sheet — nothing to do.
+    }
+  }
+
+  function handleAddToCalendar(event: DiscoverEvent) {
+    Linking.openURL(buildCalendarUrl(event)).catch(() =>
+      Alert.alert("Unable to open calendar", "No calendar app could handle the request.")
+    );
+  }
 
   // Hardware back: close overlays / step back through views before exiting.
   useEffect(() => {
@@ -113,7 +172,12 @@ export function RoleChoiceScreen({
   );
   const featured = eventView === "home" ? (sorted[0] ?? null) : null;
   const soonRail = eventView === "home" ? sorted.slice(1, 3) : [];
-  const rest = eventView === "home" ? sorted.slice(3) : sorted;
+  const rest =
+    eventView === "home"
+      ? sorted.slice(3)
+      : eventView === "saved"
+        ? sorted.filter((e) => savedIds.includes(e.id))
+        : sorted;
 
   return (
     <PremiumBackdrop>
@@ -126,13 +190,24 @@ export function RoleChoiceScreen({
         >
           <FadeSlideIn style={[styles.inner, isWide && styles.innerWide]}>
           {eventView === "detail" && selectedEvent ? (
-            <EventDetailPanel event={selectedEvent} onBack={() => setEventView("home")} />
+            <EventDetailPanel
+              event={selectedEvent}
+              onBack={() => setEventView("home")}
+              saved={savedIds.includes(selectedEvent.id)}
+              onToggleSaved={() => handleToggleSaved(selectedEvent.id)}
+              reminderSet={!!reminders[selectedEvent.id]}
+              onToggleReminder={() => handleToggleReminder(selectedEvent)}
+              onAddToCalendar={() => handleAddToCalendar(selectedEvent)}
+              onShare={() => handleShare(selectedEvent)}
+            />
           ) : (
             <View style={styles.mkt}>
               <View style={styles.mktHeader}>
                 <View style={styles.mktHeaderCopy}>
                   <Text style={styles.mktKicker}>Bahrain · Tonight</Text>
-                  <Text style={styles.mktTitle}>{eventView === "list" ? "All events" : "Discover events"}</Text>
+                  <Text style={styles.mktTitle}>
+                    {eventView === "list" ? "All events" : eventView === "saved" ? "Saved events" : "Discover events"}
+                  </Text>
                 </View>
                 <View style={styles.mktHeaderRight}>
                   <Pressable
@@ -203,6 +278,21 @@ export function RoleChoiceScreen({
                 ))}
               </ScrollView>
 
+              {eventView === "home" && newIds.length > 0 ? (
+                <Pressable
+                  style={styles.newBanner}
+                  onPress={() => setEventView("list")}
+                  accessibilityRole="button"
+                  accessibilityLabel="See new events"
+                >
+                  <Ionicons name="sparkles" size={14} color="#67E8F9" />
+                  <Text style={styles.newBannerText}>
+                    {newIds.length === 1 ? "1 new event" : `${newIds.length} new events`} since your last visit
+                  </Text>
+                  <Ionicons name="chevron-forward" size={14} color="rgba(255,255,255,0.6)" />
+                </Pressable>
+              ) : null}
+
               {featured && eventView === "home" ? (
                 <FeaturedHero event={featured} onOpen={openEvent} />
               ) : null}
@@ -234,11 +324,15 @@ export function RoleChoiceScreen({
                   <Text style={styles.eventEmptyTitle}>No events found</Text>
                   <Text style={styles.eventEmptyBody}>Try another category or search — new public events appear here automatically.</Text>
                 </View>
-              ) : rest.length > 0 || eventView === "list" ? (
+              ) : rest.length > 0 || eventView !== "home" ? (
                 <>
                   <View style={styles.mktSectionHead}>
                     <Text style={styles.mktSectionEyebrow}>
-                      {eventView === "list" ? `All events · ${sorted.length}` : "More events"}
+                      {eventView === "list"
+                        ? `All events · ${sorted.length}`
+                        : eventView === "saved"
+                          ? `Saved · ${rest.length}`
+                          : "More events"}
                     </Text>
                     {eventView === "home" ? (
                       <Pressable onPress={() => setEventView("list")} accessibilityRole="button" accessibilityLabel="See all events">
@@ -250,11 +344,25 @@ export function RoleChoiceScreen({
                       </Pressable>
                     )}
                   </View>
-                  <View style={styles.gridWrap}>
-                    {rest.map((event, index) => (
-                      <GridTile key={event.id} event={event} index={index} onOpen={openEvent} />
-                    ))}
-                  </View>
+                  {rest.length === 0 ? (
+                    <View style={styles.eventEmpty}>
+                      <Ionicons name="heart-outline" size={22} color="rgba(255,255,255,0.72)" />
+                      <Text style={styles.eventEmptyTitle}>No saved events yet</Text>
+                      <Text style={styles.eventEmptyBody}>Tap the heart on any event to keep it here for quick access.</Text>
+                    </View>
+                  ) : (
+                    <View style={styles.gridWrap}>
+                      {rest.map((event, index) => (
+                        <GridTile
+                          key={event.id}
+                          event={event}
+                          index={index}
+                          isNew={newIds.includes(event.id)}
+                          onOpen={openEvent}
+                        />
+                      ))}
+                    </View>
+                  )}
                 </>
               ) : (
                 <Pressable
@@ -284,8 +392,10 @@ export function RoleChoiceScreen({
         ) : null}
         {eventView !== "detail" ? (
           <BottomTabBar
+            view={eventView}
+            savedCount={savedIds.length}
             onDiscover={() => setEventView("home")}
-            onSaved={() => setEventView("list")}
+            onSaved={() => setEventView("saved")}
             onAccount={onSelectVisitor}
           />
         ) : null}
@@ -410,10 +520,12 @@ function SoonCard({
 function GridTile({
   event,
   index,
+  isNew,
   onOpen,
 }: {
   event: DiscoverEvent;
   index: number;
+  isNew?: boolean;
   onOpen: (event: DiscoverEvent) => void;
 }) {
   const gradient = THUMB_GRADIENTS[index % THUMB_GRADIENTS.length];
@@ -429,8 +541,15 @@ function GridTile({
         <Image source={{ uri: event.coverImageUrl }} style={StyleSheet.absoluteFill} resizeMode="cover" />
       ) : null}
       <LinearGradient colors={["rgba(8,16,32,0.0)", "rgba(8,16,32,0.94)"]} style={StyleSheet.absoluteFill} />
-      <View style={styles.gridTileDay}>
-        <Text style={styles.gridTileDayText}>{shortDay(event.startsAt)}</Text>
+      <View style={styles.gridTileTopRow}>
+        <View style={styles.gridTileDay}>
+          <Text style={styles.gridTileDayText}>{shortDay(event.startsAt)}</Text>
+        </View>
+        {isNew ? (
+          <View style={styles.gridTileNew}>
+            <Text style={styles.gridTileNewText}>NEW</Text>
+          </View>
+        ) : null}
       </View>
       <View style={styles.gridTileBody}>
         <Text style={styles.gridTileTitle} numberOfLines={2}>{event.title}</Text>
@@ -512,30 +631,44 @@ function MarketplaceRow({
 }
 
 function BottomTabBar({
+  view,
+  savedCount,
   onDiscover,
   onSaved,
   onAccount,
 }: {
+  view: "home" | "list" | "saved";
+  savedCount: number;
   onDiscover: () => void;
   onSaved: () => void;
   onAccount: () => void;
 }) {
+  const discoverActive = view === "home" || view === "list";
+  const savedActive = view === "saved";
+  const dim = "rgba(255,255,255,0.4)";
   return (
     <View style={styles.tabBar}>
       <Pressable style={styles.tabItem} onPress={onDiscover} accessibilityRole="button" accessibilityLabel="Discover events">
-        <Ionicons name="home" size={21} color={palette.accentCyan} />
-        <Text style={[styles.tabLabel, styles.tabLabelActive]}>Discover</Text>
+        <Ionicons name={discoverActive ? "home" : "home-outline"} size={21} color={discoverActive ? palette.accentCyan : dim} />
+        <Text style={[styles.tabLabel, discoverActive && styles.tabLabelActive]}>Discover</Text>
       </Pressable>
       <Pressable style={styles.tabItem} onPress={onAccount} accessibilityRole="button" accessibilityLabel="My tickets">
-        <Ionicons name="ticket-outline" size={21} color="rgba(255,255,255,0.4)" />
+        <Ionicons name="ticket-outline" size={21} color={dim} />
         <Text style={styles.tabLabel}>Tickets</Text>
       </Pressable>
-      <Pressable style={styles.tabItem} onPress={onSaved} accessibilityRole="button" accessibilityLabel="All events">
-        <Ionicons name="heart-outline" size={21} color="rgba(255,255,255,0.4)" />
-        <Text style={styles.tabLabel}>Saved</Text>
+      <Pressable style={styles.tabItem} onPress={onSaved} accessibilityRole="button" accessibilityLabel="Saved events">
+        <View>
+          <Ionicons name={savedActive ? "heart" : "heart-outline"} size={21} color={savedActive ? palette.accentCyan : dim} />
+          {savedCount > 0 ? (
+            <View style={styles.tabDot}>
+              <Text style={styles.tabDotText}>{savedCount > 9 ? "9+" : savedCount}</Text>
+            </View>
+          ) : null}
+        </View>
+        <Text style={[styles.tabLabel, savedActive && styles.tabLabelActive]}>Saved</Text>
       </Pressable>
       <Pressable style={styles.tabItem} onPress={onAccount} accessibilityRole="button" accessibilityLabel="Account">
-        <Ionicons name="person-outline" size={21} color="rgba(255,255,255,0.4)" />
+        <Ionicons name="person-outline" size={21} color={dim} />
         <Text style={styles.tabLabel}>Account</Text>
       </Pressable>
     </View>
@@ -630,9 +763,21 @@ function DiscoverEventCard({
 function EventDetailPanel({
   event,
   onBack,
+  saved,
+  onToggleSaved,
+  reminderSet,
+  onToggleReminder,
+  onAddToCalendar,
+  onShare,
 }: {
   event: DiscoverEvent;
   onBack: () => void;
+  saved: boolean;
+  onToggleSaved: () => void;
+  reminderSet: boolean;
+  onToggleReminder: () => void;
+  onAddToCalendar: () => void;
+  onShare: () => void;
 }) {
   const [selectedTickets, setSelectedTickets] = useState<Record<string, number>>({});
   const [attendeeName, setAttendeeName] = useState("");
@@ -711,10 +856,35 @@ function EventDetailPanel({
           <Ionicons name="sparkles-outline" size={34} color="#FFFFFF" />
         </View>
       )}
-      <Text style={styles.eventDate}>{formatEventDate(event.startsAt)}</Text>
+      <View style={styles.detailDateRow}>
+        <Text style={styles.eventDate}>{formatEventDate(event.startsAt)}</Text>
+        {countdownLabel(event.startsAt, event.endsAt) ? (
+          <View style={styles.countdownPill}>
+            <Ionicons name="time-outline" size={11} color="#A5F3FC" />
+            <Text style={styles.countdownPillText}>{countdownLabel(event.startsAt, event.endsAt)}</Text>
+          </View>
+        ) : null}
+      </View>
       <Text style={styles.detailTitle}>{event.title}</Text>
       <Text style={styles.eventHost}>{event.companyName}</Text>
       {event.shortDescription ? <Text style={styles.detailDescription}>{event.shortDescription}</Text> : null}
+
+      <View style={styles.detailActions}>
+        <DetailAction
+          icon={reminderSet ? "notifications" : "notifications-outline"}
+          label={reminderSet ? "Reminding" : "Remind me"}
+          active={reminderSet}
+          onPress={onToggleReminder}
+        />
+        <DetailAction icon="calendar-outline" label="Calendar" onPress={onAddToCalendar} />
+        <DetailAction icon="share-social-outline" label="Share" onPress={onShare} />
+        <DetailAction
+          icon={saved ? "heart" : "heart-outline"}
+          label={saved ? "Saved" : "Save"}
+          active={saved}
+          onPress={onToggleSaved}
+        />
+      </View>
 
       <View style={styles.ticketBox}>
         <Text style={styles.ticketBoxTitle}>Tickets</Text>
@@ -798,6 +968,30 @@ function EventDetailPanel({
         ) : null}
       </View>
     </View>
+  );
+}
+
+function DetailAction({
+  icon,
+  label,
+  active,
+  onPress,
+}: {
+  icon: keyof typeof Ionicons.glyphMap;
+  label: string;
+  active?: boolean;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => [styles.detailAction, active && styles.detailActionActive, pressed && styles.pressed]}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+    >
+      <Ionicons name={icon} size={18} color={active ? "#67E8F9" : "#FFFFFF"} />
+      <Text style={[styles.detailActionText, active && styles.detailActionTextActive]}>{label}</Text>
+    </Pressable>
   );
 }
 
@@ -1211,6 +1405,88 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "900",
   },
+  newBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    backgroundColor: "rgba(34,211,238,0.1)",
+    borderColor: "rgba(103,232,249,0.35)",
+    borderWidth: 1,
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 11,
+  },
+  newBannerText: {
+    color: "#FFFFFF",
+    flex: 1,
+    fontSize: 12,
+    fontWeight: "800",
+  },
+  tabDot: {
+    position: "absolute",
+    top: -4,
+    right: -8,
+    minWidth: 14,
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: "#DB2777",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 3,
+  },
+  tabDotText: {
+    color: "#FFFFFF",
+    fontSize: 8,
+    fontWeight: "900",
+  },
+  detailDateRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  countdownPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    backgroundColor: "rgba(34,211,238,0.12)",
+    borderColor: "rgba(103,232,249,0.35)",
+    borderWidth: 1,
+    borderRadius: 999,
+    paddingHorizontal: 9,
+    paddingVertical: 4,
+  },
+  countdownPillText: {
+    color: "#A5F3FC",
+    fontSize: 10,
+    fontWeight: "900",
+    letterSpacing: 0.4,
+  },
+  detailActions: {
+    flexDirection: "row",
+    gap: spacing.sm,
+  },
+  detailAction: {
+    flex: 1,
+    alignItems: "center",
+    gap: 5,
+    backgroundColor: "rgba(255,255,255,0.07)",
+    borderColor: "rgba(255,255,255,0.13)",
+    borderWidth: 1,
+    borderRadius: radii.md,
+    paddingVertical: 11,
+  },
+  detailActionActive: {
+    backgroundColor: "rgba(34,211,238,0.12)",
+    borderColor: "rgba(103,232,249,0.45)",
+  },
+  detailActionText: {
+    color: "#FFFFFF",
+    fontSize: 10,
+    fontWeight: "800",
+  },
+  detailActionTextActive: {
+    color: "#67E8F9",
+  },
   detailPanel: {
     backgroundColor: "rgba(255,255,255,0.1)",
     borderColor: "rgba(255,255,255,0.14)",
@@ -1562,6 +1838,23 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.1)",
     backgroundColor: "rgba(255,255,255,0.05)",
+  },
+  gridTileTopRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+  },
+  gridTileNew: {
+    backgroundColor: "#DB2777",
+    borderRadius: 999,
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+  },
+  gridTileNewText: {
+    color: "#FFFFFF",
+    fontSize: 8,
+    fontWeight: "900",
+    letterSpacing: 0.6,
   },
   gridTileDay: {
     alignSelf: "flex-start",
