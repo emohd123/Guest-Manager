@@ -51,19 +51,39 @@ type DeviceInfo = {
   appVersion?: string;
 };
 
+/** Hard cap on any single request. Without it a dead connection on mobile
+ *  data never settles and every spinner in the app hangs forever. */
+const REQUEST_TIMEOUT_MS = 15_000;
+
 async function apiRequest<T>(
   path: string,
   options: RequestInit = {},
   token?: string
 ): Promise<T> {
-  const response = await fetch(`${baseUrl}${path}`, {
-    ...options,
-    headers: {
-      "content-type": "application/json",
-      ...(token ? { authorization: `Bearer ${token}` } : {}),
-      ...(options.headers ?? {}),
-    },
-  });
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+
+  let response: Response;
+  try {
+    response = await fetch(`${baseUrl}${path}`, {
+      ...options,
+      signal: controller.signal,
+      headers: {
+        "content-type": "application/json",
+        ...(token ? { authorization: `Bearer ${token}` } : {}),
+        ...(options.headers ?? {}),
+      },
+    });
+  } catch (err) {
+    const aborted = (err as Error)?.name === "AbortError";
+    throw new Error(
+      aborted
+        ? "Request timed out. Check your connection and try again."
+        : "Network error. Check your connection and try again."
+    );
+  } finally {
+    clearTimeout(timer);
+  }
 
   if (!response.ok) {
     let message = `Request failed: ${response.status}`;
