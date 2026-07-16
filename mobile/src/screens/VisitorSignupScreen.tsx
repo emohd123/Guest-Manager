@@ -70,7 +70,7 @@ export function VisitorSignupScreen({
   return (
     <AuthScreenLayout
       onBack={onBack}
-      icon="Spark"
+      icon="sparkles-outline"
       eyebrow="New Visitor"
       title="Create your visitor account"
       subtitle="Set up a profile once, then jump between tickets, schedules, updates, and event messages without friction."

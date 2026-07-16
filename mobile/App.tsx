@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
+  BackHandler,
   Platform,
   Pressable,
   SafeAreaView,
@@ -211,6 +212,48 @@ function AppShell() {
     });
     return () => setUnauthorizedHandler(null);
   }, []);
+
+  // ── Hardware back: step back through the flow instead of exiting ──────────
+  // Screens with their own internal navigation (RoleChoice, VisitorDashboard)
+  // register their own handlers; this one covers the app-level steps and only
+  // lets Android exit from a true "home" state.
+  useEffect(() => {
+    const sub = BackHandler.addEventListener("hardwareBackPress", () => {
+      if (visitorSession) {
+        if (authStep === "visitor_join" || authStep === "visitor_compose") {
+          setAuthStep("role_choice");
+          return true;
+        }
+        return false;
+      }
+      if (session) {
+        if (tab !== "home") {
+          setTab("home");
+          return true;
+        }
+        return false;
+      }
+      switch (authStep) {
+        case "staff_choice":
+          setAuthStep("role_choice");
+          return true;
+        case "code_pin":
+        case "qr":
+        case "staff":
+          setAuthStep("staff_choice");
+          return true;
+        case "visitor_login":
+          setAuthStep("role_choice");
+          return true;
+        case "visitor_signup":
+          setAuthStep("visitor_login");
+          return true;
+        default:
+          return false;
+      }
+    });
+    return () => sub.remove();
+  }, [visitorSession, session, authStep, tab]);
 
   // ── Staff heartbeat + queue replay ────────────────────────────────────────
   useEffect(() => {

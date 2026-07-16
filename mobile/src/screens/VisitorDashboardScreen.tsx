@@ -3,6 +3,7 @@ import {
   ActivityIndicator,
   Alert,
   Animated,
+  BackHandler,
   Image,
   Linking,
   Platform,
@@ -458,6 +459,19 @@ export function VisitorDashboardScreen({
   respondToNetworkingRequest,
 }: Props) {
   const [tab, setTab] = useState<VisitorTab>("home");
+
+  // Hardware back: return to the Home tab first; only exit from Home.
+  useEffect(() => {
+    const sub = BackHandler.addEventListener("hardwareBackPress", () => {
+      if (tab !== "home") {
+        setTab("home");
+        return true;
+      }
+      return false;
+    });
+    return () => sub.remove();
+  }, [tab]);
+
   const [ticket, setTicket] = useState<VisitorTicket | null>(null);
   const [events, setEvents] = useState<VisitorEvent[]>([]);
   const [discover, setDiscover] = useState<DiscoverEvent[]>([]);
@@ -775,7 +789,7 @@ export function VisitorDashboardScreen({
 
   return (
     <View style={styles.screen}>
-      <FallingSparkles count={24} speed={1} />
+      <FallingSparkles count={10} speed={0.7} />
       <View style={styles.headerShell}>
         <View style={styles.headerRow}>
           <View style={styles.headerLeft}>
@@ -1606,7 +1620,7 @@ const styles = StyleSheet.create({
   },
   loadingText: { color: "#96A0C4", fontSize: 14, fontWeight: "600" },
   headerShell: {
-    paddingTop: Platform.OS === "ios" ? 58 : 38,
+    paddingTop: Platform.OS === "ios" ? 58 : 44,
     paddingHorizontal: 28,
     paddingBottom: 26,
     backgroundColor: "rgba(15,22,48,0.74)",
@@ -2078,7 +2092,8 @@ const styles = StyleSheet.create({
   emptyState: { borderRadius: 24, backgroundColor: "rgba(255,255,255,0.08)", borderWidth: 1, borderColor: "rgba(255,255,255,0.1)", padding: 24, alignItems: "center", gap: 10 },
   emptyStateTitle: { color: "#FFFFFF", fontSize: 20, fontWeight: "900", textAlign: "center" },
   emptyStateBody: { color: "#AEB7D6", fontSize: 14, lineHeight: 21, textAlign: "center" },
-  tabBarWrap: { position: "absolute", left: 16, right: 16, bottom: 22, alignItems: "center" },
+  // Sits above the Android gesture/nav area (app runs edge-to-edge).
+  tabBarWrap: { position: "absolute", left: 16, right: 16, bottom: Platform.OS === "android" ? 38 : 22, alignItems: "center" },
   tabBar: {
     flexDirection: "row",
     backgroundColor: "rgba(10,16,32,0.92)",

@@ -19,7 +19,9 @@ type FallingSparklesProps = {
   speed?: number;
 };
 
-const DEFAULT_COLORS = ["#38BDF8", "#7C3AED", "#E879F9", "#F59E0B", "#FFFFFF"];
+// Muted, low-saturation hues close to the app's navy backdrop so the field
+// reads as ambient depth rather than confetti.
+const DEFAULT_COLORS = ["#5B6B9E", "#6D5B9E", "#4E6E96", "#7B6BB0"];
 const NATIVE_DRIVER = Platform.OS !== "web";
 
 type Spec = {
@@ -108,7 +110,7 @@ function Sparkle({ spec, height }: { spec: Spec; height: number }) {
 
 export function FallingSparkles({
   colors = DEFAULT_COLORS,
-  count = 34,
+  count = 12,
   speed = 1,
 }: FallingSparklesProps) {
   const { width, height } = useWindowDimensions();
@@ -128,18 +130,19 @@ export function FallingSparkles({
 
   const specs = useMemo<Spec[]>(() => {
     return Array.from({ length: count }, (_, i) => {
-      const size = 8 + Math.random() * 16;
+      const size = 6 + Math.random() * 8;
       return {
         key: i,
         leftPct: Math.random() * 96,
         size,
-        // Bigger sparkles fall faster — cheap depth cue.
-        duration: ((16000 - size * 260) / speed) * (0.7 + Math.random() * 0.6),
-        delay: Math.random() * 9000,
-        sway: 8 + Math.random() * 26,
-        twinkleMs: 500 + Math.random() * 1600,
+        // Bigger sparkles fall faster — cheap depth cue. Slow drift overall so
+        // the field sits quietly behind the content.
+        duration: ((26000 - size * 400) / speed) * (0.8 + Math.random() * 0.5),
+        delay: Math.random() * 12000,
+        sway: 6 + Math.random() * 12,
+        twinkleMs: 1200 + Math.random() * 2200,
         color: colors[i % colors.length],
-        peakOpacity: 0.35 + Math.random() * 0.5,
+        peakOpacity: 0.1 + Math.random() * 0.14,
       };
     });
     // width is included so a rotation/resize reshuffles the field.

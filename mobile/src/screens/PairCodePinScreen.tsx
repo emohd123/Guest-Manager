@@ -40,7 +40,7 @@ export function PairCodePinScreen({
   return (
     <AuthScreenLayout
       onBack={onBack}
-      icon="Pair"
+      icon="link-outline"
       eyebrow="Access Pairing"
       title="Pair with access credentials"
       subtitle="Enter the access code and PIN from your event dashboard to arm this device for check-in."

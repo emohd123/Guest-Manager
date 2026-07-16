@@ -36,7 +36,7 @@ export function PairQrScreen({
   return (
     <AuthScreenLayout
       onBack={onBack}
-      icon="QR"
+      icon="qr-code-outline"
       eyebrow="QR Pairing"
       title="Pair with QR token"
       subtitle="Scan the pairing token from Devices or paste the raw token here for manual setup."

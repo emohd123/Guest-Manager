@@ -49,7 +49,7 @@ export function JoinEventScreen({
   return (
     <AuthScreenLayout
       onBack={onBack}
-      icon="Join"
+      icon="enter-outline"
       eyebrow="Event Access"
       title="Connect to an event"
       subtitle="Enter the code from your invitation or ticket to unlock the event feed inside the app."

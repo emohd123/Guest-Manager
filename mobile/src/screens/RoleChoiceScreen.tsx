@@ -3,6 +3,7 @@ import React, { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Animated,
+  BackHandler,
   Image,
   Linking,
   Platform,
@@ -47,6 +48,7 @@ export function RoleChoiceScreen({
   const [eventView, setEventView] = useState<"home" | "list" | "detail">("home");
   const [selectedEvent, setSelectedEvent] = useState<DiscoverEvent | null>(null);
   const [query, setQuery] = useState("");
+  const [activeCategory, setActiveCategory] = useState("All");
   const { width } = useWindowDimensions();
   const isWide = width >= 760;
 
@@ -70,21 +72,53 @@ export function RoleChoiceScreen({
     };
   }, []);
 
+  // Hardware back: close overlays / step back through views before exiting.
+  useEffect(() => {
+    const sub = BackHandler.addEventListener("hardwareBackPress", () => {
+      if (aiOpen) {
+        setAiOpen(false);
+        return true;
+      }
+      if (eventView !== "home") {
+        setEventView("home");
+        setSelectedEvent(null);
+        return true;
+      }
+      if (showOptions) {
+        setShowOptions(false);
+        return true;
+      }
+      return false;
+    });
+    return () => sub.remove();
+  }, [aiOpen, eventView, showOptions]);
+
   function openEvent(event: DiscoverEvent) {
     setSelectedEvent(event);
     setEventView("detail");
   }
 
-  const filtered = query.trim()
-    ? events.filter((e) => e.title.toLowerCase().includes(query.trim().toLowerCase()))
-    : events;
-  const featured = filtered[0] ?? null;
-  const rows = eventView === "list" ? filtered : filtered.slice(1);
+  const q = query.trim().toLowerCase();
+  const filtered = events.filter((e) => {
+    const matchesQuery = !q || e.title.toLowerCase().includes(q);
+    const matchesCategory =
+      activeCategory === "All" ||
+      (e.category ?? "").toLowerCase() === activeCategory.toLowerCase() ||
+      (e.categorySlug ?? "").toLowerCase() === activeCategory.toLowerCase();
+    return matchesQuery && matchesCategory;
+  });
+  // Soonest-first so the top of the page is always "what's happening next".
+  const sorted = [...filtered].sort(
+    (a, b) => new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime()
+  );
+  const featured = eventView === "home" ? (sorted[0] ?? null) : null;
+  const soonRail = eventView === "home" ? sorted.slice(1, 3) : [];
+  const rest = eventView === "home" ? sorted.slice(3) : sorted;
 
   return (
     <PremiumBackdrop>
       <View style={styles.container}>
-        <FallingSparkles count={34} speed={1} />
+        <FallingSparkles count={12} speed={0.7} />
         <ScrollView
           style={styles.scroll}
           contentContainerStyle={[styles.scrollContent, isWide && styles.scrollContentWide]}
@@ -156,10 +190,16 @@ export function RoleChoiceScreen({
                 showsHorizontalScrollIndicator={false}
                 contentContainerStyle={styles.mktPills}
               >
-                {CATEGORIES.map((cat, index) => (
-                  <View key={cat} style={[styles.mktPill, index === 0 && styles.mktPillActive]}>
-                    <Text style={[styles.mktPillText, index === 0 && styles.mktPillTextActive]}>{cat}</Text>
-                  </View>
+                {CATEGORIES.map((cat) => (
+                  <Pressable
+                    key={cat}
+                    onPress={() => setActiveCategory(cat)}
+                    style={[styles.mktPill, activeCategory === cat && styles.mktPillActive]}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Filter by ${cat}`}
+                  >
+                    <Text style={[styles.mktPillText, activeCategory === cat && styles.mktPillTextActive]}>{cat}</Text>
+                  </Pressable>
                 ))}
               </ScrollView>
 
@@ -167,40 +207,66 @@ export function RoleChoiceScreen({
                 <FeaturedHero event={featured} onOpen={openEvent} />
               ) : null}
 
-              {eventsLoading || rows.length > 0 || eventView === "list" || !featured ? (
-              <>
-              <View style={styles.mktSectionHead}>
-                <Text style={styles.mktSectionEyebrow}>{eventView === "list" ? "All events" : "Recent events"}</Text>
-                {eventView === "home" ? (
-                  <Pressable onPress={() => setEventView("list")} accessibilityRole="button" accessibilityLabel="See all events">
-                    <Text style={styles.mktSeeAll}>See all</Text>
-                  </Pressable>
-                ) : (
-                  <Pressable onPress={() => setEventView("home")} accessibilityRole="button" accessibilityLabel="Back to home">
-                    <Text style={styles.mktSeeAll}>Back</Text>
-                  </Pressable>
-                )}
-              </View>
+              {eventView === "home" && soonRail.length > 0 ? (
+                <>
+                  <View style={styles.mktSectionHead}>
+                    <Text style={styles.mktSectionEyebrow}>Happening soon</Text>
+                  </View>
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={styles.soonRail}
+                  >
+                    {soonRail.map((event, index) => (
+                      <SoonCard key={event.id} event={event} index={index} onOpen={openEvent} />
+                    ))}
+                  </ScrollView>
+                </>
+              ) : null}
 
               {eventsLoading ? (
                 <View style={styles.eventSkeleton}>
                   <Text style={styles.eventSkeletonText}>Loading public events…</Text>
                 </View>
-              ) : rows.length === 0 ? (
+              ) : sorted.length === 0 ? (
                 <View style={styles.eventEmpty}>
                   <Ionicons name="calendar-clear-outline" size={22} color="rgba(255,255,255,0.72)" />
-                  <Text style={styles.eventEmptyTitle}>No public events yet</Text>
-                  <Text style={styles.eventEmptyBody}>Published events with public pages will appear here automatically.</Text>
+                  <Text style={styles.eventEmptyTitle}>No events found</Text>
+                  <Text style={styles.eventEmptyBody}>Try another category or search — new public events appear here automatically.</Text>
                 </View>
+              ) : rest.length > 0 || eventView === "list" ? (
+                <>
+                  <View style={styles.mktSectionHead}>
+                    <Text style={styles.mktSectionEyebrow}>
+                      {eventView === "list" ? `All events · ${sorted.length}` : "More events"}
+                    </Text>
+                    {eventView === "home" ? (
+                      <Pressable onPress={() => setEventView("list")} accessibilityRole="button" accessibilityLabel="See all events">
+                        <Text style={styles.mktSeeAll}>See all</Text>
+                      </Pressable>
+                    ) : (
+                      <Pressable onPress={() => setEventView("home")} accessibilityRole="button" accessibilityLabel="Back to home">
+                        <Text style={styles.mktSeeAll}>Back</Text>
+                      </Pressable>
+                    )}
+                  </View>
+                  <View style={styles.gridWrap}>
+                    {rest.map((event, index) => (
+                      <GridTile key={event.id} event={event} index={index} onOpen={openEvent} />
+                    ))}
+                  </View>
+                </>
               ) : (
-                <View style={styles.mktList}>
-                  {rows.map((event, index) => (
-                    <MarketplaceRow key={event.id} event={event} index={index} onOpen={openEvent} />
-                  ))}
-                </View>
+                <Pressable
+                  onPress={() => setEventView("list")}
+                  style={styles.mktSectionHead}
+                  accessibilityRole="button"
+                  accessibilityLabel="See all events"
+                >
+                  <Text style={styles.mktSectionEyebrow}>That's everything for now</Text>
+                  <Text style={styles.mktSeeAll}>See all</Text>
+                </Pressable>
               )}
-              </>
-              ) : null}
             </View>
           )}
         </FadeSlideIn>
@@ -216,7 +282,13 @@ export function RoleChoiceScreen({
             <Text style={styles.aiFabText}>Ask AI</Text>
           </Pressable>
         ) : null}
-        {eventView !== "detail" ? <BottomTabBar onAccount={onSelectVisitor} /> : null}
+        {eventView !== "detail" ? (
+          <BottomTabBar
+            onDiscover={() => setEventView("home")}
+            onSaved={() => setEventView("list")}
+            onAccount={onSelectVisitor}
+          />
+        ) : null}
         <AiConciergeSheet
           visible={aiOpen}
           onClose={() => setAiOpen(false)}
@@ -282,6 +354,89 @@ function FeaturedHero({ event, onOpen }: { event: DiscoverEvent; onOpen: (event:
         </View>
       </View>
     </View>
+  );
+}
+
+function shortDay(value: string) {
+  try {
+    return new Date(value).toLocaleDateString("en-US", { month: "short", day: "numeric" }).toUpperCase();
+  } catch {
+    return "";
+  }
+}
+
+/** Medium horizontal-rail card for the "Happening soon" top section. */
+function SoonCard({
+  event,
+  index,
+  onOpen,
+}: {
+  event: DiscoverEvent;
+  index: number;
+  onOpen: (event: DiscoverEvent) => void;
+}) {
+  const gradient = THUMB_GRADIENTS[index % THUMB_GRADIENTS.length];
+  return (
+    <Pressable
+      onPress={() => onOpen(event)}
+      style={({ pressed }) => [styles.soonCard, pressed && styles.pressed]}
+      accessibilityRole="button"
+      accessibilityLabel={`Open ${event.title}`}
+    >
+      <LinearGradient colors={gradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
+      {event.coverImageUrl ? (
+        <Image source={{ uri: event.coverImageUrl }} style={StyleSheet.absoluteFill} resizeMode="cover" />
+      ) : null}
+      <LinearGradient colors={["rgba(5,9,20,0.05)", "rgba(5,9,20,0.92)"]} style={StyleSheet.absoluteFill} />
+      <View style={styles.soonCardTop}>
+        <View style={styles.eventBoxPill}>
+          <Text style={styles.eventBoxPillText}>{shortDay(event.startsAt)}</Text>
+        </View>
+        <View style={styles.eventBoxPill}>
+          <Text style={styles.eventBoxPillText}>{formatPrice(event)}</Text>
+        </View>
+      </View>
+      <View style={styles.soonCardBody}>
+        <Text style={styles.soonCardTitle} numberOfLines={2}>{event.title}</Text>
+        <Text style={styles.soonCardMeta} numberOfLines={1}>
+          {event.venueName ?? event.locationText ?? event.organizerName ?? event.companyName}
+        </Text>
+      </View>
+    </Pressable>
+  );
+}
+
+/** Compact poster tile — three per row keeps the catalogue organized. */
+function GridTile({
+  event,
+  index,
+  onOpen,
+}: {
+  event: DiscoverEvent;
+  index: number;
+  onOpen: (event: DiscoverEvent) => void;
+}) {
+  const gradient = THUMB_GRADIENTS[index % THUMB_GRADIENTS.length];
+  return (
+    <Pressable
+      onPress={() => onOpen(event)}
+      style={({ pressed }) => [styles.gridTile, pressed && styles.pressed]}
+      accessibilityRole="button"
+      accessibilityLabel={`Open ${event.title}`}
+    >
+      <LinearGradient colors={gradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
+      {event.coverImageUrl ? (
+        <Image source={{ uri: event.coverImageUrl }} style={StyleSheet.absoluteFill} resizeMode="cover" />
+      ) : null}
+      <LinearGradient colors={["rgba(8,16,32,0.0)", "rgba(8,16,32,0.94)"]} style={StyleSheet.absoluteFill} />
+      <View style={styles.gridTileDay}>
+        <Text style={styles.gridTileDayText}>{shortDay(event.startsAt)}</Text>
+      </View>
+      <View style={styles.gridTileBody}>
+        <Text style={styles.gridTileTitle} numberOfLines={2}>{event.title}</Text>
+        <Text style={styles.gridTilePrice}>{formatPrice(event)}</Text>
+      </View>
+    </Pressable>
   );
 }
 
@@ -356,21 +511,29 @@ function MarketplaceRow({
   );
 }
 
-function BottomTabBar({ onAccount }: { onAccount: () => void }) {
+function BottomTabBar({
+  onDiscover,
+  onSaved,
+  onAccount,
+}: {
+  onDiscover: () => void;
+  onSaved: () => void;
+  onAccount: () => void;
+}) {
   return (
     <View style={styles.tabBar}>
-      <View style={styles.tabItem}>
+      <Pressable style={styles.tabItem} onPress={onDiscover} accessibilityRole="button" accessibilityLabel="Discover events">
         <Ionicons name="home" size={21} color={palette.accentCyan} />
         <Text style={[styles.tabLabel, styles.tabLabelActive]}>Discover</Text>
-      </View>
+      </Pressable>
       <Pressable style={styles.tabItem} onPress={onAccount} accessibilityRole="button" accessibilityLabel="My tickets">
         <Ionicons name="ticket-outline" size={21} color="rgba(255,255,255,0.4)" />
         <Text style={styles.tabLabel}>Tickets</Text>
       </Pressable>
-      <View style={styles.tabItem}>
+      <Pressable style={styles.tabItem} onPress={onSaved} accessibilityRole="button" accessibilityLabel="All events">
         <Ionicons name="heart-outline" size={21} color="rgba(255,255,255,0.4)" />
         <Text style={styles.tabLabel}>Saved</Text>
-      </View>
+      </Pressable>
       <Pressable style={styles.tabItem} onPress={onAccount} accessibilityRole="button" accessibilityLabel="Account">
         <Ionicons name="person-outline" size={21} color="rgba(255,255,255,0.4)" />
         <Text style={styles.tabLabel}>Account</Text>
@@ -494,6 +657,8 @@ function EventDetailPanel({
     .filter((item) => item.quantity > 0);
 
   const total = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const totalQuantity = cartItems.reduce((sum, item) => sum + item.quantity, 0);
+  const cartCurrency = cartItems[0]?.currency ?? event.ticketTypes[0]?.currency ?? "BHD";
 
   async function submitOrder() {
     setMessage(null);
@@ -582,6 +747,14 @@ function EventDetailPanel({
             );
           })
         )}
+        {totalQuantity > 0 ? (
+          <View style={styles.totalRow}>
+            <Text style={styles.totalLabel}>
+              Total · {totalQuantity} {totalQuantity === 1 ? "ticket" : "tickets"}
+            </Text>
+            <Text style={styles.totalValue}>{formatTicketPrice(total, cartCurrency)}</Text>
+          </View>
+        ) : null}
       </View>
 
       <View style={styles.checkoutBox}>
@@ -606,7 +779,13 @@ function EventDetailPanel({
           onPress={submitOrder}
           style={({ pressed }) => [styles.checkoutButton, pressed && styles.pressed, submitting && styles.disabled]}
         >
-          {submitting ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.checkoutButtonText}>{total > 0 ? "Prepare checkout" : "Reserve tickets"}</Text>}
+          {submitting ? (
+            <ActivityIndicator color="#FFFFFF" />
+          ) : (
+            <Text style={styles.checkoutButtonText}>
+              {total > 0 ? `Checkout · ${formatTicketPrice(total, cartCurrency)}` : "Reserve tickets"}
+            </Text>
+          )}
         </Pressable>
         {message ? <Text style={styles.checkoutMessage}>{message}</Text> : null}
         {checkoutUrl ? (
@@ -1146,6 +1325,24 @@ const styles = StyleSheet.create({
   disabled: {
     opacity: 0.5,
   },
+  totalRow: {
+    alignItems: "center",
+    borderTopColor: "rgba(255,255,255,0.14)",
+    borderTopWidth: 1,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingTop: spacing.md,
+  },
+  totalLabel: {
+    color: palette.textSoft,
+    fontSize: 13,
+    fontWeight: "800",
+  },
+  totalValue: {
+    color: palette.textInverse,
+    fontSize: 18,
+    fontWeight: "900",
+  },
   checkoutBox: {
     gap: spacing.sm,
   },
@@ -1197,7 +1394,7 @@ const styles = StyleSheet.create({
   // ---- Home · Marketplace (design) ----
   mkt: {
     gap: spacing.md,
-    paddingBottom: 130,
+    paddingBottom: 160,
   },
   mktHeader: {
     alignItems: "center",
@@ -1311,6 +1508,90 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     gap: 14,
+  },
+  // "Happening soon" horizontal rail
+  soonRail: {
+    gap: 12,
+    paddingRight: spacing.xl,
+  },
+  soonCard: {
+    width: 244,
+    height: 150,
+    borderRadius: 20,
+    overflow: "hidden",
+    padding: 12,
+    justifyContent: "space-between",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.1)",
+  },
+  soonCardTop: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+  },
+  soonCardBody: {
+    gap: 2,
+  },
+  soonCardTitle: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "900",
+    letterSpacing: -0.3,
+    lineHeight: 19,
+  },
+  soonCardMeta: {
+    color: "rgba(255,255,255,0.72)",
+    fontSize: 11,
+    fontWeight: "700",
+  },
+  // Compact 3-per-row tiles
+  gridWrap: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 10,
+  },
+  gridTile: {
+    flexGrow: 1,
+    flexBasis: "30%",
+    maxWidth: "32.5%",
+    aspectRatio: 0.76,
+    borderRadius: 18,
+    overflow: "hidden",
+    padding: 10,
+    justifyContent: "space-between",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.1)",
+    backgroundColor: "rgba(255,255,255,0.05)",
+  },
+  gridTileDay: {
+    alignSelf: "flex-start",
+    backgroundColor: "rgba(8,16,32,0.72)",
+    borderRadius: 999,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.12)",
+  },
+  gridTileDayText: {
+    color: "#FFFFFF",
+    fontSize: 9,
+    fontWeight: "900",
+    letterSpacing: 0.4,
+  },
+  gridTileBody: {
+    gap: 3,
+  },
+  gridTileTitle: {
+    color: "#FFFFFF",
+    fontSize: 13,
+    fontWeight: "900",
+    lineHeight: 16,
+    letterSpacing: -0.2,
+  },
+  gridTilePrice: {
+    color: palette.accentCyanSoft,
+    fontSize: 11,
+    fontWeight: "900",
   },
   eventGridItem: { flexGrow: 1, flexBasis: "47%", minWidth: 260 },
   eventBox: {
@@ -1498,7 +1779,7 @@ const styles = StyleSheet.create({
   aiFab: {
     position: "absolute",
     right: 16,
-    bottom: 86,
+    bottom: 118,
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
@@ -1523,7 +1804,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-around",
     left: 0,
-    paddingBottom: 20,
+    // Android runs edge-to-edge: clear the system gesture/nav area so the
+    // tab buttons stay visible and tappable.
+    paddingBottom: Platform.OS === "android" ? 40 : 20,
     paddingTop: 12,
     position: "absolute",
     right: 0,
@@ -1531,6 +1814,9 @@ const styles = StyleSheet.create({
   tabItem: {
     alignItems: "center",
     gap: 5,
+    minWidth: 64,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
   },
   tabLabel: {
     color: "rgba(255,255,255,0.4)",

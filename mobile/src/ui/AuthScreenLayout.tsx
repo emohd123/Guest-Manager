@@ -4,6 +4,7 @@ import {
   Platform,
   Pressable,
   ScrollView,
+  StatusBar,
   StyleSheet,
   Text,
   View,
@@ -18,7 +19,8 @@ type Props = {
   subtitle: string;
   children: React.ReactNode;
   onBack?: () => void;
-  icon?: string;
+  /** Ionicons glyph name shown in the badge above the title. */
+  icon?: keyof typeof Ionicons.glyphMap;
   eyebrow?: string;
   footer?: React.ReactNode;
   contentContainerStyle?: object;
@@ -53,7 +55,7 @@ export function AuthScreenLayout({
           <View style={styles.top}>
             {icon ? (
               <View style={styles.iconBadge}>
-                <Text style={styles.icon}>{icon}</Text>
+                <Ionicons name={icon} size={26} color="#FFFFFF" />
               </View>
             ) : null}
             <Text style={styles.title}>{title}</Text>
@@ -102,15 +104,16 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   heroPanel: {
-    paddingTop: Platform.OS === "ios" ? 58 : 38,
+    // Edge-to-edge on Android: clear the real status bar height.
+    paddingTop: Platform.OS === "ios" ? 58 : (StatusBar.currentHeight ?? 28) + 12,
     paddingHorizontal: spacing.xl,
-    paddingBottom: spacing.xl,
+    paddingBottom: spacing.lg,
   },
   heroTopRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: spacing.xl,
+    marginBottom: spacing.lg,
     minHeight: 42,
   },
   top: {
@@ -147,11 +150,6 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     width: 58,
   },
-  icon: {
-    fontSize: 22,
-    color: palette.textInverse,
-    fontWeight: "900",
-  },
   title: {
     fontSize: type.hero,
     fontWeight: "900",
@@ -170,7 +168,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.md,
-    padding: spacing.lg,
+    padding: spacing.md,
     borderRadius: radii.lg,
     backgroundColor: "rgba(255,255,255,0.075)",
     borderWidth: 1,

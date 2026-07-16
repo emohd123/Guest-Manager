@@ -40,7 +40,7 @@ export function PairStaffScreen({
   return (
     <AuthScreenLayout
       onBack={onBack}
-      icon="Admin"
+      icon="shield-checkmark-outline"
       eyebrow="Manual Pairing"
       title="Pair with staff token"
       subtitle="Use a staff token and event ID when this device is being set up by your event team."

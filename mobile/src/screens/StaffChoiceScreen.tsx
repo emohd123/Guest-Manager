@@ -24,7 +24,7 @@ export function StaffChoiceScreen({
   return (
     <PremiumBackdrop>
       <View style={styles.root}>
-        <FallingSparkles count={30} speed={1} />
+        <FallingSparkles count={10} speed={0.7} />
 
         <FadeSlideIn style={[styles.inner, isWide && styles.innerWide]}>
           <View style={styles.topBar}>

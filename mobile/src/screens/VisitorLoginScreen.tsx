@@ -45,7 +45,7 @@ export function VisitorLoginScreen({
   return (
     <AuthScreenLayout
       onBack={onBack}
-      icon="Ticket"
+      icon="ticket-outline"
       eyebrow="Visitor Portal"
       title="Sign in to your event space"
       subtitle="Access tickets, event updates, agenda changes, and Events Hub messages from one place."
