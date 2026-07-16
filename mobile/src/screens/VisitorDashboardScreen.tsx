@@ -22,6 +22,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { BrandLogo } from "../ui/brand-logo";
 import { FallingSparkles } from "../ui/FallingSparkles";
 import { Dock } from "../ui/Dock";
+import { QrCode } from "../ui/QrCode";
 import { BorderGlow } from "../ui/BorderGlow";
 import { SpotlightCard } from "../ui/SpotlightCard";
 import type { DiscoverEvent } from "../types";
@@ -1535,6 +1536,12 @@ export function VisitorDashboardScreen({
                 </View>
 
                 <View style={styles.ticketDivider} />
+                {ticket.barcode ? (
+                  <View style={styles.qrWrap}>
+                    <QrCode value={ticket.barcode} size={216} />
+                    <Text style={styles.qrHint}>Show this code at the entrance to check in</Text>
+                  </View>
+                ) : null}
                 <View style={styles.ticketMetaGrid}>
                   <InfoChip label="Ticket" value={ticket.ticketType} />
                   <InfoChip label="Barcode" value={ticket.barcode} accent />
@@ -1619,6 +1626,8 @@ const styles = StyleSheet.create({
     gap: 14,
   },
   loadingText: { color: "#96A0C4", fontSize: 14, fontWeight: "600" },
+  qrWrap: { alignItems: "center", gap: 10, marginBottom: 16 },
+  qrHint: { color: "#96A0C4", fontSize: 12, fontWeight: "600", textAlign: "center" },
   headerShell: {
     paddingTop: Platform.OS === "ios" ? 58 : 44,
     paddingHorizontal: 28,

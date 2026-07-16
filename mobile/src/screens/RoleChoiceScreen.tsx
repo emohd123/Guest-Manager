@@ -9,6 +9,7 @@ import {
   Linking,
   Platform,
   Pressable,
+  RefreshControl,
   ScrollView,
   Share,
   StyleSheet,
@@ -18,20 +19,32 @@ import {
   View,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import { createPublicOrder, fetchDiscoverEvents } from "../api/mobileClient";
+import * as Notifications from "expo-notifications";
+import { createPublicOrder, fetchDiscoverEvents, registerDiscoverPushToken } from "../api/mobileClient";
+import { getExpoProjectId } from "../config";
 import {
+  availableReminderOffsets,
   buildCalendarUrl,
+  buildDirectionsUrl,
   cancelEventReminder,
   countdownLabel,
   detectNewEvents,
   eventPublicLink,
+  getLang,
   getReminders,
   getSavedIds,
+  getTopCategories,
   notifyNewEvents,
+  recordCategoryOpen,
+  reminderOffsetLabel,
   scheduleEventReminder,
+  setLang as persistLang,
   toggleSaved,
+  type AppLang,
   type ReminderMap,
+  type ReminderOffset,
 } from "../features/eventExtras";
+import { categoryLabel, eventDescription, eventHost, eventTitle, eventVenue, t } from "../features/i18n";
 import { AiConciergeSheet } from "../ui/AiConciergeSheet";
 import { FadeSlideIn } from "../ui/motion";
 import { FallingSparkles } from "../ui/FallingSparkles";
@@ -67,39 +80,95 @@ export function RoleChoiceScreen({
   const [savedIds, setSavedIds] = useState<string[]>([]);
   const [reminders, setReminders] = useState<ReminderMap>({});
   const [newIds, setNewIds] = useState<string[]>([]);
+  const [refreshing, setRefreshing] = useState(false);
+  const [lang, setLangState] = useState<AppLang>("en");
+  const [topCategories, setTopCategories] = useState<string[]>([]);
+  const [pendingEventId, setPendingEventId] = useState<string | null>(null);
   const { width } = useWindowDimensions();
   const isWide = width >= 760;
 
   const CATEGORIES = ["All", "Concerts", "Dining", "Family", "Comedy", "Attractions"];
 
+  const loadEvents = React.useCallback(async (notifyFresh: boolean) => {
+    try {
+      const result = await fetchDiscoverEvents();
+      const list = result.events ?? [];
+      setEvents(list);
+      // Surface anything published since the last visit.
+      const fresh = await detectNewEvents(list);
+      if (fresh.length > 0) {
+        setNewIds((current) => Array.from(new Set([...current, ...fresh])));
+        if (notifyFresh) void notifyNewEvents(list.filter((e) => fresh.includes(e.id)));
+      }
+    } catch {
+      setEvents((current) => current);
+    }
+  }, []);
+
   useEffect(() => {
     let mounted = true;
-    fetchDiscoverEvents()
-      .then((result) => {
-        if (!mounted) return;
-        const list = result.events ?? [];
-        setEvents(list);
-        // Surface anything published since the last visit.
-        detectNewEvents(list).then((fresh) => {
-          if (!mounted || fresh.length === 0) return;
-          setNewIds(fresh);
-          void notifyNewEvents(list.filter((e) => fresh.includes(e.id)));
-        });
-      })
-      .catch(() => {
-        if (mounted) setEvents([]);
-      })
-      .finally(() => {
-        if (mounted) setEventsLoading(false);
-      });
+    loadEvents(true).finally(() => mounted && setEventsLoading(false));
 
     getSavedIds().then((ids) => mounted && setSavedIds(ids));
     getReminders().then((map) => mounted && setReminders(map));
+    getLang().then((value) => mounted && setLangState(value));
+    getTopCategories().then((cats) => mounted && setTopCategories(cats));
+
+    // Register for server "new event" broadcasts. Requires notification
+    // permission + FCM credentials in the build; silently skips otherwise.
+    (async () => {
+      try {
+        const permission = await Notifications.getPermissionsAsync();
+        if (permission.status !== "granted") return;
+        const projectId = getExpoProjectId();
+        if (!projectId) return;
+        const pushToken = await Notifications.getExpoPushTokenAsync({ projectId });
+        if (pushToken.data) {
+          await registerDiscoverPushToken({ token: pushToken.data, platform: Platform.OS });
+        }
+      } catch {
+        // Expo push needs FCM config on bare Android — fine to skip until then.
+      }
+    })();
 
     return () => {
       mounted = false;
     };
+  }, [loadEvents]);
+
+  async function handleRefresh() {
+    setRefreshing(true);
+    try {
+      await loadEvents(false);
+    } finally {
+      setRefreshing(false);
+    }
+  }
+
+  function toggleLang() {
+    const next: AppLang = lang === "en" ? "ar" : "en";
+    setLangState(next);
+    void persistLang(next);
+  }
+
+  // Deep link: tapping a reminder / new-event notification opens that event.
+  useEffect(() => {
+    const handleResponse = (response: Notifications.NotificationResponse | null) => {
+      const eventId = response?.notification.request.content.data?.eventId;
+      if (typeof eventId === "string" && eventId) setPendingEventId(eventId);
+    };
+    Notifications.getLastNotificationResponseAsync().then(handleResponse).catch(() => undefined);
+    const sub = Notifications.addNotificationResponseReceivedListener(handleResponse);
+    return () => sub.remove();
   }, []);
+
+  useEffect(() => {
+    if (!pendingEventId || events.length === 0) return;
+    const match = events.find((event) => event.id === pendingEventId);
+    setPendingEventId(null);
+    if (match) openEvent(match);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pendingEventId, events]);
 
   async function handleToggleSaved(eventId: string) {
     setSavedIds(await toggleSaved(eventId));
@@ -109,12 +178,29 @@ export function RoleChoiceScreen({
     if (reminders[event.id]) {
       await cancelEventReminder(event.id);
       setReminders(await getReminders());
-      Alert.alert("Reminder removed", `You won't be notified about ${event.title}.`);
+      Alert.alert("Reminder removed", `You won't be notified about ${eventTitle(event, lang)}.`);
       return;
     }
-    const result = await scheduleEventReminder(event);
-    setReminders(await getReminders());
-    Alert.alert(result.ok ? "Reminder set" : "Couldn't set reminder", result.message);
+    const offsets = availableReminderOffsets(event);
+    if (offsets.length === 0) {
+      Alert.alert("Couldn't set reminder", "This event starts too soon to schedule a reminder.");
+      return;
+    }
+    const schedule = async (offset: ReminderOffset) => {
+      const result = await scheduleEventReminder(event, offset);
+      setReminders(await getReminders());
+      Alert.alert(result.ok ? "Reminder set" : "Couldn't set reminder", result.message);
+    };
+    // Android alerts support up to three action buttons — exactly our offsets.
+    Alert.alert(
+      t(lang, "reminderPickerTitle"),
+      t(lang, "reminderPickerBody"),
+      offsets.map((offset) => ({
+        text: reminderOffsetLabel(offset),
+        onPress: () => void schedule(offset),
+      })),
+      { cancelable: true }
+    );
   }
 
   async function handleShare(event: DiscoverEvent) {
@@ -155,11 +241,31 @@ export function RoleChoiceScreen({
   function openEvent(event: DiscoverEvent) {
     setSelectedEvent(event);
     setEventView("detail");
+    // Feed the "For you" rail with what the user actually opens.
+    recordCategoryOpen(event)
+      .then(() => getTopCategories())
+      .then(setTopCategories)
+      .catch(() => undefined);
   }
 
   const q = query.trim().toLowerCase();
   const filtered = events.filter((e) => {
-    const matchesQuery = !q || e.title.toLowerCase().includes(q);
+    // Search across everything a user might remember about an event.
+    const haystack = [
+      e.title,
+      e.titleAr,
+      e.venueName,
+      e.venueNameAr,
+      e.locationText,
+      e.organizerName,
+      e.companyName,
+      e.category,
+      e.shortDescription,
+    ]
+      .filter(Boolean)
+      .join(" ")
+      .toLowerCase();
+    const matchesQuery = !q || haystack.includes(q);
     const matchesCategory =
       activeCategory === "All" ||
       (e.category ?? "").toLowerCase() === activeCategory.toLowerCase() ||
@@ -178,6 +284,18 @@ export function RoleChoiceScreen({
       : eventView === "saved"
         ? sorted.filter((e) => savedIds.includes(e.id))
         : sorted;
+  // "For you": upcoming events in the categories this user opens most.
+  const topThreeIds = new Set(sorted.slice(0, 3).map((e) => e.id));
+  const forYou =
+    eventView === "home" && topCategories.length > 0
+      ? sorted
+          .filter((e) => !topThreeIds.has(e.id))
+          .filter((e) => {
+            const cat = (e.category ?? e.categorySlug ?? "").toLowerCase();
+            return cat && topCategories.includes(cat);
+          })
+          .slice(0, 6)
+      : [];
 
   return (
     <PremiumBackdrop>
@@ -187,11 +305,15 @@ export function RoleChoiceScreen({
           style={styles.scroll}
           contentContainerStyle={[styles.scrollContent, isWide && styles.scrollContentWide]}
           showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor="#67E8F9" colors={["#67E8F9"]} />
+          }
         >
           <FadeSlideIn style={[styles.inner, isWide && styles.innerWide]}>
           {eventView === "detail" && selectedEvent ? (
             <EventDetailPanel
               event={selectedEvent}
+              lang={lang}
               onBack={() => setEventView("home")}
               saved={savedIds.includes(selectedEvent.id)}
               onToggleSaved={() => handleToggleSaved(selectedEvent.id)}
@@ -204,12 +326,24 @@ export function RoleChoiceScreen({
             <View style={styles.mkt}>
               <View style={styles.mktHeader}>
                 <View style={styles.mktHeaderCopy}>
-                  <Text style={styles.mktKicker}>Bahrain · Tonight</Text>
+                  <Text style={styles.mktKicker}>{t(lang, "kicker")}</Text>
                   <Text style={styles.mktTitle}>
-                    {eventView === "list" ? "All events" : eventView === "saved" ? "Saved events" : "Discover events"}
+                    {eventView === "list"
+                      ? t(lang, "allEventsTitle")
+                      : eventView === "saved"
+                        ? t(lang, "savedEventsTitle")
+                        : t(lang, "discoverTitle")}
                   </Text>
                 </View>
                 <View style={styles.mktHeaderRight}>
+                  <Pressable
+                    onPress={toggleLang}
+                    style={({ pressed }) => [styles.mktGear, pressed && styles.pressed]}
+                    accessibilityRole="button"
+                    accessibilityLabel={lang === "en" ? "التبديل إلى العربية" : "Switch to English"}
+                  >
+                    <Text style={styles.langToggleText}>{lang === "en" ? "ع" : "EN"}</Text>
+                  </Pressable>
                   <Pressable
                     onPress={() => setShowOptions((value) => !value)}
                     style={({ pressed }) => [styles.mktGear, pressed && styles.pressed]}
@@ -254,9 +388,9 @@ export function RoleChoiceScreen({
                 <TextInput
                   value={query}
                   onChangeText={setQuery}
-                  placeholder="Search events, venues, artists…"
+                  placeholder={t(lang, "searchPlaceholder")}
                   placeholderTextColor="rgba(255,255,255,0.4)"
-                  style={styles.mktSearchInput}
+                  style={[styles.mktSearchInput, lang === "ar" && styles.rtlText]}
                 />
               </View>
 
@@ -273,7 +407,9 @@ export function RoleChoiceScreen({
                     accessibilityRole="button"
                     accessibilityLabel={`Filter by ${cat}`}
                   >
-                    <Text style={[styles.mktPillText, activeCategory === cat && styles.mktPillTextActive]}>{cat}</Text>
+                    <Text style={[styles.mktPillText, activeCategory === cat && styles.mktPillTextActive]}>
+                      {categoryLabel(lang, cat)}
+                    </Text>
                   </Pressable>
                 ))}
               </ScrollView>
@@ -287,20 +423,22 @@ export function RoleChoiceScreen({
                 >
                   <Ionicons name="sparkles" size={14} color="#67E8F9" />
                   <Text style={styles.newBannerText}>
-                    {newIds.length === 1 ? "1 new event" : `${newIds.length} new events`} since your last visit
+                    {newIds.length === 1
+                      ? t(lang, "newEventOne")
+                      : `${newIds.length} ${t(lang, "newEventMany")}`}
                   </Text>
                   <Ionicons name="chevron-forward" size={14} color="rgba(255,255,255,0.6)" />
                 </Pressable>
               ) : null}
 
               {featured && eventView === "home" ? (
-                <FeaturedHero event={featured} onOpen={openEvent} />
+                <FeaturedHero event={featured} lang={lang} onOpen={openEvent} />
               ) : null}
 
               {eventView === "home" && soonRail.length > 0 ? (
                 <>
                   <View style={styles.mktSectionHead}>
-                    <Text style={styles.mktSectionEyebrow}>Happening soon</Text>
+                    <Text style={styles.mktSectionEyebrow}>{t(lang, "happeningSoon")}</Text>
                   </View>
                   <ScrollView
                     horizontal
@@ -308,47 +446,66 @@ export function RoleChoiceScreen({
                     contentContainerStyle={styles.soonRail}
                   >
                     {soonRail.map((event, index) => (
-                      <SoonCard key={event.id} event={event} index={index} onOpen={openEvent} />
+                      <SoonCard key={event.id} event={event} index={index} lang={lang} onOpen={openEvent} />
+                    ))}
+                  </ScrollView>
+                </>
+              ) : null}
+
+              {forYou.length > 0 ? (
+                <>
+                  <View style={styles.mktSectionHead}>
+                    <Text style={styles.mktSectionEyebrow}>{t(lang, "forYou")}</Text>
+                  </View>
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={styles.soonRail}
+                  >
+                    {forYou.map((event, index) => (
+                      <SoonCard key={event.id} event={event} index={index + 2} lang={lang} onOpen={openEvent} />
                     ))}
                   </ScrollView>
                 </>
               ) : null}
 
               {eventsLoading ? (
-                <View style={styles.eventSkeleton}>
-                  <Text style={styles.eventSkeletonText}>Loading public events…</Text>
+                <View style={styles.gridWrap}>
+                  {[0, 1, 2, 3, 4, 5].map((i) => (
+                    <View key={i} style={[styles.gridTile, styles.gridTileSkeleton]} />
+                  ))}
                 </View>
               ) : sorted.length === 0 ? (
                 <View style={styles.eventEmpty}>
                   <Ionicons name="calendar-clear-outline" size={22} color="rgba(255,255,255,0.72)" />
-                  <Text style={styles.eventEmptyTitle}>No events found</Text>
-                  <Text style={styles.eventEmptyBody}>Try another category or search — new public events appear here automatically.</Text>
+                  <Text style={styles.eventEmptyTitle}>{t(lang, "noEventsTitle")}</Text>
+                  <Text style={styles.eventEmptyBody}>{t(lang, "noEventsBody")}</Text>
                 </View>
               ) : rest.length > 0 || eventView !== "home" ? (
                 <>
                   <View style={styles.mktSectionHead}>
                     <Text style={styles.mktSectionEyebrow}>
                       {eventView === "list"
-                        ? `All events · ${sorted.length}`
+                        ? `${t(lang, "allEvents")} · ${sorted.length}`
                         : eventView === "saved"
-                          ? `Saved · ${rest.length}`
-                          : "More events"}
+                          ? `${t(lang, "savedCount")} · ${rest.length}`
+                          : t(lang, "moreEvents")}
                     </Text>
                     {eventView === "home" ? (
                       <Pressable onPress={() => setEventView("list")} accessibilityRole="button" accessibilityLabel="See all events">
-                        <Text style={styles.mktSeeAll}>See all</Text>
+                        <Text style={styles.mktSeeAll}>{t(lang, "seeAll")}</Text>
                       </Pressable>
                     ) : (
                       <Pressable onPress={() => setEventView("home")} accessibilityRole="button" accessibilityLabel="Back to home">
-                        <Text style={styles.mktSeeAll}>Back</Text>
+                        <Text style={styles.mktSeeAll}>{t(lang, "back")}</Text>
                       </Pressable>
                     )}
                   </View>
                   {rest.length === 0 ? (
                     <View style={styles.eventEmpty}>
                       <Ionicons name="heart-outline" size={22} color="rgba(255,255,255,0.72)" />
-                      <Text style={styles.eventEmptyTitle}>No saved events yet</Text>
-                      <Text style={styles.eventEmptyBody}>Tap the heart on any event to keep it here for quick access.</Text>
+                      <Text style={styles.eventEmptyTitle}>{t(lang, "noSavedTitle")}</Text>
+                      <Text style={styles.eventEmptyBody}>{t(lang, "noSavedBody")}</Text>
                     </View>
                   ) : (
                     <View style={styles.gridWrap}>
@@ -357,6 +514,7 @@ export function RoleChoiceScreen({
                           key={event.id}
                           event={event}
                           index={index}
+                          lang={lang}
                           isNew={newIds.includes(event.id)}
                           onOpen={openEvent}
                         />
@@ -371,8 +529,8 @@ export function RoleChoiceScreen({
                   accessibilityRole="button"
                   accessibilityLabel="See all events"
                 >
-                  <Text style={styles.mktSectionEyebrow}>That's everything for now</Text>
-                  <Text style={styles.mktSeeAll}>See all</Text>
+                  <Text style={styles.mktSectionEyebrow}>{t(lang, "thatsEverything")}</Text>
+                  <Text style={styles.mktSeeAll}>{t(lang, "seeAll")}</Text>
                 </Pressable>
               )}
             </View>
@@ -393,6 +551,7 @@ export function RoleChoiceScreen({
         {eventView !== "detail" ? (
           <BottomTabBar
             view={eventView}
+            lang={lang}
             savedCount={savedIds.length}
             onDiscover={() => setEventView("home")}
             onSaved={() => setEventView("saved")}
@@ -415,8 +574,16 @@ export function RoleChoiceScreen({
   );
 }
 
-function FeaturedHero({ event, onOpen }: { event: DiscoverEvent; onOpen: (event: DiscoverEvent) => void }) {
-  const host = event.organizerName ?? event.companyName;
+function FeaturedHero({
+  event,
+  lang,
+  onOpen,
+}: {
+  event: DiscoverEvent;
+  lang: AppLang;
+  onOpen: (event: DiscoverEvent) => void;
+}) {
+  const host = eventHost(event, lang);
   const price = formatPrice(event);
   return (
     <View style={styles.featured}>
@@ -436,13 +603,13 @@ function FeaturedHero({ event, onOpen }: { event: DiscoverEvent; onOpen: (event:
         style={StyleSheet.absoluteFill}
       />
       <View style={styles.featuredBadge}>
-        <Text style={styles.featuredBadgeText}>Featured</Text>
+        <Text style={styles.featuredBadgeText}>{t(lang, "featured")}</Text>
       </View>
       <View style={styles.featuredBody}>
         <Text style={styles.featuredDate}>{formatEventDate(event.startsAt)}</Text>
-        <Text style={styles.featuredTitle} numberOfLines={2}>{event.title}</Text>
+        <Text style={styles.featuredTitle} numberOfLines={2}>{eventTitle(event, lang)}</Text>
         <Text style={styles.featuredMeta} numberOfLines={1}>
-          {host}{price ? ` · from ${price}` : ""}
+          {host}{price ? ` · ${price}` : ""}
         </Text>
         <View style={styles.featuredActions}>
           <Pressable
@@ -451,7 +618,9 @@ function FeaturedHero({ event, onOpen }: { event: DiscoverEvent; onOpen: (event:
             accessibilityRole="button"
             accessibilityLabel={`Buy tickets for ${event.title}`}
           >
-            <Text style={styles.featuredBuyText}>{event.hasTickets ? "Buy Ticket" : "Open"}</Text>
+            <Text style={styles.featuredBuyText}>
+              {event.hasTickets ? t(lang, "buyTicket") : t(lang, "openEvent")}
+            </Text>
           </Pressable>
           <Pressable
             onPress={() => onOpen(event)}
@@ -459,7 +628,7 @@ function FeaturedHero({ event, onOpen }: { event: DiscoverEvent; onOpen: (event:
             accessibilityRole="button"
             accessibilityLabel={`Details for ${event.title}`}
           >
-            <Text style={styles.featuredDetailsText}>Details</Text>
+            <Text style={styles.featuredDetailsText}>{t(lang, "details")}</Text>
           </Pressable>
         </View>
       </View>
@@ -475,14 +644,16 @@ function shortDay(value: string) {
   }
 }
 
-/** Medium horizontal-rail card for the "Happening soon" top section. */
+/** Medium horizontal-rail card for the "Happening soon" / "For you" rails. */
 function SoonCard({
   event,
   index,
+  lang,
   onOpen,
 }: {
   event: DiscoverEvent;
   index: number;
+  lang: AppLang;
   onOpen: (event: DiscoverEvent) => void;
 }) {
   const gradient = THUMB_GRADIENTS[index % THUMB_GRADIENTS.length];
@@ -507,10 +678,8 @@ function SoonCard({
         </View>
       </View>
       <View style={styles.soonCardBody}>
-        <Text style={styles.soonCardTitle} numberOfLines={2}>{event.title}</Text>
-        <Text style={styles.soonCardMeta} numberOfLines={1}>
-          {event.venueName ?? event.locationText ?? event.organizerName ?? event.companyName}
-        </Text>
+        <Text style={styles.soonCardTitle} numberOfLines={2}>{eventTitle(event, lang)}</Text>
+        <Text style={styles.soonCardMeta} numberOfLines={1}>{eventVenue(event, lang)}</Text>
       </View>
     </Pressable>
   );
@@ -520,11 +689,13 @@ function SoonCard({
 function GridTile({
   event,
   index,
+  lang,
   isNew,
   onOpen,
 }: {
   event: DiscoverEvent;
   index: number;
+  lang: AppLang;
   isNew?: boolean;
   onOpen: (event: DiscoverEvent) => void;
 }) {
@@ -552,7 +723,7 @@ function GridTile({
         ) : null}
       </View>
       <View style={styles.gridTileBody}>
-        <Text style={styles.gridTileTitle} numberOfLines={2}>{event.title}</Text>
+        <Text style={styles.gridTileTitle} numberOfLines={2}>{eventTitle(event, lang)}</Text>
         <Text style={styles.gridTilePrice}>{formatPrice(event)}</Text>
       </View>
     </Pressable>
@@ -632,12 +803,14 @@ function MarketplaceRow({
 
 function BottomTabBar({
   view,
+  lang,
   savedCount,
   onDiscover,
   onSaved,
   onAccount,
 }: {
   view: "home" | "list" | "saved";
+  lang: AppLang;
   savedCount: number;
   onDiscover: () => void;
   onSaved: () => void;
@@ -650,11 +823,11 @@ function BottomTabBar({
     <View style={styles.tabBar}>
       <Pressable style={styles.tabItem} onPress={onDiscover} accessibilityRole="button" accessibilityLabel="Discover events">
         <Ionicons name={discoverActive ? "home" : "home-outline"} size={21} color={discoverActive ? palette.accentCyan : dim} />
-        <Text style={[styles.tabLabel, discoverActive && styles.tabLabelActive]}>Discover</Text>
+        <Text style={[styles.tabLabel, discoverActive && styles.tabLabelActive]}>{t(lang, "tabDiscover")}</Text>
       </Pressable>
       <Pressable style={styles.tabItem} onPress={onAccount} accessibilityRole="button" accessibilityLabel="My tickets">
         <Ionicons name="ticket-outline" size={21} color={dim} />
-        <Text style={styles.tabLabel}>Tickets</Text>
+        <Text style={styles.tabLabel}>{t(lang, "tabTickets")}</Text>
       </Pressable>
       <Pressable style={styles.tabItem} onPress={onSaved} accessibilityRole="button" accessibilityLabel="Saved events">
         <View>
@@ -665,11 +838,11 @@ function BottomTabBar({
             </View>
           ) : null}
         </View>
-        <Text style={[styles.tabLabel, savedActive && styles.tabLabelActive]}>Saved</Text>
+        <Text style={[styles.tabLabel, savedActive && styles.tabLabelActive]}>{t(lang, "tabSaved")}</Text>
       </Pressable>
       <Pressable style={styles.tabItem} onPress={onAccount} accessibilityRole="button" accessibilityLabel="Account">
         <Ionicons name="person-outline" size={21} color={dim} />
-        <Text style={styles.tabLabel}>Account</Text>
+        <Text style={styles.tabLabel}>{t(lang, "tabAccount")}</Text>
       </Pressable>
     </View>
   );
@@ -762,6 +935,7 @@ function DiscoverEventCard({
 
 function EventDetailPanel({
   event,
+  lang,
   onBack,
   saved,
   onToggleSaved,
@@ -771,6 +945,7 @@ function EventDetailPanel({
   onShare,
 }: {
   event: DiscoverEvent;
+  lang: AppLang;
   onBack: () => void;
   saved: boolean;
   onToggleSaved: () => void;
@@ -865,31 +1040,53 @@ function EventDetailPanel({
           </View>
         ) : null}
       </View>
-      <Text style={styles.detailTitle}>{event.title}</Text>
-      <Text style={styles.eventHost}>{event.companyName}</Text>
-      {event.shortDescription ? <Text style={styles.detailDescription}>{event.shortDescription}</Text> : null}
+      <Text style={styles.detailTitle}>{eventTitle(event, lang)}</Text>
+      <Text style={styles.eventHost}>{eventHost(event, lang)}</Text>
+      {eventDescription(event, lang) ? (
+        <Text style={styles.detailDescription}>{eventDescription(event, lang)}</Text>
+      ) : null}
 
       <View style={styles.detailActions}>
         <DetailAction
           icon={reminderSet ? "notifications" : "notifications-outline"}
-          label={reminderSet ? "Reminding" : "Remind me"}
+          label={reminderSet ? t(lang, "reminding") : t(lang, "remindMe")}
           active={reminderSet}
           onPress={onToggleReminder}
         />
-        <DetailAction icon="calendar-outline" label="Calendar" onPress={onAddToCalendar} />
-        <DetailAction icon="share-social-outline" label="Share" onPress={onShare} />
+        <DetailAction icon="calendar-outline" label={t(lang, "calendar")} onPress={onAddToCalendar} />
+        <DetailAction icon="share-social-outline" label={t(lang, "share")} onPress={onShare} />
         <DetailAction
           icon={saved ? "heart" : "heart-outline"}
-          label={saved ? "Saved" : "Save"}
+          label={saved ? t(lang, "savedLabel") : t(lang, "save")}
           active={saved}
           onPress={onToggleSaved}
         />
       </View>
 
+      <Pressable
+        onPress={() =>
+          Linking.openURL(buildDirectionsUrl(event)).catch(() =>
+            Alert.alert("Unable to open maps", "No maps app could handle the request.")
+          )
+        }
+        style={({ pressed }) => [styles.directionsRow, pressed && styles.pressed]}
+        accessibilityRole="button"
+        accessibilityLabel="Get directions"
+      >
+        <Ionicons name="location-outline" size={17} color="#67E8F9" />
+        <Text style={styles.directionsText} numberOfLines={1}>
+          {eventVenue(event, lang) ?? "Bahrain"}
+        </Text>
+        <View style={styles.directionsCta}>
+          <Text style={styles.directionsCtaText}>{t(lang, "directions")}</Text>
+          <Ionicons name="chevron-forward" size={13} color="#67E8F9" />
+        </View>
+      </Pressable>
+
       <View style={styles.ticketBox}>
-        <Text style={styles.ticketBoxTitle}>Tickets</Text>
+        <Text style={styles.ticketBoxTitle}>{t(lang, "tickets")}</Text>
         {event.ticketTypes.length === 0 ? (
-          <Text style={styles.eventDescription}>No tickets are available for this event yet.</Text>
+          <Text style={styles.eventDescription}>{t(lang, "noTickets")}</Text>
         ) : (
           event.ticketTypes.map((ticket) => {
             const quantity = selectedTickets[ticket.id] ?? 0;
@@ -920,7 +1117,8 @@ function EventDetailPanel({
         {totalQuantity > 0 ? (
           <View style={styles.totalRow}>
             <Text style={styles.totalLabel}>
-              Total · {totalQuantity} {totalQuantity === 1 ? "ticket" : "tickets"}
+              {t(lang, "total")} · {totalQuantity}{" "}
+              {totalQuantity === 1 ? t(lang, "ticketOne") : t(lang, "ticketMany")}
             </Text>
             <Text style={styles.totalValue}>{formatTicketPrice(total, cartCurrency)}</Text>
           </View>
@@ -931,18 +1129,18 @@ function EventDetailPanel({
         <TextInput
           value={attendeeName}
           onChangeText={setAttendeeName}
-          placeholder="Full name"
+          placeholder={t(lang, "fullName")}
           placeholderTextColor="rgba(255,255,255,0.5)"
-          style={styles.checkoutInput}
+          style={[styles.checkoutInput, lang === "ar" && styles.rtlText]}
         />
         <TextInput
           value={attendeeEmail}
           onChangeText={setAttendeeEmail}
-          placeholder="Email address"
+          placeholder={t(lang, "emailAddress")}
           placeholderTextColor="rgba(255,255,255,0.5)"
           keyboardType="email-address"
           autoCapitalize="none"
-          style={styles.checkoutInput}
+          style={[styles.checkoutInput, lang === "ar" && styles.rtlText]}
         />
         <Pressable
           disabled={submitting || event.ticketTypes.length === 0}
@@ -953,7 +1151,9 @@ function EventDetailPanel({
             <ActivityIndicator color="#FFFFFF" />
           ) : (
             <Text style={styles.checkoutButtonText}>
-              {total > 0 ? `Checkout · ${formatTicketPrice(total, cartCurrency)}` : "Reserve tickets"}
+              {total > 0
+                ? `${t(lang, "checkout")} · ${formatTicketPrice(total, cartCurrency)}`
+                : t(lang, "reserveTickets")}
             </Text>
           )}
         </Pressable>
@@ -1465,6 +1665,33 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: spacing.sm,
   },
+  directionsRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    backgroundColor: "rgba(255,255,255,0.06)",
+    borderColor: "rgba(255,255,255,0.12)",
+    borderWidth: 1,
+    borderRadius: radii.md,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  directionsText: {
+    color: palette.textInverse,
+    flex: 1,
+    fontSize: 13,
+    fontWeight: "700",
+  },
+  directionsCta: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 2,
+  },
+  directionsCtaText: {
+    color: "#67E8F9",
+    fontSize: 12,
+    fontWeight: "900",
+  },
   detailAction: {
     flex: 1,
     alignItems: "center",
@@ -1720,6 +1947,15 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "800",
   },
+  langToggleText: {
+    color: palette.textInverse,
+    fontSize: 15,
+    fontWeight: "900",
+  },
+  rtlText: {
+    textAlign: "right",
+    writingDirection: "rtl",
+  },
   mktSearch: {
     alignItems: "center",
     backgroundColor: "rgba(255,255,255,0.05)",
@@ -1838,6 +2074,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.1)",
     backgroundColor: "rgba(255,255,255,0.05)",
+  },
+  gridTileSkeleton: {
+    backgroundColor: "rgba(255,255,255,0.06)",
+    borderColor: "rgba(255,255,255,0.08)",
   },
   gridTileTopRow: {
     flexDirection: "row",

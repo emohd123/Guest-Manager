@@ -11,6 +11,8 @@ import { getApiBaseUrl } from "../config";
 const SAVED_KEY = "events_hub_saved_event_ids";
 const REMINDERS_KEY = "events_hub_event_reminders";
 const SEEN_KEY = "events_hub_seen_event_ids";
+const AFFINITY_KEY = "events_hub_category_affinity";
+const LANG_KEY = "events_hub_lang";
 const CHANNEL_ID = "events";
 
 /** eventId -> scheduled notification ids */
@@ -54,28 +56,39 @@ export async function getReminders(): Promise<ReminderMap> {
   return readJson<ReminderMap>(REMINDERS_KEY, {});
 }
 
-/**
- * Schedules reminders 24h and 1h before the event (whichever are still in the
- * future). Returns a human message describing what was scheduled.
- */
+export type ReminderOffset = "week" | "day" | "hour";
+
+const REMINDER_OFFSETS: Record<ReminderOffset, { ms: number; label: string; body: string }> = {
+  week: { ms: 7 * 24 * 60 * 60 * 1000, label: "1 week before", body: "Starts in one week" },
+  day: { ms: 24 * 60 * 60 * 1000, label: "1 day before", body: "Starts tomorrow" },
+  hour: { ms: 60 * 60 * 1000, label: "1 hour before", body: "Starts in 1 hour" },
+};
+
+/** Which reminder offsets are still in the future for this event. */
+export function availableReminderOffsets(event: DiscoverEvent): ReminderOffset[] {
+  const start = new Date(event.startsAt).getTime();
+  if (Number.isNaN(start)) return [];
+  const now = Date.now();
+  return (Object.keys(REMINDER_OFFSETS) as ReminderOffset[]).filter(
+    (key) => start - REMINDER_OFFSETS[key].ms > now
+  );
+}
+
+export function reminderOffsetLabel(offset: ReminderOffset): string {
+  return REMINDER_OFFSETS[offset].label;
+}
+
+/** Schedules one reminder at the chosen offset before the event start. */
 export async function scheduleEventReminder(
-  event: DiscoverEvent
+  event: DiscoverEvent,
+  offset: ReminderOffset
 ): Promise<{ ok: boolean; message: string }> {
   const start = new Date(event.startsAt).getTime();
   if (Number.isNaN(start)) return { ok: false, message: "This event has no valid start time." };
-
-  const now = Date.now();
-  const slots: { date: Date; label: string; body: string }[] = [];
-  const dayBefore = start - 24 * 60 * 60 * 1000;
-  const hourBefore = start - 60 * 60 * 1000;
-  if (dayBefore > now) {
-    slots.push({ date: new Date(dayBefore), label: "1 day before", body: "Starts tomorrow" });
-  }
-  if (hourBefore > now) {
-    slots.push({ date: new Date(hourBefore), label: "1 hour before", body: "Starts in 1 hour" });
-  }
-  if (slots.length === 0) {
-    return { ok: false, message: "This event starts too soon to schedule a reminder." };
+  const slot = REMINDER_OFFSETS[offset];
+  const when = start - slot.ms;
+  if (when <= Date.now()) {
+    return { ok: false, message: `${slot.label} has already passed for this event.` };
   }
 
   const permission = await Notifications.requestPermissionsAsync();
@@ -84,29 +97,28 @@ export async function scheduleEventReminder(
   }
   await ensureNotificationChannel();
 
+  // One reminder per event: replace whatever was scheduled before.
+  await cancelEventReminder(event.id);
+
   const where = event.venueName ?? event.locationText ?? event.companyName;
-  const ids: string[] = [];
-  for (const slot of slots) {
-    const id = await Notifications.scheduleNotificationAsync({
-      content: {
-        title: `Reminder: ${event.title}`,
-        body: `${slot.body}${where ? ` · ${where}` : ""}`,
-        data: { eventId: event.id, url: event.publicUrl },
-        sound: "default",
-      },
-      trigger: {
-        type: Notifications.SchedulableTriggerInputTypes.DATE,
-        date: slot.date,
-        channelId: CHANNEL_ID,
-      },
-    });
-    ids.push(id);
-  }
+  const id = await Notifications.scheduleNotificationAsync({
+    content: {
+      title: `Reminder: ${event.title}`,
+      body: `${slot.body}${where ? ` · ${where}` : ""}`,
+      data: { eventId: event.id, url: event.publicUrl },
+      sound: "default",
+    },
+    trigger: {
+      type: Notifications.SchedulableTriggerInputTypes.DATE,
+      date: new Date(when),
+      channelId: CHANNEL_ID,
+    },
+  });
 
   const reminders = await getReminders();
-  reminders[event.id] = ids;
+  reminders[event.id] = [id];
   await AsyncStorage.setItem(REMINDERS_KEY, JSON.stringify(reminders));
-  return { ok: true, message: `Reminder set — we'll notify you ${slots.map((s) => s.label).join(" and ")}.` };
+  return { ok: true, message: `Reminder set — we'll notify you ${slot.label.toLowerCase()}.` };
 }
 
 export async function cancelEventReminder(eventId: string): Promise<void> {
@@ -192,6 +204,8 @@ export async function notifyNewEvents(events: DiscoverEvent[]): Promise<void> {
       content: {
         title: events.length === 1 ? "New event in Bahrain 🎉" : `${events.length} new events in Bahrain 🎉`,
         body: events.slice(0, 3).map((e) => e.title).join(" · "),
+        // Single new event → tapping the notification deep-links straight to it.
+        data: events.length === 1 ? { eventId: events[0].id } : {},
         sound: "default",
       },
       trigger: null,
@@ -199,4 +213,41 @@ export async function notifyNewEvents(events: DiscoverEvent[]): Promise<void> {
   } catch {
     // Notifications are best-effort — never break the feed for them.
   }
+}
+
+// ── Directions ───────────────────────────────────────────────────────────────
+export function buildDirectionsUrl(event: DiscoverEvent): string {
+  const target = event.venueName ?? event.locationText ?? `${event.title} Bahrain`;
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(target)}`;
+}
+
+// ── Category affinity ("For you") ────────────────────────────────────────────
+/** Bump the open-count for an event's category. */
+export async function recordCategoryOpen(event: DiscoverEvent): Promise<void> {
+  const category = (event.category ?? event.categorySlug ?? "").toLowerCase();
+  if (!category) return;
+  const counts = await readJson<Record<string, number>>(AFFINITY_KEY, {});
+  counts[category] = (counts[category] ?? 0) + 1;
+  await AsyncStorage.setItem(AFFINITY_KEY, JSON.stringify(counts));
+}
+
+/** Categories the user opens most, strongest first. */
+export async function getTopCategories(limit = 2): Promise<string[]> {
+  const counts = await readJson<Record<string, number>>(AFFINITY_KEY, {});
+  return Object.entries(counts)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, limit)
+    .map(([category]) => category);
+}
+
+// ── Language (English / Arabic) ──────────────────────────────────────────────
+export type AppLang = "en" | "ar";
+
+export async function getLang(): Promise<AppLang> {
+  const raw = await AsyncStorage.getItem(LANG_KEY);
+  return raw === "ar" ? "ar" : "en";
+}
+
+export async function setLang(lang: AppLang): Promise<void> {
+  await AsyncStorage.setItem(LANG_KEY, lang);
 }

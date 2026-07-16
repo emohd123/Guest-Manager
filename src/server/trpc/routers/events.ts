@@ -2,6 +2,7 @@ import { z } from "zod";
 import { router, protectedProcedure, publicProcedure } from "../index";
 import { nanoid } from "nanoid";
 import { createSupabaseAdminClient } from "@/server/supabase/admin";
+import { broadcastNewEventPush } from "@/server/services/discover-push";
 
 type EventRow = {
   id: string;
@@ -193,6 +194,19 @@ export const eventsRouter = router({
       })
     )
     .mutation(async ({ ctx, input }) => {
+      // Capture the previous status so publishing (draft -> published) can
+      // trigger a one-time "new event" push to Discover app users.
+      let previousStatus: string | null = null;
+      if (input.status === "published") {
+        const { data: before } = await ctx.supabase
+          .from("events")
+          .select("status")
+          .eq("id", input.id)
+          .eq("company_id", ctx.companyId)
+          .maybeSingle();
+        previousStatus = (before as { status?: string } | null)?.status ?? null;
+      }
+
       const payload: Record<string, unknown> = {
         updated_at: new Date().toISOString(),
       };
@@ -221,7 +235,14 @@ export const eventsRouter = router({
         .single();
 
       if (error) throw new Error(error.message);
-      return mapEvent(data as EventRow);
+
+      const updated = data as EventRow;
+      if (input.status === "published" && previousStatus !== "published") {
+        // Fire-and-forget: never delay or fail the mutation over a push.
+        void broadcastNewEventPush({ id: updated.id, title: updated.title });
+      }
+
+      return mapEvent(updated);
     }),
 
   delete: protectedProcedure

@@ -540,6 +540,18 @@ export async function fetchDiscoverEvents() {
   );
 }
 
+/** Registers this device for "new event" broadcast pushes (pre-auth Discover). */
+export async function registerDiscoverPushToken(payload: {
+  token: string;
+  platform?: string;
+  installationId?: string;
+}) {
+  return apiRequest<{ success: boolean }>(
+    "/api/mobile/v1/discover/push-token",
+    { method: "POST", body: JSON.stringify(payload) }
+  );
+}
+
 export async function createPublicOrder(payload: {
   companySlug: string;
   eventSlug: string;
