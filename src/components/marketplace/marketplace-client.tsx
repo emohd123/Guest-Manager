@@ -6,6 +6,7 @@ import { format } from "date-fns";
 import { BadgeCheck, CalendarDays, ChevronRight, Headphones, Heart, MapPin, Search, ShieldCheck, Sparkles, Ticket, UsersRound, X, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { FallingSparkles } from "@/components/visual/falling-sparkles";
+import { AiConcierge } from "@/components/marketplace/ai-concierge";
 import { eventCategories, formatMoney, normalizeLocale, type LocaleCode } from "@/lib/marketplace";
 import type { MarketplaceDiscoveryResponse, MarketplaceEvent } from "@/types/marketplace";
 import { cn } from "@/lib/utils";
@@ -469,6 +470,8 @@ export function MarketplaceClient({
       {quickViewEvent ? (
         <EventQuickView event={quickViewEvent} locale={locale} onClose={() => setQuickViewEvent(null)} />
       ) : null}
+
+      <AiConcierge locale={locale} />
     </div>
   );
 }
@@ -762,6 +765,22 @@ function EventQuickView({
               </Button>
               <Button asChild variant="outline" className="rounded-full border-white/15 bg-white/[0.04] py-6 font-black text-white hover:bg-white/[0.08]">
                 <Link href={event.publicUrl}>{locale === "ar" ? "\u0641\u062a\u062d \u0635\u0641\u062d\u0629 \u0627\u0644\u0641\u0639\u0627\u0644\u064a\u0629" : "Open full event page"}</Link>
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  window.dispatchEvent(
+                    new CustomEvent("eh-ask-ai", {
+                      detail: { eventId: event.id, title: locale === "ar" && event.titleAr ? event.titleAr : event.title },
+                    })
+                  );
+                  onClose();
+                }}
+                className="rounded-full border-cyan-300/40 bg-cyan-300/10 py-6 font-black text-cyan-100 hover:bg-cyan-300/20 sm:col-span-2"
+              >
+                <Sparkles className="me-2 h-4 w-4" />
+                {locale === "ar" ? "\u0627\u0633\u0623\u0644 \u0627\u0644\u0630\u0643\u0627\u0621 \u0639\u0646 \u0647\u0627\u0644\u0641\u0639\u0627\u0644\u064a\u0629" : "Ask AI about this event"}
               </Button>
             </div>
           </div>
