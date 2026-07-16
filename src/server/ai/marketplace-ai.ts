@@ -332,13 +332,28 @@ function smartListingWriter(bullets: string): AiResult {
 function smartDigest(stats: Record<string, unknown>, locale: "en" | "ar"): AiResult {
   const ar = locale === "ar";
   const s = stats as {
-    totalOrders?: number; totalRevenueBhd?: number; totalGuests?: number;
-    checkIns?: number; topEvent?: string; upcomingEvents?: number;
+    totalEvents?: number; totalOrders?: number; totalRevenueBhd?: number;
+    totalGuests?: number; checkIns?: number; topEvent?: string; upcomingEvents?: number;
   };
-  const reply = ar
-    ? `هذا الأسبوع: ${s.totalOrders ?? 0} طلب بإيراد ${(s.totalRevenueBhd ?? 0).toFixed(3)} دينار، ${s.totalGuests ?? 0} ضيف مسجل و${s.checkIns ?? 0} تسجيل دخول.${s.topEvent ? ` الأكثر مبيعاً: ${s.topEvent}.` : ""} عندك ${s.upcomingEvents ?? 0} فعالية قادمة.`
-    : `This week: ${s.totalOrders ?? 0} orders totalling BHD ${(s.totalRevenueBhd ?? 0).toFixed(3)}, ${s.totalGuests ?? 0} registered guests and ${s.checkIns ?? 0} check-ins.${s.topEvent ? ` Top seller: ${s.topEvent}.` : ""} You have ${s.upcomingEvents ?? 0} upcoming events.`;
-  return { reply, eventIds: [], source: "smart" };
+  // Only speak to numbers we were actually given.
+  const parts: string[] = [];
+  if (s.totalOrders != null) parts.push(ar ? `${s.totalOrders} طلب` : `${s.totalOrders} orders`);
+  if (s.totalRevenueBhd != null) parts.push(ar ? `إيراد ${s.totalRevenueBhd.toFixed(3)} دينار` : `BHD ${s.totalRevenueBhd.toFixed(3)} revenue`);
+  if (s.totalGuests != null) parts.push(ar ? `${s.totalGuests} ضيف مسجل` : `${s.totalGuests} registered guests`);
+  if (s.checkIns != null) parts.push(ar ? `${s.checkIns} تسجيل دخول` : `${s.checkIns} check-ins`);
+
+  const summary = parts.length
+    ? (ar ? "هذا الأسبوع: " : "So far: ") + parts.join(ar ? "، " : ", ") + "."
+    : ar ? "لا توجد بيانات كافية بعد." : "Not enough data yet.";
+  const top = s.topEvent ? (ar ? ` الأكثر مبيعاً: ${s.topEvent}.` : ` Top seller: ${s.topEvent}.`) : "";
+  const upcoming = s.upcomingEvents != null
+    ? ar ? ` عندك ${s.upcomingEvents} فعالية قادمة.` : ` You have ${s.upcomingEvents} upcoming events.`
+    : "";
+  const tip = (s.checkIns ?? 0) > (s.totalGuests ?? 0)
+    ? ar ? " نشاط الدخول ممتاز — فكّر بزيادة السعة." : " Check-in activity is strong — consider adding capacity."
+    : ar ? " جرّب حملة واتساب قبل الفعاليات القادمة لرفع الحضور." : " Try a WhatsApp push before your next events to lift attendance.";
+
+  return { reply: summary + top + upcoming + tip, eventIds: [], source: "smart" };
 }
 
 // ---------------------------------------------------------------------------

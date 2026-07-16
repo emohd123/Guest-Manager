@@ -25,6 +25,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { SpotlightCard } from "@/components/ui/spotlight-card";
+import { AiToolsCard } from "@/components/dashboard/ai-tools-card";
 
 
 export default function DashboardPage() {
@@ -199,6 +200,17 @@ export default function DashboardPage() {
           );
         })}
       </div>
+
+      <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.35 }}>
+        <AiToolsCard
+          stats={{
+            totalEvents,
+            totalGuests,
+            checkIns: totalCheckIns,
+            upcomingEvents: upcomingEvents?.events?.length ?? 0,
+          }}
+        />
+      </motion.div>
 
       <div className="grid gap-10 lg:grid-cols-3">
         <div className="space-y-10 lg:col-span-2">
