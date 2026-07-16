@@ -2,7 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import { Pressable, StyleSheet, Text, useWindowDimensions, View } from "react-native";
 import { BrandLogo } from "../ui/brand-logo";
-import { FloatingLines } from "../ui/FloatingLines";
+import { FallingSparkles } from "../ui/FallingSparkles";
 import { FadeSlideIn } from "../ui/motion";
 import { PremiumBackdrop, PremiumPill } from "../ui/primitives";
 import { palette, radii, shadows, spacing, type } from "../ui/theme";
@@ -24,16 +24,7 @@ export function StaffChoiceScreen({
   return (
     <PremiumBackdrop>
       <View style={styles.root}>
-        <FloatingLines
-          enabledWaves={["top", "middle", "bottom"]}
-          lineCount={[10, 16, 18]}
-          lineDistance={[8, 6, 5]}
-          linesGradient={["#2563EB", "#7C3AED", "#DB2777"]}
-          animationSpeed={1}
-          topWavePosition={{ x: isWide ? 0.2 : -2.8, y: 0.52, rotate: -0.14 }}
-          middleWavePosition={{ x: isWide ? -0.6 : -3.4, y: 0.12, rotate: 0.1 }}
-          bottomWavePosition={{ x: isWide ? -1.4 : -3.8, y: -0.5, rotate: -0.2 }}
-        />
+        <FallingSparkles count={30} speed={1} />
 
         <FadeSlideIn style={[styles.inner, isWide && styles.innerWide]}>
           <View style={styles.topBar}>

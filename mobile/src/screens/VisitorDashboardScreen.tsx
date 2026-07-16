@@ -19,7 +19,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { BrandLogo } from "../ui/brand-logo";
-import { FloatingLines } from "../ui/FloatingLines";
+import { FallingSparkles } from "../ui/FallingSparkles";
 import { Dock } from "../ui/Dock";
 import { BorderGlow } from "../ui/BorderGlow";
 import { SpotlightCard } from "../ui/SpotlightCard";
@@ -775,13 +775,7 @@ export function VisitorDashboardScreen({
 
   return (
     <View style={styles.screen}>
-      <FloatingLines
-        enabledWaves={["top", "middle", "bottom"]}
-        lineCount={[7, 10, 12]}
-        lineDistance={[9, 7, 6]}
-        linesGradient={["#2563EB", "#7C3AED", "#DB2777"]}
-        animationSpeed={0.8}
-      />
+      <FallingSparkles count={24} speed={1} />
       <View style={styles.headerShell}>
         <View style={styles.headerRow}>
           <View style={styles.headerLeft}>

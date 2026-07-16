@@ -17,7 +17,7 @@ import {
 import { LinearGradient } from "expo-linear-gradient";
 import { createPublicOrder, fetchDiscoverEvents } from "../api/mobileClient";
 import { FadeSlideIn } from "../ui/motion";
-import { FloatingLines } from "../ui/FloatingLines";
+import { FallingSparkles } from "../ui/FallingSparkles";
 import { PremiumBackdrop } from "../ui/primitives";
 import { SpotlightCard } from "../ui/SpotlightCard";
 import { palette, radii, shadows, spacing, type } from "../ui/theme";
@@ -82,16 +82,7 @@ export function RoleChoiceScreen({
   return (
     <PremiumBackdrop>
       <View style={styles.container}>
-        <FloatingLines
-          enabledWaves={["top", "middle", "bottom"]}
-          lineCount={[12, 18, 22]}
-          lineDistance={[8, 6, 4]}
-          linesGradient={["#3B82F6", "#8B5CF6", "#EC4899"]}
-          animationSpeed={1.05}
-          topWavePosition={{ x: isWide ? 0.5 : -2.8, y: 0.64, rotate: -0.16 }}
-          middleWavePosition={{ x: isWide ? -0.8 : -3.2, y: 0.08, rotate: 0.12 }}
-          bottomWavePosition={{ x: isWide ? -1.5 : -3.6, y: -0.62, rotate: -0.22 }}
-        />
+        <FallingSparkles count={34} speed={1} />
         <ScrollView
           style={styles.scroll}
           contentContainerStyle={[styles.scrollContent, isWide && styles.scrollContentWide]}
