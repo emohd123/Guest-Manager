@@ -16,6 +16,7 @@ import {
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { createPublicOrder, fetchDiscoverEvents } from "../api/mobileClient";
+import { AiConciergeSheet } from "../ui/AiConciergeSheet";
 import { FadeSlideIn } from "../ui/motion";
 import { FallingSparkles } from "../ui/FallingSparkles";
 import { PremiumBackdrop } from "../ui/primitives";
@@ -40,6 +41,7 @@ export function RoleChoiceScreen({
   onSelectVisitor: () => void;
 }) {
   const [showOptions, setShowOptions] = useState(false);
+  const [aiOpen, setAiOpen] = useState(false);
   const [events, setEvents] = useState<DiscoverEvent[]>([]);
   const [eventsLoading, setEventsLoading] = useState(true);
   const [eventView, setEventView] = useState<"home" | "list" | "detail">("home");
@@ -203,7 +205,29 @@ export function RoleChoiceScreen({
           )}
         </FadeSlideIn>
         </ScrollView>
+        {eventView !== "detail" ? (
+          <Pressable
+            style={styles.aiFab}
+            onPress={() => setAiOpen(true)}
+            accessibilityRole="button"
+            accessibilityLabel="Ask AI about events"
+          >
+            <Ionicons name="sparkles" size={16} color="#67E8F9" />
+            <Text style={styles.aiFabText}>Ask AI</Text>
+          </Pressable>
+        ) : null}
         {eventView !== "detail" ? <BottomTabBar onAccount={onSelectVisitor} /> : null}
+        <AiConciergeSheet
+          visible={aiOpen}
+          onClose={() => setAiOpen(false)}
+          onOpenEvent={(eventId) => {
+            const match = events.find((event) => event.id === eventId);
+            if (!match) return false;
+            setAiOpen(false);
+            openEvent(match);
+            return true;
+          }}
+        />
       </View>
     </PremiumBackdrop>
   );
@@ -1471,6 +1495,26 @@ const styles = StyleSheet.create({
     fontWeight: "900",
     textTransform: "uppercase",
   },
+  aiFab: {
+    position: "absolute",
+    right: 16,
+    bottom: 86,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    borderRadius: 999,
+    paddingHorizontal: 16,
+    paddingVertical: 11,
+    backgroundColor: "rgba(11,18,36,0.96)",
+    borderWidth: 1,
+    borderColor: "rgba(103,232,249,0.45)",
+    shadowColor: "#22D3EE",
+    shadowOpacity: 0.35,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 8,
+  },
+  aiFabText: { color: "#fff", fontWeight: "900", fontSize: 13 },
   tabBar: {
     backgroundColor: "rgba(12,16,32,0.94)",
     borderTopColor: "rgba(255,255,255,0.08)",
