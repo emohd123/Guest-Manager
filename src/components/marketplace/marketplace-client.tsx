@@ -5,7 +5,7 @@ import Link from "next/link";
 import { format } from "date-fns";
 import { BadgeCheck, CalendarDays, ChevronRight, Headphones, Heart, MapPin, Search, ShieldCheck, Sparkles, Ticket, UsersRound, X, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { FloatingLines } from "@/components/visual/floating-lines";
+import { FallingSparkles } from "@/components/visual/falling-sparkles";
 import { eventCategories, formatMoney, normalizeLocale, type LocaleCode } from "@/lib/marketplace";
 import type { MarketplaceDiscoveryResponse, MarketplaceEvent } from "@/types/marketplace";
 import { cn } from "@/lib/utils";
@@ -149,24 +149,11 @@ export function MarketplaceClient({
   return (
     <div dir={dir} className="relative min-h-screen overflow-hidden bg-[#050712] text-white">
       <div className="pointer-events-none fixed inset-0 z-0 bg-[#050712]">
-        <FloatingLines
-          className="absolute inset-0 opacity-95 [filter:brightness(1.18)_contrast(1.12)_saturate(1.08)]"
-          enabledWaves={["top", "middle", "bottom"]}
-          lineCount={[10, 14, 18]}
-          lineDistance={[10, 8, 6]}
-          linesGradient={["#38BDF8", "#7C3AED", "#E879F9", "#F59E0B"]}
-          topWavePosition={{ x: 4.8, y: 0.5, rotate: -0.2 }}
-          middleWavePosition={{ x: 1.0, y: -0.02, rotate: 0.12 }}
-          bottomWavePosition={{ x: -0.6, y: -0.58, rotate: -0.36 }}
-          animationSpeed={0.6}
-          interactive={true}
-          bendRadius={7}
-          bendStrength={-0.65}
-          mouseDamping={0.04}
-          parallax={true}
-          parallaxStrength={0.08}
-          mixBlendMode="screen"
-          intensity={1.55}
+        <FallingSparkles
+          className="absolute inset-0 h-full w-full"
+          colors={["#38BDF8", "#7C3AED", "#E879F9", "#F59E0B", "#FFFFFF"]}
+          density={8}
+          speed={1}
         />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_72%_16%,rgba(14,165,233,0.08),transparent_34%),radial-gradient(circle_at_18%_82%,rgba(190,24,93,0.06),transparent_36%)]" />
         <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(5,7,18,0.5)_0%,rgba(5,7,18,0.2)_36%,transparent_78%)]" />

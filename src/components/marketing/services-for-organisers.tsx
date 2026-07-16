@@ -22,7 +22,7 @@ import {
   Users,
   Wrench,
 } from "lucide-react";
-import { FloatingLines } from "@/components/visual/floating-lines";
+import { FallingSparkles } from "@/components/visual/falling-sparkles";
 
 const valueProps = [
   { icon: Ticket, title: "Sell more tickets", body: "A fast, mobile-first checkout in BHD with Benefit, Visa, Mastercard, Apple Pay & Google Pay." },
@@ -82,7 +82,7 @@ export function ServicesForOrganisers() {
   return (
     <div className="relative min-h-screen overflow-hidden bg-[#050712] text-white">
       <div className="pointer-events-none absolute inset-0 z-0">
-        <FloatingLines />
+        <FallingSparkles className="absolute inset-0 h-full w-full" />
       </div>
 
       <div className="relative z-10 mx-auto max-w-none px-4 pt-32 pb-20 sm:px-8 lg:px-12 2xl:px-20">

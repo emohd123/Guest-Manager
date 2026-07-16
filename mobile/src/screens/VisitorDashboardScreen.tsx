@@ -20,6 +20,9 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { BrandLogo } from "../ui/brand-logo";
 import { FloatingLines } from "../ui/FloatingLines";
+import { Dock } from "../ui/Dock";
+import { BorderGlow } from "../ui/BorderGlow";
+import { SpotlightCard } from "../ui/SpotlightCard";
 import type { DiscoverEvent } from "../types";
 import type {
   VisitorChatThread,
@@ -308,10 +311,10 @@ function AnimatedGlow({ style }: { style?: any }) {
   }, [glow]);
   return (
     <Animated.View
-      pointerEvents="none"
       style={[
         style,
         {
+          pointerEvents: "none",
           opacity: glow.interpolate({ inputRange: [0, 1], outputRange: [0.45, 0.95] }),
           transform: [{ scale: glow.interpolate({ inputRange: [0, 1], outputRange: [0.9, 1.15] }) }],
         },
@@ -344,64 +347,92 @@ function formatDiscoverPrice(event: DiscoverEvent) {
   }
 }
 
-function DiscoverRow({ event, index }: { event: DiscoverEvent; index: number }) {
+/** Resolve a discover event path to an absolute URL and open it reliably.
+ *  On web we force a new tab so the SPA isn't replaced; on native we defer to Linking. */
+function openDiscoverUrl(path?: string | null) {
+  if (!path) return;
+  const url = path.startsWith("http") ? path : `${getApiBaseUrl().replace(/\/$/, "")}${path}`;
+  if (Platform.OS === "web" && typeof window !== "undefined") {
+    window.open(url, "_blank", "noopener,noreferrer");
+    return;
+  }
+  Linking.openURL(url).catch(() => {});
+}
+
+function discoverDayLabel(iso: string) {
+  try {
+    return new Date(iso)
+      .toLocaleDateString("en-US", { weekday: "short", month: "short", day: "2-digit" })
+      .toUpperCase();
+  } catch {
+    return "";
+  }
+}
+
+/** Compact event box: cover image, date + price pills, then Buy tickets / Details. */
+function DiscoverCard({ event, index }: { event: DiscoverEvent; index: number }) {
   const gradient = DISCOVER_GRADIENTS[index % DISCOVER_GRADIENTS.length];
-  const host = event.category ?? event.organizerName ?? event.companyName;
-  const day = (() => {
-    try {
-      return new Date(event.startsAt)
-        .toLocaleDateString("en-US", { month: "short", day: "2-digit" })
-        .toUpperCase();
-    } catch {
-      return "";
-    }
-  })();
-  const openEvent = () => {
-    const path = event.buyUrl || event.publicUrl;
-    const url = path.startsWith("http") ? path : `${getApiBaseUrl().replace(/\/$/, "")}${path}`;
-    Linking.openURL(url).catch(() => {});
-  };
+  const host = event.venueName ?? event.locationText ?? event.category ?? event.organizerName ?? event.companyName;
+  const day = discoverDayLabel(event.startsAt);
   const scale = useRef(new Animated.Value(1)).current;
   const springTo = (to: number) =>
     Animated.spring(scale, { toValue: to, useNativeDriver: NATIVE_DRIVER, tension: 220, friction: 12 }).start();
+  const buyPath = event.buyUrl || event.publicUrl;
   return (
-    <AnimatedEntrance delay={120 + index * 70}>
-      <Pressable
-        onPress={openEvent}
-        onPressIn={() => springTo(0.975)}
-        onPressOut={() => springTo(1)}
-        accessibilityRole="button"
-        accessibilityLabel={`Open ${event.title}`}
-      >
-        <Animated.View style={[styles.discoverRow, { transform: [{ scale }] }]}>
-          <View style={styles.discoverThumb}>
-            <LinearGradient colors={gradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
-            {event.coverImageUrl ? (
-              <Image source={{ uri: event.coverImageUrl }} style={StyleSheet.absoluteFill} resizeMode="cover" />
-            ) : null}
-            <View style={styles.discoverThumbScrim} />
-            <View style={styles.discoverThumbDatePill}>
-              <Text style={styles.discoverThumbDate}>{day}</Text>
+    <AnimatedEntrance delay={100 + index * 60} style={styles.discoverCardWrap}>
+      <SpotlightCard borderRadius={22} spotlightColor="rgba(139,92,246,0.24)">
+      <Animated.View style={[styles.discoverCard, { transform: [{ scale }] }]}>
+        <Pressable
+          onPress={() => openDiscoverUrl(buyPath)}
+          onPressIn={() => springTo(0.98)}
+          onPressOut={() => springTo(1)}
+          accessibilityRole="button"
+          accessibilityLabel={`Open ${event.title}`}
+          style={styles.discoverCardMedia}
+        >
+          <LinearGradient colors={gradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
+          {event.coverImageUrl ? (
+            <Image source={{ uri: event.coverImageUrl }} style={StyleSheet.absoluteFill} resizeMode="cover" />
+          ) : null}
+          <LinearGradient
+            colors={["rgba(8,16,32,0.05)", "rgba(8,16,32,0.85)"]}
+            style={StyleSheet.absoluteFill}
+          />
+          <View style={styles.discoverPills}>
+            {day ? (
+              <View style={styles.discoverPillDark}>
+                <Text style={styles.discoverPillDarkText}>{day}</Text>
+              </View>
+            ) : <View />}
+            <View style={styles.discoverPillDark}>
+              <Text style={styles.discoverPillDarkText}>{formatDiscoverPrice(event)}</Text>
             </View>
           </View>
-          <View style={styles.discoverBody}>
-            <Text style={styles.discoverHost} numberOfLines={1}>{host}</Text>
-            <Text style={styles.discoverTitle} numberOfLines={1}>{event.title}</Text>
-            <View style={styles.discoverMeta}>
-              <Text style={styles.discoverPrice}>{formatDiscoverPrice(event)}</Text>
-              <LinearGradient
-                colors={["#8B5CF6", "#DB2777"]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={styles.discoverBuy}
-              >
-                <Text style={styles.discoverBuyText}>{event.hasTickets ? "Buy Ticket" : "Open"}</Text>
-                <Ionicons name="arrow-forward" size={11} color="#FFFFFF" style={{ marginLeft: 4 }} />
-              </LinearGradient>
-            </View>
+          <View style={styles.discoverCardTitleWrap}>
+            <Text style={styles.discoverCardTitle} numberOfLines={1}>{event.title}</Text>
+            {host ? <Text style={styles.discoverCardHost} numberOfLines={1}>{host}</Text> : null}
           </View>
-        </Animated.View>
-      </Pressable>
+        </Pressable>
+        <View style={styles.discoverCardActions}>
+          <Pressable
+            style={styles.discoverPrimaryBtn}
+            onPress={() => openDiscoverUrl(buyPath)}
+            accessibilityRole="button"
+          >
+            <LinearGradient colors={["#8B5CF6", "#DB2777"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.discoverPrimaryBtnBg}>
+              <Text style={styles.discoverPrimaryBtnText}>{event.hasTickets ? "Buy tickets" : "Open"}</Text>
+            </LinearGradient>
+          </Pressable>
+          <Pressable
+            style={styles.discoverGhostBtn}
+            onPress={() => openDiscoverUrl(event.publicUrl)}
+            accessibilityRole="button"
+          >
+            <Text style={styles.discoverGhostBtnText}>Details</Text>
+          </Pressable>
+        </View>
+      </Animated.View>
+      </SpotlightCard>
     </AnimatedEntrance>
   );
 }
@@ -790,7 +821,9 @@ export function VisitorDashboardScreen({
             refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}
             contentContainerStyle={styles.scrollContent}
           >
-            <AnimatedEntrance delay={0} from={22} style={styles.heroCard}>
+            <AnimatedEntrance delay={0} from={22}>
+             <BorderGlow borderRadius={28} backgroundColor="#0d1326" colors={["#c084fc", "#f472b6", "#38bdf8"]}>
+              <View style={styles.heroInner}>
               <LinearGradient
                 colors={["rgba(124,58,237,0.28)", "rgba(37,99,235,0.10)", "rgba(219,39,119,0.20)"]}
                 start={{ x: 0, y: 0 }}
@@ -837,10 +870,13 @@ export function VisitorDashboardScreen({
                   )}
                 </View>
               </View>
+              </View>
+             </BorderGlow>
             </AnimatedEntrance>
 
             <View style={styles.metricsRow}>
               <AnimatedEntrance delay={90} style={styles.metricFlex}>
+                <SpotlightCard borderRadius={22} spotlightColor="rgba(124,58,237,0.28)">
                 <View style={styles.metricCard}>
                   <View style={styles.metricHeadRow}>
                     <Ionicons name="time-outline" size={13} color="#8FA0D8" />
@@ -849,8 +885,10 @@ export function VisitorDashboardScreen({
                   <Text style={styles.metricValue} numberOfLines={2}>{home?.nextSession?.title ?? "No upcoming session"}</Text>
                   <Text style={styles.metricMeta}>{fmtDate(home?.nextSession?.startsAt)}</Text>
                 </View>
+                </SpotlightCard>
               </AnimatedEntrance>
               <AnimatedEntrance delay={160} style={styles.metricFlex}>
+                <SpotlightCard borderRadius={22} spotlightColor={home?.liveSession ? "rgba(244,63,94,0.3)" : "rgba(56,189,248,0.24)"}>
                 <View style={[styles.metricCard, home?.liveSession ? styles.metricCardLive : null]}>
                   <View style={styles.metricHeadRow}>
                     {home?.liveSession ? (
@@ -863,6 +901,7 @@ export function VisitorDashboardScreen({
                   <Text style={styles.metricValue} numberOfLines={2}>{home?.liveSession?.title ?? "No live stream"}</Text>
                   <Text style={styles.metricMeta}>{home?.liveSession?.location ?? liveLabel}</Text>
                 </View>
+                </SpotlightCard>
               </AnimatedEntrance>
             </View>
 
@@ -875,9 +914,9 @@ export function VisitorDashboardScreen({
                     <Text style={styles.discoverSub}>More Bahrain events on Events Hub</Text>
                   </View>
                 </View>
-                <View style={styles.discoverList}>
+                <View style={styles.discoverGrid}>
                   {discover.slice(0, 6).map((ev, index) => (
-                    <DiscoverRow key={ev.id} event={ev} index={index} />
+                    <DiscoverCard key={ev.id} event={ev} index={index} />
                   ))}
                 </View>
               </View>
@@ -936,8 +975,11 @@ export function VisitorDashboardScreen({
             contentContainerStyle={styles.scrollContent}
           >
             <View style={styles.discoverHead}>
-              <Text style={styles.discoverEyebrow}>Discover events</Text>
-              <Text style={styles.discoverSub}>Browse and buy tickets to Bahrain events</Text>
+              <View style={styles.sectionAccentBar} />
+              <View style={{ flex: 1 }}>
+                <Text style={styles.discoverEyebrow}>Discover events</Text>
+                <Text style={styles.discoverSub}>Browse and buy tickets to Bahrain events</Text>
+              </View>
             </View>
             {discover.length === 0 ? (
               <View style={styles.sectionCard}>
@@ -945,9 +987,9 @@ export function VisitorDashboardScreen({
                 <Text style={styles.discoverSub}>Published events will appear here automatically.</Text>
               </View>
             ) : (
-              <View style={styles.discoverList}>
+              <View style={styles.discoverGrid}>
                 {discover.map((ev, index) => (
-                  <DiscoverRow key={ev.id} event={ev} index={index} />
+                  <DiscoverCard key={ev.id} event={ev} index={index} />
                 ))}
               </View>
             )}
@@ -960,14 +1002,22 @@ export function VisitorDashboardScreen({
             refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}
             contentContainerStyle={styles.scrollContent}
           >
+            <View style={styles.discoverHead}>
+              <View style={styles.sectionAccentBar} />
+              <View style={{ flex: 1 }}>
+                <Text style={styles.discoverEyebrow}>Your agenda</Text>
+                <Text style={styles.discoverSub}>Sessions, speakers, and live links</Text>
+              </View>
+            </View>
             {agenda.length === 0 ? (
               <EmptyState
                 title="No sessions published yet"
                 body="Once the Events Hub team publishes the agenda, your full schedule and live links will appear here."
               />
             ) : (
-              agenda.map((sessionItem) => (
-                <View key={sessionItem.id} style={styles.sessionCard}>
+              agenda.map((sessionItem, index) => (
+                <AnimatedEntrance key={sessionItem.id} delay={index * 70}>
+                <View style={styles.sessionCard}>
                   <View style={styles.sessionHeader}>
                     <View
                       style={[
@@ -1043,6 +1093,7 @@ export function VisitorDashboardScreen({
                     ) : null}
                   </View>
                 </View>
+                </AnimatedEntrance>
               ))
             )}
           </ScrollView>
@@ -1322,6 +1373,7 @@ export function VisitorDashboardScreen({
             refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}
             contentContainerStyle={styles.scrollContent}
           >
+            <AnimatedEntrance delay={0}>
             <View style={styles.sectionCard}>
               <View style={styles.sectionHeader}>
                 <Text style={styles.sectionTitle}>Event updates</Text>
@@ -1352,7 +1404,9 @@ export function VisitorDashboardScreen({
                 ))
               )}
             </View>
+            </AnimatedEntrance>
 
+            <AnimatedEntrance delay={90}>
             <View style={styles.sectionCard}>
               <Text style={styles.sectionTitle}>Your messages</Text>
               {messages.length === 0 ? (
@@ -1380,7 +1434,9 @@ export function VisitorDashboardScreen({
                 ))
               )}
             </View>
+            </AnimatedEntrance>
 
+            <AnimatedEntrance delay={170}>
             <View style={styles.sectionCard}>
               <Text style={styles.sectionTitle}>Matched attendee chat</Text>
               {chatThreads.length === 0 ? (
@@ -1424,6 +1480,7 @@ export function VisitorDashboardScreen({
                 </>
               )}
             </View>
+            </AnimatedEntrance>
           </ScrollView>
         ) : null}
 
@@ -1489,24 +1546,56 @@ export function VisitorDashboardScreen({
         ) : null}
       </Animated.View>
 
-      <View style={styles.tabBarWrap}>
-        <View style={styles.tabBar}>
-          <TabBtn icon="home-outline" label="Home" active={tab === "home"} onPress={() => setTab("home")} />
-          <TabBtn icon="compass-outline" label="Discover" active={tab === "discover"} onPress={() => setTab("discover")} />
-          <TabBtn icon="calendar-outline" label="Agenda" active={tab === "agenda"} onPress={() => setTab("agenda")} />
-          <TabBtn
-            icon="chatbubble-ellipses-outline"
-            label="Inbox"
-            active={tab === "inbox"}
-            badge={unreadCount}
-            onPress={() => {
-              setTab("inbox");
-              markNotificationsRead(session.token).catch(() => undefined);
-              setUnreadCount(0);
-            }}
-          />
-          <TabBtn icon="ticket-outline" label="Ticket" active={tab === "ticket"} onPress={() => setTab("ticket")} />
-        </View>
+      <View style={styles.tabBarWrap} pointerEvents="box-none">
+        <Dock
+          items={[
+            {
+              key: "home",
+              label: "Home",
+              active: tab === "home",
+              icon: <Ionicons name="home-outline" size={22} color="#8D98C5" />,
+              activeIcon: <Ionicons name="home" size={22} color="#FFFFFF" />,
+              onPress: () => setTab("home"),
+            },
+            {
+              key: "discover",
+              label: "Discover",
+              active: tab === "discover",
+              icon: <Ionicons name="compass-outline" size={22} color="#8D98C5" />,
+              activeIcon: <Ionicons name="compass" size={22} color="#FFFFFF" />,
+              onPress: () => setTab("discover"),
+            },
+            {
+              key: "agenda",
+              label: "Agenda",
+              active: tab === "agenda",
+              icon: <Ionicons name="calendar-outline" size={22} color="#8D98C5" />,
+              activeIcon: <Ionicons name="calendar" size={22} color="#FFFFFF" />,
+              onPress: () => setTab("agenda"),
+            },
+            {
+              key: "inbox",
+              label: "Inbox",
+              active: tab === "inbox",
+              badge: unreadCount,
+              icon: <Ionicons name="chatbubble-ellipses-outline" size={22} color="#8D98C5" />,
+              activeIcon: <Ionicons name="chatbubble-ellipses" size={22} color="#FFFFFF" />,
+              onPress: () => {
+                setTab("inbox");
+                markNotificationsRead(session.token).catch(() => undefined);
+                setUnreadCount(0);
+              },
+            },
+            {
+              key: "ticket",
+              label: "Ticket",
+              active: tab === "ticket",
+              icon: <Ionicons name="ticket-outline" size={22} color="#8D98C5" />,
+              activeIcon: <Ionicons name="ticket" size={22} color="#FFFFFF" />,
+              onPress: () => setTab("ticket"),
+            },
+          ]}
+        />
       </View>
     </View>
   );
@@ -1573,6 +1662,10 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255,255,255,0.08)",
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.12)",
+    position: "relative",
+  },
+  heroInner: {
+    minHeight: 268,
     position: "relative",
   },
   heroGlow: {
@@ -1700,6 +1793,44 @@ const styles = StyleSheet.create({
   },
   discoverSub: { color: "rgba(255,255,255,0.42)", fontSize: 12, fontWeight: "700" },
   discoverList: { gap: 12 },
+  discoverGrid: { flexDirection: "row", flexWrap: "wrap", gap: 12 },
+  discoverCardWrap: { flexGrow: 1, flexBasis: "47%", minWidth: 260 },
+  discoverCard: {
+    borderRadius: 22,
+    overflow: "hidden",
+    backgroundColor: "rgba(255,255,255,0.05)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.1)",
+  },
+  discoverCardMedia: { height: 150, justifyContent: "space-between", padding: 12 },
+  discoverPills: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" },
+  discoverPillDark: {
+    backgroundColor: "rgba(8,16,32,0.72)",
+    borderRadius: 999,
+    paddingHorizontal: 11,
+    paddingVertical: 5,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.12)",
+  },
+  discoverPillDarkText: { color: "#FFFFFF", fontSize: 11, fontWeight: "900", letterSpacing: 0.4 },
+  discoverCardTitleWrap: { gap: 2 },
+  discoverCardTitle: { color: "#FFFFFF", fontSize: 18, fontWeight: "900", letterSpacing: -0.4 },
+  discoverCardHost: { color: "rgba(255,255,255,0.75)", fontSize: 12, fontWeight: "700" },
+  discoverCardActions: { flexDirection: "row", gap: 10, padding: 12 },
+  discoverPrimaryBtn: { flex: 1, borderRadius: 14, overflow: "hidden" },
+  discoverPrimaryBtnBg: { paddingVertical: 12, alignItems: "center", justifyContent: "center" },
+  discoverPrimaryBtnText: { color: "#FFFFFF", fontSize: 13, fontWeight: "900" },
+  discoverGhostBtn: {
+    flex: 1,
+    borderRadius: 14,
+    paddingVertical: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.18)",
+    backgroundColor: "rgba(255,255,255,0.06)",
+  },
+  discoverGhostBtnText: { color: "#FFFFFF", fontSize: 13, fontWeight: "900" },
   discoverRow: {
     flexDirection: "row",
     gap: 14,

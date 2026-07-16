@@ -1,9 +1,11 @@
 import { Ionicons } from "@expo/vector-icons";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  Animated,
   Image,
   Linking,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -17,6 +19,7 @@ import { createPublicOrder, fetchDiscoverEvents } from "../api/mobileClient";
 import { FadeSlideIn } from "../ui/motion";
 import { FloatingLines } from "../ui/FloatingLines";
 import { PremiumBackdrop } from "../ui/primitives";
+import { SpotlightCard } from "../ui/SpotlightCard";
 import { palette, radii, shadows, spacing, type } from "../ui/theme";
 import type { DiscoverEvent } from "../types";
 
@@ -276,42 +279,65 @@ function MarketplaceRow({
   index: number;
   onOpen: (event: DiscoverEvent) => void;
 }) {
-  const host = event.organizerName ?? event.companyName;
+  const host = event.venueName ?? event.locationText ?? event.organizerName ?? event.companyName;
   const gradient = THUMB_GRADIENTS[index % THUMB_GRADIENTS.length];
   const day = (() => {
     try {
       return new Date(event.startsAt)
-        .toLocaleDateString("en-US", { month: "short", day: "2-digit" })
+        .toLocaleDateString("en-US", { weekday: "short", month: "short", day: "2-digit" })
         .toUpperCase();
     } catch {
       return "";
     }
   })();
+  const scale = useRef(new Animated.Value(1)).current;
+  const springTo = (to: number) =>
+    Animated.spring(scale, { toValue: to, useNativeDriver: Platform.OS !== "web", tension: 220, friction: 12 }).start();
   return (
-    <Pressable
-      onPress={() => onOpen(event)}
-      style={({ pressed }) => [styles.row, pressed && styles.pressed]}
-      accessibilityRole="button"
-      accessibilityLabel={`Open ${event.title}`}
-    >
-      <View style={styles.rowThumb}>
-        <LinearGradient colors={gradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
-        {event.coverImageUrl ? (
-          <Image source={{ uri: event.coverImageUrl }} style={StyleSheet.absoluteFill} resizeMode="cover" />
-        ) : null}
-        <Text style={styles.rowThumbDate}>{day}</Text>
-      </View>
-      <View style={styles.rowBody}>
-        <Text style={styles.rowHost} numberOfLines={1}>{host}</Text>
-        <Text style={styles.rowTitle} numberOfLines={1}>{event.title}</Text>
-        <View style={styles.rowMeta}>
-          <Text style={styles.rowPrice}>{formatPrice(event)}</Text>
-          <View style={styles.rowBuy}>
-            <Text style={styles.rowBuyText}>{event.hasTickets ? "Buy Ticket" : "Open"}</Text>
+    <View style={styles.eventGridItem}>
+      <SpotlightCard borderRadius={22} spotlightColor="rgba(139,92,246,0.24)">
+      <Animated.View style={[styles.eventBox, { transform: [{ scale }] }]}>
+        <Pressable
+          onPress={() => onOpen(event)}
+          onPressIn={() => springTo(0.98)}
+          onPressOut={() => springTo(1)}
+          accessibilityRole="button"
+          accessibilityLabel={`Open ${event.title}`}
+          style={styles.eventBoxMedia}
+        >
+          <LinearGradient colors={gradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
+          {event.coverImageUrl ? (
+            <Image source={{ uri: event.coverImageUrl }} style={StyleSheet.absoluteFill} resizeMode="cover" />
+          ) : null}
+          <LinearGradient colors={["rgba(8,16,32,0.05)", "rgba(8,16,32,0.85)"]} style={StyleSheet.absoluteFill} />
+          <View style={styles.eventBoxPills}>
+            {day ? (
+              <View style={styles.eventBoxPill}>
+                <Text style={styles.eventBoxPillText}>{day}</Text>
+              </View>
+            ) : <View />}
+            <View style={styles.eventBoxPill}>
+              <Text style={styles.eventBoxPillText}>{formatPrice(event)}</Text>
+            </View>
           </View>
+          <View style={styles.eventBoxTitleWrap}>
+            <Text style={styles.eventBoxTitle} numberOfLines={1}>{event.title}</Text>
+            {host ? <Text style={styles.eventBoxHost} numberOfLines={1}>{host}</Text> : null}
+          </View>
+        </Pressable>
+        <View style={styles.eventBoxActions}>
+          <Pressable style={styles.eventBoxPrimary} onPress={() => onOpen(event)} accessibilityRole="button">
+            <LinearGradient colors={["#8B5CF6", "#DB2777"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.eventBoxPrimaryBg}>
+              <Text style={styles.eventBoxPrimaryText}>{event.hasTickets ? "Buy tickets" : "Open"}</Text>
+            </LinearGradient>
+          </Pressable>
+          <Pressable style={styles.eventBoxGhost} onPress={() => onOpen(event)} accessibilityRole="button">
+            <Text style={styles.eventBoxGhostText}>Details</Text>
+          </Pressable>
         </View>
-      </View>
-    </Pressable>
+      </Animated.View>
+      </SpotlightCard>
+    </View>
   );
 }
 
@@ -1267,8 +1293,47 @@ const styles = StyleSheet.create({
     fontWeight: "900",
   },
   mktList: {
+    flexDirection: "row",
+    flexWrap: "wrap",
     gap: 14,
   },
+  eventGridItem: { flexGrow: 1, flexBasis: "47%", minWidth: 260 },
+  eventBox: {
+    borderRadius: 22,
+    overflow: "hidden",
+    backgroundColor: "rgba(255,255,255,0.05)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.1)",
+  },
+  eventBoxMedia: { height: 150, justifyContent: "space-between", padding: 12 },
+  eventBoxPills: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" },
+  eventBoxPill: {
+    backgroundColor: "rgba(8,16,32,0.72)",
+    borderRadius: 999,
+    paddingHorizontal: 11,
+    paddingVertical: 5,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.12)",
+  },
+  eventBoxPillText: { color: "#FFFFFF", fontSize: 11, fontWeight: "900", letterSpacing: 0.4 },
+  eventBoxTitleWrap: { gap: 2 },
+  eventBoxTitle: { color: "#FFFFFF", fontSize: 18, fontWeight: "900", letterSpacing: -0.4 },
+  eventBoxHost: { color: "rgba(255,255,255,0.75)", fontSize: 12, fontWeight: "700" },
+  eventBoxActions: { flexDirection: "row", gap: 10, padding: 12 },
+  eventBoxPrimary: { flex: 1, borderRadius: 14, overflow: "hidden" },
+  eventBoxPrimaryBg: { paddingVertical: 12, alignItems: "center", justifyContent: "center" },
+  eventBoxPrimaryText: { color: "#FFFFFF", fontSize: 13, fontWeight: "900" },
+  eventBoxGhost: {
+    flex: 1,
+    borderRadius: 14,
+    paddingVertical: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.18)",
+    backgroundColor: "rgba(255,255,255,0.06)",
+  },
+  eventBoxGhostText: { color: "#FFFFFF", fontSize: 13, fontWeight: "900" },
   featured: {
     aspectRatio: 16 / 13,
     borderRadius: 24,
