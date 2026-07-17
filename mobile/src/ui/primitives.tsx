@@ -138,9 +138,11 @@ export function PremiumButton({
               {
                 transform: [
                   {
+                    // End well past the right edge so the sweep fully exits
+                    // during the hold (no wedge lingering at the button edge).
                     translateX: shimmer.interpolate({
                       inputRange: [0, 1],
-                      outputRange: [-220, 260],
+                      outputRange: [-260, 420],
                     }),
                   },
                   { rotate: "18deg" },
@@ -346,8 +348,8 @@ const styles = StyleSheet.create({
     position: "absolute",
     bottom: -24,
     top: -24,
-    width: 84,
-    backgroundColor: "rgba(255,255,255,0.24)",
+    width: 70,
+    backgroundColor: "rgba(255,255,255,0.16)",
   },
   buttonSecondary: {
     backgroundColor: palette.surfaceRaised,

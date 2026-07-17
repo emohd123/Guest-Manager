@@ -4,11 +4,11 @@ import {
   Platform,
   Pressable,
   ScrollView,
-  StatusBar,
   StyleSheet,
   Text,
   View,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { FadeSlideIn } from "./motion";
 import { PremiumBackdrop, PremiumCard, PremiumPill } from "./primitives";
@@ -36,10 +36,11 @@ export function AuthScreenLayout({
   footer,
   contentContainerStyle,
 }: Props) {
+  const insets = useSafeAreaInsets();
   return (
     <PremiumBackdrop>
       <View style={styles.root}>
-        <View style={styles.heroPanel}>
+        <View style={[styles.heroPanel, { paddingTop: insets.top + 14 }]}>
           <View style={styles.heroTopRow}>
             {onBack ? (
               <Pressable style={styles.backBtn} onPress={onBack} accessibilityRole="button">
@@ -82,8 +83,9 @@ export function AuthScreenLayout({
             <PremiumCard style={styles.card}>
               <ScrollView
                 style={styles.flex}
-                contentContainerStyle={[styles.cardContent, contentContainerStyle]}
+                contentContainerStyle={[styles.cardContent, { paddingBottom: spacing.xxxl + insets.bottom }, contentContainerStyle]}
                 keyboardShouldPersistTaps="handled"
+                showsVerticalScrollIndicator={false}
               >
                 {children}
                 {footer ? <View style={styles.footer}>{footer}</View> : null}
@@ -104,8 +106,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   heroPanel: {
-    // Edge-to-edge on Android: clear the real status bar height.
-    paddingTop: Platform.OS === "ios" ? 58 : (StatusBar.currentHeight ?? 28) + 12,
+    // paddingTop is applied inline from safe-area insets.
     paddingHorizontal: spacing.xl,
     paddingBottom: spacing.lg,
   },

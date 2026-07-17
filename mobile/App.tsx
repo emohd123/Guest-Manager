@@ -4,11 +4,11 @@ import {
   BackHandler,
   Platform,
   Pressable,
-  SafeAreaView,
   StyleSheet,
   Text,
   View,
 } from "react-native";
+import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Device from "expo-device";
 import * as Notifications from "expo-notifications";
@@ -143,9 +143,11 @@ async function clearVisitorSession() {
 // ── Main App ─────────────────────────────────────────────────────────────────
 export default function App() {
   return (
-    <AppErrorBoundary>
-      <AppShell />
-    </AppErrorBoundary>
+    <SafeAreaProvider>
+      <AppErrorBoundary>
+        <AppShell />
+      </AppErrorBoundary>
+    </SafeAreaProvider>
   );
 }
 

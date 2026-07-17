@@ -18,6 +18,7 @@ import {
   useWindowDimensions,
   View,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import * as Notifications from "expo-notifications";
 import { createPublicOrder, fetchDiscoverEvents, registerDiscoverPushToken } from "../api/mobileClient";
@@ -87,6 +88,7 @@ export function RoleChoiceScreen({
   const [pendingEventId, setPendingEventId] = useState<string | null>(null);
   const { width } = useWindowDimensions();
   const isWide = width >= 760;
+  const insets = useSafeAreaInsets();
 
   const CATEGORIES = ["All", "Concerts", "Dining", "Family", "Comedy", "Attractions"];
 
@@ -319,7 +321,7 @@ export function RoleChoiceScreen({
             <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor="#67E8F9" colors={["#67E8F9"]} />
           }
         >
-          <FadeSlideIn style={[styles.inner, isWide && styles.innerWide]}>
+          <FadeSlideIn style={[styles.inner, isWide && styles.innerWide, { paddingTop: insets.top + 16 }]}>
           {eventView === "detail" && selectedEvent ? (
             <EventDetailPanel
               event={selectedEvent}
@@ -559,7 +561,7 @@ export function RoleChoiceScreen({
         </ScrollView>
         {eventView !== "detail" ? (
           <Pressable
-            style={styles.aiFab}
+            style={[styles.aiFab, { bottom: 92 + insets.bottom }]}
             onPress={() => setAiOpen(true)}
             accessibilityRole="button"
             accessibilityLabel="Ask AI about events"
@@ -572,6 +574,7 @@ export function RoleChoiceScreen({
           <BottomTabBar
             view={eventView}
             lang={lang}
+            bottomInset={insets.bottom}
             savedCount={savedIds.length}
             onDiscover={() => setEventView("home")}
             onSaved={() => setEventView("saved")}
@@ -880,6 +883,7 @@ function BottomTabBar({
   view,
   lang,
   savedCount,
+  bottomInset = 0,
   onDiscover,
   onSaved,
   onAccount,
@@ -887,6 +891,7 @@ function BottomTabBar({
   view: "home" | "list" | "saved";
   lang: AppLang;
   savedCount: number;
+  bottomInset?: number;
   onDiscover: () => void;
   onSaved: () => void;
   onAccount: () => void;
@@ -895,7 +900,7 @@ function BottomTabBar({
   const savedActive = view === "saved";
   const dim = "rgba(255,255,255,0.4)";
   return (
-    <View style={styles.tabBar}>
+    <View style={[styles.tabBar, { paddingBottom: 12 + bottomInset }]}>
       <Pressable style={styles.tabItem} onPress={onDiscover} accessibilityRole="button" accessibilityLabel="Discover events">
         <Ionicons name={discoverActive ? "home" : "home-outline"} size={21} color={discoverActive ? palette.accentCyan : dim} />
         <Text style={[styles.tabLabel, discoverActive && styles.tabLabelActive]}>{t(lang, "tabDiscover")}</Text>
@@ -1094,27 +1099,51 @@ function EventDetailPanel({
 
   return (
     <View style={styles.detailPanel}>
-      <Pressable onPress={onBack} style={({ pressed }) => [styles.detailBack, pressed && styles.pressed]}>
-        <Ionicons name="chevron-back" size={17} color="#FFFFFF" />
-        <Text style={styles.detailBackText}>Events</Text>
-      </Pressable>
-
-      {event.coverImageUrl ? (
-        <Image source={{ uri: event.coverImageUrl }} style={styles.detailImage} resizeMode="cover" />
-      ) : (
-        <View style={styles.detailImageFallback}>
-          <Ionicons name="sparkles-outline" size={34} color="#FFFFFF" />
-        </View>
-      )}
-      <View style={styles.detailDateRow}>
-        <Text style={styles.eventDate}>{formatEventDate(event.startsAt)}</Text>
+      <View style={styles.detailHero}>
+        {event.coverImageUrl ? (
+          <KenBurns style={StyleSheet.absoluteFill} maxScale={1.05} duration={11000}>
+            <Image source={{ uri: event.coverImageUrl }} style={StyleSheet.absoluteFill} resizeMode="cover" />
+          </KenBurns>
+        ) : (
+          <View style={styles.detailHeroFallback}>
+            <Ionicons name="sparkles-outline" size={34} color="#FFFFFF" />
+          </View>
+        )}
+        <LinearGradient
+          colors={["rgba(5,7,15,0)", "rgba(5,7,15,0.28)", "rgba(5,7,15,0.82)"]}
+          style={StyleSheet.absoluteFill}
+        />
+        <Pressable
+          onPress={onBack}
+          style={({ pressed }) => [styles.heroCircleBtn, styles.heroCircleLeft, pressed && styles.pressed]}
+          accessibilityRole="button"
+          accessibilityLabel="Back"
+        >
+          <Ionicons name={lang === "ar" ? "chevron-forward" : "chevron-back"} size={20} color="#FFFFFF" />
+        </Pressable>
+        <Pressable
+          onPress={onToggleSaved}
+          style={({ pressed }) => [
+            styles.heroCircleBtn,
+            styles.heroCircleRight,
+            saved && styles.heroCircleActive,
+            pressed && styles.pressed,
+          ]}
+          accessibilityRole="button"
+          accessibilityLabel={saved ? "Saved" : "Save"}
+        >
+          <Ionicons name={saved ? "heart" : "heart-outline"} size={19} color={saved ? "#67E8F9" : "#FFFFFF"} />
+        </Pressable>
         {countdownLabel(event.startsAt, event.endsAt) ? (
-          <View style={styles.countdownPill}>
+          <View style={styles.heroCountdown}>
             <Ionicons name="time-outline" size={11} color="#A5F3FC" />
             <Text style={styles.countdownPillText}>{countdownLabel(event.startsAt, event.endsAt)}</Text>
           </View>
         ) : null}
       </View>
+
+      <View style={styles.detailBody}>
+      <Text style={styles.detailEyebrow}>{formatEventDate(event.startsAt)}</Text>
       <Text style={styles.detailTitle}>{eventTitle(event, lang)}</Text>
       <Text style={styles.eventHost}>{eventHost(event, lang)}</Text>
       {eventDescription(event, lang) ? (
@@ -1136,12 +1165,6 @@ function EventDetailPanel({
         />
         <DetailAction icon="calendar-outline" label={t(lang, "calendar")} onPress={onAddToCalendar} />
         <DetailAction icon="share-social-outline" label={t(lang, "share")} onPress={onShare} />
-        <DetailAction
-          icon={saved ? "heart" : "heart-outline"}
-          label={saved ? t(lang, "savedLabel") : t(lang, "save")}
-          active={saved}
-          onPress={onToggleSaved}
-        />
       </View>
 
       <Pressable
@@ -1247,6 +1270,7 @@ function EventDetailPanel({
             <Text style={styles.paymentLinkText}>Open secure payment</Text>
           </Pressable>
         ) : null}
+      </View>
       </View>
     </View>
   );
@@ -1795,12 +1819,12 @@ const styles = StyleSheet.create({
   detailAction: {
     flex: 1,
     alignItems: "center",
-    gap: 5,
-    backgroundColor: "rgba(255,255,255,0.07)",
-    borderColor: "rgba(255,255,255,0.13)",
+    gap: 6,
+    backgroundColor: "rgba(255,255,255,0.06)",
+    borderColor: "rgba(255,255,255,0.12)",
     borderWidth: 1,
-    borderRadius: radii.md,
-    paddingVertical: 11,
+    borderRadius: 16,
+    paddingVertical: 14,
   },
   detailActionActive: {
     backgroundColor: "rgba(34,211,238,0.12)",
@@ -1815,37 +1839,67 @@ const styles = StyleSheet.create({
     color: "#67E8F9",
   },
   detailPanel: {
-    backgroundColor: "rgba(255,255,255,0.1)",
-    borderColor: "rgba(255,255,255,0.14)",
-    borderRadius: radii.lg,
+    backgroundColor: "rgba(13,19,38,0.72)",
+    borderColor: "rgba(255,255,255,0.1)",
+    borderRadius: 26,
     borderWidth: 1,
-    gap: spacing.md,
     overflow: "hidden",
-    padding: spacing.lg,
+    ...shadows.strong,
   },
-  detailBack: {
-    alignItems: "center",
-    alignSelf: "flex-start",
-    flexDirection: "row",
-    gap: 7,
-  },
-  detailBackText: {
-    color: palette.textInverse,
-    fontSize: 13,
-    fontWeight: "900",
-  },
-  detailImage: {
-    borderRadius: radii.md,
-    height: 210,
+  detailHero: {
+    height: 248,
     width: "100%",
+    position: "relative",
+    backgroundColor: "#160f2e",
   },
-  detailImageFallback: {
+  detailHeroFallback: {
+    ...StyleSheet.absoluteFillObject,
     alignItems: "center",
-    backgroundColor: "rgba(124,58,237,0.28)",
-    borderRadius: radii.md,
-    height: 210,
     justifyContent: "center",
-    width: "100%",
+    backgroundColor: "rgba(124,58,237,0.3)",
+  },
+  heroCircleBtn: {
+    position: "absolute",
+    top: 14,
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(5,7,15,0.5)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.2)",
+  },
+  heroCircleLeft: { left: 14 },
+  heroCircleRight: { right: 14 },
+  heroCircleActive: {
+    backgroundColor: "rgba(34,211,238,0.22)",
+    borderColor: "rgba(103,232,249,0.55)",
+  },
+  heroCountdown: {
+    position: "absolute",
+    bottom: 14,
+    left: 16,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    backgroundColor: "rgba(5,7,15,0.6)",
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderWidth: 1,
+    borderColor: "rgba(103,232,249,0.4)",
+  },
+  detailBody: {
+    padding: spacing.lg,
+    gap: 13,
+  },
+  detailEyebrow: {
+    color: "rgba(103,232,249,0.9)",
+    fontSize: 11,
+    fontWeight: "900",
+    letterSpacing: 1.4,
+    textTransform: "uppercase",
   },
   detailTitle: {
     color: palette.textInverse,
@@ -2473,9 +2527,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-around",
     left: 0,
-    // Android runs edge-to-edge: clear the system gesture/nav area so the
-    // tab buttons stay visible and tappable.
-    paddingBottom: Platform.OS === "android" ? 40 : 20,
+    // paddingBottom is applied inline from safe-area insets (clears the
+    // system gesture/nav area so the tab buttons stay tappable).
     paddingTop: 12,
     position: "absolute",
     right: 0,
