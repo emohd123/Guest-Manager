@@ -49,6 +49,7 @@ import { categoryLabel, eventDescription, eventHost, eventTitle, eventVenue, t }
 import { AiConciergeSheet } from "../ui/AiConciergeSheet";
 import { FadeSlideIn, KenBurns, PressScale, PulseView } from "../ui/motion";
 import { ClickStack } from "../ui/ClickStack";
+import { Dock } from "../ui/Dock";
 import { FallingSparkles } from "../ui/FallingSparkles";
 import { PremiumBackdrop } from "../ui/primitives";
 import { SpotlightCard } from "../ui/SpotlightCard";
@@ -571,15 +572,44 @@ export function RoleChoiceScreen({
           </Pressable>
         ) : null}
         {eventView !== "detail" ? (
-          <BottomTabBar
-            view={eventView}
-            lang={lang}
-            bottomInset={insets.bottom}
-            savedCount={savedIds.length}
-            onDiscover={() => setEventView("home")}
-            onSaved={() => setEventView("saved")}
-            onAccount={onSelectVisitor}
-          />
+          <View style={[styles.dockWrap, { bottom: 14 + insets.bottom }]} pointerEvents="box-none">
+            <Dock
+              panelHeight={60}
+              baseItemSize={46}
+              magnification={64}
+              items={[
+                {
+                  key: "discover",
+                  label: t(lang, "tabDiscover"),
+                  active: eventView === "home" || eventView === "list",
+                  icon: <Ionicons name="home-outline" size={22} color="#8D98C5" />,
+                  activeIcon: <Ionicons name="home" size={22} color="#67E8F9" />,
+                  onPress: () => setEventView("home"),
+                },
+                {
+                  key: "tickets",
+                  label: t(lang, "tabTickets"),
+                  icon: <Ionicons name="ticket-outline" size={22} color="#8D98C5" />,
+                  onPress: onSelectVisitor,
+                },
+                {
+                  key: "saved",
+                  label: t(lang, "tabSaved"),
+                  active: eventView === "saved",
+                  badge: savedIds.length,
+                  icon: <Ionicons name="heart-outline" size={22} color="#8D98C5" />,
+                  activeIcon: <Ionicons name="heart" size={22} color="#67E8F9" />,
+                  onPress: () => setEventView("saved"),
+                },
+                {
+                  key: "account",
+                  label: t(lang, "tabAccount"),
+                  icon: <Ionicons name="person-outline" size={22} color="#8D98C5" />,
+                  onPress: onSelectVisitor,
+                },
+              ]}
+            />
+          </View>
         ) : null}
         <AiConciergeSheet
           visible={aiOpen}
@@ -875,55 +905,6 @@ function MarketplaceRow({
         </View>
       </Animated.View>
       </SpotlightCard>
-    </View>
-  );
-}
-
-function BottomTabBar({
-  view,
-  lang,
-  savedCount,
-  bottomInset = 0,
-  onDiscover,
-  onSaved,
-  onAccount,
-}: {
-  view: "home" | "list" | "saved";
-  lang: AppLang;
-  savedCount: number;
-  bottomInset?: number;
-  onDiscover: () => void;
-  onSaved: () => void;
-  onAccount: () => void;
-}) {
-  const discoverActive = view === "home" || view === "list";
-  const savedActive = view === "saved";
-  const dim = "rgba(255,255,255,0.4)";
-  return (
-    <View style={[styles.tabBar, { paddingBottom: 12 + bottomInset }]}>
-      <Pressable style={styles.tabItem} onPress={onDiscover} accessibilityRole="button" accessibilityLabel="Discover events">
-        <Ionicons name={discoverActive ? "home" : "home-outline"} size={21} color={discoverActive ? palette.accentCyan : dim} />
-        <Text style={[styles.tabLabel, discoverActive && styles.tabLabelActive]}>{t(lang, "tabDiscover")}</Text>
-      </Pressable>
-      <Pressable style={styles.tabItem} onPress={onAccount} accessibilityRole="button" accessibilityLabel="My tickets">
-        <Ionicons name="ticket-outline" size={21} color={dim} />
-        <Text style={styles.tabLabel}>{t(lang, "tabTickets")}</Text>
-      </Pressable>
-      <Pressable style={styles.tabItem} onPress={onSaved} accessibilityRole="button" accessibilityLabel="Saved events">
-        <View>
-          <Ionicons name={savedActive ? "heart" : "heart-outline"} size={21} color={savedActive ? palette.accentCyan : dim} />
-          {savedCount > 0 ? (
-            <View style={styles.tabDot}>
-              <Text style={styles.tabDotText}>{savedCount > 9 ? "9+" : savedCount}</Text>
-            </View>
-          ) : null}
-        </View>
-        <Text style={[styles.tabLabel, savedActive && styles.tabLabelActive]}>{t(lang, "tabSaved")}</Text>
-      </Pressable>
-      <Pressable style={styles.tabItem} onPress={onAccount} accessibilityRole="button" accessibilityLabel="Account">
-        <Ionicons name="person-outline" size={21} color={dim} />
-        <Text style={styles.tabLabel}>{t(lang, "tabAccount")}</Text>
-      </Pressable>
     </View>
   );
 }
@@ -2519,6 +2500,13 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   aiFabText: { color: "#fff", fontWeight: "900", fontSize: 13 },
+  // Floating magnifying Dock at the bottom of Discover (centered pill).
+  dockWrap: {
+    position: "absolute",
+    left: 16,
+    right: 16,
+    alignItems: "center",
+  },
   tabBar: {
     backgroundColor: "rgba(12,16,32,0.94)",
     borderTopColor: "rgba(255,255,255,0.08)",
@@ -2527,8 +2515,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-around",
     left: 0,
-    // paddingBottom is applied inline from safe-area insets (clears the
-    // system gesture/nav area so the tab buttons stay tappable).
     paddingTop: 12,
     position: "absolute",
     right: 0,
