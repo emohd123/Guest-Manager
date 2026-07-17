@@ -5,6 +5,7 @@ import Link from "next/link";
 import { format } from "date-fns";
 import { BadgeCheck, CalendarDays, ChevronRight, Headphones, Heart, MapPin, Search, ShieldCheck, Sparkles, Ticket, UsersRound, X, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ModalCards, type ModalCard } from "@/components/ui/modal-cards";
 import { FallingSparkles } from "@/components/visual/falling-sparkles";
 import { AiConcierge } from "@/components/marketplace/ai-concierge";
 import { Reveal, Spotlight } from "@/components/visual/reactbits";
@@ -340,11 +341,11 @@ export function MarketplaceClient({
           </div>
 
           {heroEvents.length > 0 ? (
-            <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
-              {heroEvents.map((event) => (
-                <EventCard key={event.id} event={event} locale={locale} onQuickView={setQuickViewEvent} />
-              ))}
-            </div>
+            <ModalCards
+              dir={dir}
+              gradientColor="rgba(103, 232, 249, 0.28)"
+              cards={heroEvents.map((event) => eventToModalCard(event, locale))}
+            />
           ) : (
             <EmptyState title={copy.emptyTitle} body={copy.emptyBody} />
           )}
@@ -581,6 +582,66 @@ function HeroFeature({
       </div>
     </article>
   );
+}
+
+/** Adapts a marketplace event to the ModalCards item shape (home + events pages). */
+function eventToModalCard(event: MarketplaceEvent, locale: LocaleCode): ModalCard {
+  const ar = locale === "ar";
+  const title = ar && event.titleAr ? event.titleAr : event.title;
+  const description = ar && event.shortDescriptionAr ? event.shortDescriptionAr : event.shortDescription;
+  const image =
+    event.coverImageUrl ?? categoryImage(event.categorySlug ?? "concerts");
+  return {
+    id: event.id,
+    image,
+    title,
+    subtitle: `${format(new Date(event.startsAt), "EEE, MMM d · h:mm a")}${event.venueName ? ` · ${event.venueName}` : ""}`,
+    badge: formatMoney(event.minPrice, event.currency, locale),
+    content: (
+      <div className="space-y-4">
+        <div className="flex flex-wrap gap-2">
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-white/12 bg-white/[0.06] px-3 py-1.5 text-xs font-bold text-white/85">
+            <CalendarDays className="h-3.5 w-3.5 text-cyan-200" />
+            {format(new Date(event.startsAt), "EEEE, MMMM d, yyyy · h:mm a")}
+          </span>
+          {event.venueName ? (
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-white/12 bg-white/[0.06] px-3 py-1.5 text-xs font-bold text-white/85">
+              <MapPin className="h-3.5 w-3.5 text-pink-300" />
+              {event.venueName}
+            </span>
+          ) : null}
+          {event.category ? (
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-white/12 bg-white/[0.06] px-3 py-1.5 text-xs font-bold text-white/85">
+              <Sparkles className="h-3.5 w-3.5 text-violet-300" />
+              {event.category}
+            </span>
+          ) : null}
+        </div>
+        {description ? <p className="text-base leading-7 text-white/70">{description}</p> : null}
+        <p className="text-sm font-bold text-white/50">{event.organizerName}</p>
+      </div>
+    ),
+    actions: (
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <p className="text-lg font-black text-white">
+          {formatMoney(event.minPrice, event.currency, locale)}
+          <span className="ms-2 text-xs font-bold uppercase tracking-wider text-white/45">
+            {ar ? "يبدأ من" : "from"}
+          </span>
+        </p>
+        <div className="flex gap-3">
+          <Button asChild variant="outline" className="rounded-full border-white/20 bg-transparent font-black text-white hover:bg-white/10 hover:text-white">
+            <Link href={event.publicUrl}>{ar ? "التفاصيل" : "Details"}</Link>
+          </Button>
+          <Button asChild className="rounded-full bg-cyan-300 px-6 font-black text-black hover:bg-cyan-200">
+            <Link href={event.buyUrl}>
+              {event.hasTickets ? (ar ? "شراء التذاكر" : "Buy tickets") : ar ? "عرض الفعالية" : "View event"}
+            </Link>
+          </Button>
+        </div>
+      </div>
+    ),
+  };
 }
 
 function EventCard({
