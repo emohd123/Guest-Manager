@@ -47,6 +47,7 @@ import {
 import { categoryLabel, eventDescription, eventHost, eventTitle, eventVenue, t } from "../features/i18n";
 import { AiConciergeSheet } from "../ui/AiConciergeSheet";
 import { FadeSlideIn, KenBurns, PressScale, PulseView } from "../ui/motion";
+import { ClickStack } from "../ui/ClickStack";
 import { FallingSparkles } from "../ui/FallingSparkles";
 import { PremiumBackdrop } from "../ui/primitives";
 import { SpotlightCard } from "../ui/SpotlightCard";
@@ -285,10 +286,11 @@ export function RoleChoiceScreen({
     (a, b) => new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime()
   );
   const featured = eventView === "home" ? (sorted[0] ?? null) : null;
-  const soonRail = eventView === "home" ? sorted.slice(1, 3) : [];
+  // Up to 3 next events feed the "Happening soon" click stack.
+  const soonRail = eventView === "home" ? sorted.slice(1, 4) : [];
   const rest =
     eventView === "home"
-      ? sorted.slice(3)
+      ? sorted.slice(1 + soonRail.length)
       : eventView === "saved"
         ? sorted.filter((e) => savedIds.includes(e.id))
         : sorted;
@@ -449,16 +451,22 @@ export function RoleChoiceScreen({
                 <>
                   <View style={styles.mktSectionHead}>
                     <Text style={styles.mktSectionEyebrow}>{t(lang, "happeningSoon")}</Text>
+                    {soonRail.length > 1 ? (
+                      <Text style={styles.stackHint}>{t(lang, "tapToCycle")}</Text>
+                    ) : null}
                   </View>
-                  <ScrollView
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                    contentContainerStyle={styles.soonRail}
-                  >
-                    {soonRail.map((event, index) => (
-                      <SoonCard key={event.id} event={event} index={index} lang={lang} onOpen={openEvent} />
-                    ))}
-                  </ScrollView>
+                  <FadeSlideIn delay={100} distance={18}>
+                    <ClickStack
+                      key={soonRail.map((event) => event.id).join("|")}
+                      count={soonRail.length}
+                      cardHeight={172}
+                      spreadY={-13}
+                      visibleCount={3}
+                      renderCard={(index) => (
+                        <StackEventCard event={soonRail[index]} index={index} lang={lang} onOpen={openEvent} />
+                      )}
+                    />
+                  </FadeSlideIn>
                 </>
               ) : null}
 
@@ -657,6 +665,53 @@ function shortDay(value: string) {
   } catch {
     return "";
   }
+}
+
+/** Full-width card face for the "Happening soon" click stack. Tapping the
+ * card cycles the deck (handled by ClickStack); the arrow button opens it. */
+function StackEventCard({
+  event,
+  index,
+  lang,
+  onOpen,
+}: {
+  event: DiscoverEvent;
+  index: number;
+  lang: AppLang;
+  onOpen: (event: DiscoverEvent) => void;
+}) {
+  const gradient = THUMB_GRADIENTS[index % THUMB_GRADIENTS.length];
+  return (
+    <View style={styles.stackCard}>
+      <LinearGradient colors={gradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
+      {event.coverImageUrl ? (
+        <Image source={{ uri: event.coverImageUrl }} style={StyleSheet.absoluteFill} resizeMode="cover" />
+      ) : null}
+      <LinearGradient colors={["rgba(5,9,20,0.05)", "rgba(5,9,20,0.92)"]} style={StyleSheet.absoluteFill} />
+      <View style={styles.soonCardTop}>
+        <View style={styles.eventBoxPill}>
+          <Text style={styles.eventBoxPillText}>{shortDay(event.startsAt)}</Text>
+        </View>
+        <View style={styles.eventBoxPill}>
+          <Text style={styles.eventBoxPillText}>{formatPrice(event)}</Text>
+        </View>
+      </View>
+      <View style={styles.stackCardBottom}>
+        <View style={styles.stackCardCopy}>
+          <Text style={styles.soonCardTitle} numberOfLines={2}>{eventTitle(event, lang)}</Text>
+          <Text style={styles.soonCardMeta} numberOfLines={1}>{eventVenue(event, lang)}</Text>
+        </View>
+        <Pressable
+          onPress={() => onOpen(event)}
+          style={({ pressed }) => [styles.stackOpenBtn, pressed && styles.pressed]}
+          accessibilityRole="button"
+          accessibilityLabel={`Open ${event.title}`}
+        >
+          <Ionicons name={lang === "ar" ? "arrow-back" : "arrow-forward"} size={19} color="#0B1020" />
+        </Pressable>
+      </View>
+    </View>
+  );
 }
 
 /** Medium horizontal-rail card for the "Happening soon" / "For you" rails. */
@@ -2070,6 +2125,39 @@ const styles = StyleSheet.create({
   soonRail: {
     gap: 12,
     paddingRight: spacing.xl,
+  },
+  // "Happening soon" click stack
+  stackHint: {
+    color: "rgba(255,255,255,0.4)",
+    fontSize: 11,
+    fontWeight: "800",
+  },
+  stackCard: {
+    flex: 1,
+    borderRadius: 22,
+    overflow: "hidden",
+    padding: 14,
+    justifyContent: "space-between",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.12)",
+    backgroundColor: "#0B1224",
+  },
+  stackCardBottom: {
+    flexDirection: "row",
+    alignItems: "flex-end",
+    gap: 12,
+  },
+  stackCardCopy: {
+    flex: 1,
+    gap: 2,
+  },
+  stackOpenBtn: {
+    alignItems: "center",
+    justifyContent: "center",
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: "#67E8F9",
   },
   soonCard: {
     width: 244,

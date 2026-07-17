@@ -58,6 +58,7 @@ const STRINGS = {
   tabAccount: { en: "Account", ar: "الحساب" },
   reminderPickerTitle: { en: "Remind me before the event", ar: "ذكّرني قبل الفعالية" },
   reminderPickerBody: { en: "When should we notify you?", ar: "متى تريد أن نذكّرك؟" },
+  tapToCycle: { en: "Tap card to shuffle", ar: "اضغط للتبديل" },
 } as const;
 
 export type StringKey = keyof typeof STRINGS;
