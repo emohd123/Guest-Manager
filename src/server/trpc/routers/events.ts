@@ -2,7 +2,7 @@ import { z } from "zod";
 import { router, protectedProcedure, publicProcedure } from "../index";
 import { nanoid } from "nanoid";
 import { createSupabaseAdminClient } from "@/server/supabase/admin";
-import { broadcastNewEventPush } from "@/server/services/discover-push";
+import { handleEventPublished } from "@/server/services/discover-push";
 
 type EventRow = {
   id: string;
@@ -239,7 +239,12 @@ export const eventsRouter = router({
       const updated = data as EventRow;
       if (input.status === "published" && previousStatus !== "published") {
         // Fire-and-forget: never delay or fail the mutation over a push.
-        void broadcastNewEventPush({ id: updated.id, title: updated.title });
+        void handleEventPublished({
+          id: updated.id,
+          title: updated.title,
+          categoryId: updated.category_id,
+          description: updated.short_description ?? updated.description,
+        });
       }
 
       return mapEvent(updated);

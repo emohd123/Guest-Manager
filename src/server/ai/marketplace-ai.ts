@@ -4,14 +4,15 @@ import type { MarketplaceEvent } from "@/types/marketplace";
 /**
  * Events Hub AI layer.
  *
- * Two tiers:
- *  - With ANTHROPIC_API_KEY set (Vercel env / .env.local): real Claude, grounded
- *    in the live marketplace events passed in.
- *  - Without a key: a deterministic "smart" fallback that parses intent
- *    (category / budget / date) and answers from the same events, so the
- *    feature works end-to-end before a key is configured.
+ * Tiers (best available wins, each grounded in the live marketplace events):
+ *  1. ANTHROPIC_API_KEY set → real Claude.
+ *  2. GEMINI_API_KEY set → Google Gemini free tier (gemini-2.0-flash REST).
+ *  3. Keyless → text.pollinations.ai (free, server-side only; Turnstile blocks
+ *     browsers but Vercel functions call it fine — same pattern as Tawzee'at).
+ *  4. Deterministic "smart" fallback that parses intent (category / budget /
+ *     date) so the feature never breaks.
  *
- * Responses always carry `source: "claude" | "smart"` so the UI can label them.
+ * Responses carry `source: "claude" | "free" | "smart"` so the UI can label them.
  */
 
 export type AiMode = "concierge" | "event-qa" | "listing-writer" | "translate" | "digest";
@@ -35,14 +36,124 @@ export type AiRequestBody = {
 export type AiResult = {
   reply: string;
   eventIds: string[];
-  source: "claude" | "smart";
+  source: "claude" | "free" | "smart";
 };
 
 const MODEL = "claude-opus-4-8";
+const GEMINI_MODEL = "gemini-2.0-flash";
 
 export function getAnthropic(): Anthropic | null {
   if (!process.env.ANTHROPIC_API_KEY) return null;
   return new Anthropic();
+}
+
+// ---------------------------------------------------------------------------
+// Free tier (Gemini free / keyless Pollinations)
+// ---------------------------------------------------------------------------
+
+async function askGemini(system: string, user: string): Promise<string | null> {
+  const key = process.env.GEMINI_API_KEY;
+  if (!key) return null;
+  try {
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${key}`,
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          system_instruction: { parts: [{ text: system }] },
+          contents: [{ role: "user", parts: [{ text: user }] }],
+          generationConfig: { temperature: 0.6, maxOutputTokens: 1024 },
+        }),
+        signal: AbortSignal.timeout(20_000),
+      }
+    );
+    if (!res.ok) return null;
+    const data = (await res.json()) as {
+      candidates?: { content?: { parts?: { text?: string }[] } }[];
+    };
+    const text = (data.candidates?.[0]?.content?.parts ?? [])
+      .map((part) => part.text ?? "")
+      .join("")
+      .trim();
+    return text || null;
+  } catch {
+    return null;
+  }
+}
+
+async function askPollinations(system: string, user: string): Promise<string | null> {
+  try {
+    const url = `https://text.pollinations.ai/${encodeURIComponent(user.slice(0, 4000))}?system=${encodeURIComponent(system.slice(0, 6000))}`;
+    // Pollinations rejects some default library user agents.
+    const res = await fetch(url, {
+      headers: { "user-agent": "EventsHub/1.0 (server)" },
+      signal: AbortSignal.timeout(25_000),
+    });
+    if (!res.ok) return null;
+    const text = (await res.text()).trim();
+    // Pollinations occasionally returns HTML error pages with status 200.
+    if (!text || text.startsWith("<")) return null;
+    return text;
+  } catch {
+    return null;
+  }
+}
+
+/** Best free-tier completion available: Gemini (if key) → keyless Pollinations. */
+async function freeAiText(system: string, user: string): Promise<string | null> {
+  return (await askGemini(system, user)) ?? (await askPollinations(system, user));
+}
+
+/** Lenient JSON extraction — free models sometimes wrap JSON in prose/fences. */
+function extractJson<T>(raw: string): T | null {
+  try {
+    return JSON.parse(raw) as T;
+  } catch {
+    const match = raw.match(/\{[\s\S]*\}/);
+    if (match) {
+      try {
+        return JSON.parse(match[0]) as T;
+      } catch {
+        return null;
+      }
+    }
+    return null;
+  }
+}
+
+function historyAsText(history: AiChatTurn[]): string {
+  if (!history.length) return "";
+  return (
+    "Previous conversation:\n" +
+    history
+      .slice(-6)
+      .map((turn) => `${turn.role === "user" ? "User" : "Assistant"}: ${turn.text}`)
+      .join("\n") +
+    "\n\nCurrent message:\n"
+  );
+}
+
+/** Free-tier structured concierge: strict-JSON ask with defensive parsing. */
+async function freeConcierge(
+  system: string,
+  history: AiChatTurn[],
+  message: string,
+  validIds: Set<string>
+): Promise<AiResult | null> {
+  const raw = await freeAiText(
+    system +
+      '\n\nRespond with STRICT JSON only, no markdown fences: {"reply": string, "eventIds": string[]} — eventIds may only contain ids from the EVENTS list.',
+    historyAsText(history) + message
+  );
+  if (!raw) return null;
+  const parsed = extractJson<{ reply?: string; eventIds?: string[] }>(raw);
+  if (!parsed?.reply) return null;
+  return {
+    reply: parsed.reply,
+    eventIds: (Array.isArray(parsed.eventIds) ? parsed.eventIds : []).filter((id) => validIds.has(id)),
+    source: "free",
+  };
 }
 
 /** Compact grounding snapshot of an event for the model / fallback engine. */
@@ -88,9 +199,11 @@ function conciergeSystem(eventsJson: string, locale: "en" | "ar") {
     "You are the Events Hub concierge for Bahrain — a warm, concise local guide for events, dining, and things to do.",
     "You may ONLY recommend events from the JSON list below. Never invent events, prices, dates, or venues.",
     "Prices are in BHD. Dates are ISO 8601 (Bahrain time, UTC+3).",
-    `Default reply language: ${locale === "ar" ? "Arabic" : "English"} — but always mirror the language the user writes in.`,
+    `Default reply language: ${locale === "ar" ? "Arabic" : "English"} — but always mirror the language the user writes in (Arabic in, Arabic out).`,
     "Keep replies short (2-4 sentences). When you recommend events, mention why they fit, and return their IDs in eventIds.",
+    "ITINERARIES: when the user asks to plan a day/weekend/trip, build a mini schedule from MULTIPLE events — order them by date/time, respect any budget across the total, note the day and start time for each, and include every used event id in eventIds. Keep it to at most 4 events.",
     "If nothing fits, say so honestly and suggest the closest alternative from the list.",
+    `Today's date/time in Bahrain: ${new Date(Date.now() + 3 * 3600_000).toISOString().slice(0, 16)} (+03:00).`,
     "",
     "EVENTS:",
     eventsJson,
@@ -140,6 +253,35 @@ async function claudeText(client: Anthropic, system: string, message: string): P
     .map((block) => (block.type === "text" ? block.text : ""))
     .join("");
   return { reply, eventIds: [], source: "claude" };
+}
+
+/**
+ * One-line "why you'll love this" tagline for an event card, generated once
+ * at publish time (never per-request). Best tier available; null when no AI
+ * tier is reachable — callers simply skip the tagline then.
+ */
+export async function generateEventTagline(input: {
+  title: string;
+  description?: string | null;
+  category?: string | null;
+}): Promise<string | null> {
+  const system =
+    "Write ONE short, punchy 'why you'll love this' tagline (max 12 words) for a Bahrain event card. Warm and concrete. No emojis, no quotes, no markdown — return only the tagline text in English.";
+  const user = JSON.stringify(input);
+  const client = getAnthropic();
+  if (client) {
+    try {
+      const result = await claudeText(client, system, user);
+      const clean = result.reply.trim().replace(/^["']|["']$/g, "");
+      if (clean) return clean.slice(0, 120);
+    } catch {
+      // fall through to the free tier
+    }
+  }
+  const free = await freeAiText(system, user);
+  if (!free) return null;
+  const clean = free.trim().replace(/^["']|["']$/g, "").split("\n")[0];
+  return clean ? clean.slice(0, 120) : null;
 }
 
 // ---------------------------------------------------------------------------
@@ -372,18 +514,21 @@ export async function runAi(
     case "concierge": {
       const message = (body.message ?? "").trim();
       if (!message) return { reply: "", eventIds: [], source: "smart" };
+      const system = conciergeSystem(JSON.stringify(compact), locale);
       if (client) {
         try {
-          return await claudeStructured(
-            client,
-            conciergeSystem(JSON.stringify(compact), locale),
-            body.history ?? [],
-            message
-          );
+          return await claudeStructured(client, system, body.history ?? [], message);
         } catch {
-          // fall through to smart tier on any API failure
+          // fall through to free tier on any API failure
         }
       }
+      const free = await freeConcierge(
+        system,
+        body.history ?? [],
+        message,
+        new Set(compact.map((event) => event.id))
+      );
+      if (free) return free;
       return smartConcierge(message, compact, locale);
     }
 
@@ -391,31 +536,32 @@ export async function runAi(
       const message = (body.message ?? "").trim();
       const event = compact.find((item) => item.id === body.eventId);
       if (!event) return { reply: locale === "ar" ? "الفعالية غير متوفرة." : "That event isn't available.", eventIds: [], source: "smart" };
+      const system =
+        conciergeSystem(JSON.stringify([event]), locale) +
+        "\nThe user is asking about this specific event. Answer only from its data.";
       if (client) {
         try {
-          return await claudeStructured(
-            client,
-            conciergeSystem(JSON.stringify([event]), locale) +
-              "\nThe user is asking about this specific event. Answer only from its data.",
-            body.history ?? [],
-            message
-          );
+          return await claudeStructured(client, system, body.history ?? [], message);
         } catch { /* fall through */ }
       }
+      const free = await freeConcierge(system, body.history ?? [], message, new Set([event.id]));
+      if (free) return free;
       return smartEventQa(message, event, locale);
     }
 
     case "listing-writer": {
       const bullets = (body.bullets ?? body.message ?? "").trim();
       if (!bullets) return { reply: "", eventIds: [], source: "smart" };
+      const system =
+        "You write event listings for Events Hub Bahrain. From the organiser's bullet points, produce STRICT JSON with keys: title, shortDescription (<=180 chars), description (2-3 paragraphs, warm, factual), titleAr, shortDescriptionAr, descriptionAr (natural Arabic, not literal). No markdown, JSON only.";
       if (client) {
         try {
-          return await claudeText(
-            client,
-            "You write event listings for Events Hub Bahrain. From the organiser's bullet points, produce STRICT JSON with keys: title, shortDescription (<=180 chars), description (2-3 paragraphs, warm, factual), titleAr, shortDescriptionAr, descriptionAr (natural Arabic, not literal). No markdown, JSON only.",
-            bullets
-          );
+          return await claudeText(client, system, bullets);
         } catch { /* fall through */ }
+      }
+      const free = await freeAiText(system, bullets);
+      if (free && extractJson<Record<string, string>>(free)) {
+        return { reply: free, eventIds: [], source: "free" };
       }
       return smartListingWriter(bullets);
     }
@@ -424,19 +570,18 @@ export async function runAi(
       const text = (body.text ?? body.message ?? "").trim();
       if (!text) return { reply: "", eventIds: [], source: "smart" };
       const target = body.targetLang === "en" ? "English" : "Arabic";
+      const system = `Translate event marketing copy to natural, fluent ${target} for a Bahrain audience. Keep names, prices and times unchanged. Return only the translation.`;
       if (client) {
         try {
-          return await claudeText(
-            client,
-            `Translate event marketing copy to natural, fluent ${target} for a Bahrain audience. Keep names, prices and times unchanged. Return only the translation.`,
-            text
-          );
+          return await claudeText(client, system, text);
         } catch { /* fall through */ }
       }
+      const free = await freeAiText(system, text);
+      if (free) return { reply: free, eventIds: [], source: "free" };
       return {
         reply: locale === "ar"
-          ? "الترجمة الذكية تتطلب تفعيل مفتاح ANTHROPIC_API_KEY."
-          : "AI translation needs ANTHROPIC_API_KEY configured. (Text kept unchanged.)\n\n" + text,
+          ? "الترجمة الذكية غير متاحة حالياً — حاول مرة أخرى."
+          : "AI translation is temporarily unavailable — please try again. (Text kept unchanged.)\n\n" + text,
         eventIds: [],
         source: "smart",
       };
@@ -444,15 +589,14 @@ export async function runAi(
 
     case "digest": {
       const stats = body.stats ?? {};
+      const system = `You are a business analyst for an event organiser in Bahrain. Write a short (3-4 sentence) plain-language weekly summary from the JSON stats, in ${locale === "ar" ? "Arabic" : "English"}. Only mention numbers that appear in the stats. Mention totals, the standout number, and one actionable suggestion. No markdown headers.`;
       if (client) {
         try {
-          return await claudeText(
-            client,
-            `You are a business analyst for an event organiser in Bahrain. Write a short (3-4 sentence) plain-language weekly summary from the JSON stats, in ${locale === "ar" ? "Arabic" : "English"}. Mention totals, the standout number, and one actionable suggestion. No markdown headers.`,
-            JSON.stringify(stats)
-          );
+          return await claudeText(client, system, JSON.stringify(stats));
         } catch { /* fall through */ }
       }
+      const free = await freeAiText(system, JSON.stringify(stats));
+      if (free) return { reply: free, eventIds: [], source: "free" };
       return smartDigest(stats, locale);
     }
   }

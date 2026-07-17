@@ -147,7 +147,7 @@ export function AiToolsCard({ stats }: { stats: AiDigestStats }) {
           </Button>
           {source ? (
             <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground dark:text-white/35">
-              {source === "claude" ? "AI generated" : "Smart template"}
+              {source === "smart" ? "Smart template" : "AI generated"}
             </span>
           ) : null}
         </div>

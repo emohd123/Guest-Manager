@@ -545,6 +545,7 @@ export async function registerDiscoverPushToken(payload: {
   token: string;
   platform?: string;
   installationId?: string;
+  categories?: string[];
 }) {
   return apiRequest<{ success: boolean }>(
     "/api/mobile/v1/discover/push-token",

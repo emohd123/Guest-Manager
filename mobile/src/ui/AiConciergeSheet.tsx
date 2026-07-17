@@ -30,7 +30,7 @@ type ChatItem = {
   role: "user" | "assistant";
   text: string;
   events?: AiEventCard[];
-  source?: "claude" | "smart";
+  source?: "claude" | "free" | "smart";
 };
 
 const SUGGESTIONS = ["What's on this weekend?", "Family friendly events", "Concerts under BHD 20"];
@@ -46,10 +46,12 @@ function formatBhd(minPrice: number | null, currency: string | null) {
  */
 export function AiConciergeSheet({
   visible,
+  lang = "en",
   onClose,
   onOpenEvent,
 }: {
   visible: boolean;
+  lang?: "en" | "ar";
   onClose: () => void;
   /** Optional: open an event natively by id; return false to fall back to the browser. */
   onOpenEvent?: (eventId: string) => boolean;
@@ -75,7 +77,7 @@ export function AiConciergeSheet({
           method: "POST",
           signal: controller.signal,
           headers: { "content-type": "application/json" },
-          body: JSON.stringify({ mode: "concierge", message, history, locale: "en" }),
+          body: JSON.stringify({ mode: "concierge", message, history, locale: lang }),
         });
         const data = (await response.json()) as {
           reply?: string;
@@ -182,7 +184,7 @@ export function AiConciergeSheet({
                     ))}
                     {item.role === "assistant" && item.source ? (
                       <Text style={styles.sourceTag}>
-                        {item.source === "claude" ? "AI ANSWER" : "SMART SEARCH"}
+                        {item.source === "smart" ? "SMART SEARCH" : "AI ANSWER"}
                       </Text>
                     ) : null}
                   </View>

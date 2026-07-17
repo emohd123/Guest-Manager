@@ -84,6 +84,7 @@ export type DiscoverEvent = {
   venueNameAr?: string | null;
   locationText?: string | null;
   locationTextAr?: string | null;
+  aiTagline?: string | null;
   publicUrl: string;
   buyUrl: string;
   registrationEnabled: boolean;

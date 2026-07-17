@@ -46,7 +46,7 @@ import {
 } from "../features/eventExtras";
 import { categoryLabel, eventDescription, eventHost, eventTitle, eventVenue, t } from "../features/i18n";
 import { AiConciergeSheet } from "../ui/AiConciergeSheet";
-import { FadeSlideIn } from "../ui/motion";
+import { FadeSlideIn, KenBurns, PressScale, PulseView } from "../ui/motion";
 import { FallingSparkles } from "../ui/FallingSparkles";
 import { PremiumBackdrop } from "../ui/primitives";
 import { SpotlightCard } from "../ui/SpotlightCard";
@@ -124,7 +124,12 @@ export function RoleChoiceScreen({
         if (!projectId) return;
         const pushToken = await Notifications.getExpoPushTokenAsync({ projectId });
         if (pushToken.data) {
-          await registerDiscoverPushToken({ token: pushToken.data, platform: Platform.OS });
+          const cats = await getTopCategories(3);
+          await registerDiscoverPushToken({
+            token: pushToken.data,
+            platform: Platform.OS,
+            categories: cats.length ? cats : undefined,
+          });
         }
       } catch {
         // Expo push needs FCM config on bare Android — fine to skip until then.
@@ -191,12 +196,15 @@ export function RoleChoiceScreen({
       setReminders(await getReminders());
       Alert.alert(result.ok ? "Reminder set" : "Couldn't set reminder", result.message);
     };
+    // Suggest a sensible default: soon-starting events need a tighter reminder.
+    const hoursUntil = (new Date(event.startsAt).getTime() - Date.now()) / 3_600_000;
+    const suggested: ReminderOffset = hoursUntil <= 48 ? "hour" : "day";
     // Android alerts support up to three action buttons — exactly our offsets.
     Alert.alert(
       t(lang, "reminderPickerTitle"),
       t(lang, "reminderPickerBody"),
       offsets.map((offset) => ({
-        text: reminderOffsetLabel(offset),
+        text: offset === suggested ? `★ ${reminderOffsetLabel(offset)}` : reminderOffsetLabel(offset),
         onPress: () => void schedule(offset),
       })),
       { cancelable: true }
@@ -421,7 +429,9 @@ export function RoleChoiceScreen({
                   accessibilityRole="button"
                   accessibilityLabel="See new events"
                 >
-                  <Ionicons name="sparkles" size={14} color="#67E8F9" />
+                  <PulseView minOpacity={0.45} duration={800}>
+                    <Ionicons name="sparkles" size={14} color="#67E8F9" />
+                  </PulseView>
                   <Text style={styles.newBannerText}>
                     {newIds.length === 1
                       ? t(lang, "newEventOne")
@@ -472,7 +482,9 @@ export function RoleChoiceScreen({
               {eventsLoading ? (
                 <View style={styles.gridWrap}>
                   {[0, 1, 2, 3, 4, 5].map((i) => (
-                    <View key={i} style={[styles.gridTile, styles.gridTileSkeleton]} />
+                    <PulseView key={i} style={styles.gridTileWrap} minOpacity={0.4} duration={800}>
+                      <View style={[styles.gridTile, styles.gridTileSkeleton]} />
+                    </PulseView>
                   ))}
                 </View>
               ) : sorted.length === 0 ? (
@@ -560,6 +572,7 @@ export function RoleChoiceScreen({
         ) : null}
         <AiConciergeSheet
           visible={aiOpen}
+          lang={lang}
           onClose={() => setAiOpen(false)}
           onOpenEvent={(eventId) => {
             const match = events.find((event) => event.id === eventId);
@@ -594,7 +607,9 @@ function FeaturedHero({
         style={StyleSheet.absoluteFill}
       />
       {event.coverImageUrl ? (
-        <Image source={{ uri: event.coverImageUrl }} style={StyleSheet.absoluteFill} resizeMode="cover" />
+        <KenBurns style={StyleSheet.absoluteFill}>
+          <Image source={{ uri: event.coverImageUrl }} style={StyleSheet.absoluteFill} resizeMode="cover" />
+        </KenBurns>
       ) : null}
       <LinearGradient
         colors={["rgba(0,0,0,0.9)", "rgba(0,0,0,0.1)", "transparent"]}
@@ -602,9 +617,9 @@ function FeaturedHero({
         end={{ x: 0, y: 0 }}
         style={StyleSheet.absoluteFill}
       />
-      <View style={styles.featuredBadge}>
+      <PulseView style={styles.featuredBadge} minOpacity={0.82} duration={1400}>
         <Text style={styles.featuredBadgeText}>{t(lang, "featured")}</Text>
-      </View>
+      </PulseView>
       <View style={styles.featuredBody}>
         <Text style={styles.featuredDate}>{formatEventDate(event.startsAt)}</Text>
         <Text style={styles.featuredTitle} numberOfLines={2}>{eventTitle(event, lang)}</Text>
@@ -658,9 +673,10 @@ function SoonCard({
 }) {
   const gradient = THUMB_GRADIENTS[index % THUMB_GRADIENTS.length];
   return (
-    <Pressable
+    <FadeSlideIn delay={120 + index * 90} distance={18}>
+    <PressScale
       onPress={() => onOpen(event)}
-      style={({ pressed }) => [styles.soonCard, pressed && styles.pressed]}
+      style={styles.soonCard}
       accessibilityRole="button"
       accessibilityLabel={`Open ${event.title}`}
     >
@@ -681,7 +697,8 @@ function SoonCard({
         <Text style={styles.soonCardTitle} numberOfLines={2}>{eventTitle(event, lang)}</Text>
         <Text style={styles.soonCardMeta} numberOfLines={1}>{eventVenue(event, lang)}</Text>
       </View>
-    </Pressable>
+    </PressScale>
+    </FadeSlideIn>
   );
 }
 
@@ -701,9 +718,11 @@ function GridTile({
 }) {
   const gradient = THUMB_GRADIENTS[index % THUMB_GRADIENTS.length];
   return (
-    <Pressable
+    <FadeSlideIn delay={Math.min(index, 8) * 60} distance={16} style={styles.gridTileWrap}>
+    <PressScale
       onPress={() => onOpen(event)}
-      style={({ pressed }) => [styles.gridTile, pressed && styles.pressed]}
+      style={styles.gridTile}
+      pressedScale={0.94}
       accessibilityRole="button"
       accessibilityLabel={`Open ${event.title}`}
     >
@@ -717,16 +736,17 @@ function GridTile({
           <Text style={styles.gridTileDayText}>{shortDay(event.startsAt)}</Text>
         </View>
         {isNew ? (
-          <View style={styles.gridTileNew}>
+          <PulseView style={styles.gridTileNew} minOpacity={0.6} duration={700}>
             <Text style={styles.gridTileNewText}>NEW</Text>
-          </View>
+          </PulseView>
         ) : null}
       </View>
       <View style={styles.gridTileBody}>
         <Text style={styles.gridTileTitle} numberOfLines={2}>{eventTitle(event, lang)}</Text>
         <Text style={styles.gridTilePrice}>{formatPrice(event)}</Text>
       </View>
-    </Pressable>
+    </PressScale>
+    </FadeSlideIn>
   );
 }
 
@@ -1044,6 +1064,12 @@ function EventDetailPanel({
       <Text style={styles.eventHost}>{eventHost(event, lang)}</Text>
       {eventDescription(event, lang) ? (
         <Text style={styles.detailDescription}>{eventDescription(event, lang)}</Text>
+      ) : null}
+      {event.aiTagline ? (
+        <View style={styles.taglineRow}>
+          <Ionicons name="sparkles" size={13} color="#C4B5FD" />
+          <Text style={styles.taglineText}>{event.aiTagline}</Text>
+        </View>
       ) : null}
 
       <View style={styles.detailActions}>
@@ -1665,6 +1691,25 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: spacing.sm,
   },
+  taglineRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 7,
+    backgroundColor: "rgba(139,92,246,0.12)",
+    borderColor: "rgba(196,181,253,0.3)",
+    borderWidth: 1,
+    borderRadius: radii.md,
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+  },
+  taglineText: {
+    color: "#DDD6FE",
+    flex: 1,
+    fontSize: 13,
+    fontStyle: "italic",
+    fontWeight: "700",
+    lineHeight: 18,
+  },
   directionsRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -2062,10 +2107,13 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
     gap: 10,
   },
-  gridTile: {
+  gridTileWrap: {
     flexGrow: 1,
     flexBasis: "30%",
     maxWidth: "32.5%",
+  },
+  gridTile: {
+    width: "100%",
     aspectRatio: 0.76,
     borderRadius: 18,
     overflow: "hidden",

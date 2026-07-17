@@ -11,6 +11,7 @@ const bodySchema = z.object({
   token: z.string().min(8).max(200).startsWith("ExponentPushToken"),
   platform: z.string().min(2).max(20).optional(),
   installationId: z.string().min(4).max(80).optional(),
+  categories: z.array(z.string().min(1).max(40)).max(10).optional(),
 });
 
 export async function POST(request: NextRequest) {

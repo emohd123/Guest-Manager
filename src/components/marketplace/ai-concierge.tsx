@@ -226,7 +226,7 @@ export function AiConcierge({ locale }: { locale: LocaleCode }) {
                   {message.role === "assistant" && message.source ? (
                     <p className="mt-2 flex items-center gap-1 text-[9px] font-black uppercase tracking-widest text-white/35">
                       <BadgeCheck className="h-3 w-3" />
-                      {message.source === "claude" ? (ar ? "إجابة ذكاء اصطناعي" : "AI answer") : ar ? "بحث ذكي" : "Smart search"}
+                      {message.source === "smart" ? (ar ? "بحث ذكي" : "Smart search") : ar ? "إجابة ذكاء اصطناعي" : "AI answer"}
                     </p>
                   ) : null}
                 </div>

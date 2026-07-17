@@ -21,6 +21,7 @@ type EventRow = {
   registration_enabled: boolean | null;
   max_capacity: number | null;
   settings: unknown;
+  metadata: unknown;
 };
 
 type CompanyRow = {
@@ -74,7 +75,7 @@ export async function GET() {
     const { data: eventsData, error: eventsError } = await supabase
       .from("events")
       .select(
-        "id,company_id,category_id,venue_id,title,slug,short_description,description,cover_image_url,starts_at,ends_at,timezone,registration_enabled,max_capacity,settings"
+        "id,company_id,category_id,venue_id,title,slug,short_description,description,cover_image_url,starts_at,ends_at,timezone,registration_enabled,max_capacity,settings,metadata"
       )
       .eq("status", "published")
       .is("deleted_at", null)
@@ -150,6 +151,10 @@ export async function GET() {
           event.settings && typeof event.settings === "object"
             ? (event.settings as Record<string, any>)
             : {};
+        const metadata =
+          event.metadata && typeof event.metadata === "object"
+            ? (event.metadata as Record<string, any>)
+            : {};
         const publicPage = (settings.publicPage ?? {}) as Record<string, any>;
         const organizer = (settings.organizer ?? {}) as Record<string, any>;
         const category = event.category_id ? categoryMap.get(event.category_id) : undefined;
@@ -188,6 +193,7 @@ export async function GET() {
           venueNameAr: getLocalizedText(publicPage.venueName, "ar", publicPage.venueName ?? venue?.name ?? ""),
           locationText: publicPage.locationText ?? null,
           locationTextAr: getLocalizedText(publicPage.locationText, "ar", publicPage.locationText ?? ""),
+          aiTagline: typeof metadata.aiTagline === "string" ? metadata.aiTagline : null,
           publicUrl,
           buyUrl: availableTicketCount > 0 ? `${publicUrl}#tickets` : publicUrl,
           registrationEnabled: event.registration_enabled ?? false,
