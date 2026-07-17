@@ -49,16 +49,40 @@ export function QrCode({
       }}
       accessibilityLabel={`QR code: ${value}`}
     >
-      {matrix.map((row, r) => (
-        <View key={r} style={{ flexDirection: "row" }}>
-          {row.map((dark, c) => (
-            <View
-              key={c}
-              style={{ width: cell, height: cell, backgroundColor: dark ? "#0B1020" : "#FFFFFF" }}
-            />
-          ))}
-        </View>
-      ))}
+      {matrix.map((row, r) => {
+        // Merge consecutive dark modules into single runs: fractional cell
+        // widths otherwise leave hairline gaps between adjacent Views that
+        // break scanners.
+        const runs: { start: number; length: number }[] = [];
+        let c = 0;
+        while (c < row.length) {
+          if (row[c]) {
+            const start = c;
+            while (c < row.length && row[c]) c += 1;
+            runs.push({ start, length: c - start });
+          } else {
+            c += 1;
+          }
+        }
+        return (
+          <View key={r} style={{ height: cell, position: "relative" }}>
+            {runs.map((run) => (
+              <View
+                key={run.start}
+                style={{
+                  position: "absolute",
+                  left: run.start * cell,
+                  top: 0,
+                  width: run.length * cell,
+                  // Slight vertical overlap closes horizontal hairlines too.
+                  height: cell + 0.5,
+                  backgroundColor: "#0B1020",
+                }}
+              />
+            ))}
+          </View>
+        );
+      })}
     </View>
   );
 }
