@@ -3,9 +3,11 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { format } from "date-fns";
-import { BadgeCheck, CalendarDays, ChevronRight, Headphones, Heart, MapPin, Search, ShieldCheck, Sparkles, Ticket, UsersRound, X, Zap } from "lucide-react";
+import { BadgeCheck, CalendarDays, ChevronRight, Headphones, Heart, Home, MapPin, Search, ShieldCheck, Sparkles, Ticket, User, UsersRound, X, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ModalCards, type ModalCard } from "@/components/ui/modal-cards";
+import Dock from "@/components/ui/dock";
+import { PerspectiveGrid } from "@/components/visual/perspective-grid";
 import { FallingSparkles } from "@/components/visual/falling-sparkles";
 import { AiConcierge } from "@/components/marketplace/ai-concierge";
 import { Reveal, Spotlight } from "@/components/visual/reactbits";
@@ -164,6 +166,7 @@ export function MarketplaceClient({
 
       <section className="relative z-10 overflow-hidden px-4 pb-16 pt-24 sm:px-8 lg:px-12 2xl:px-20">
         <div className="absolute inset-0">
+          <PerspectiveGrid className="opacity-[0.45]" color="rgba(103,232,249,0.3)" speed={0.9} lineCount={16} />
           <div className="absolute left-[8%] top-[22%] h-24 w-24 rounded-full border border-cyan-200/10 bg-cyan-200/[0.025] blur-sm" />
           <div className="absolute bottom-[24%] right-[12%] h-36 w-36 rounded-full border border-pink-300/10 bg-pink-300/[0.025] blur-sm" />
         </div>
@@ -471,6 +474,44 @@ export function MarketplaceClient({
       </main>
       {quickViewEvent ? (
         <EventQuickView event={quickViewEvent} locale={locale} onClose={() => setQuickViewEvent(null)} />
+      ) : null}
+
+      {/* Floating quick-nav dock (desktop only; mobile uses the top nav). */}
+      {mode === "home" ? (
+        <div className="pointer-events-none fixed inset-x-0 bottom-5 z-40 hidden justify-center md:flex">
+          <div className="pointer-events-auto">
+            <Dock
+              panelHeight={64}
+              baseItemSize={46}
+              magnification={72}
+              items={[
+                {
+                  icon: <Home className="h-5 w-5 text-cyan-200" />,
+                  label: locale === "ar" ? "الرئيسية" : "Home",
+                  onClick: () => window.scrollTo({ top: 0, behavior: "smooth" }),
+                },
+                {
+                  icon: <Search className="h-5 w-5 text-white/80" />,
+                  label: locale === "ar" ? "بحث" : "Search",
+                  onClick: () => {
+                    window.scrollTo({ top: 0, behavior: "smooth" });
+                    setTimeout(() => document.querySelector<HTMLInputElement>('input[placeholder]')?.focus(), 500);
+                  },
+                },
+                {
+                  icon: <Ticket className="h-5 w-5 text-white/80" />,
+                  label: locale === "ar" ? "تذاكري" : "My Tickets",
+                  onClick: () => { window.location.href = "/account"; },
+                },
+                {
+                  icon: <User className="h-5 w-5 text-white/80" />,
+                  label: locale === "ar" ? "حسابي" : "Account",
+                  onClick: () => { window.location.href = "/account/login"; },
+                },
+              ]}
+            />
+          </div>
+        </div>
       ) : null}
 
       <AiConcierge locale={locale} />
