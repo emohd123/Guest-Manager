@@ -12,7 +12,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { BrandWordmark } from "@/components/brand/brand-wordmark";
-import { Menu, X, ChevronDown, BriefcaseBusiness, CalendarDays, Ticket } from "lucide-react";
+import { Menu, X, ChevronDown, BriefcaseBusiness, CalendarDays, Ticket, Sparkles } from "lucide-react";
 
 const products = [
   {
@@ -67,13 +67,19 @@ export function MarketingNavbar() {
         <div className="mx-auto flex h-20 max-w-none items-center justify-between px-4 sm:px-8 lg:px-12 2xl:px-20">
           <div className="flex items-center gap-8">
             <div className="flex flex-col">
-              <Link href="/" aria-label="Events Hub home">
-                <BrandWordmark
-                  className="gap-x-5"
-                  markClassName="h-10 w-10 sm:h-14 sm:w-14"
-                  textClassName="text-[1.5rem] sm:text-[2.35rem]"
-                />
-              </Link>
+              <div className="flex items-center gap-2.5">
+                <Link href="/" aria-label="Events Hub home">
+                  <BrandWordmark
+                    className="gap-x-5"
+                    markClassName="h-10 w-10 sm:h-14 sm:w-14"
+                    textClassName="text-[1.5rem] sm:text-[2.35rem]"
+                  />
+                </Link>
+                <span className="inline-flex items-center gap-1 rounded-full border border-cyan-300/45 bg-gradient-to-r from-cyan-400/20 to-fuchsia-500/20 px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.12em] text-cyan-200 shadow-[0_0_14px_rgba(103,232,249,0.25)]">
+                  <Sparkles className="h-3 w-3" />
+                  AI
+                </span>
+              </div>
               <a
                 href="https://onestoneads.com/"
                 target="_blank"
