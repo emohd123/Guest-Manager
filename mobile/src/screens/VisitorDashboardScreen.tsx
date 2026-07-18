@@ -17,8 +17,10 @@ import {
   useWindowDimensions,
   View,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
+import * as Notifications from "expo-notifications";
 import { BrandLogo } from "../ui/brand-logo";
 import { FallingSparkles } from "../ui/FallingSparkles";
 import { Dock } from "../ui/Dock";
@@ -460,6 +462,22 @@ export function VisitorDashboardScreen({
   respondToNetworkingRequest,
 }: Props) {
   const [tab, setTab] = useState<VisitorTab>("home");
+  const insets = useSafeAreaInsets();
+
+  // Ask for notification permission once, so event reminders and updates can
+  // reach the attendee. Best-effort — never blocks the dashboard.
+  useEffect(() => {
+    (async () => {
+      try {
+        const current = await Notifications.getPermissionsAsync();
+        if (current.status === "undetermined") {
+          await Notifications.requestPermissionsAsync();
+        }
+      } catch {
+        // no-op on web / unsupported
+      }
+    })();
+  }, []);
 
   // Hardware back: return to the Home tab first; only exit from Home.
   useEffect(() => {
@@ -791,7 +809,7 @@ export function VisitorDashboardScreen({
   return (
     <View style={styles.screen}>
       <FallingSparkles count={10} speed={0.7} />
-      <View style={styles.headerShell}>
+      <View style={[styles.headerShell, { paddingTop: insets.top + 12 }]}>
         <View style={styles.headerRow}>
           <View style={styles.headerLeft}>
             <BrandLogo size={38} showWordmark />
@@ -1508,10 +1526,30 @@ export function VisitorDashboardScreen({
               />
             ) : (
               <View style={styles.ticketCard}>
-                <Text style={styles.ticketEyebrow}>{ticket.status.toUpperCase()}</Text>
-                <Text style={styles.ticketTitle}>{ticket.event.name}</Text>
-                <Text style={styles.ticketDate}>{fmtFullDate(ticket.event.startsAt)}</Text>
-                {ticket.event.location ? <Text style={styles.ticketLocation}>{ticket.event.location}</Text> : null}
+                <LinearGradient
+                  colors={["#7C3AED", "#DB2777", "#38BDF8"]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.ticketBanner}
+                >
+                  <View style={styles.ticketBannerTop}>
+                    <View style={styles.ticketStatusPill}>
+                      <Text style={styles.ticketStatusText}>{ticket.status.toUpperCase()}</Text>
+                    </View>
+                    <Ionicons name="ticket" size={22} color="rgba(255,255,255,0.85)" />
+                  </View>
+                  <Text style={styles.ticketBannerTitle} numberOfLines={2}>{ticket.event.name}</Text>
+                  <View style={styles.ticketBannerMeta}>
+                    <Ionicons name="calendar-outline" size={13} color="rgba(255,255,255,0.9)" />
+                    <Text style={styles.ticketBannerDate}>{fmtFullDate(ticket.event.startsAt)}</Text>
+                  </View>
+                  {ticket.event.location ? (
+                    <View style={styles.ticketBannerMeta}>
+                      <Ionicons name="location-outline" size={13} color="rgba(255,255,255,0.9)" />
+                      <Text style={styles.ticketBannerLoc}>{ticket.event.location}</Text>
+                    </View>
+                  ) : null}
+                </LinearGradient>
 
                 <View style={styles.confirmationPanel}>
                   <Text style={styles.confirmationLabel}>Attendance</Text>
@@ -1561,7 +1599,7 @@ export function VisitorDashboardScreen({
         ) : null}
       </Animated.View>
 
-      <View style={styles.tabBarWrap} pointerEvents="box-none">
+      <View style={[styles.tabBarWrap, { bottom: insets.bottom + 14 }]} pointerEvents="box-none">
         <Dock
           items={[
             {
@@ -1671,7 +1709,7 @@ const styles = StyleSheet.create({
   eventPillTextActive: { color: "#FFFFFF" },
   content: { flex: 1 },
   tabContent: { flex: 1 },
-  scrollContent: { width: "100%", maxWidth: 1180, alignSelf: "center", paddingHorizontal: 18, paddingTop: 18, paddingBottom: 128, gap: 16 },
+  scrollContent: { width: "100%", maxWidth: 1180, alignSelf: "center", paddingHorizontal: 18, paddingTop: 18, paddingBottom: 156, gap: 16 },
   heroCard: {
     borderRadius: 28,
     minHeight: 270,
@@ -2065,7 +2103,30 @@ const styles = StyleSheet.create({
   },
   replyBody: { color: "#FFFFFF", fontSize: 13, lineHeight: 20 },
   pendingReply: { color: "#9DA7CC", fontSize: 12, fontWeight: "700" },
-  ticketCard: { borderRadius: 28, backgroundColor: "rgba(255,255,255,0.08)", borderWidth: 1, borderColor: "rgba(255,255,255,0.1)", padding: 22, gap: 14 },
+  ticketCard: { borderRadius: 28, backgroundColor: "rgba(255,255,255,0.08)", borderWidth: 1, borderColor: "rgba(255,255,255,0.1)", padding: 22, gap: 14, overflow: "hidden" },
+  ticketBanner: {
+    marginHorizontal: -22,
+    marginTop: -22,
+    marginBottom: 6,
+    paddingHorizontal: 22,
+    paddingTop: 22,
+    paddingBottom: 20,
+    gap: 6,
+  },
+  ticketBannerTop: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 4 },
+  ticketStatusPill: {
+    backgroundColor: "rgba(0,0,0,0.28)",
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.3)",
+  },
+  ticketStatusText: { color: "#FFFFFF", fontSize: 10, fontWeight: "900", letterSpacing: 1 },
+  ticketBannerTitle: { color: "#FFFFFF", fontSize: 24, fontWeight: "900", letterSpacing: -0.8, lineHeight: 28 },
+  ticketBannerMeta: { flexDirection: "row", alignItems: "center", gap: 6 },
+  ticketBannerDate: { color: "rgba(255,255,255,0.96)", fontSize: 13, fontWeight: "800" },
+  ticketBannerLoc: { color: "rgba(255,255,255,0.9)", fontSize: 12, fontWeight: "700" },
   ticketEyebrow: {
     color: "#C4B5FD",
     fontSize: 12,

@@ -94,7 +94,11 @@ async function apiRequest<T>(
       // no-op
     }
     if (response.status === 401 || response.status === 403) {
-      unauthorizedHandler?.(response.status);
+      // Only treat this as a session-expiry (which logs the user out and
+      // returns to home) when the request actually carried a token. A 401 on
+      // the login/register request itself just means wrong credentials — that
+      // must surface as a form error, not bounce the user to the home screen.
+      if (token) unauthorizedHandler?.(response.status);
       throw new UnauthorizedError(message, response.status);
     }
     throw new Error(message);
