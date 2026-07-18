@@ -421,17 +421,12 @@ export function RoleChoiceScreen({
                 contentContainerStyle={styles.mktPills}
               >
                 {CATEGORIES.map((cat) => (
-                  <Pressable
+                  <CategoryPill
                     key={cat}
+                    label={categoryLabel(lang, cat)}
+                    active={activeCategory === cat}
                     onPress={() => setActiveCategory(cat)}
-                    style={[styles.mktPill, activeCategory === cat && styles.mktPillActive]}
-                    accessibilityRole="button"
-                    accessibilityLabel={`Filter by ${cat}`}
-                  >
-                    <Text style={[styles.mktPillText, activeCategory === cat && styles.mktPillTextActive]}>
-                      {categoryLabel(lang, cat)}
-                    </Text>
-                  </Pressable>
+                  />
                 ))}
               </ScrollView>
 
@@ -668,6 +663,32 @@ function HeroSheen({ width, delay = 0 }: { width: number; delay?: number }) {
         end={{ x: 1, y: 0 }}
         style={StyleSheet.absoluteFill}
       />
+    </Animated.View>
+  );
+}
+
+/** Category filter chip that springs up and glows when it becomes active. */
+function CategoryPill({ label, active, onPress }: { label: string; active: boolean; onPress: () => void }) {
+  const scale = useRef(new Animated.Value(1)).current;
+  const useNative = Platform.OS !== "web";
+  useEffect(() => {
+    Animated.spring(scale, {
+      toValue: active ? 1.07 : 1,
+      useNativeDriver: useNative,
+      speed: 40,
+      bounciness: 14,
+    }).start();
+  }, [active, scale, useNative]);
+  return (
+    <Animated.View style={{ transform: [{ scale }] }}>
+      <Pressable
+        onPress={onPress}
+        style={[styles.mktPill, active && styles.mktPillActive]}
+        accessibilityRole="button"
+        accessibilityLabel={`Filter by ${label}`}
+      >
+        <Text style={[styles.mktPillText, active && styles.mktPillTextActive]}>{label}</Text>
+      </Pressable>
     </Animated.View>
   );
 }
