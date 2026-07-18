@@ -25,7 +25,6 @@ import { BrandLogo } from "../ui/brand-logo";
 import { FallingSparkles } from "../ui/FallingSparkles";
 import { Dock } from "../ui/Dock";
 import { QrCode } from "../ui/QrCode";
-import { BorderGlow } from "../ui/BorderGlow";
 import { SpotlightCard } from "../ui/SpotlightCard";
 import type { DiscoverEvent } from "../types";
 import type {
@@ -301,32 +300,6 @@ function PulseDot({ color = "#F43F5E", size = 9 }: { color?: string; size?: numb
 }
 
 /** Slowly pulsing radial glow that gives the hero a living feel. */
-function AnimatedGlow({ style }: { style?: any }) {
-  const glow = useRef(new Animated.Value(0)).current;
-  useEffect(() => {
-    const loop = Animated.loop(
-      Animated.sequence([
-        Animated.timing(glow, { toValue: 1, duration: 2600, useNativeDriver: NATIVE_DRIVER }),
-        Animated.timing(glow, { toValue: 0, duration: 2600, useNativeDriver: NATIVE_DRIVER }),
-      ])
-    );
-    loop.start();
-    return () => loop.stop();
-  }, [glow]);
-  return (
-    <Animated.View
-      style={[
-        style,
-        {
-          pointerEvents: "none",
-          opacity: glow.interpolate({ inputRange: [0, 1], outputRange: [0.45, 0.95] }),
-          transform: [{ scale: glow.interpolate({ inputRange: [0, 1], outputRange: [0.9, 1.15] }) }],
-        },
-      ]}
-    />
-  );
-}
-
 function InfoChip({ label, value, accent }: { label: string; value: string; accent?: boolean }) {
   return (
     <View style={[styles.infoChip, accent && styles.infoChipAccent]}>
@@ -849,16 +822,14 @@ export function VisitorDashboardScreen({
             contentContainerStyle={styles.scrollContent}
           >
             <AnimatedEntrance delay={0} from={22}>
-             <BorderGlow borderRadius={28} backgroundColor="#0d1326" colors={["#c084fc", "#f472b6", "#38bdf8"]}>
+             <View style={styles.heroCard}>
               <View style={styles.heroInner}>
               <LinearGradient
-                colors={["rgba(124,58,237,0.28)", "rgba(37,99,235,0.10)", "rgba(219,39,119,0.20)"]}
+                colors={["rgba(124,58,237,0.22)", "rgba(15,19,38,0.55)"]}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 style={StyleSheet.absoluteFill}
               />
-              <AnimatedGlow style={styles.heroGlow} />
-              <AnimatedGlow style={styles.heroGlowTop} />
               <View style={[styles.heroContent, compactHome && styles.heroContentCompact]}>
                 <View style={[styles.heroCopy, compactHome && styles.heroCopyCompact]}>
                   <Text style={styles.heroDate}>{fmtFullDate(home?.event.startsAt ?? ticket?.event.startsAt)}</Text>
@@ -898,7 +869,7 @@ export function VisitorDashboardScreen({
                 </View>
               </View>
               </View>
-             </BorderGlow>
+             </View>
             </AnimatedEntrance>
 
             <View style={styles.metricsRow}>
@@ -1722,24 +1693,6 @@ const styles = StyleSheet.create({
   heroInner: {
     minHeight: 268,
     position: "relative",
-  },
-  heroGlow: {
-    position: "absolute",
-    bottom: -140,
-    height: 260,
-    left: "12%",
-    right: "12%",
-    backgroundColor: "rgba(219,39,119,0.22)",
-    borderRadius: 999,
-  },
-  heroGlowTop: {
-    position: "absolute",
-    top: -120,
-    height: 220,
-    left: "-6%",
-    width: 260,
-    backgroundColor: "rgba(37,99,235,0.22)",
-    borderRadius: 999,
   },
   heroContent: {
     alignItems: "stretch",
