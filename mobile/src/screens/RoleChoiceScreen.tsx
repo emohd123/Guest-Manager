@@ -339,7 +339,13 @@ export function RoleChoiceScreen({
             <View style={styles.mkt}>
               <View style={styles.mktHeader}>
                 <View style={styles.mktHeaderCopy}>
-                  <Text style={styles.mktKicker}>{t(lang, "kicker")}</Text>
+                  <View style={styles.kickerRow}>
+                    <Text style={styles.mktKicker}>{t(lang, "kicker")}</Text>
+                    <View style={styles.aiBadge}>
+                      <Ionicons name="sparkles" size={10} color="#67E8F9" />
+                      <Text style={styles.aiBadgeText}>AI</Text>
+                    </View>
+                  </View>
                   <Text style={styles.mktTitle}>
                     {eventView === "list"
                       ? t(lang, "allEventsTitle")
@@ -2046,6 +2052,28 @@ const styles = StyleSheet.create({
     color: "rgba(255,255,255,0.5)",
     fontSize: 11,
     fontWeight: "800",
+  },
+  kickerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  aiBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 3,
+    borderRadius: 999,
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    backgroundColor: "rgba(34,211,238,0.14)",
+    borderWidth: 1,
+    borderColor: "rgba(103,232,249,0.45)",
+  },
+  aiBadgeText: {
+    color: "#67E8F9",
+    fontSize: 10,
+    fontWeight: "900",
+    letterSpacing: 0.6,
   },
   mktTitle: {
     color: palette.textInverse,
