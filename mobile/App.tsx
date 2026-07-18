@@ -100,7 +100,9 @@ const INSTALLATION_ID_KEY = "guest_manager_mobile_v2_installation_id";
 // so device/fleet telemetry reflects the actual shipped version.
 const APP_VERSION = Constants.expoConfig?.version ?? "0.0.0";
 const VISITOR_SESSION_KEY = "guest_manager_visitor_session";
-const INTRO_COMPLETE_KEY = "guest_manager_mobile_v2_intro_complete";
+// Bumped to v3 so the redesigned intro (logo, AI slide, Ken Burns) shows
+// once again for users who had already completed the previous version.
+const INTRO_COMPLETE_KEY = "guest_manager_mobile_v3_intro_complete";
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({

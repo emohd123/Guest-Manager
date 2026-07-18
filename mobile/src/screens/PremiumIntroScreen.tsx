@@ -1,8 +1,11 @@
 import React, { useMemo, useState } from "react";
 import { Image, Pressable, StyleSheet, Text, View, useWindowDimensions } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import { PremiumButton, PremiumPill } from "../ui/primitives";
-import { FadeSlideIn } from "../ui/motion";
+import { PremiumButton } from "../ui/primitives";
+import { BrandLogo } from "../ui/brand-logo";
+import { FadeSlideIn, KenBurns } from "../ui/motion";
 import { palette, radii, spacing, type } from "../ui/theme";
 
 const IMG = (id: string, w = 1600, h = 2000) =>
@@ -14,6 +17,12 @@ const slides = [
     title: "Every event in Bahrain, one place.",
     body: "Concerts, festivals, dining, and family days — discover what's on tonight.",
     image: IMG("photo-1492684223066-81342ee5ff30"),
+  },
+  {
+    eyebrow: "Meet your AI concierge",
+    title: "Just ask what's on.",
+    body: "Tell it a vibe, a budget, or a night — it plans your weekend from real events, in English or Arabic.",
+    image: IMG("photo-1516450360452-9312f5e86fc7"),
   },
   {
     eyebrow: "Buy & Go",
@@ -38,15 +47,19 @@ export function PremiumIntroScreen({
 }) {
   const [step, setStep] = useState(0);
   const { width } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
   const slide = slides[step];
   const isLast = step === slides.length - 1;
   const stepLabel = useMemo(() => `${step + 1} / ${slides.length}`, [step]);
   const isWide = width >= 900;
+  const isAiSlide = step === 1;
 
   return (
     <View style={styles.root}>
-      {/* Full-bleed background image per slide */}
-      <Image key={slide.image} source={{ uri: slide.image }} style={StyleSheet.absoluteFill} resizeMode="cover" />
+      {/* Full-bleed background image per slide, with a slow Ken Burns drift. */}
+      <KenBurns key={slide.image} style={StyleSheet.absoluteFill} maxScale={1.12} duration={9000}>
+        <Image source={{ uri: slide.image }} style={StyleSheet.absoluteFill} resizeMode="cover" />
+      </KenBurns>
       <LinearGradient
         colors={["rgba(6,10,24,0.35)", "rgba(6,10,24,0.72)", "rgba(6,10,24,0.98)"]}
         locations={[0, 0.5, 1]}
@@ -59,9 +72,9 @@ export function PremiumIntroScreen({
         style={StyleSheet.absoluteFill}
       />
 
-      <View style={styles.container}>
+      <View style={[styles.container, { paddingTop: insets.top + 12, paddingBottom: insets.bottom + spacing.lg }]}>
         <View style={styles.header}>
-          <PremiumPill label="Events Hub" tone="live" />
+          <BrandLogo size={40} showWordmark />
           <Pressable onPress={onSkip} style={styles.skip}>
             <Text style={styles.skipText}>Skip</Text>
           </Pressable>
@@ -69,9 +82,16 @@ export function PremiumIntroScreen({
 
         <View style={styles.middle}>
           <FadeSlideIn key={step} style={[styles.copyBlock, isWide && styles.copyBlockWide]}>
-            <View style={styles.stepBadge}>
-              <Text style={styles.stepLabel}>{stepLabel}</Text>
-            </View>
+            {isAiSlide ? (
+              <View style={styles.aiPill}>
+                <Ionicons name="sparkles" size={12} color="#67E8F9" />
+                <Text style={styles.aiPillText}>POWERED BY AI</Text>
+              </View>
+            ) : (
+              <View style={styles.stepBadge}>
+                <Text style={styles.stepLabel}>{stepLabel}</Text>
+              </View>
+            )}
             <Text style={styles.eyebrow}>{slide.eyebrow}</Text>
             <Text style={styles.title}>{slide.title}</Text>
             <View style={styles.accentLine} />
@@ -106,12 +126,27 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     paddingHorizontal: spacing.xl,
-    paddingTop: 52,
-    paddingBottom: spacing.xl,
     justifyContent: "space-between",
     width: "100%",
     maxWidth: 1160,
     alignSelf: "center",
+  },
+  aiPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    borderRadius: radii.pill,
+    backgroundColor: "rgba(34,211,238,0.14)",
+    borderWidth: 1,
+    borderColor: "rgba(103,232,249,0.5)",
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+  },
+  aiPillText: {
+    color: "#67E8F9",
+    fontSize: 11,
+    fontWeight: "900",
+    letterSpacing: 2,
   },
   header: {
     flexDirection: "row",

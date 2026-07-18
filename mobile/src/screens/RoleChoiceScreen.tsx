@@ -50,6 +50,7 @@ import { categoryLabel, eventDescription, eventHost, eventTitle, eventVenue, t }
 import { AiConciergeSheet } from "../ui/AiConciergeSheet";
 import { FadeSlideIn, KenBurns, PressScale, PulseView } from "../ui/motion";
 import { ClickStack } from "../ui/ClickStack";
+import { Confetti } from "../ui/Confetti";
 import { Dock } from "../ui/Dock";
 import { FallingSparkles } from "../ui/FallingSparkles";
 import { PremiumBackdrop } from "../ui/primitives";
@@ -1085,6 +1086,7 @@ function EventDetailPanel({
   onShare: () => void;
 }) {
   const { width: detailWidth } = useWindowDimensions();
+  const [showConfetti, setShowConfetti] = useState(false);
   const [selectedTickets, setSelectedTickets] = useState<Record<string, number>>({});
   const [attendeeName, setAttendeeName] = useState("");
   const [attendeeEmail, setAttendeeEmail] = useState("");
@@ -1134,10 +1136,12 @@ function EventDetailPanel({
       if (result.checkoutUrl) {
         setCheckoutUrl(result.checkoutUrl);
         setMessage("Opening secure payment checkout...");
+        setShowConfetti(true);
         await Linking.openURL(result.checkoutUrl);
       } else if (result.success) {
         setMessage("Registration complete. Tickets will be sent by email.");
         setSelectedTickets({});
+        setShowConfetti(true);
       } else {
         setMessage("Checkout response was not recognized.");
       }
@@ -1324,6 +1328,7 @@ function EventDetailPanel({
         ) : null}
       </View>
       </View>
+      {showConfetti ? <Confetti onDone={() => setShowConfetti(false)} /> : null}
     </View>
   );
 }
