@@ -5,6 +5,7 @@ import {
   Alert,
   Animated,
   BackHandler,
+  Easing,
   Image,
   Linking,
   Platform,
@@ -634,6 +635,66 @@ export function RoleChoiceScreen({
   );
 }
 
+/** A glossy diagonal light band that periodically sweeps across a hero card. */
+function HeroSheen({ width, delay = 0 }: { width: number; delay?: number }) {
+  const progress = useRef(new Animated.Value(0)).current;
+  const useNative = Platform.OS !== "web";
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.delay(3600 + delay),
+        Animated.timing(progress, {
+          toValue: 1,
+          duration: 1150,
+          easing: Easing.inOut(Easing.cubic),
+          useNativeDriver: useNative,
+        }),
+        Animated.timing(progress, { toValue: 0, duration: 0, useNativeDriver: useNative }),
+      ])
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [delay, progress, useNative]);
+  const translateX = progress.interpolate({ inputRange: [0, 1], outputRange: [-width * 0.7, width * 1.2] });
+  return (
+    <Animated.View
+      pointerEvents="none"
+      style={[styles.sheen, { transform: [{ translateX }, { rotate: "18deg" }] }]}
+    >
+      <LinearGradient
+        colors={["rgba(255,255,255,0)", "rgba(255,255,255,0.22)", "rgba(255,255,255,0)"]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 0 }}
+        style={StyleSheet.absoluteFill}
+      />
+    </Animated.View>
+  );
+}
+
+/** Heart icon that springs with a satisfying pop when it becomes saved. */
+function PopHeart({ saved }: { saved: boolean }) {
+  const scale = useRef(new Animated.Value(1)).current;
+  const useNative = Platform.OS !== "web";
+  const first = useRef(true);
+  useEffect(() => {
+    if (first.current) {
+      first.current = false;
+      return;
+    }
+    if (saved) {
+      Animated.sequence([
+        Animated.spring(scale, { toValue: 1.4, useNativeDriver: useNative, speed: 50, bounciness: 16 }),
+        Animated.spring(scale, { toValue: 1, useNativeDriver: useNative, speed: 30, bounciness: 10 }),
+      ]).start();
+    }
+  }, [saved, scale, useNative]);
+  return (
+    <Animated.View style={{ transform: [{ scale }] }}>
+      <Ionicons name={saved ? "heart" : "heart-outline"} size={19} color={saved ? "#67E8F9" : "#FFFFFF"} />
+    </Animated.View>
+  );
+}
+
 function FeaturedHero({
   event,
   lang,
@@ -645,6 +706,7 @@ function FeaturedHero({
 }) {
   const host = eventHost(event, lang);
   const price = formatPrice(event);
+  const { width } = useWindowDimensions();
   return (
     <View style={styles.featured}>
       <LinearGradient
@@ -658,6 +720,7 @@ function FeaturedHero({
           <Image source={{ uri: event.coverImageUrl }} style={StyleSheet.absoluteFill} resizeMode="cover" />
         </KenBurns>
       ) : null}
+      <HeroSheen width={width} />
       <LinearGradient
         colors={["rgba(0,0,0,0.9)", "rgba(0,0,0,0.1)", "transparent"]}
         start={{ x: 0, y: 1 }}
@@ -1021,6 +1084,7 @@ function EventDetailPanel({
   onAddToCalendar: () => void;
   onShare: () => void;
 }) {
+  const { width: detailWidth } = useWindowDimensions();
   const [selectedTickets, setSelectedTickets] = useState<Record<string, number>>({});
   const [attendeeName, setAttendeeName] = useState("");
   const [attendeeEmail, setAttendeeEmail] = useState("");
@@ -1096,6 +1160,7 @@ function EventDetailPanel({
             <Ionicons name="sparkles-outline" size={34} color="#FFFFFF" />
           </View>
         )}
+        <HeroSheen width={detailWidth} delay={900} />
         <LinearGradient
           colors={["rgba(5,7,15,0)", "rgba(5,7,15,0.28)", "rgba(5,7,15,0.82)"]}
           style={StyleSheet.absoluteFill}
@@ -1119,7 +1184,7 @@ function EventDetailPanel({
           accessibilityRole="button"
           accessibilityLabel={saved ? "Saved" : "Save"}
         >
-          <Ionicons name={saved ? "heart" : "heart-outline"} size={19} color={saved ? "#67E8F9" : "#FFFFFF"} />
+          <PopHeart saved={saved} />
         </Pressable>
         {countdownLabel(event.startsAt, event.endsAt) ? (
           <View style={styles.heroCountdown}>
@@ -2368,6 +2433,13 @@ const styles = StyleSheet.create({
     maxHeight: 460,
     overflow: "hidden",
     ...shadows.glow,
+  },
+  sheen: {
+    position: "absolute",
+    top: -60,
+    bottom: -60,
+    left: 0,
+    width: 84,
   },
   featuredBadge: {
     backgroundColor: palette.accentCyanSoft,
