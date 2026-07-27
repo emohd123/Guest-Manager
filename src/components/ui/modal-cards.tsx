@@ -138,7 +138,7 @@ export function ModalCards({
           key={card.id}
           type="button"
           onClick={() => open(card.id)}
-          className="group relative flex aspect-[4/5] flex-col justify-end overflow-hidden rounded-3xl border border-white/10 text-start transition-all duration-300 hover:-translate-y-1.5 active:scale-[0.97] focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 sm:aspect-[4/3]"
+          className="group relative flex aspect-[16/10] flex-col justify-end overflow-hidden rounded-2xl border border-white/10 text-start transition-all duration-300 hover:-translate-y-1.5 active:scale-[0.97] focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 sm:aspect-[4/3] sm:rounded-3xl"
           onMouseEnter={(event) => {
             (event.currentTarget as HTMLElement).style.boxShadow = `0 18px 50px -18px ${gradientColor}`;
           }}
@@ -158,9 +158,9 @@ export function ModalCards({
               {card.badge}
             </span>
           ) : null}
-          <div className="relative p-5">
-            <h3 className="text-xl font-black tracking-tight text-white">{card.title}</h3>
-            {card.subtitle ? <p className="mt-1 text-sm font-bold text-cyan-100/85">{card.subtitle}</p> : null}
+          <div className="relative p-4 sm:p-5">
+            <h3 className="text-lg font-black tracking-tight text-white sm:text-xl">{card.title}</h3>
+            {card.subtitle ? <p className="mt-1 text-xs font-bold text-cyan-100/85 sm:text-sm">{card.subtitle}</p> : null}
           </div>
         </button>
       ))}
