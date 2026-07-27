@@ -121,6 +121,14 @@
   * {
     @apply border-border outline-ring/50;
   }
+  html {
+    /* Public app is light; the dashboard opts into dark via .dark scope.
+       Declaring the scheme stops mobile browsers auto-darkening the page. */
+    color-scheme: light;
+  }
+  html.dark, .dark {
+    color-scheme: dark;
+  }
   body {
     @apply bg-background text-foreground;
   }

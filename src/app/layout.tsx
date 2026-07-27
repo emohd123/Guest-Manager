@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import { ThemeProvider } from "@/providers/theme-provider";
 import { TRPCProvider } from "@/providers/trpc-provider";
@@ -27,13 +27,20 @@ export const metadata: Metadata = {
   },
 };
 
+/** Light UI + a light browser chrome colour, so mobile browsers don't
+ *  auto-darken the marketing pages. */
+export const viewport: Viewport = {
+  colorScheme: "light",
+  themeColor: "#f6f7fb",
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning>
       <body className={`${inter.variable} font-sans antialiased`}>
         <ThemeProvider>
           <TRPCProvider>

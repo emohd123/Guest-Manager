@@ -9,17 +9,17 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#070910] px-4 py-20 text-center text-white">
-      <div className="max-w-lg rounded-[2rem] border border-white/10 bg-white/[0.06] p-8">
+    <div className="flex min-h-screen items-center justify-center bg-white px-4 py-20 text-center text-slate-900">
+      <div className="max-w-lg rounded-[2rem] border border-slate-200 bg-white p-8">
         <Link href="/" className="mb-8 flex justify-center">
           <BrandWordmark
             className="gap-3"
             markClassName="h-12 w-12"
-            textClassName="text-[2rem] text-white"
+            textClassName="text-[2rem] text-slate-900"
           />
         </Link>
         <h1 className="text-3xl font-black">Admin access is invite-only</h1>
-        <p className="mt-4 text-white/65">
+        <p className="mt-4 text-slate-600">
           iTicket creates and manages event dashboards internally. For managed event,
           ticketing, or check-in support, contact the team and we will set up the right workspace.
         </p>

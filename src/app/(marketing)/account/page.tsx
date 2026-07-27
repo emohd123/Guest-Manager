@@ -65,7 +65,7 @@ export default function AccountPage() {
   if (error) {
     return (
       <AccountShell title="Your tickets and orders">
-        <p className="mx-auto mt-4 max-w-xl text-white/60">{error}</p>
+        <p className="mx-auto mt-4 max-w-xl text-slate-600">{error}</p>
         <Button asChild className="mt-8 rounded-full bg-white px-8 font-black text-black hover:bg-white/90">
           <Link href="/account/login">Sign in or create buyer account</Link>
         </Button>
@@ -74,17 +74,17 @@ export default function AccountPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#070910] px-4 py-28 text-white sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-white px-4 py-28 text-slate-900 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-7xl">
-        <div className="flex flex-col justify-between gap-6 border-b border-white/10 pb-8 md:flex-row md:items-end">
+        <div className="flex flex-col justify-between gap-6 border-b border-slate-200 pb-8 md:flex-row md:items-end">
           <div>
-            <p className="text-xs font-black uppercase tracking-[0.28em] text-cyan-200">
+            <p className="text-xs font-black uppercase tracking-[0.28em] text-blue-600">
               {summary?.adminAccess ? "Admin and buyer account" : "Buyer account"}
             </p>
             <h1 className="mt-3 text-4xl font-black tracking-tight sm:text-6xl">
               {summary?.profile.name}
             </h1>
-            <p className="mt-3 text-white/60">{summary?.profile.email}</p>
+            <p className="mt-3 text-slate-600">{summary?.profile.email}</p>
           </div>
           <div className="flex flex-wrap gap-3">
             {summary?.adminAccess ? (
@@ -95,10 +95,10 @@ export default function AccountPage() {
                 </Link>
               </Button>
             ) : null}
-            <Button asChild variant="outline" className="rounded-full border-white/15 bg-white/5 text-white hover:bg-white/10">
+            <Button asChild variant="outline" className="rounded-full border-slate-200 bg-white text-slate-900 hover:bg-slate-100">
               <Link href="/events">Browse events</Link>
             </Button>
-            <Button onClick={signOut} variant="outline" className="rounded-full border-white/15 bg-white/5 text-white hover:bg-white/10">
+            <Button onClick={signOut} variant="outline" className="rounded-full border-slate-200 bg-white text-slate-900 hover:bg-slate-100">
               <LogOut className="mr-2 h-4 w-4" />
               Sign out
             </Button>
@@ -123,9 +123,9 @@ export default function AccountPage() {
           <section className="mt-10 rounded-[1.5rem] border border-cyan-200/25 bg-cyan-200/[0.08] p-6">
             <div className="flex flex-col justify-between gap-5 md:flex-row md:items-center">
               <div>
-                <p className="text-xs font-black uppercase tracking-[0.24em] text-cyan-200">Internal access</p>
+                <p className="text-xs font-black uppercase tracking-[0.24em] text-blue-600">Internal access</p>
                 <h2 className="mt-2 text-2xl font-black">iTicket admin dashboard is enabled</h2>
-                <p className="mt-2 text-sm text-white/60">
+                <p className="mt-2 text-sm text-slate-600">
                   Manage company-created events, tickets, guests, orders, scans, reports, and messages.
                 </p>
               </div>
@@ -137,20 +137,20 @@ export default function AccountPage() {
         ) : null}
 
         <section className="mt-12 grid gap-4 lg:grid-cols-[0.8fr_1.2fr]">
-          <div className="rounded-[1.5rem] border border-white/10 bg-white/[0.04] p-6">
+          <div className="rounded-[1.5rem] border border-slate-200 bg-white p-6">
             <div className="flex items-center gap-3">
-              <UserRound className="h-5 w-5 text-cyan-200" />
+              <UserRound className="h-5 w-5 text-blue-600" />
               <h2 className="text-2xl font-black">Profile</h2>
             </div>
-            <p className="mt-4 text-sm leading-6 text-white/60">
+            <p className="mt-4 text-sm leading-6 text-slate-600">
               Buyer profiles are linked by email. Use the same email at checkout and your tickets and orders will appear here automatically.
             </p>
-            <div className="mt-5 rounded-2xl bg-black/25 p-4 text-sm text-white/70">
-              <p className="font-black text-white">{summary?.profile.name}</p>
+            <div className="mt-5 rounded-2xl bg-slate-50 p-4 text-sm text-slate-600">
+              <p className="font-black text-slate-900">{summary?.profile.name}</p>
               <p>{summary?.profile.email}</p>
             </div>
           </div>
-          <div className="rounded-[1.5rem] border border-white/10 bg-white/[0.04] p-6">
+          <div className="rounded-[1.5rem] border border-slate-200 bg-white p-6">
             <div className="flex items-center gap-3">
               <Heart className="h-5 w-5 text-pink-300" />
               <h2 className="text-2xl font-black">Saved favorites</h2>
@@ -158,17 +158,17 @@ export default function AccountPage() {
             {favorites.length > 0 ? (
               <div className="mt-5 flex flex-wrap gap-2">
                 {favorites.slice(0, 12).map((id) => (
-                  <span key={id} className="rounded-full border border-white/10 bg-black/25 px-3 py-2 font-mono text-xs text-white/55">
+                  <span key={id} className="rounded-full border border-slate-200 bg-slate-50 px-3 py-2 font-mono text-xs text-slate-600">
                     {id.slice(0, 8)}
                   </span>
                 ))}
               </div>
             ) : (
-              <p className="mt-4 text-sm leading-6 text-white/60">
+              <p className="mt-4 text-sm leading-6 text-slate-600">
                 Save events from the marketplace and they will appear here on this device.
               </p>
             )}
-            <Button asChild variant="outline" className="mt-5 rounded-full border-white/15 bg-white/5 text-white hover:bg-white/10">
+            <Button asChild variant="outline" className="mt-5 rounded-full border-slate-200 bg-white text-slate-900 hover:bg-slate-100">
               <Link href="/events">Browse events</Link>
             </Button>
           </div>
@@ -235,9 +235,9 @@ export default function AccountPage() {
 
 function AccountShell({ title, children }: { title: string; children?: React.ReactNode }) {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#070910] px-4 py-28 text-center text-white">
+    <div className="flex min-h-screen items-center justify-center bg-white px-4 py-28 text-center text-slate-900">
       <div>
-        <Ticket className="mx-auto h-12 w-12 text-cyan-200" />
+        <Ticket className="mx-auto h-12 w-12 text-blue-600" />
         <h1 className="mt-5 text-4xl font-black">{title}</h1>
         {children}
       </div>
@@ -247,10 +247,10 @@ function AccountShell({ title, children }: { title: string; children?: React.Rea
 
 function Stat({ icon: Icon, label, value }: { icon: LucideIcon; label: string; value: number }) {
   return (
-    <div className="rounded-[1.5rem] border border-white/10 bg-white/[0.05] p-5">
-      <Icon className="h-5 w-5 text-cyan-200" />
+    <div className="rounded-[1.5rem] border border-slate-200 bg-white p-5">
+      <Icon className="h-5 w-5 text-blue-600" />
       <p className="mt-5 text-3xl font-black">{value}</p>
-      <p className="text-sm font-bold text-white/45">{label}</p>
+      <p className="text-sm font-bold text-slate-500">{label}</p>
     </div>
   );
 }
@@ -267,10 +267,10 @@ function AccountTool({
   body: string;
 }) {
   return (
-    <Link href={href} className="rounded-[1.25rem] border border-white/10 bg-white/[0.045] p-4 transition hover:border-cyan-200/35 hover:bg-white/[0.07]">
-      <Icon className="h-5 w-5 text-cyan-200" />
+    <Link href={href} className="rounded-[1.25rem] border border-slate-200 bg-white p-4 transition hover:border-cyan-200/35 hover:bg-white">
+      <Icon className="h-5 w-5 text-blue-600" />
       <p className="mt-4 font-black">{title}</p>
-      <p className="mt-2 text-xs leading-5 text-white/50">{body}</p>
+      <p className="mt-2 text-xs leading-5 text-slate-600">{body}</p>
     </Link>
   );
 }
@@ -280,13 +280,13 @@ function TicketRow({ ticket }: { ticket: Record<string, any> }) {
   const ticketType = ticket.ticket_types;
   const url = event?.companies?.slug && event?.slug ? `/e/${event.companies.slug}/${event.slug}` : "/events";
   return (
-    <div className="rounded-[1.5rem] border border-white/10 bg-white/[0.05] p-5">
+    <div className="rounded-[1.5rem] border border-slate-200 bg-white p-5">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <p className="text-xs font-black uppercase tracking-[0.24em] text-cyan-200">{ticketType?.name ?? "Ticket"}</p>
+          <p className="text-xs font-black uppercase tracking-[0.24em] text-blue-600">{ticketType?.name ?? "Ticket"}</p>
           <h3 className="mt-2 text-xl font-black">{event?.title ?? "Event"}</h3>
           {event?.starts_at ? (
-            <p className="mt-2 flex items-center gap-2 text-sm text-white/55">
+            <p className="mt-2 flex items-center gap-2 text-sm text-slate-600">
               <CalendarDays className="h-4 w-4" />
               {format(new Date(event.starts_at), "EEE, MMM d - h:mm a")}
             </p>
@@ -296,7 +296,7 @@ function TicketRow({ ticket }: { ticket: Record<string, any> }) {
           <QrCode className="h-8 w-8" />
         </div>
       </div>
-      <p className="mt-5 rounded-2xl bg-black/30 p-3 font-mono text-xs text-white/60">{ticket.barcode}</p>
+      <p className="mt-5 rounded-2xl bg-slate-100 p-3 font-mono text-xs text-slate-600">{ticket.barcode}</p>
       <Button asChild className="mt-4 w-full rounded-full bg-white font-black text-black hover:bg-white/90">
         <Link href={url}>Open event</Link>
       </Button>
@@ -306,10 +306,10 @@ function TicketRow({ ticket }: { ticket: Record<string, any> }) {
 
 function OrderRow({ order }: { order: Record<string, any> }) {
   return (
-    <div className="flex flex-col justify-between gap-3 rounded-[1.25rem] border border-white/10 bg-white/[0.04] p-4 sm:flex-row sm:items-center">
+    <div className="flex flex-col justify-between gap-3 rounded-[1.25rem] border border-slate-200 bg-white p-4 sm:flex-row sm:items-center">
       <div>
         <p className="font-black">{order.order_number}</p>
-        <p className="text-sm text-white/55">{order.events?.title ?? "Event"} · {order.status}</p>
+        <p className="text-sm text-slate-600">{order.events?.title ?? "Event"} · {order.status}</p>
       </div>
       <p className="font-black">{formatMoney(order.total ?? 0, order.currency ?? "BHD")}</p>
     </div>
@@ -321,20 +321,20 @@ function NotificationRow({ notification }: { notification: Record<string, any> }
   const eventUrl = event?.companies?.slug && event?.slug ? `/e/${event.companies.slug}/${event.slug}` : "/events";
 
   return (
-    <div className="rounded-[1.25rem] border border-white/10 bg-white/[0.04] p-4">
+    <div className="rounded-[1.25rem] border border-slate-200 bg-white p-4">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <p className="text-xs font-black uppercase tracking-[0.22em] text-cyan-200">
+          <p className="text-xs font-black uppercase tracking-[0.22em] text-blue-600">
             {notification.is_read ? "Update" : "New update"}
           </p>
           <h3 className="mt-2 font-black">{notification.title ?? "Event update"}</h3>
-          {notification.body ? <p className="mt-2 text-sm leading-6 text-white/60">{notification.body}</p> : null}
+          {notification.body ? <p className="mt-2 text-sm leading-6 text-slate-600">{notification.body}</p> : null}
         </div>
-        <Bell className={notification.is_read ? "h-5 w-5 text-white/35" : "h-5 w-5 text-cyan-200"} />
+        <Bell className={notification.is_read ? "h-5 w-5 text-slate-500" : "h-5 w-5 text-blue-600"} />
       </div>
-      <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-xs text-white/45">
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-500">
         <span>{[event?.title, formatOptionalDate(notification.created_at)].filter(Boolean).join(" - ")}</span>
-        <Link href={eventUrl} className="font-black text-cyan-200">
+        <Link href={eventUrl} className="font-black text-blue-600">
           Open event
         </Link>
       </div>
@@ -347,21 +347,21 @@ function MessageRow({ message }: { message: Record<string, any> }) {
   const eventUrl = event?.companies?.slug && event?.slug ? `/e/${event.companies.slug}/${event.slug}` : "/events";
 
   return (
-    <div className="rounded-[1.25rem] border border-white/10 bg-white/[0.04] p-4">
-      <p className="text-xs font-black uppercase tracking-[0.22em] text-cyan-200">
+    <div className="rounded-[1.25rem] border border-slate-200 bg-white p-4">
+      <p className="text-xs font-black uppercase tracking-[0.22em] text-blue-600">
         {message.admin_reply ? "iTicket replied" : "Awaiting iTicket reply"}
       </p>
       <h3 className="mt-2 font-black">{message.subject ?? "Message"}</h3>
-      <p className="mt-2 text-sm leading-6 text-white/60">{message.body}</p>
+      <p className="mt-2 text-sm leading-6 text-slate-600">{message.body}</p>
       {message.admin_reply ? (
-        <div className="mt-4 rounded-2xl bg-black/25 p-4">
-          <p className="text-xs font-black uppercase tracking-[0.18em] text-white/40">Reply</p>
-          <p className="mt-2 text-sm leading-6 text-white/75">{message.admin_reply}</p>
+        <div className="mt-4 rounded-2xl bg-slate-50 p-4">
+          <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-500">Reply</p>
+          <p className="mt-2 text-sm leading-6 text-slate-600">{message.admin_reply}</p>
         </div>
       ) : null}
-      <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-xs text-white/45">
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-500">
         <span>{[event?.title, formatOptionalDate(message.created_at)].filter(Boolean).join(" - ")}</span>
-        <Link href={eventUrl} className="font-black text-cyan-200">
+        <Link href={eventUrl} className="font-black text-blue-600">
           Open event
         </Link>
       </div>
@@ -375,10 +375,10 @@ function formatOptionalDate(value: string | null | undefined) {
 
 function EmptyPanel({ icon: Icon, title, body }: { icon: LucideIcon; title: string; body: string }) {
   return (
-    <div className="rounded-[1.5rem] border border-white/10 bg-white/[0.04] p-8 text-center">
-      <Icon className="mx-auto h-8 w-8 text-white/40" />
+    <div className="rounded-[1.5rem] border border-slate-200 bg-white p-8 text-center">
+      <Icon className="mx-auto h-8 w-8 text-slate-500" />
       <h3 className="mt-4 text-xl font-black">{title}</h3>
-      <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-white/55">{body}</p>
+      <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-slate-600">{body}</p>
     </div>
   );
 }
