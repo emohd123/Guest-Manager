@@ -170,7 +170,7 @@ export function ServicesForOrganisers() {
             {stats.map((s) => (
               <div key={s.label} className="text-center">
                 <p className="text-3xl font-black italic text-slate-900 sm:text-4xl">{s.value}</p>
-                <p className="mt-2 text-xs font-bold uppercase tracking-wider text-slate-500">{s.label}</p>
+                <p className="mt-2 text-xs font-bold uppercase tracking-wider text-slate-600">{s.label}</p>
               </div>
             ))}
           </div>
@@ -266,7 +266,7 @@ export function ServicesForOrganisers() {
                 </blockquote>
                 <figcaption className="mt-6 text-sm">
                   <span className="font-black text-slate-900">{t.name}</span>
-                  <span className="text-slate-500"> · {t.role}</span>
+                  <span className="text-slate-600"> · {t.role}</span>
                 </figcaption>
               </figure>
             ))}

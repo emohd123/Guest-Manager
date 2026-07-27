@@ -133,7 +133,7 @@ export function AiConcierge({ locale }: { locale: LocaleCode }) {
               </span>
               <div>
                 <p className="text-sm font-black leading-tight">{ar ? "مساعد الفعاليات" : "Events concierge"}</p>
-                <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">
                   {eventContext
                     ? (ar ? "عن: " : "About: ") + eventContext.title.slice(0, 26)
                     : ar ? "البحرين · مباشر" : "Bahrain · live data"}
@@ -224,7 +224,7 @@ export function AiConcierge({ locale }: { locale: LocaleCode }) {
                     </div>
                   ) : null}
                   {message.role === "assistant" && message.source ? (
-                    <p className="mt-2 flex items-center gap-1 text-[9px] font-black uppercase tracking-widest text-slate-400">
+                    <p className="mt-2 flex items-center gap-1 text-[9px] font-black uppercase tracking-widest text-slate-500">
                       <BadgeCheck className="h-3 w-3" />
                       {message.source === "smart" ? (ar ? "بحث ذكي" : "Smart search") : ar ? "إجابة ذكاء اصطناعي" : "AI answer"}
                     </p>

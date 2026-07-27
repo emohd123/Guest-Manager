@@ -193,7 +193,7 @@ export function MarketplaceClient({
                       value={query}
                       onChange={(event) => setQuery(event.target.value)}
                       placeholder={copy.searchPlaceholder}
-                      className="w-full bg-transparent text-base font-semibold text-slate-900 outline-none placeholder:text-slate-500"
+                      className="w-full bg-transparent text-base font-semibold text-slate-900 outline-none placeholder:text-slate-600"
                     />
                   </label>
                   <select
@@ -216,7 +216,7 @@ export function MarketplaceClient({
                 </div>
               </div>
 
-              <div className="mt-7 flex flex-wrap gap-3 text-xs font-black uppercase tracking-[0.18em] text-slate-500">
+              <div className="mt-7 flex flex-wrap gap-3 text-xs font-black uppercase tracking-[0.18em] text-slate-600">
                 {copy.quickStats.map((item) => (
                   <span key={item} className="rounded-full border border-slate-200 bg-white px-4 py-2 text-slate-600">
                     {item}
@@ -228,7 +228,7 @@ export function MarketplaceClient({
                 <div className="mt-8">
                   <div className="mb-4 flex items-center gap-2">
                     <span className={`h-2 w-2 animate-pulse rounded-full ${hasFast ? "bg-rose-400" : "bg-cyan-300"}`} />
-                    <p className="text-[11px] font-black uppercase tracking-[0.22em] text-slate-500">
+                    <p className="text-[11px] font-black uppercase tracking-[0.22em] text-slate-600">
                       {hasFast
                         ? locale === "ar" ? "الشراء السريع" : "Fast purchase"
                         : locale === "ar" ? "قريبًا" : "Happening soon"}
@@ -338,10 +338,10 @@ export function MarketplaceClient({
         <section className="mb-16">
           <div className="mb-7 flex items-end justify-between gap-6">
             <div>
-              <p className="text-xs font-black uppercase tracking-[0.28em] text-pink-500">{copy.discover}</p>
+              <p className="text-xs font-black uppercase tracking-[0.28em] text-pink-700">{copy.discover}</p>
               <h2 className="mt-2 text-3xl font-black tracking-tight sm:text-5xl">{copy.featured}</h2>
             </div>
-            {loading ? <span className="text-sm font-bold text-slate-500">{copy.loading}</span> : null}
+            {loading ? <span className="text-sm font-bold text-slate-600">{copy.loading}</span> : null}
           </div>
 
           {heroEvents.length > 0 ? (
@@ -384,9 +384,9 @@ export function MarketplaceClient({
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/15 to-black/10 transition group-hover:from-black/75" />
                   <div className="absolute inset-x-3 bottom-3">
-                    <p className="text-sm font-black text-slate-900">{locale === "ar" ? item.labelAr : item.label}</p>
+                    <p className="text-sm font-black text-white">{locale === "ar" ? item.labelAr : item.label}</p>
                     {item.count > 0 ? (
-                      <p className="text-[11px] font-bold text-blue-600">
+                      <p className="text-[11px] font-bold text-cyan-200">
                         {item.count} {locale === "ar" ? "فعالية" : item.count === 1 ? "event" : "events"}
                       </p>
                     ) : null}
@@ -450,13 +450,13 @@ export function MarketplaceClient({
                   </span>
                   <div>
                     <p className="text-sm font-black">{item.title}</p>
-                    <p className="mt-1 text-xs leading-5 text-slate-500">{item.body}</p>
+                    <p className="mt-1 text-xs leading-5 text-slate-600">{item.body}</p>
                   </div>
                 </div>
               ))}
             </div>
             <div className="lg:text-right">
-              <p className="text-xs font-black uppercase tracking-[0.28em] text-slate-500">
+              <p className="text-xs font-black uppercase tracking-[0.28em] text-slate-600">
                 {locale === "ar" ? "طرق دفع آمنة" : "Secure payments"}
               </p>
               <div className="mt-4 flex flex-wrap gap-2.5 lg:justify-end">
@@ -648,7 +648,7 @@ function eventToModalCard(event: MarketplaceEvent, locale: LocaleCode): ModalCar
           </span>
           {event.venueName ? (
             <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-800">
-              <MapPin className="h-3.5 w-3.5 text-pink-500" />
+              <MapPin className="h-3.5 w-3.5 text-pink-700" />
               {event.venueName}
             </span>
           ) : null}
@@ -660,14 +660,14 @@ function eventToModalCard(event: MarketplaceEvent, locale: LocaleCode): ModalCar
           ) : null}
         </div>
         {description ? <p className="text-base leading-7 text-slate-600">{description}</p> : null}
-        <p className="text-sm font-bold text-slate-500">{event.organizerName}</p>
+        <p className="text-sm font-bold text-slate-600">{event.organizerName}</p>
       </div>
     ),
     actions: (
       <div className="flex flex-wrap items-center justify-between gap-4">
         <p className="text-lg font-black text-slate-900">
           {formatMoney(event.minPrice, event.currency, locale)}
-          <span className="ms-2 text-xs font-bold uppercase tracking-wider text-slate-500">
+          <span className="ms-2 text-xs font-bold uppercase tracking-wider text-slate-600">
             {ar ? "يبدأ من" : "from"}
           </span>
         </p>
@@ -729,7 +729,7 @@ function EventCard({
             <img src={event.coverImageUrl} alt="" className="h-full w-full object-cover transition duration-500 group-hover:scale-105" />
           ) : (
             <div className="flex h-full w-full items-center justify-center bg-[radial-gradient(circle_at_30%_20%,rgba(56,189,248,0.18),transparent_28%),linear-gradient(135deg,#111827,#281052_58%,#0f172a)]">
-              <Ticket className="h-10 w-10 text-slate-500" />
+              <Ticket className="h-10 w-10 text-slate-600" />
             </div>
           )}
           <div className="absolute inset-0 bg-gradient-to-t from-black/86 via-black/18 to-transparent" />
@@ -753,13 +753,13 @@ function EventCard({
       </button>
       <div className="space-y-4 p-5">
         <div className="flex items-start justify-between gap-4">
-          <p className="min-w-0 text-xs font-black uppercase tracking-[0.22em] text-slate-500">
+          <p className="min-w-0 text-xs font-black uppercase tracking-[0.22em] text-slate-600">
             {event.organizerName}
           </p>
           <button
             onClick={toggleFavorite}
             aria-label={saved ? "Remove from favorites" : "Save event"}
-            className="rounded-full border border-slate-200 p-2 text-slate-600 transition hover:text-pink-500"
+            className="rounded-full border border-slate-200 p-2 text-slate-600 transition hover:text-pink-700"
           >
             <Heart className={saved ? "h-4 w-4 fill-pink-400 text-pink-400" : "h-4 w-4"} />
           </button>
@@ -835,7 +835,7 @@ function EventQuickView({
               <img src={event.coverImageUrl} alt="" className="h-full w-full object-cover" />
             ) : (
               <div className="flex h-full min-h-[300px] items-center justify-center bg-[radial-gradient(circle_at_35%_20%,rgba(56,189,248,0.22),transparent_30%),linear-gradient(135deg,#111827,#2e1065_58%,#0f172a)]">
-                <Ticket className="h-16 w-16 text-slate-500" />
+                <Ticket className="h-16 w-16 text-slate-600" />
               </div>
             )}
             <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/18 to-transparent" />
@@ -909,7 +909,7 @@ function DetailRow({
     <div className="flex gap-3 rounded-2xl border border-slate-200 bg-white/[0.045] p-4">
       <Icon className="mt-0.5 h-5 w-5 shrink-0 text-blue-600" />
       <div>
-        <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">{label}</p>
+        <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-600">{label}</p>
         <p className="mt-1 text-sm font-bold text-slate-600">{value}</p>
       </div>
     </div>
@@ -919,9 +919,9 @@ function DetailRow({
 function EmptyState({ title, body }: { title: string; body: string }) {
   return (
     <div className="rounded-[2rem] border border-slate-200 bg-white p-10 text-center">
-      <Ticket className="mx-auto h-10 w-10 text-slate-500" />
+      <Ticket className="mx-auto h-10 w-10 text-slate-600" />
       <h3 className="mt-4 text-2xl font-black">{title}</h3>
-      <p className="mx-auto mt-3 max-w-xl text-slate-500">{body}</p>
+      <p className="mx-auto mt-3 max-w-xl text-slate-600">{body}</p>
     </div>
   );
 }
@@ -993,8 +993,8 @@ function CompactEventCard({
       </div>
       <div className="space-y-2 p-4">
         <h3 className="line-clamp-2 min-h-[3rem] text-base font-black leading-6">{title}</h3>
-        <p className="text-xs font-bold text-slate-500">{format(new Date(event.startsAt), "EEE, MMM d")}</p>
-        <p className="line-clamp-1 text-xs text-slate-500">{event.venueName || event.locationText || "Bahrain"}</p>
+        <p className="text-xs font-bold text-slate-600">{format(new Date(event.startsAt), "EEE, MMM d")}</p>
+        <p className="line-clamp-1 text-xs text-slate-600">{event.venueName || event.locationText || "Bahrain"}</p>
       </div>
     </button>
   );
@@ -1007,7 +1007,7 @@ function ThingsToDo({ copy, locale }: { copy: typeof enCopy; locale: LocaleCode 
     <section className="mb-16 rounded-[2rem] border border-slate-200 bg-white p-6 sm:p-8">
       <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="text-xs font-black uppercase tracking-[0.28em] text-pink-500">{copy.thingsEyebrow}</p>
+          <p className="text-xs font-black uppercase tracking-[0.28em] text-pink-700">{copy.thingsEyebrow}</p>
           <h2 className="mt-2 text-2xl font-black tracking-tight sm:text-4xl">{copy.thingsTitle}</h2>
         </div>
         <Link href="/" className="inline-flex items-center gap-2 text-sm font-black text-blue-600">
@@ -1023,7 +1023,7 @@ function ThingsToDo({ copy, locale }: { copy: typeof enCopy; locale: LocaleCode 
             className="rounded-2xl border border-slate-200 bg-black/20 p-5 transition hover:border-pink-200/40 hover:bg-black/30"
           >
             <p className="text-lg font-black">{item.title}</p>
-            <p className="mt-2 text-sm leading-6 text-slate-500">{item.body}</p>
+            <p className="mt-2 text-sm leading-6 text-slate-600">{item.body}</p>
           </Link>
         ))}
       </div>

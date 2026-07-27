@@ -84,7 +84,7 @@ export function MarketingNavbar() {
                 href="https://onestoneads.com/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="mt-1 w-fit pl-1 text-[9px] font-black uppercase tracking-[0.24em] text-slate-500 transition-colors hover:text-blue-600 sm:text-[10px]"
+                className="mt-1 w-fit pl-1 text-[9px] font-black uppercase tracking-[0.24em] text-slate-600 transition-colors hover:text-blue-600 sm:text-[10px]"
               >
                 A OneStone Platform
               </a>
@@ -109,7 +109,7 @@ export function MarketingNavbar() {
                         </div>
                         <div>
                           <p className="font-semibold text-slate-900">{product.name}</p>
-                          <p className="text-sm text-slate-500 mt-0.5">
+                          <p className="text-sm text-slate-600 mt-0.5">
                             {product.description}
                           </p>
                         </div>

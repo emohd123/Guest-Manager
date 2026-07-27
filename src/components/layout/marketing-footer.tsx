@@ -44,7 +44,7 @@ export function MarketingFooter() {
               href="https://onestoneads.com/"
               target="_blank"
               rel="noopener noreferrer"
-              className="mt-2 inline-block text-[10px] font-black uppercase tracking-[0.24em] text-slate-400 transition-colors hover:text-blue-600"
+              className="mt-2 inline-block text-[10px] font-black uppercase tracking-[0.24em] text-slate-600 transition-colors hover:text-blue-600"
             >
               A OneStone Platform
             </a>
@@ -81,7 +81,7 @@ export function MarketingFooter() {
               href="https://onestoneads.com/"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-primary hover:underline font-semibold"
+              className="text-violet-700 hover:underline font-semibold"
             >
               OneStone Ads
             </a>.

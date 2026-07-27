@@ -36,7 +36,7 @@ export function BrandWordmark({
       </div>
       {showSubtitle && (
         <div className="col-start-2 row-start-2 mt-2">
-          <span className="text-[10px] font-black uppercase tracking-[0.24em] text-muted-foreground/60 leading-none block">
+          <span className="text-[10px] font-black uppercase tracking-[0.24em] text-slate-600 leading-none block">
             A OneStone Platform
           </span>
         </div>
