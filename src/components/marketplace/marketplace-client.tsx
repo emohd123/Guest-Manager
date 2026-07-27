@@ -187,7 +187,7 @@ export function MarketplaceClient({
 
               <div className="mt-8 rounded-[2rem] border border-slate-200 bg-white p-3 shadow-[0_18px_60px_rgba(15,23,42,0.10)]">
                 <div className="grid gap-3 md:grid-cols-[1fr_auto_auto]">
-                  <label className="flex min-h-14 items-center gap-3 rounded-[1.4rem] bg-black/25 px-5">
+                  <label className="flex min-h-14 items-center gap-3 rounded-[1.4rem] border border-slate-200 bg-slate-50 px-5">
                     <Search className="h-5 w-5 shrink-0 text-slate-600" />
                     <input
                       value={query}
@@ -1020,7 +1020,7 @@ function ThingsToDo({ copy, locale }: { copy: typeof enCopy; locale: LocaleCode 
           <Link
             key={item.href}
             href={item.href}
-            className="rounded-2xl border border-slate-200 bg-black/20 p-5 transition hover:border-pink-200/40 hover:bg-black/30"
+            className="rounded-2xl border border-slate-200 bg-slate-50 p-5 transition hover:border-pink-300 hover:bg-white hover:shadow-md"
           >
             <p className="text-lg font-black">{item.title}</p>
             <p className="mt-2 text-sm leading-6 text-slate-600">{item.body}</p>

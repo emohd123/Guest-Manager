@@ -160,7 +160,7 @@ export function ModalCards({
           ) : null}
           <div className="relative p-4 sm:p-5">
             <h3 className="text-lg font-black tracking-tight text-white sm:text-xl">{card.title}</h3>
-            {card.subtitle ? <p className="mt-1 text-xs font-bold text-cyan-100/85 sm:text-sm">{card.subtitle}</p> : null}
+            {card.subtitle ? <p className="mt-1 text-xs font-bold text-cyan-100 sm:text-sm">{card.subtitle}</p> : null}
           </div>
         </button>
       ))}
@@ -219,7 +219,7 @@ export function ModalCards({
               >
                 {active.title}
               </h2>
-              {active.subtitle ? <p className="mt-2 text-base font-bold text-cyan-100/85">{active.subtitle}</p> : null}
+              {active.subtitle ? <p className="mt-2 text-base font-bold text-cyan-100">{active.subtitle}</p> : null}
               {active.content ? (
                 <div className="mt-5 text-white/75" style={closing ? undefined : entrance("mcRiseIn", 0.4)}>
                   {active.content}
