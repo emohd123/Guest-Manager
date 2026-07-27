@@ -83,7 +83,7 @@ export function ServicesForOrganisers() {
   return (
     <div className="relative min-h-screen overflow-hidden bg-[#f6f7fb] text-slate-900">
       <div className="pointer-events-none absolute inset-0 z-0">
-        <FallingSparkles className="absolute inset-0 h-full w-full" />
+        <FallingSparkles className="absolute inset-0 h-full w-full" colors={["#3B6CF6", "#6D28D9", "#0EA5E9", "#A855F7"]} composite="source-over" />
       </div>
 
       <div className="relative z-10 mx-auto max-w-none px-4 pt-32 pb-20 sm:px-8 lg:px-12 2xl:px-20">
