@@ -116,7 +116,7 @@ export default function AccountPage() {
           <AccountTool href="/account/orders" icon={ReceiptText} title="Orders" body="Review registration and checkout history." />
           <AccountTool href="/account/favorites" icon={Heart} title="Favorites" body="Saved events from this browser." />
           <AccountTool href="/account/notifications" icon={Bell} title="Updates" body="Event updates and ticket notices." />
-          <AccountTool href="/account/messages" icon={MessageSquare} title="Messages" body="Support conversations with Events Hub." />
+          <AccountTool href="/account/messages" icon={MessageSquare} title="Messages" body="Support conversations with iTicket." />
         </section>
 
         {summary?.adminAccess ? (
@@ -124,7 +124,7 @@ export default function AccountPage() {
             <div className="flex flex-col justify-between gap-5 md:flex-row md:items-center">
               <div>
                 <p className="text-xs font-black uppercase tracking-[0.24em] text-cyan-200">Internal access</p>
-                <h2 className="mt-2 text-2xl font-black">Events Hub admin dashboard is enabled</h2>
+                <h2 className="mt-2 text-2xl font-black">iTicket admin dashboard is enabled</h2>
                 <p className="mt-2 text-sm text-white/60">
                   Manage company-created events, tickets, guests, orders, scans, reports, and messages.
                 </p>
@@ -222,7 +222,7 @@ export default function AccountPage() {
                 <EmptyPanel
                   icon={MessageSquare}
                   title="No messages yet"
-                  body="Messages with the Events Hub team linked to your attendee email will appear here."
+                  body="Messages with the iTicket team linked to your attendee email will appear here."
                 />
               )}
             </div>
@@ -349,7 +349,7 @@ function MessageRow({ message }: { message: Record<string, any> }) {
   return (
     <div className="rounded-[1.25rem] border border-white/10 bg-white/[0.04] p-4">
       <p className="text-xs font-black uppercase tracking-[0.22em] text-cyan-200">
-        {message.admin_reply ? "Events Hub replied" : "Awaiting Events Hub reply"}
+        {message.admin_reply ? "iTicket replied" : "Awaiting iTicket reply"}
       </p>
       <h3 className="mt-2 font-black">{message.subject ?? "Message"}</h3>
       <p className="mt-2 text-sm leading-6 text-white/60">{message.body}</p>

@@ -68,7 +68,7 @@ export function MarketingNavbar() {
           <div className="flex items-center gap-8">
             <div className="flex flex-col">
               <div className="flex items-center gap-2.5">
-                <Link href="/" aria-label="Events Hub home">
+                <Link href="/" aria-label="iTicket home">
                   <BrandWordmark
                     className="gap-x-5"
                     markClassName="h-10 w-10 sm:h-14 sm:w-14"

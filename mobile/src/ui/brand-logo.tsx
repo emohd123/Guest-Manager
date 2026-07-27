@@ -7,8 +7,8 @@ type BrandLogoProps = {
   showWordmark?: boolean;
 };
 
-const pinSource = require("../../assets/events-hub-mark.png");
-const tileSource = require("../../assets/events-hub-icon.png");
+const pinSource = require("../../assets/iticket-mark.png");
+const tileSource = require("../../assets/iticket-icon.png");
 
 export function BrandLogo({
   size = 124,
@@ -70,8 +70,8 @@ export function BrandLogo({
           />
         </View>
         <Text style={styles.wordmarkText}>
-          <Text style={styles.wordmarkAccent}>Events</Text>
-          Hub
+          <Text style={styles.wordmarkAccent}>i</Text>
+          Ticket
         </Text>
       </View>
     );
@@ -110,7 +110,7 @@ const styles = StyleSheet.create({
     lineHeight: 34,
   },
   wordmarkAccent: {
-    color: "#6D5BFF",
+    color: "#5B8CFF",
   },
   tileFrame: {
     backgroundColor: "rgba(239,246,255,0.08)",

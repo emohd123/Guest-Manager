@@ -1,5 +1,5 @@
 export const palette = {
-  // Deep-space canvas — matches the Events Hub design system (#050712 base).
+  // Deep-space canvas — matches the iTicket design system (#050712 base).
   bg: "#050712",
   bgElevated: "#0C1226",
   bgMuted: "#141E3E",

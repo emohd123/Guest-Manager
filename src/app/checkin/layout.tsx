@@ -1,7 +1,7 @@
 import { ThemeProvider } from "@/providers/theme-provider";
 
 export const metadata = {
-  title: "Check-in App | Events Hub",
+  title: "Check-in App | iTicket",
   description: "Check in your guests quickly and securely.",
 };
 

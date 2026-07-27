@@ -50,7 +50,7 @@ const stats = [
   { value: "AR + EN", label: "Fully bilingual experience" },
   { value: "QR", label: "Instant tickets & fast scans" },
   { value: "24/7", label: "Support before & on event day" },
-  { value: "1 hub", label: "Ticketing, check-in & ops" },
+  { value: "1 app", label: "Ticketing, check-in & ops" },
 ];
 
 const services = [
@@ -64,7 +64,7 @@ const services = [
 
 const testimonials = [
   {
-    quote: "Events Hub ran our ticketing and door team end to end. Check-in was fast and the live numbers kept us in control all night.",
+    quote: "iTicket ran our ticketing and door team end to end. Check-in was fast and the live numbers kept us in control all night.",
     name: "Festival Organiser",
     role: "Bahrain Bay",
   },
@@ -91,7 +91,7 @@ export function ServicesForOrganisers() {
         <section className="grid items-center gap-12 lg:grid-cols-[1.1fr_0.9fr]">
           <div>
             <span className="inline-flex items-center gap-2 rounded-full border border-cyan-100/20 bg-cyan-100/[0.09] px-4 py-2 text-xs font-black uppercase tracking-[0.24em] text-cyan-50">
-              <Sparkles className="h-4 w-4" /> Events Hub for Organisers
+              <Sparkles className="h-4 w-4" /> iTicket for Organisers
             </span>
             <h1 className="mt-6 text-4xl font-black leading-[0.98] tracking-[-0.03em] sm:text-6xl">
               Built for Bahrain&apos;s{" "}
@@ -228,7 +228,7 @@ export function ServicesForOrganisers() {
 
         {/* BUILT-IN SERVICES */}
         <section className="mt-24">
-          <Eyebrow>Managed by Events Hub</Eyebrow>
+          <Eyebrow>Managed by iTicket</Eyebrow>
           <h2 className="mt-3 text-3xl font-black tracking-tight sm:text-5xl">Built-in services for successful events</h2>
           <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {services.map((s) => (

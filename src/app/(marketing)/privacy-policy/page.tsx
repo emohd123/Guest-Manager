@@ -4,11 +4,11 @@ import { Shield, Sparkles } from "lucide-react";
 const sections = [
   {
     title: "What We Collect",
-    body: "Events Hub processes the account, attendee, ticketing, device, and communication details that event organizers choose to store in the platform. This can include names, email addresses, phone numbers, ticket records, event metadata, and operational logs needed to run check-in, registration, and guest management workflows.",
+    body: "iTicket processes the account, attendee, ticketing, device, and communication details that event organizers choose to store in the platform. This can include names, email addresses, phone numbers, ticket records, event metadata, and operational logs needed to run check-in, registration, and guest management workflows.",
   },
   {
     title: "How We Use Information",
-    body: "We use this information to operate the Events Hub website and mobile app, authenticate users, process ticketing and registration actions, send transactional communications, support event operations, improve reliability, and protect the platform against abuse or fraud.",
+    body: "We use this information to operate the iTicket website and mobile app, authenticate users, process ticketing and registration actions, send transactional communications, support event operations, improve reliability, and protect the platform against abuse or fraud.",
   },
   {
     title: "Sharing and Service Providers",
@@ -16,11 +16,11 @@ const sections = [
   },
   {
     title: "Data Retention and Security",
-    body: "We retain event and account information for as long as needed to provide the service, comply with legal obligations, resolve disputes, and maintain operational records. Events Hub applies administrative, technical, and organizational safeguards to protect stored data, but no online system can be guaranteed to be perfectly secure.",
+    body: "We retain event and account information for as long as needed to provide the service, comply with legal obligations, resolve disputes, and maintain operational records. iTicket applies administrative, technical, and organizational safeguards to protect stored data, but no online system can be guaranteed to be perfectly secure.",
   },
   {
     title: "Your Choices",
-    body: "Account owners can update or delete event data within the product, and can contact us for privacy-related requests, support, or data questions. If you are an attendee and your information was collected by an organizer using Events Hub, please contact that organizer first so they can handle your request directly.",
+    body: "Account owners can update or delete event data within the product, and can contact us for privacy-related requests, support, or data questions. If you are an attendee and your information was collected by an organizer using iTicket, please contact that organizer first so they can handle your request directly.",
   },
 ];
 
@@ -42,7 +42,7 @@ export default function PrivacyPolicyPage() {
             </span>
           </h1>
           <p className="mt-6 text-lg text-white/60 leading-relaxed max-w-2xl mx-auto font-medium">
-            This policy explains how Events Hub collects, uses, and protects
+            This policy explains how iTicket collects, uses, and protects
             information across the website, dashboard, and mobile app.
           </p>
         </div>
@@ -54,7 +54,7 @@ export default function PrivacyPolicyPage() {
           <div className="space-y-3 pb-6 border-b border-white/5">
             <h2 className="text-xl font-bold text-white">Overview</h2>
             <p className="text-sm leading-7 text-white/60">
-              Events Hub provides event registration, ticketing, attendee
+              iTicket provides event registration, ticketing, attendee
               engagement, guest management, and on-site check-in tools. By
               using our services, you agree that we may process information as
               described in this policy to deliver those services.
@@ -71,7 +71,7 @@ export default function PrivacyPolicyPage() {
           <div id="cookies" className="space-y-3 pb-6 border-b border-white/5 scroll-mt-24">
             <h2 className="text-xl font-bold text-white">Cookies and Similar Technologies</h2>
             <p className="text-sm leading-7 text-white/60">
-              Events Hub uses cookies and related technologies to keep users
+              iTicket uses cookies and related technologies to keep users
               signed in, remember product preferences, measure product
               performance, and improve reliability. Where required, you should
               obtain any attendee consent needed for technologies you configure
@@ -95,7 +95,7 @@ export default function PrivacyPolicyPage() {
           </div>
         </div>
 
-        <p className="text-center text-xs text-white/30 mt-8">Last updated: June 2026 · Events Hub, a OneStone Ads platform</p>
+        <p className="text-center text-xs text-white/30 mt-8">Last updated: June 2026 · iTicket, a OneStone Ads platform</p>
       </section>
     </div>
   );

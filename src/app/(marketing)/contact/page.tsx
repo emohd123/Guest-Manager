@@ -45,7 +45,7 @@ export default function ContactPage() {
             </span>
           </h1>
           <p className="mt-6 text-lg text-white/60 leading-relaxed font-medium">
-            Have questions about Events Hub? Our team is here to help you find
+            Have questions about iTicket? Our team is here to help you find
             the right solution for your events.
           </p>
         </div>

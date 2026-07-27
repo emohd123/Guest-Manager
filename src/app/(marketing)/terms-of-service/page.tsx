@@ -4,7 +4,7 @@ import { FileText } from "lucide-react";
 const sections = [
   {
     title: "Use of the Service",
-    body: "Events Hub may be used by event organizers, venue teams, and authorized staff to manage registrations, guests, ticketing, attendee communications, and check-in operations. You are responsible for maintaining accurate account information and for ensuring that your team uses the platform lawfully and responsibly.",
+    body: "iTicket may be used by event organizers, venue teams, and authorized staff to manage registrations, guests, ticketing, attendee communications, and check-in operations. You are responsible for maintaining accurate account information and for ensuring that your team uses the platform lawfully and responsibly.",
   },
   {
     title: "Customer Responsibilities",
@@ -12,15 +12,15 @@ const sections = [
   },
   {
     title: "Payments and Third-Party Services",
-    body: "Payments, email delivery, authentication, hosting, and other platform functions may rely on third-party providers. Events Hub is not responsible for outages, delays, or failures caused by those providers, but we will make commercially reasonable efforts to maintain reliable service.",
+    body: "Payments, email delivery, authentication, hosting, and other platform functions may rely on third-party providers. iTicket is not responsible for outages, delays, or failures caused by those providers, but we will make commercially reasonable efforts to maintain reliable service.",
   },
   {
     title: "Availability and Changes",
-    body: "We may improve, modify, or discontinue features from time to time. We aim to keep Events Hub available and secure, but we do not guarantee uninterrupted or error-free service, especially during maintenance windows, network failures, or incidents outside our control.",
+    body: "We may improve, modify, or discontinue features from time to time. We aim to keep iTicket available and secure, but we do not guarantee uninterrupted or error-free service, especially during maintenance windows, network failures, or incidents outside our control.",
   },
   {
     title: "Liability",
-    body: "To the maximum extent permitted by law, Events Hub is provided on an as-available basis. We are not liable for indirect, incidental, special, consequential, or punitive damages, or for lost profits, lost data, or event losses arising from use of the service.",
+    body: "To the maximum extent permitted by law, iTicket is provided on an as-available basis. We are not liable for indirect, incidental, special, consequential, or punitive damages, or for lost profits, lost data, or event losses arising from use of the service.",
   },
 ];
 
@@ -42,7 +42,7 @@ export default function TermsOfServicePage() {
             </span>
           </h1>
           <p className="mt-6 text-lg text-white/60 leading-relaxed max-w-2xl mx-auto font-medium">
-            These terms govern access to the Events Hub website, dashboard, and
+            These terms govern access to the iTicket website, dashboard, and
             companion mobile applications.
           </p>
         </div>
@@ -55,7 +55,7 @@ export default function TermsOfServicePage() {
             <h2 className="text-xl font-bold text-white">Agreement</h2>
             <p className="text-sm leading-7 text-white/60">
               By creating an account, accessing the dashboard, or using the
-              Events Hub mobile app, you agree to these terms and to our{" "}
+              iTicket mobile app, you agree to these terms and to our{" "}
               <Link href="/privacy-policy" className="font-semibold text-blue-400 hover:text-blue-300 transition-colors">
                 privacy policy
               </Link>. If you are using the service on behalf of an
@@ -74,7 +74,7 @@ export default function TermsOfServicePage() {
           <div className="space-y-3 pt-2 pb-6 border-b border-white/5">
             <h2 className="text-xl font-bold text-white">Termination</h2>
             <p className="text-sm leading-7 text-white/60">
-              We may suspend or terminate access to Events Hub if accounts are
+              We may suspend or terminate access to iTicket if accounts are
               used unlawfully, abusively, or in a way that threatens the
               security, integrity, or availability of the platform.
             </p>
@@ -92,12 +92,12 @@ export default function TermsOfServicePage() {
               <Link href="/contact" className="font-semibold text-blue-400 hover:text-blue-300 transition-colors">
                 contact page
               </Link>{" "}
-              on the Events Hub website.
+              on the iTicket website.
             </p>
           </div>
         </div>
 
-        <p className="text-center text-xs text-white/30 mt-8">Last updated: June 2026 · Events Hub, a OneStone Ads platform</p>
+        <p className="text-center text-xs text-white/30 mt-8">Last updated: June 2026 · iTicket, a OneStone Ads platform</p>
       </section>
     </div>
   );

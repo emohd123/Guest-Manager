@@ -20,7 +20,7 @@ export default function SignupPage() {
         </Link>
         <h1 className="text-3xl font-black">Admin access is invite-only</h1>
         <p className="mt-4 text-white/65">
-          Events Hub creates and manages event dashboards internally. For managed event,
+          iTicket creates and manages event dashboards internally. For managed event,
           ticketing, or check-in support, contact the team and we will set up the right workspace.
         </p>
         <Button asChild className="mt-8 rounded-full bg-white px-8 font-black text-black hover:bg-white/90">

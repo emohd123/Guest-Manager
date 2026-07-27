@@ -10,7 +10,7 @@ const plans = [
   {
     name: "Free",
     price: 0,
-    description: "For trying out Events Hub",
+    description: "For trying out iTicket",
     credits: 50,
     features: [
       "50 check-in credits/month",

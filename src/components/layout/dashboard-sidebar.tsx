@@ -120,11 +120,11 @@ export function DashboardSidebar({ collapsed, onToggle }: DashboardSidebarProps)
       {/* Logo */}
       <div className="flex h-20 items-center justify-between px-6">
         {collapsed ? (
-          <Link href="/dashboard" aria-label="Events Hub dashboard">
+          <Link href="/dashboard" aria-label="iTicket dashboard">
             <BrandMark className="h-11 w-11" />
           </Link>
         ) : (
-          <Link href="/dashboard" aria-label="Events Hub dashboard">
+          <Link href="/dashboard" aria-label="iTicket dashboard">
             <BrandWordmark
               className="gap-2.5"
               markClassName="h-11 w-11"

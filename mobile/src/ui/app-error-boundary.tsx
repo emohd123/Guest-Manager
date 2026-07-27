@@ -32,7 +32,7 @@ export class AppErrorBoundary extends React.Component<Props, State> {
     return (
       <ScrollView contentContainerStyle={styles.container}>
         <View style={styles.card}>
-          <Text style={styles.eyebrow}>Events Hub</Text>
+          <Text style={styles.eyebrow}>iTicket</Text>
           <Text style={styles.title}>The app hit a startup problem</Text>
           <Text style={styles.body}>
             We kept the app from closing so you can retry. If this keeps happening,

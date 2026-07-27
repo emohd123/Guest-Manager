@@ -96,7 +96,7 @@ export function makeTicketCanvas(): HTMLCanvasElement {
   // Title
   ctx.fillStyle = "#ffffff";
   ctx.font = "800 88px Arial";
-  ctx.fillText("Events Hub", 440, 160);
+  ctx.fillText("iTicket", 440, 160);
 
   // Subtitle
   ctx.font = "600 28px Arial";
@@ -132,7 +132,7 @@ export function makeTicketCanvas(): HTMLCanvasElement {
   drawQr(ctx, 1000, 375, 140, 19, {
     dark: "#00f0ff",
     light: "#0b0d1e",
-    text: "https://app.eventshub.com/t/9021882",
+    text: "https://app.iticket.com/t/9021882",
   });
   ctx.fillStyle = "#8b9bb4";
   ctx.font = "600 14px Arial";
@@ -162,7 +162,7 @@ export function makeTicketCanvas(): HTMLCanvasElement {
   drawQr(ctx, 848, 635, 64, 31, {
     dark: "#00f0ff",
     light: "#0b0d1e",
-    text: "https://app.eventshub.com/download",
+    text: "https://app.iticket.com/download",
   });
   ctx.fillStyle = "#8b9bb4";
   ctx.font = "600 13px Arial";
@@ -248,7 +248,7 @@ export function makeTicketBackCanvas(): HTMLCanvasElement {
   ctx.font = "900 96px Arial";
   // Center align text
   ctx.textAlign = "center";
-  ctx.fillText("Events Hub", w / 2, 520);
+  ctx.fillText("iTicket", w / 2, 520);
   
   ctx.fillStyle = "#7c3aed";
   ctx.font = "800 28px Arial";
@@ -310,7 +310,7 @@ export function makeQrCanvas(seed = 11): HTMLCanvasElement {
   drawQr(ctx, pad, pad + 28, s - 2 * pad, seed, {
     dark: "#00f0ff",
     light: "#0b0d1e",
-    text: "https://app.eventshub.com/scan",
+    text: "https://app.iticket.com/scan",
   });
 
   return c;

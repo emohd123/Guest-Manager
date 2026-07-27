@@ -278,7 +278,7 @@ export default function CheckInAppPage() {
             </span>
           </h2>
           <p className="mt-4 text-white/60 text-lg">
-            Join thousands of event organizers who trust Events Hub.
+            Join thousands of event organizers who trust iTicket.
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-4">
             <Button

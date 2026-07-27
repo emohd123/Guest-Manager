@@ -2,7 +2,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import type { MarketplaceEvent } from "@/types/marketplace";
 
 /**
- * Events Hub AI layer.
+ * iTicket AI layer.
  *
  * Tiers (best available wins, each grounded in the live marketplace events):
  *  1. ANTHROPIC_API_KEY set → real Claude.
@@ -87,7 +87,7 @@ async function askPollinations(system: string, user: string): Promise<string | n
     const url = `https://text.pollinations.ai/${encodeURIComponent(user.slice(0, 4000))}?system=${encodeURIComponent(system.slice(0, 6000))}`;
     // Pollinations rejects some default library user agents.
     const res = await fetch(url, {
-      headers: { "user-agent": "EventsHub/1.0 (server)" },
+      headers: { "user-agent": "iTicket/1.0 (server)" },
       signal: AbortSignal.timeout(25_000),
     });
     if (!res.ok) return null;
@@ -196,7 +196,7 @@ const CONCIERGE_SCHEMA = {
 
 function conciergeSystem(eventsJson: string, locale: "en" | "ar") {
   return [
-    "You are the Events Hub concierge for Bahrain — a warm, concise local guide for events, dining, and things to do.",
+    "You are the iTicket concierge for Bahrain — a warm, concise local guide for events, dining, and things to do.",
     "You may ONLY recommend events from the JSON list below. Never invent events, prices, dates, or venues.",
     "Prices are in BHD. Dates are ISO 8601 (Bahrain time, UTC+3).",
     `Default reply language: ${locale === "ar" ? "Arabic" : "English"} — but always mirror the language the user writes in (Arabic in, Arabic out).`,
@@ -454,7 +454,7 @@ function smartListingWriter(bullets: string): AiResult {
   const description = [
     `${first}.`,
     ...lines.slice(1).map((line) => (line.endsWith(".") ? line : line + ".")),
-    "Book your spot on Events Hub — limited availability.",
+    "Book your spot on iTicket — limited availability.",
   ].join(" ");
   const reply = JSON.stringify(
     {
@@ -553,7 +553,7 @@ export async function runAi(
       const bullets = (body.bullets ?? body.message ?? "").trim();
       if (!bullets) return { reply: "", eventIds: [], source: "smart" };
       const system =
-        "You write event listings for Events Hub Bahrain. From the organiser's bullet points, produce STRICT JSON with keys: title, shortDescription (<=180 chars), description (2-3 paragraphs, warm, factual), titleAr, shortDescriptionAr, descriptionAr (natural Arabic, not literal). No markdown, JSON only.";
+        "You write event listings for iTicket Bahrain. From the organiser's bullet points, produce STRICT JSON with keys: title, shortDescription (<=180 chars), description (2-3 paragraphs, warm, factual), titleAr, shortDescriptionAr, descriptionAr (natural Arabic, not literal). No markdown, JSON only.";
       if (client) {
         try {
           return await claudeText(client, system, bullets);

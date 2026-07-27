@@ -70,7 +70,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: `Your message has been sent to the Events Hub team for "${event.title}".`,
+      message: `Your message has been sent to the iTicket team for "${event.title}".`,
     });
   } catch (error) {
     if (error instanceof z.ZodError) {

@@ -1,7 +1,7 @@
 import MagicBento from "@/components/magic-bento/MagicBento";
 
 export const metadata = {
-  title: "Magic Bento — Events Hub",
+  title: "Magic Bento — iTicket",
 };
 
 export default function MagicBentoPage() {

@@ -36,7 +36,7 @@ const labels = {
     eventNotFoundBody: "This event may have been moved, deleted, or is not yet published.",
     returnHome: "Return Home",
     notPublic: "This event page is not public yet",
-    notPublicBody: "The Events Hub team has not published this event page yet.",
+    notPublicBody: "The iTicket team has not published this event page yet.",
     exploreEvents: "Explore Events",
     date: "Date",
     time: "Time",
@@ -46,7 +46,7 @@ const labels = {
     paid: "Paid",
     free: "Free",
     about: "About this event",
-    fallbackDescription: "Join us for an unforgettable experience. More event details will be added by the Events Hub team soon.",
+    fallbackDescription: "Join us for an unforgettable experience. More event details will be added by the iTicket team soon.",
     location: "Location",
     locationFallback: "Virtual Event or Venue TBD",
     showMap: "Show on map",
@@ -79,7 +79,7 @@ const labels = {
     eventNotFoundBody: "قد تكون هذه الفعالية غير منشورة أو تم نقلها.",
     returnHome: "العودة للرئيسية",
     notPublic: "صفحة الفعالية غير منشورة بعد",
-    notPublicBody: "لم ينشر فريق Events Hub هذه الصفحة بعد.",
+    notPublicBody: "لم ينشر فريق iTicket هذه الصفحة بعد.",
     exploreEvents: "استكشف الفعاليات",
     date: "التاريخ",
     time: "الوقت",
@@ -89,7 +89,7 @@ const labels = {
     paid: "مدفوعة",
     free: "مجانية",
     about: "عن الفعالية",
-    fallbackDescription: "انضم إلينا لتجربة مميزة. سيتم إضافة المزيد من التفاصيل قريبا من فريق Events Hub.",
+    fallbackDescription: "انضم إلينا لتجربة مميزة. سيتم إضافة المزيد من التفاصيل قريبا من فريق iTicket.",
     location: "الموقع",
     locationFallback: "فعالية افتراضية أو موقع يحدد لاحقا",
     showMap: "عرض على الخريطة",
@@ -314,12 +314,12 @@ export default function PublicEventPage({
     : [
         "Digital tickets are issued immediately after successful confirmation.",
         "Please bring a valid QR ticket and matching registration email.",
-        "Entry timing and venue rules may be updated by the Events Hub team.",
+        "Entry timing and venue rules may be updated by the iTicket team.",
       ];
   const supportItems = [
     { icon: ShieldCheck, title: "Secure Checkout", body: "Protected payment and verified order flow." },
     { icon: CheckCircle2, title: "Instant confirmation", body: "Tickets are delivered to your email." },
-    { icon: Ticket, title: "Official ticketing", body: "Managed directly by Events Hub." },
+    { icon: Ticket, title: "Official ticketing", body: "Managed directly by iTicket." },
     { icon: Headphones, title: "Customer support", body: "Help before and after your booking." },
   ];
 
@@ -333,7 +333,7 @@ export default function PublicEventPage({
             <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-zinc-950 text-white">
               <Ticket className="h-5 w-5" />
             </span>
-            <span className="text-xl font-black tracking-tight">Events Hub</span>
+            <span className="text-xl font-black tracking-tight">iTicket</span>
           </Link>
           <nav className="hidden items-center gap-7 text-sm font-bold text-zinc-600 md:flex">
             <Link href="/events" className="hover:text-zinc-950">Events</Link>
@@ -375,7 +375,7 @@ export default function PublicEventPage({
               <div className="flex h-full w-full items-center justify-center bg-[radial-gradient(circle_at_30%_20%,#d946ef,transparent_32%),linear-gradient(135deg,#111827,#312e81_55%,#0f172a)]">
                 <div className="rounded-2xl border border-white/20 bg-white/10 px-6 py-4 text-center text-white backdrop-blur">
                   <Ticket className="mx-auto mb-3 h-9 w-9" />
-                  <p className="text-sm font-black uppercase tracking-[0.28em]">Events Hub Bahrain</p>
+                  <p className="text-sm font-black uppercase tracking-[0.28em]">iTicket Bahrain</p>
                 </div>
               </div>
             )}
@@ -398,7 +398,7 @@ export default function PublicEventPage({
                     <Star key={index} className="h-4 w-4 fill-current" />
                   ))}
                 </span>
-                <span className="text-sm font-semibold text-zinc-500">Verified Events Hub experience</span>
+                <span className="text-sm font-semibold text-zinc-500">Verified iTicket experience</span>
               </div>
               <h1 className="max-w-3xl text-4xl font-black tracking-tight text-zinc-950 md:text-5xl">
                 {eventTitle}
@@ -565,7 +565,7 @@ export default function PublicEventPage({
             </section>
 
             <section className="rounded-2xl border border-zinc-200 bg-white p-5">
-              <h3 className="mb-5 text-lg font-black">Why buy with Events Hub?</h3>
+              <h3 className="mb-5 text-lg font-black">Why buy with iTicket?</h3>
               <div className="space-y-5">
                 {supportItems.map((item) => {
                   const Icon = item.icon;

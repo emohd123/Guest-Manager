@@ -64,7 +64,7 @@ export async function POST(request: NextRequest) {
       message:
         (guestData?.length ?? 0) > 0
           ? `Connected to "${eventData.title}" successfully!`
-          : `Event found! Your ticket will appear once the Events Hub team links it to your email.`,
+          : `Event found! Your ticket will appear once the iTicket team links it to your email.`,
     });
   } catch (error) {
     if (error instanceof z.ZodError) {

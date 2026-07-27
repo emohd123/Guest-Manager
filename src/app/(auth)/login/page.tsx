@@ -130,7 +130,7 @@ function LoginForm() {
     <Card className="w-full max-w-md rounded-[32px] border-border/80 bg-card/95 shadow-2xl">
       <CardHeader className="text-center">
         <div className="flex justify-center">
-          <Link href="/" aria-label="Events Hub home">
+          <Link href="/" aria-label="iTicket home">
             <BrandWordmark
               className="gap-3"
               markClassName="h-12 w-12"
@@ -139,7 +139,7 @@ function LoginForm() {
           </Link>
         </div>
         <CardTitle className="mt-4 text-2xl font-bold tracking-tight">Admin sign in</CardTitle>
-        <CardDescription>For internal Events Hub dashboard access only</CardDescription>
+        <CardDescription>For internal iTicket dashboard access only</CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleLogin} className="space-y-4">
@@ -243,7 +243,7 @@ function LoginForm() {
         <p className="text-center text-sm text-muted-foreground">
           Need internal dashboard access?{" "}
           <Link href="/contact?source=admin-access" className="text-primary hover:underline">
-            Contact Events Hub
+            Contact iTicket
           </Link>
         </p>
         <Link

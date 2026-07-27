@@ -107,7 +107,7 @@ export async function sendRegistrationConfirmation(data: RegistrationEmailData) 
           <tr>
             <td style="padding: 24px 40px; border-top: 1px solid #f0f0f0; text-align: center;">
               <p style="margin: 0; font-size: 13px; color: #9ca3af;">
-                Powered by <a href="${appUrl}" style="color: #377DFF; text-decoration: none;">Events Hub</a>
+                Powered by <a href="${appUrl}" style="color: #377DFF; text-decoration: none;">iTicket</a>
               </p>
             </td>
           </tr>
@@ -120,7 +120,7 @@ export async function sendRegistrationConfirmation(data: RegistrationEmailData) 
 
   const text = `You're registered for ${data.eventTitle}!\n\nHi ${data.attendeeName},\n\nThanks for registering!\n\nEvent: ${data.eventTitle}\nDate: ${data.eventDate}\n${data.eventLocation ? `Location: ${data.eventLocation}\n` : ""}Order #${data.orderNumber}\n\nTickets:\n${data.tickets
     .map((ticket) => `- ${ticket.name} x ${ticket.quantity}: ${ticket.price === 0 ? "Free" : formatMoney(ticket.price * ticket.quantity, ticket.currency ?? data.currency ?? "BHD")}`)
-    .join("\n")}\n\nTotal: ${data.isFree ? "Free" : formatMoney(data.total, data.currency ?? data.tickets[0]?.currency ?? "BHD")}\n\nPowered by Events Hub`;
+    .join("\n")}\n\nTotal: ${data.isFree ? "Free" : formatMoney(data.total, data.currency ?? data.tickets[0]?.currency ?? "BHD")}\n\nPowered by iTicket`;
 
   return resend.emails.send({
     from: fromEmail,

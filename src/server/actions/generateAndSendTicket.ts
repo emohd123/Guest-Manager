@@ -190,7 +190,7 @@ export async function generateAndSendTicket(payload: TicketEmailPayload): Promis
   }
 
   const resend = new Resend(resendApiKey);
-  const senderName = ticketSentEmail.senderName ?? "Events Hub";
+  const senderName = ticketSentEmail.senderName ?? "iTicket";
   const configuredFrom = process.env.RESEND_FROM_EMAIL?.trim();
   const fromEmail =
     configuredFrom && configuredFrom !== "noreply@yourdomain.com"

@@ -909,7 +909,7 @@ export function VisitorDashboardScreen({
                   <View style={styles.sectionAccentBar} />
                   <View style={{ flex: 1 }}>
                     <Text style={styles.discoverEyebrow}>Discover events</Text>
-                    <Text style={styles.discoverSub}>More Bahrain events on Events Hub</Text>
+                    <Text style={styles.discoverSub}>More Bahrain events on iTicket</Text>
                   </View>
                 </View>
                 <View style={styles.discoverGrid}>
@@ -1010,7 +1010,7 @@ export function VisitorDashboardScreen({
             {agenda.length === 0 ? (
               <EmptyState
                 title="No sessions published yet"
-                body="Once the Events Hub team publishes the agenda, your full schedule and live links will appear here."
+                body="Once the iTicket team publishes the agenda, your full schedule and live links will appear here."
               />
             ) : (
               agenda.map((sessionItem, index) => (
@@ -1410,7 +1410,7 @@ export function VisitorDashboardScreen({
               {messages.length === 0 ? (
                 <EmptyState
                   title="No message history"
-                  body="Start a conversation with the Events Hub team for access help, guest updates, or VIP requests."
+                  body="Start a conversation with the iTicket team for access help, guest updates, or VIP requests."
                 />
               ) : (
                 messages.map((message) => (
@@ -1419,11 +1419,11 @@ export function VisitorDashboardScreen({
                     <Text style={styles.messageBody}>{message.body}</Text>
                     {message.adminReply ? (
                       <View style={styles.replyCard}>
-                        <Text style={styles.replyLabel}>Events Hub reply</Text>
+                        <Text style={styles.replyLabel}>iTicket reply</Text>
                         <Text style={styles.replyBody}>{message.adminReply}</Text>
                       </View>
                     ) : (
-                      <Text style={styles.pendingReply}>Awaiting Events Hub reply</Text>
+                      <Text style={styles.pendingReply}>Awaiting iTicket reply</Text>
                     )}
                     <Text style={styles.notificationMeta}>
                       {[message.eventName, fmtDate(message.createdAt)].filter(Boolean).join(" • ")}

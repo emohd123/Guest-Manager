@@ -176,7 +176,7 @@ function InteractiveTicket() {
             <div className="flex items-center gap-2">
               <BrandMark className="h-7 w-7 text-white" />
               <div className="flex flex-col">
-                <span className="text-sm font-black uppercase tracking-tight text-white leading-none">Events Hub</span>
+                <span className="text-sm font-black uppercase tracking-tight text-white leading-none">iTicket</span>
                 <span className="text-[7px] font-black uppercase tracking-[0.15em] text-white/45">OneStone Ads</span>
               </div>
             </div>
@@ -253,7 +253,7 @@ export function LandingHero() {
             </div>
 
             <h1 className="text-5xl font-black leading-[0.95] tracking-tighter text-white sm:text-6xl lg:text-6xl xl:text-7xl uppercase">
-              <span className="block">Event Hub</span>
+              <span className="block">iTicket</span>
               <ShinyText>Your Events Gateway</ShinyText>
             </h1>
 

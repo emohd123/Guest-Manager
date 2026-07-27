@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "Events Hub",
+    "name": "iTicket",
     "slug": "events-hub",
     "version": "0.1.0",
     "scheme": "eventshub",
@@ -25,9 +25,9 @@
         "POST_NOTIFICATIONS"
       ]
     },
-    "icon": "./assets/events-hub-icon.png",
+    "icon": "./assets/iticket-icon.png",
     "splash": {
-      "image": "./assets/events-hub-splash.png",
+      "image": "./assets/iticket-splash.png",
       "resizeMode": "contain",
       "backgroundColor": "#0A1020"
     },
@@ -49,7 +49,7 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "Events Hub uses the camera to scan tickets and attendee QR codes during live event check-in."
+          "cameraPermission": "iTicket uses the camera to scan tickets and attendee QR codes during live event check-in."
         }
       ],
       [

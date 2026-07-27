@@ -24,14 +24,14 @@ export function BrandWordmark({
       <div className="col-start-2 row-start-1 flex items-center">
         <span
           className={cn(
-            "inline-flex items-baseline gap-1.5 text-[1.8rem] font-black tracking-[-0.065em] leading-none",
+            "inline-flex items-baseline text-[1.8rem] font-black tracking-[-0.045em] leading-none",
             textClassName
           )}
         >
-          <span className="bg-[linear-gradient(135deg,#2563eb,#7c3aed_50%,#db2777)] bg-clip-text text-transparent">
-            Events
+          <span className="bg-[linear-gradient(135deg,#3b6cf6,#6d28d9)] bg-clip-text text-transparent">
+            i
           </span>
-          <span className="text-current">Hub</span>
+          <span className="text-current">Ticket</span>
         </span>
       </div>
       {showSubtitle && (

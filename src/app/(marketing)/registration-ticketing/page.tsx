@@ -159,11 +159,11 @@ export default function RegistrationTicketingPage() {
         </div>
       </section>
 
-      {/* Why Events Hub */}
+      {/* Why iTicket */}
       <section className="border-t border-white/5 bg-[#0c0e17] px-4 py-20">
         <div className="mx-auto max-w-3xl">
           <h2 className="mb-10 text-center text-4xl font-black uppercase tracking-tighter text-white">
-            Why Choose <span className="text-purple-400">Events Hub?</span>
+            Why Choose <span className="text-purple-400">iTicket?</span>
           </h2>
           <div className="space-y-3">
             {[

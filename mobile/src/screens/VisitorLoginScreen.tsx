@@ -48,7 +48,7 @@ export function VisitorLoginScreen({
       icon="ticket-outline"
       eyebrow="Visitor Portal"
       title="Sign in to your event space"
-      subtitle="Access tickets, event updates, agenda changes, and Events Hub messages from one place."
+      subtitle="Access tickets, event updates, agenda changes, and iTicket messages from one place."
       footer={
         <Text style={styles.footerText}>
           Don&apos;t have an account?{" "}

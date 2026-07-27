@@ -66,7 +66,7 @@ export function ComposeMessageScreen({
     <AuthScreenLayout
       onBack={onBack}
       icon="mail-outline"
-      eyebrow="Events Hub Inbox"
+      eyebrow="iTicket Inbox"
       title="Send a message to the event team"
       subtitle="Use the same premium attendee shell to send questions, requests, or event support notes."
     >

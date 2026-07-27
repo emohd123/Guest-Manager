@@ -522,14 +522,14 @@ export function MarketplaceClient({
 const enTrust = [
   { icon: ShieldCheck, title: "Secure checkout", body: "Encrypted payments with Visa, Mastercard, Apple Pay & Benefit." },
   { icon: Zap, title: "Instant QR tickets", body: "Get your scannable tickets by email the moment you pay." },
-  { icon: BadgeCheck, title: "Official ticket seller", body: "Real events curated and managed by the Events Hub team." },
+  { icon: BadgeCheck, title: "Official ticket seller", body: "Real events curated and managed by the iTicket team." },
   { icon: Headphones, title: "24/7 support", body: "Help before, during, and after every event you book." },
 ];
 
 const arTrust = [
   { icon: ShieldCheck, title: "دفع آمن", body: "مدفوعات مشفّرة عبر فيزا وماستركارد وآبل باي وبنفت." },
   { icon: Zap, title: "تذاكر QR فورية", body: "تصلك تذاكرك القابلة للمسح عبر البريد فور الدفع." },
-  { icon: BadgeCheck, title: "بائع تذاكر رسمي", body: "فعاليات حقيقية يديرها فريق Events Hub." },
+  { icon: BadgeCheck, title: "بائع تذاكر رسمي", body: "فعاليات حقيقية يديرها فريق iTicket." },
   { icon: Headphones, title: "دعم على مدار الساعة", body: "مساعدة قبل وأثناء وبعد كل حجز." },
 ];
 
@@ -1031,14 +1031,14 @@ function ThingsToDo({ copy, locale }: { copy: typeof enCopy; locale: LocaleCode 
 }
 
 const enCopy = {
-  eyebrow: "Events Hub Bahrain",
+  eyebrow: "iTicket Bahrain",
   liveInBahrain: "Live in Bahrain",
   titleLead: "Every event in Bahrain,",
-  titleAccent: "ONE HUB",
-  title: "Every event in Bahrain, ONE HUB",
+  titleAccent: "iTicket",
+  title: "Every event in Bahrain, iTicket",
   subtitle:
     "Browse curated events, reserve QR tickets, and let our team run ticketing, check-in, and guest ops end to end.",
-  quickStats: ["BHD payments", "Arabic + English", "QR tickets", "Managed by Events Hub"],
+  quickStats: ["BHD payments", "Arabic + English", "QR tickets", "Managed by iTicket"],
   searchPlaceholder: "Search events, venues, artists, services...",
   allCategories: "All categories",
   explore: "Explore",
@@ -1048,12 +1048,12 @@ const enCopy = {
   loading: "Updating...",
   emptyTitle: "No public events yet",
   emptyBody: "Published events with public ticketing will appear here automatically.",
-  servicesEyebrow: "Managed by Events Hub",
+  servicesEyebrow: "Managed by iTicket",
   servicesTitle: "Need us to run the event with you?",
   servicesBody:
     "Our admin team can handle ticketing, registration, staffing, check-in devices, guest data, reporting, and attendee communication.",
   workWithUs: "Work with us",
-  managedService: "Managed planning, ticketing, and event operations by the Events Hub team.",
+  managedService: "Managed planning, ticketing, and event operations by the iTicket team.",
   popularEyebrow: "Top events",
   popularTitle: "Most popular events",
   weekendEyebrow: "This weekend",
@@ -1076,7 +1076,7 @@ const arCopy = {
     "\u062f\u0641\u0639 \u0628\u0627\u0644\u062f\u064a\u0646\u0627\u0631",
     "\u0639\u0631\u0628\u064a + \u0625\u0646\u062c\u0644\u064a\u0632\u064a",
     "\u062a\u0630\u0627\u0643\u0631 QR",
-    "\u0628\u0625\u062f\u0627\u0631\u0629 Events Hub",
+    "\u0628\u0625\u062f\u0627\u0631\u0629 iTicket",
   ],
   searchPlaceholder: "\u0627\u0628\u062d\u062b \u0639\u0646 \u0641\u0639\u0627\u0644\u064a\u0629 \u0623\u0648 \u0645\u0643\u0627\u0646 \u0623\u0648 \u062e\u062f\u0645\u0629...",
   allCategories: "\u0643\u0644 \u0627\u0644\u0641\u0626\u0627\u062a",

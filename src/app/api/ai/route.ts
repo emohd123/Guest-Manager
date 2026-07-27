@@ -6,7 +6,7 @@ import { runAi, type AiRequestBody } from "@/server/ai/marketplace-ai";
 import type { MarketplaceDiscoveryResponse } from "@/types/marketplace";
 
 /**
- * Events Hub AI endpoint.
+ * iTicket AI endpoint.
  * Grounds every answer in the live marketplace via the existing discover API,
  * then routes to Claude (when ANTHROPIC_API_KEY is set) or the smart fallback.
  */

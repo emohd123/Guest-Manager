@@ -83,7 +83,7 @@ export default function ForgotPasswordPage() {
     <Card>
       <CardHeader className="text-center">
         <CardTitle className="text-2xl font-bold">
-          <span className="text-primary">Events</span> Hub
+          <span className="text-primary">i</span>Ticket
         </CardTitle>
         <CardDescription>
           Enter your admin email and we&apos;ll send you a reset link
