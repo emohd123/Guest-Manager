@@ -187,10 +187,10 @@ export function ServicesForOrganisers() {
                 <div className="relative aspect-[16/9] overflow-hidden">
                   <img src={i.img} alt={i.title} loading="lazy" className="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-105" />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-transparent" />
-                  <span className="absolute left-4 top-4 flex h-10 w-10 items-center justify-center rounded-xl border border-slate-300 bg-black/40 text-blue-600 backdrop-blur">
+                  <span className="absolute left-4 top-4 flex h-10 w-10 items-center justify-center rounded-xl border border-white/25 bg-black/45 text-cyan-200 backdrop-blur">
                     <i.icon className="h-5 w-5" />
                   </span>
-                  <h3 className="absolute inset-x-4 bottom-3 text-lg font-black">{i.title}</h3>
+                  <h3 className="absolute inset-x-4 bottom-3 text-lg font-black text-white">{i.title}</h3>
                 </div>
                 <p className="p-5 text-sm leading-6 text-slate-600">{i.body}</p>
               </div>

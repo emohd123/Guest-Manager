@@ -430,8 +430,8 @@ export function MarketplaceClient({
                 />
                 <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/55 to-black/25" />
                 <div className="relative">
-                  <p className="text-lg font-black">{locale === "ar" ? item.labelAr : item.label}</p>
-                  <p className="mt-2 text-sm leading-6 text-slate-600">
+                  <p className="text-lg font-black text-white">{locale === "ar" ? item.labelAr : item.label}</p>
+                  <p className="mt-2 text-sm leading-6 text-white/80">
                     {serviceBlurbs[item.slug]?.[locale] ?? copy.managedService}
                   </p>
                 </div>
