@@ -122,9 +122,10 @@
     @apply border-border outline-ring/50;
   }
   html {
-    /* Public app is light; the dashboard opts into dark via .dark scope.
-       Declaring the scheme stops mobile browsers auto-darkening the page. */
-    color-scheme: light;
+    /* Public app is light. "only light" (not just "light") is what makes
+       Chrome/Android skip its Auto Dark Theme, which otherwise repaints the
+       whole page dark grey and destroys text contrast. */
+    color-scheme: only light;
   }
   html.dark, .dark {
     color-scheme: dark;

@@ -30,7 +30,7 @@ export const metadata: Metadata = {
 /** Light UI + a light browser chrome colour, so mobile browsers don't
  *  auto-darken the marketing pages. */
 export const viewport: Viewport = {
-  colorScheme: "light",
+  colorScheme: "only light",
   themeColor: "#f6f7fb",
 };
 
