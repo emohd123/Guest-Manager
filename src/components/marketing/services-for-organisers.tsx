@@ -76,12 +76,12 @@ const testimonials = [
 ];
 
 function Eyebrow({ children }: { children: React.ReactNode }) {
-  return <p className="text-xs font-black uppercase tracking-[0.28em] text-cyan-200">{children}</p>;
+  return <p className="text-xs font-black uppercase tracking-[0.28em] text-blue-600">{children}</p>;
 }
 
 export function ServicesForOrganisers() {
   return (
-    <div className="relative min-h-screen overflow-hidden bg-[#050712] text-white">
+    <div className="relative min-h-screen overflow-hidden bg-[#f6f7fb] text-slate-900">
       <div className="pointer-events-none absolute inset-0 z-0">
         <FallingSparkles className="absolute inset-0 h-full w-full" />
       </div>
@@ -90,7 +90,7 @@ export function ServicesForOrganisers() {
         {/* HERO */}
         <section className="grid items-center gap-12 lg:grid-cols-[1.1fr_0.9fr]">
           <div>
-            <span className="inline-flex items-center gap-2 rounded-full border border-cyan-100/20 bg-cyan-100/[0.09] px-4 py-2 text-xs font-black uppercase tracking-[0.24em] text-cyan-50">
+            <span className="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-4 py-2 text-xs font-black uppercase tracking-[0.24em] text-blue-700">
               <Sparkles className="h-4 w-4" /> iTicket for Organisers
             </span>
             <h1 className="mt-6 text-4xl font-black leading-[0.98] tracking-[-0.03em] sm:text-6xl">
@@ -99,7 +99,7 @@ export function ServicesForOrganisers() {
                 experience-makers
               </span>
             </h1>
-            <p className="mt-6 max-w-xl text-lg leading-relaxed text-white/65">
+            <p className="mt-6 max-w-xl text-lg leading-relaxed text-slate-600">
               Power your events with Bahrain&apos;s all-in-one ticketing, check-in, and guest-operations
               platform. Maximise your reach, sell seamlessly in BHD, and deliver experiences that move
               every audience.
@@ -107,19 +107,19 @@ export function ServicesForOrganisers() {
             <div className="mt-8 flex flex-wrap gap-3">
               <Link
                 href="/contact?service=corporate"
-                className="inline-flex items-center gap-2 rounded-full bg-cyan-300 px-7 py-3.5 text-sm font-black text-black transition hover:bg-cyan-200"
+                className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-blue-600 to-violet-600 px-7 py-3.5 text-sm font-black text-slate-900 transition hover:opacity-95"
               >
                 Book a call <ArrowRight className="h-4 w-4" />
               </Link>
               <Link
                 href="/contact?service=ticketing-services"
-                className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-7 py-3.5 text-sm font-black text-white transition hover:bg-white/20"
+                className="inline-flex items-center gap-2 rounded-full border border-slate-300 bg-slate-100 px-7 py-3.5 text-sm font-black text-slate-900 transition hover:bg-slate-200"
               >
                 Explore ticketing
               </Link>
             </div>
           </div>
-          <div className="relative rounded-[2rem] border border-white/12 bg-[#0a0f1d]/70 p-6 shadow-[0_30px_100px_rgba(0,0,0,0.5)] backdrop-blur">
+          <div className="relative rounded-[2rem] border border-slate-200 bg-white p-6 shadow-[0_20px_60px_rgba(15,23,42,0.10)] backdrop-blur">
             <div className="grid grid-cols-2 gap-4">
               {[
                 { icon: Ticket, label: "Ticketing", img: img("1459749411175-04bf5292ceea", 160, 160) },
@@ -129,11 +129,11 @@ export function ServicesForOrganisers() {
                 { icon: Megaphone, label: "Campaigns", img: img("1557200134-90327ee9fafa", 160, 160) },
                 { icon: ShieldCheck, label: "Secure pay", img: img("1556742502-ec7c0e9f34b1", 160, 160) },
               ].map((f) => (
-                <div key={f.label} className="group flex items-center gap-3 overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04] p-3">
+                <div key={f.label} className="group flex items-center gap-3 overflow-hidden rounded-2xl border border-slate-200 bg-white p-3">
                   <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-xl">
                     <img src={f.img} alt="" loading="lazy" className="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-110" />
                     <div className="absolute inset-0 bg-black/45" />
-                    <span className="absolute inset-0 flex items-center justify-center text-cyan-100">
+                    <span className="absolute inset-0 flex items-center justify-center text-blue-600">
                       <f.icon className="h-5 w-5" />
                     </span>
                   </div>
@@ -152,12 +152,12 @@ export function ServicesForOrganisers() {
           </h2>
           <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
             {valueProps.map((v) => (
-              <div key={v.title} className="rounded-2xl border border-white/10 bg-white/[0.04] p-6 transition hover:border-cyan-200/40 hover:bg-white/[0.07]">
-                <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-cyan-300/15 text-cyan-200">
+              <div key={v.title} className="rounded-2xl border border-slate-200 bg-white p-6 transition hover:border-cyan-200/40 hover:bg-white">
+                <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-cyan-300/15 text-blue-600">
                   <v.icon className="h-6 w-6" />
                 </span>
                 <h3 className="mt-5 text-lg font-black">{v.title}</h3>
-                <p className="mt-2 text-sm leading-6 text-white/60">{v.body}</p>
+                <p className="mt-2 text-sm leading-6 text-slate-600">{v.body}</p>
               </div>
             ))}
           </div>
@@ -165,12 +165,12 @@ export function ServicesForOrganisers() {
 
         {/* STATS */}
         <Reveal>
-        <section className="mt-20 rounded-[2rem] border border-white/12 bg-white/[0.04] px-6 py-10 backdrop-blur">
+        <section className="mt-20 rounded-[2rem] border border-slate-200 bg-white px-6 py-10 backdrop-blur">
           <div className="grid gap-8 sm:grid-cols-3 lg:grid-cols-5">
             {stats.map((s) => (
               <div key={s.label} className="text-center">
-                <p className="text-3xl font-black italic text-white sm:text-4xl">{s.value}</p>
-                <p className="mt-2 text-xs font-bold uppercase tracking-wider text-white/55">{s.label}</p>
+                <p className="text-3xl font-black italic text-slate-900 sm:text-4xl">{s.value}</p>
+                <p className="mt-2 text-xs font-bold uppercase tracking-wider text-slate-500">{s.label}</p>
               </div>
             ))}
           </div>
@@ -183,16 +183,16 @@ export function ServicesForOrganisers() {
           <h2 className="mt-3 text-3xl font-black tracking-tight sm:text-5xl">Industries we power</h2>
           <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {industries.map((i) => (
-              <div key={i.title} className="group overflow-hidden rounded-[1.5rem] border border-white/10 bg-white/[0.04] transition hover:border-cyan-200/40">
+              <div key={i.title} className="group overflow-hidden rounded-[1.5rem] border border-slate-200 bg-white transition hover:border-cyan-200/40">
                 <div className="relative aspect-[16/9] overflow-hidden">
                   <img src={i.img} alt={i.title} loading="lazy" className="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-105" />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-transparent" />
-                  <span className="absolute left-4 top-4 flex h-10 w-10 items-center justify-center rounded-xl border border-white/20 bg-black/40 text-cyan-200 backdrop-blur">
+                  <span className="absolute left-4 top-4 flex h-10 w-10 items-center justify-center rounded-xl border border-slate-300 bg-black/40 text-blue-600 backdrop-blur">
                     <i.icon className="h-5 w-5" />
                   </span>
                   <h3 className="absolute inset-x-4 bottom-3 text-lg font-black">{i.title}</h3>
                 </div>
-                <p className="p-5 text-sm leading-6 text-white/60">{i.body}</p>
+                <p className="p-5 text-sm leading-6 text-slate-600">{i.body}</p>
               </div>
             ))}
           </div>
@@ -201,14 +201,14 @@ export function ServicesForOrganisers() {
         {/* FEATURE ROWS */}
         <section className="mt-24 grid gap-4 lg:grid-cols-2">
           <div className="rounded-[2rem] border border-cyan-200/20 bg-gradient-to-br from-cyan-300/10 to-transparent p-8">
-            <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-cyan-300/15 text-cyan-200">
+            <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-cyan-300/15 text-blue-600">
               <Ticket className="h-6 w-6" />
             </span>
             <h3 className="mt-5 text-2xl font-black">Custom ticketing at any scale</h3>
-            <p className="mt-3 max-w-md text-sm leading-6 text-white/65">
+            <p className="mt-3 max-w-md text-sm leading-6 text-slate-600">
               Branded event pages, multiple ticket types, promo codes, and QR-coded PDF tickets with real-time inventory control.
             </p>
-            <Link href="/contact?service=ticketing-services" className="mt-6 inline-flex items-center gap-2 text-sm font-black text-cyan-200 hover:text-cyan-100">
+            <Link href="/contact?service=ticketing-services" className="mt-6 inline-flex items-center gap-2 text-sm font-black text-blue-600 hover:text-blue-600">
               Explore ticketing solutions <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
@@ -217,7 +217,7 @@ export function ServicesForOrganisers() {
               <CalendarCheck className="h-6 w-6" />
             </span>
             <h3 className="mt-5 text-2xl font-black">Fast, reliable check-in</h3>
-            <p className="mt-3 max-w-md text-sm leading-6 text-white/65">
+            <p className="mt-3 max-w-md text-sm leading-6 text-slate-600">
               Scan tickets in seconds with our companion app — offline-ready, multi-device, and with live attendance on your dashboard.
             </p>
             <Link href="/contact?service=staffing" className="mt-6 inline-flex items-center gap-2 text-sm font-black text-fuchsia-200 hover:text-fuchsia-100">
@@ -232,7 +232,7 @@ export function ServicesForOrganisers() {
           <h2 className="mt-3 text-3xl font-black tracking-tight sm:text-5xl">Built-in services for successful events</h2>
           <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {services.map((s) => (
-              <div key={s.title} className="group flex items-center gap-4 rounded-2xl border border-white/10 bg-white/[0.04] p-4 transition hover:border-cyan-200/40 hover:bg-white/[0.07]">
+              <div key={s.title} className="group flex items-center gap-4 rounded-2xl border border-slate-200 bg-white p-4 transition hover:border-cyan-200/40 hover:bg-white">
                 <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl">
                   <img src={s.img} alt={s.title} loading="lazy" className="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-110" />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
@@ -242,7 +242,7 @@ export function ServicesForOrganisers() {
                 </div>
                 <div className="min-w-0">
                   <h3 className="text-lg font-black">{s.title}</h3>
-                  <p className="mt-1 text-sm leading-6 text-white/60">{s.body}</p>
+                  <p className="mt-1 text-sm leading-6 text-slate-600">{s.body}</p>
                 </div>
               </div>
             ))}
@@ -255,18 +255,18 @@ export function ServicesForOrganisers() {
           <h2 className="mt-3 text-3xl font-black tracking-tight sm:text-5xl">Don&apos;t just take our word for it</h2>
           <div className="mt-10 grid gap-4 lg:grid-cols-2">
             {testimonials.map((t) => (
-              <figure key={t.name} className="rounded-[2rem] border border-white/12 bg-white/[0.04] p-8">
+              <figure key={t.name} className="rounded-[2rem] border border-slate-200 bg-white p-8">
                 <div className="flex gap-1 text-amber-300">
                   {Array.from({ length: 5 }).map((_, i) => (
                     <Star key={i} className="h-4 w-4 fill-current" />
                   ))}
                 </div>
-                <blockquote className="mt-5 text-lg font-semibold leading-relaxed text-white/85">
+                <blockquote className="mt-5 text-lg font-semibold leading-relaxed text-slate-800">
                   &ldquo;{t.quote}&rdquo;
                 </blockquote>
                 <figcaption className="mt-6 text-sm">
-                  <span className="font-black text-white">{t.name}</span>
-                  <span className="text-white/50"> · {t.role}</span>
+                  <span className="font-black text-slate-900">{t.name}</span>
+                  <span className="text-slate-500"> · {t.role}</span>
                 </figcaption>
               </figure>
             ))}
@@ -274,14 +274,14 @@ export function ServicesForOrganisers() {
         </section>
 
         {/* REGIONAL */}
-        <section className="mt-24 flex flex-col items-start gap-6 rounded-[2rem] border border-white/12 bg-white/[0.04] p-8 backdrop-blur sm:flex-row sm:items-center sm:justify-between">
+        <section className="mt-24 flex flex-col items-start gap-6 rounded-[2rem] border border-slate-200 bg-white p-8 backdrop-blur sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-4">
-            <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-cyan-300/15 text-cyan-200">
+            <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-cyan-300/15 text-blue-600">
               <Globe2 className="h-6 w-6" />
             </span>
             <div>
               <h3 className="text-xl font-black">Rooted in Bahrain, built for the Gulf</h3>
-              <p className="mt-1 text-sm text-white/60">Local expertise, BHD settlement, and Arabic + English from day one.</p>
+              <p className="mt-1 text-sm text-slate-600">Local expertise, BHD settlement, and Arabic + English from day one.</p>
             </div>
           </div>
         </section>
@@ -291,14 +291,14 @@ export function ServicesForOrganisers() {
           <h2 className="mx-auto max-w-2xl text-3xl font-black tracking-tight sm:text-5xl">
             Let&apos;s make your next event a milestone
           </h2>
-          <p className="mx-auto mt-5 max-w-xl text-base leading-7 text-white/70">
+          <p className="mx-auto mt-5 max-w-xl text-base leading-7 text-slate-600">
             Ticketing, check-in, staffing, permits, and reporting — our team handles the operations so you can focus on the experience.
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
             <Link href="/contact" className="inline-flex items-center gap-2 rounded-full bg-white px-8 py-4 text-sm font-black text-black transition hover:bg-white/90">
               Book a call <ArrowRight className="h-4 w-4" />
             </Link>
-            <Link href="/" className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-8 py-4 text-sm font-black text-white transition hover:bg-white/20">
+            <Link href="/" className="inline-flex items-center gap-2 rounded-full border border-slate-300 bg-slate-100 px-8 py-4 text-sm font-black text-slate-900 transition hover:bg-slate-200">
               Browse the marketplace
             </Link>
           </div>

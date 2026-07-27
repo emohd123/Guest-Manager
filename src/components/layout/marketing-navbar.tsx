@@ -60,7 +60,7 @@ export function MarketingNavbar() {
       <header
         className={`fixed top-0 w-full z-50 transition-all duration-300 ${
           scrolled
-            ? "bg-[#080911]/70 backdrop-blur-md border-b border-white/5 shadow-[0_4px_30px_rgba(0,0,0,0.3)]"
+            ? "bg-white/85 backdrop-blur-md border-b border-white/5 shadow-[0_4px_30px_rgba(0,0,0,0.3)]"
             : "bg-transparent border-transparent"
         }`}
       >
@@ -72,10 +72,10 @@ export function MarketingNavbar() {
                   <BrandWordmark
                     className="gap-x-5"
                     markClassName="h-10 w-10 sm:h-14 sm:w-14"
-                    textClassName="text-[1.5rem] sm:text-[2.35rem]"
+                    textClassName="text-[1.5rem] text-slate-900 sm:text-[2.35rem]"
                   />
                 </Link>
-                <span className="inline-flex items-center gap-1 rounded-full border border-cyan-300/45 bg-gradient-to-r from-cyan-400/20 to-fuchsia-500/20 px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.12em] text-cyan-200 shadow-[0_0_14px_rgba(103,232,249,0.25)]">
+                <span className="inline-flex items-center gap-1 rounded-full border border-cyan-300/45 bg-gradient-to-r from-cyan-400/20 to-fuchsia-500/20 px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.12em] text-blue-600 shadow-[0_0_14px_rgba(103,232,249,0.25)]">
                   <Sparkles className="h-3 w-3" />
                   AI
                 </span>
@@ -84,7 +84,7 @@ export function MarketingNavbar() {
                 href="https://onestoneads.com/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="mt-1 w-fit pl-1 text-[9px] font-black uppercase tracking-[0.24em] text-muted-foreground/60 transition-colors hover:text-cyan-300 sm:text-[10px]"
+                className="mt-1 w-fit pl-1 text-[9px] font-black uppercase tracking-[0.24em] text-slate-500 transition-colors hover:text-blue-600 sm:text-[10px]"
               >
                 A OneStone Platform
               </a>
@@ -93,13 +93,13 @@ export function MarketingNavbar() {
             <nav className="hidden items-center gap-2 md:flex">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="gap-1 hover:bg-black/5 dark:hover:bg-white/5 transition-colors text-foreground">
+                  <Button variant="ghost" className="gap-1 hover:bg-slate-100 transition-colors text-slate-700">
                     Explore <ChevronDown className="h-3.5 w-3.5 opacity-70" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className="w-[320px] p-2 glass-panel border-border">
+                <DropdownMenuContent align="start" className="w-[320px] p-2 border-slate-200 bg-white text-slate-900 shadow-xl">
                   {products.map((product) => (
-                    <DropdownMenuItem key={product.href} asChild className="rounded-xl p-3 hover:bg-black/5 dark:hover:bg-white/10 cursor-pointer transition-colors duration-200">
+                    <DropdownMenuItem key={product.href} asChild className="rounded-xl p-3 hover:bg-slate-100 cursor-pointer transition-colors duration-200">
                       <Link
                         href={product.href}
                         className="flex items-start gap-4"
@@ -108,8 +108,8 @@ export function MarketingNavbar() {
                           <product.icon className="h-5 w-5" />
                         </div>
                         <div>
-                          <p className="font-semibold text-foreground">{product.name}</p>
-                          <p className="text-sm text-muted-foreground mt-0.5">
+                          <p className="font-semibold text-slate-900">{product.name}</p>
+                          <p className="text-sm text-slate-500 mt-0.5">
                             {product.description}
                           </p>
                         </div>
@@ -122,7 +122,7 @@ export function MarketingNavbar() {
               <Link href="/events">
                 <Button
                   variant="ghost"
-                  className={`hover:bg-black/5 dark:hover:bg-white/5 transition-colors text-foreground ${pathname?.startsWith("/events") ? "text-primary text-glow font-medium" : ""}`}
+                  className={`hover:bg-slate-100 transition-colors text-slate-700 ${pathname?.startsWith("/events") ? "text-blue-600 font-bold" : ""}`}
                 >
                   Our Services
                 </Button>
@@ -131,7 +131,7 @@ export function MarketingNavbar() {
               <Link href="/account">
                 <Button
                   variant="ghost"
-                  className={`hover:bg-black/5 dark:hover:bg-white/5 transition-colors text-foreground ${pathname?.startsWith("/account") ? "text-primary text-glow font-medium" : ""}`}
+                  className={`hover:bg-slate-100 transition-colors text-slate-700 ${pathname?.startsWith("/account") ? "text-blue-600 font-bold" : ""}`}
                 >
                   My Tickets
                 </Button>
@@ -140,7 +140,7 @@ export function MarketingNavbar() {
               <Link href="/contact">
                 <Button
                   variant="ghost"
-                  className={`hover:bg-black/5 dark:hover:bg-white/5 transition-colors text-foreground ${pathname === "/contact" ? "text-primary text-glow font-medium" : ""}`}
+                  className={`hover:bg-slate-100 transition-colors text-slate-700 ${pathname === "/contact" ? "text-blue-600 font-bold" : ""}`}
                 >
                   Contact
                 </Button>
@@ -149,14 +149,14 @@ export function MarketingNavbar() {
           </div>
 
           <div className="hidden items-center gap-3 md:flex">
-            <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.06] px-3.5 py-1.5 text-[11px] font-black uppercase tracking-[0.14em] text-foreground/80">
-              <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-400" />
+            <span className="inline-flex items-center gap-2 rounded-full border border-slate-300 bg-white px-3.5 py-1.5 text-[11px] font-black uppercase tracking-[0.14em] text-slate-700">
+              <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-500" />
               Live in Bahrain
             </span>
-            <Button asChild variant="ghost" className="rounded-full border border-white/15 px-4 font-bold hover:bg-black/5 dark:hover:bg-white/10">
+            <Button asChild variant="ghost" className="rounded-full border border-slate-300 px-4 font-bold hover:bg-slate-100">
               <Link href={`${pathname || "/"}?locale=${nextLang}`}>{lang === "ar" ? "English" : "العربية"}</Link>
             </Button>
-            <Button asChild variant="ghost" className="hover:bg-accent transition-colors">
+            <Button asChild variant="ghost" className="text-slate-700 hover:bg-slate-100 transition-colors">
               <Link href="/account/login">Buyer Login</Link>
             </Button>
              <Button asChild className="shadow-[0_4px_20px_0_rgba(124,77,255,0.4)] hover:shadow-[0_6px_25px_0_rgba(124,77,255,0.55)] transition-all duration-300 bg-brand-gradient hover:opacity-95 text-white">
@@ -168,7 +168,7 @@ export function MarketingNavbar() {
           <Button
             variant="ghost"
             size="icon"
-            className="md:hidden hover:bg-black/10 dark:hover:bg-white/10"
+            className="md:hidden hover:bg-slate-100 text-slate-700"
             onClick={() => setMobileOpen(!mobileOpen)}
           >
             {mobileOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
@@ -177,13 +177,13 @@ export function MarketingNavbar() {
 
       {/* Mobile menu */}
       {mobileOpen && (
-        <div className="border-b border-white/5 bg-[#080911]/95 backdrop-blur-xl px-4 py-4 md:hidden">
+        <div className="border-b border-white/5 bg-white/95 backdrop-blur-xl px-4 py-4 md:hidden">
           <nav className="flex flex-col gap-2">
             {products.map((product) => (
               <Link
                 key={product.href}
                 href={product.href}
-                className="flex items-center gap-3 rounded-lg p-3 hover:bg-accent"
+                className="flex items-center gap-3 rounded-lg p-3 hover:bg-slate-100"
                 onClick={() => setMobileOpen(false)}
               >
                 <product.icon className="h-5 w-5 text-primary" />
@@ -198,28 +198,28 @@ export function MarketingNavbar() {
             <hr className="my-2" />
             <Link
               href="/events"
-              className="rounded-lg p-3 hover:bg-accent"
+              className="rounded-lg p-3 hover:bg-slate-100"
               onClick={() => setMobileOpen(false)}
             >
               Our Services
             </Link>
             <Link
               href="/account"
-              className="rounded-lg p-3 hover:bg-accent"
+              className="rounded-lg p-3 hover:bg-slate-100"
               onClick={() => setMobileOpen(false)}
             >
               My Tickets
             </Link>
             <Link
               href="/contact"
-              className="rounded-lg p-3 hover:bg-accent"
+              className="rounded-lg p-3 hover:bg-slate-100"
               onClick={() => setMobileOpen(false)}
             >
               Contact
             </Link>
             <div className="flex items-center justify-between rounded-lg border border-border p-3">
               <span className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-[0.14em] text-muted-foreground">
-                <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-400" />
+                <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-500" />
                 Live in Bahrain
               </span>
               <Button asChild variant="outline" size="sm" className="rounded-full px-4 font-bold">

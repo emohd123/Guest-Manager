@@ -11,6 +11,8 @@ type FallingSparklesProps = {
   maxParticles?: number;
   /** Multiplier on fall speed. */
   speed?: number;
+  /** "lighter" glows on dark pages; "source-over" for light backgrounds. */
+  composite?: GlobalCompositeOperation;
   className?: string;
 };
 
@@ -82,6 +84,7 @@ export function FallingSparkles({
   density = 8,
   maxParticles = 200,
   speed = 1,
+  composite = "lighter",
   className,
 }: FallingSparklesProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -147,7 +150,7 @@ export function FallingSparkles({
 
     const draw = (t: number) => {
       ctx.clearRect(0, 0, width, height);
-      ctx.globalCompositeOperation = "lighter";
+      ctx.globalCompositeOperation = composite;
 
       for (const s of sparkles) {
         const twinkle = 0.55 + 0.45 * Math.sin(t * s.twinkleFreq + s.twinklePhase);
@@ -211,7 +214,7 @@ export function FallingSparkles({
       window.removeEventListener("resize", onResize);
       document.removeEventListener("visibilitychange", onVisibility);
     };
-  }, [colors, density, maxParticles, speed]);
+  }, [colors, density, maxParticles, speed, composite]);
 
   return <canvas ref={canvasRef} aria-hidden="true" className={className} />;
 }

@@ -19,11 +19,11 @@ import { cn } from "@/lib/utils";
 // chip becomes active (keyframes in globals.css); the active chips also render an
 // inline check icon via `chip-check` so the selection is unmistakable.
 const chipBase =
-  "group inline-flex shrink-0 items-center gap-2 rounded-full px-5 py-3 text-sm font-black transition-all duration-200 cursor-pointer select-none active:scale-95 [-webkit-tap-highlight-color:transparent] touch-manipulation focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60";
-const chipActiveWhite = "chip-flash bg-white text-black shadow-[0_0_20px_rgba(255,255,255,0.25)]";
+  "group inline-flex shrink-0 items-center gap-2 rounded-full px-5 py-3 text-sm font-black transition-all duration-200 cursor-pointer select-none active:scale-95 [-webkit-tap-highlight-color:transparent] touch-manipulation focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400";
+const chipActiveWhite = "chip-flash bg-slate-900 text-white shadow-[0_4px_16px_rgba(15,23,42,0.25)]";
 const chipActiveCyan = "chip-flash bg-cyan-300 text-black shadow-[0_0_20px_rgba(103,232,249,0.35)]";
 const chipInactive =
-  "border border-white/10 bg-white/[0.05] text-white/75 hover:border-white/25 hover:text-white";
+  "border border-slate-200 bg-white text-slate-600 hover:border-slate-400 hover:text-slate-900";
 
 // Subject-relevant, curated category imagery (stable Unsplash photos).
 const CATEGORY_IMAGE_IDS: Record<string, string> = {
@@ -152,16 +152,17 @@ export function MarketplaceClient({
   }, [category, dateFilter, locale, query]);
 
   return (
-    <div dir={dir} className="relative min-h-screen overflow-hidden bg-[#050712] text-white">
-      <div className="pointer-events-none fixed inset-0 z-0 bg-[#050712]">
+    <div dir={dir} className="relative min-h-screen overflow-hidden bg-[#f6f7fb] text-slate-900">
+      <div className="pointer-events-none fixed inset-0 z-0 bg-[#f6f7fb]">
         <FallingSparkles
           className="absolute inset-0 h-full w-full"
-          colors={["#38BDF8", "#7C3AED", "#E879F9", "#F59E0B", "#FFFFFF"]}
+          colors={["#3B6CF6", "#6D28D9", "#0EA5E9", "#A855F7"]}
           density={8}
           speed={1}
+          composite="source-over"
         />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_72%_16%,rgba(14,165,233,0.08),transparent_34%),radial-gradient(circle_at_18%_82%,rgba(190,24,93,0.06),transparent_36%)]" />
-        <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(5,7,18,0.5)_0%,rgba(5,7,18,0.2)_36%,transparent_78%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_72%_16%,rgba(59,108,246,0.07),transparent_34%),radial-gradient(circle_at_18%_82%,rgba(109,40,217,0.05),transparent_36%)]" />
+        
       </div>
 
       <section className="relative z-10 overflow-hidden px-4 pb-16 pt-24 sm:px-8 lg:px-12 2xl:px-20">
@@ -174,31 +175,31 @@ export function MarketplaceClient({
         <div className="relative z-10 mx-auto flex max-w-none flex-col justify-end">
           <div className="grid items-start gap-10 lg:grid-cols-[1.08fr_0.92fr]">
             <div className="min-w-0">
-              <h1 className="text-4xl font-black leading-[0.96] tracking-[-0.03em] text-white sm:text-5xl lg:text-[3.35rem]">
+              <h1 className="text-4xl font-black leading-[0.96] tracking-[-0.03em] text-slate-900 sm:text-5xl lg:text-[3.35rem]">
                 {copy.titleLead}{" "}
                 <span className="bg-gradient-to-r from-cyan-400 via-fuchsia-400 to-amber-400 bg-[length:200%_auto] bg-clip-text text-transparent animate-[shine_5s_linear_infinite]">
                   {copy.titleAccent}
                 </span>
               </h1>
-              <p className="mt-5 max-w-[46ch] text-[15px] leading-relaxed text-white/60">
+              <p className="mt-5 max-w-[46ch] text-[15px] leading-relaxed text-slate-600">
                 {copy.subtitle}
               </p>
 
-              <div className="mt-8 rounded-[2rem] border border-white/16 bg-[#080c18]/82 p-3 shadow-[0_24px_90px_rgba(0,0,0,0.58)] backdrop-blur-2xl">
+              <div className="mt-8 rounded-[2rem] border border-slate-200 bg-white p-3 shadow-[0_18px_60px_rgba(15,23,42,0.10)]">
                 <div className="grid gap-3 md:grid-cols-[1fr_auto_auto]">
                   <label className="flex min-h-14 items-center gap-3 rounded-[1.4rem] bg-black/25 px-5">
-                    <Search className="h-5 w-5 shrink-0 text-white/60" />
+                    <Search className="h-5 w-5 shrink-0 text-slate-600" />
                     <input
                       value={query}
                       onChange={(event) => setQuery(event.target.value)}
                       placeholder={copy.searchPlaceholder}
-                      className="w-full bg-transparent text-base font-semibold text-white outline-none placeholder:text-white/45"
+                      className="w-full bg-transparent text-base font-semibold text-slate-900 outline-none placeholder:text-slate-500"
                     />
                   </label>
                   <select
                     value={category}
                     onChange={(event) => setCategory(event.target.value)}
-                    className="min-h-14 rounded-[1.4rem] border border-white/10 bg-black/35 px-5 text-sm font-bold text-white outline-none"
+                    className="min-h-14 rounded-[1.4rem] border border-slate-200 bg-white px-5 text-sm font-bold text-slate-700 outline-none"
                   >
                     <option value="">{copy.allCategories}</option>
                     {publicCategories.map((item) => (
@@ -207,7 +208,7 @@ export function MarketplaceClient({
                       </option>
                     ))}
                   </select>
-                  <Button asChild className="min-h-14 rounded-[1.4rem] bg-white px-7 font-black text-black hover:bg-white/90">
+                  <Button asChild className="min-h-14 rounded-[1.4rem] bg-gradient-to-r from-blue-600 to-violet-600 px-7 font-black text-white hover:opacity-95">
                     <Link href={`/?${new URLSearchParams({ q: query, category, date: dateFilter }).toString()}`}>
                       {copy.explore}
                     </Link>
@@ -215,9 +216,9 @@ export function MarketplaceClient({
                 </div>
               </div>
 
-              <div className="mt-7 flex flex-wrap gap-3 text-xs font-black uppercase tracking-[0.18em] text-white/55">
+              <div className="mt-7 flex flex-wrap gap-3 text-xs font-black uppercase tracking-[0.18em] text-slate-500">
                 {copy.quickStats.map((item) => (
-                  <span key={item} className="rounded-full border border-white/14 bg-[#080c18]/75 px-4 py-2 text-white/70 backdrop-blur">
+                  <span key={item} className="rounded-full border border-slate-200 bg-white px-4 py-2 text-slate-600">
                     {item}
                   </span>
                 ))}
@@ -227,7 +228,7 @@ export function MarketplaceClient({
                 <div className="mt-8">
                   <div className="mb-4 flex items-center gap-2">
                     <span className={`h-2 w-2 animate-pulse rounded-full ${hasFast ? "bg-rose-400" : "bg-cyan-300"}`} />
-                    <p className="text-[11px] font-black uppercase tracking-[0.22em] text-white/55">
+                    <p className="text-[11px] font-black uppercase tracking-[0.22em] text-slate-500">
                       {hasFast
                         ? locale === "ar" ? "الشراء السريع" : "Fast purchase"
                         : locale === "ar" ? "قريبًا" : "Happening soon"}
@@ -237,8 +238,8 @@ export function MarketplaceClient({
                     {soonEvents.map(({ event, fast, hours }) => (
                       <div
                         key={event.id}
-                        className={`group overflow-hidden rounded-[1.5rem] border bg-[#090d19]/75 backdrop-blur transition ${
-                          fast ? "border-rose-400/45 shadow-[0_0_28px_rgba(251,113,133,0.22)]" : "border-white/12 hover:border-cyan-200/45"
+                        className={`group overflow-hidden rounded-[1.5rem] border bg-white shadow-[0_12px_36px_rgba(15,23,42,0.08)] transition ${
+                          fast ? "border-rose-400/45 shadow-[0_0_28px_rgba(251,113,133,0.22)]" : "border-slate-200 hover:border-blue-300"
                         }`}
                       >
                         <div className="relative aspect-[16/9] overflow-hidden">
@@ -256,26 +257,26 @@ export function MarketplaceClient({
                                 : `${Math.round(hours)}h ${locale === "ar" ? "متبقّي" : "left"}`}
                             </span>
                           ) : (
-                            <span className="absolute left-3 top-3 rounded-full bg-black/50 px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-cyan-100 backdrop-blur">
+                            <span className="absolute left-3 top-3 rounded-full bg-black/50 px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-white backdrop-blur">
                               {format(new Date(event.startsAt), "EEE, MMM d")}
                             </span>
                           )}
-                          <span className="absolute right-3 top-3 rounded-full border border-white/20 bg-black/55 px-3 py-1 text-xs font-black text-white backdrop-blur">
+                          <span className="absolute right-3 top-3 rounded-full border border-white/25 bg-black/55 px-3 py-1 text-xs font-black text-white backdrop-blur">
                             {formatMoney(event.minPrice, event.currency, locale)}
                           </span>
                           <div className="absolute inset-x-3 bottom-3">
                             <h3 className="line-clamp-1 text-base font-black text-white">{event.title}</h3>
-                            <p className="text-xs font-bold text-white/65">{event.venueName || event.locationText || "Bahrain"}</p>
+                            <p className="text-xs font-bold text-white/75">{event.venueName || event.locationText || "Bahrain"}</p>
                           </div>
                         </div>
                         <div className="flex items-center gap-2 p-3">
-                          <Button asChild className={`h-10 flex-1 rounded-full text-sm font-black ${fast ? "bg-rose-500 text-white hover:bg-rose-400" : "bg-white text-black hover:bg-white/90"}`}>
+                          <Button asChild className={`h-10 flex-1 rounded-full text-sm font-black ${fast ? "bg-rose-500 text-white hover:bg-rose-400" : "bg-gradient-to-r from-blue-600 to-violet-600 text-white hover:opacity-95"}`}>
                             <Link href={event.buyUrl}>{fast ? (locale === "ar" ? "شراء سريع" : "Fast buy") : (locale === "ar" ? "شراء" : "Buy tickets")}</Link>
                           </Button>
                           <Button
                             type="button"
                             onClick={() => setQuickViewEvent(event)}
-                            className="h-10 flex-1 rounded-full border border-white/25 bg-white/10 text-sm font-black text-white hover:bg-white/20"
+                            className="h-10 flex-1 rounded-full border border-slate-300 bg-slate-100 text-sm font-black text-slate-900 hover:bg-slate-200"
                           >
                             {locale === "ar" ? "تفاصيل" : "Details"}
                           </Button>
@@ -337,10 +338,10 @@ export function MarketplaceClient({
         <section className="mb-16">
           <div className="mb-7 flex items-end justify-between gap-6">
             <div>
-              <p className="text-xs font-black uppercase tracking-[0.28em] text-pink-300">{copy.discover}</p>
+              <p className="text-xs font-black uppercase tracking-[0.28em] text-pink-500">{copy.discover}</p>
               <h2 className="mt-2 text-3xl font-black tracking-tight sm:text-5xl">{copy.featured}</h2>
             </div>
-            {loading ? <span className="text-sm font-bold text-white/50">{copy.loading}</span> : null}
+            {loading ? <span className="text-sm font-bold text-slate-500">{copy.loading}</span> : null}
           </div>
 
           {heroEvents.length > 0 ? (
@@ -357,7 +358,7 @@ export function MarketplaceClient({
         {mode === "home" && publicCategories.length > 0 ? (
           <section className="mb-16">
             <Reveal className="mb-6">
-              <p className="text-xs font-black uppercase tracking-[0.28em] text-cyan-200">
+              <p className="text-xs font-black uppercase tracking-[0.28em] text-blue-600">
                 {locale === "ar" ? "تصفّح" : "Browse"}
               </p>
               <h2 className="mt-2 text-2xl font-black tracking-tight sm:text-4xl">
@@ -373,7 +374,7 @@ export function MarketplaceClient({
                     setCategory(item.slug);
                     window.scrollTo({ top: 0, behavior: "smooth" });
                   }}
-                  className="group relative aspect-[4/3] w-[calc(50%-0.375rem)] overflow-hidden rounded-2xl border border-white/10 text-left sm:w-[calc(33.333%-0.5rem)] lg:w-[calc(20%-0.6rem)]"
+                  className="group relative aspect-[4/3] w-[calc(50%-0.375rem)] overflow-hidden rounded-2xl border border-slate-200 text-left sm:w-[calc(33.333%-0.5rem)] lg:w-[calc(20%-0.6rem)]"
                 >
                   <img
                     src={categoryImage(item.slug)}
@@ -383,9 +384,9 @@ export function MarketplaceClient({
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/15 to-black/10 transition group-hover:from-black/75" />
                   <div className="absolute inset-x-3 bottom-3">
-                    <p className="text-sm font-black text-white">{locale === "ar" ? item.labelAr : item.label}</p>
+                    <p className="text-sm font-black text-slate-900">{locale === "ar" ? item.labelAr : item.label}</p>
                     {item.count > 0 ? (
-                      <p className="text-[11px] font-bold text-cyan-100/80">
+                      <p className="text-[11px] font-bold text-blue-600">
                         {item.count} {locale === "ar" ? "فعالية" : item.count === 1 ? "event" : "events"}
                       </p>
                     ) : null}
@@ -405,11 +406,11 @@ export function MarketplaceClient({
           </>
         ) : null}
 
-        <section className="grid gap-10 border-y border-white/10 py-14 lg:grid-cols-[0.9fr_1.1fr]">
+        <section className="grid gap-10 border-y border-slate-200 py-14 lg:grid-cols-[0.9fr_1.1fr]">
           <div>
-            <p className="text-xs font-black uppercase tracking-[0.28em] text-cyan-200">{copy.servicesEyebrow}</p>
+            <p className="text-xs font-black uppercase tracking-[0.28em] text-blue-600">{copy.servicesEyebrow}</p>
             <h2 className="mt-3 text-3xl font-black tracking-tight sm:text-5xl">{copy.servicesTitle}</h2>
-            <p className="mt-5 max-w-xl text-base leading-7 text-white/65">{copy.servicesBody}</p>
+            <p className="mt-5 max-w-xl text-base leading-7 text-slate-600">{copy.servicesBody}</p>
             <Button asChild className="mt-8 rounded-full bg-cyan-300 px-7 font-black text-black hover:bg-cyan-200">
               <Link href="/contact">{copy.workWithUs}</Link>
             </Button>
@@ -419,7 +420,7 @@ export function MarketplaceClient({
               <Link
                 key={item.slug}
                 href={`/contact?service=${item.slug}`}
-                className="group relative overflow-hidden rounded-2xl border border-white/10 p-5 transition hover:border-cyan-200/40"
+                className="group relative overflow-hidden rounded-2xl border border-slate-200 p-5 transition hover:border-cyan-200/40"
               >
                 <img
                   src={serviceImage(item.slug)}
@@ -430,7 +431,7 @@ export function MarketplaceClient({
                 <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/55 to-black/25" />
                 <div className="relative">
                   <p className="text-lg font-black">{locale === "ar" ? item.labelAr : item.label}</p>
-                  <p className="mt-2 text-sm leading-6 text-white/70">
+                  <p className="mt-2 text-sm leading-6 text-slate-600">
                     {serviceBlurbs[item.slug]?.[locale] ?? copy.managedService}
                   </p>
                 </div>
@@ -439,30 +440,30 @@ export function MarketplaceClient({
           </div>
         </section>
 
-        <section className="border-t border-white/10 py-14">
+        <section className="border-t border-slate-200 py-14">
           <div className="grid gap-8 lg:grid-cols-[1.4fr_1fr] lg:items-center">
             <div className="grid gap-5 sm:grid-cols-2">
               {(locale === "ar" ? arTrust : enTrust).map((item) => (
                 <div key={item.title} className="flex items-start gap-3">
-                  <span className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-cyan-300/15 text-cyan-200">
+                  <span className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-cyan-300/15 text-blue-600">
                     <item.icon className="h-5 w-5" />
                   </span>
                   <div>
                     <p className="text-sm font-black">{item.title}</p>
-                    <p className="mt-1 text-xs leading-5 text-white/55">{item.body}</p>
+                    <p className="mt-1 text-xs leading-5 text-slate-500">{item.body}</p>
                   </div>
                 </div>
               ))}
             </div>
             <div className="lg:text-right">
-              <p className="text-xs font-black uppercase tracking-[0.28em] text-white/45">
+              <p className="text-xs font-black uppercase tracking-[0.28em] text-slate-500">
                 {locale === "ar" ? "طرق دفع آمنة" : "Secure payments"}
               </p>
               <div className="mt-4 flex flex-wrap gap-2.5 lg:justify-end">
                 {["Visa", "Mastercard", "Apple Pay", "Benefit", "Google Pay"].map((p) => (
                   <span
                     key={p}
-                    className="rounded-lg border border-white/12 bg-white/[0.06] px-3.5 py-2 text-xs font-black text-white/80"
+                    className="rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-xs font-black text-slate-800"
                   >
                     {p}
                   </span>
@@ -486,12 +487,12 @@ export function MarketplaceClient({
               magnification={72}
               items={[
                 {
-                  icon: <Home className="h-5 w-5 text-cyan-200" />,
+                  icon: <Home className="h-5 w-5 text-blue-600" />,
                   label: locale === "ar" ? "الرئيسية" : "Home",
                   onClick: () => window.scrollTo({ top: 0, behavior: "smooth" }),
                 },
                 {
-                  icon: <Search className="h-5 w-5 text-white/80" />,
+                  icon: <Search className="h-5 w-5 text-slate-800" />,
                   label: locale === "ar" ? "بحث" : "Search",
                   onClick: () => {
                     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -499,12 +500,12 @@ export function MarketplaceClient({
                   },
                 },
                 {
-                  icon: <Ticket className="h-5 w-5 text-white/80" />,
+                  icon: <Ticket className="h-5 w-5 text-slate-800" />,
                   label: locale === "ar" ? "تذاكري" : "My Tickets",
                   onClick: () => { window.location.href = "/account"; },
                 },
                 {
-                  icon: <User className="h-5 w-5 text-white/80" />,
+                  icon: <User className="h-5 w-5 text-slate-800" />,
                   label: locale === "ar" ? "حسابي" : "Account",
                   onClick: () => { window.location.href = "/account/login"; },
                 },
@@ -579,7 +580,7 @@ function HeroFeature({
       : "View event";
 
   return (
-    <article className="group relative overflow-hidden rounded-[2rem] border border-white/14 bg-[#0a0f1d]/70 shadow-[0_30px_100px_rgba(0,0,0,0.5)]">
+    <article className="group relative overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-[0_24px_70px_rgba(15,23,42,0.14)]">
       <div className="relative aspect-[16/13]">
         {event.coverImageUrl ? (
           <img src={event.coverImageUrl} alt="" className="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-105" />
@@ -591,21 +592,21 @@ function HeroFeature({
           {locale === "ar" ? "مميّز" : "Featured"}
         </span>
         {event.category ? (
-          <span className="absolute right-5 top-5 rounded-full border border-white/15 bg-black/50 px-3 py-1 text-xs font-bold text-white backdrop-blur">
+          <span className="absolute right-5 top-5 rounded-full border border-white/25 bg-black/50 px-3 py-1 text-xs font-bold text-white backdrop-blur">
             {event.category}
           </span>
         ) : null}
         <div className="absolute inset-x-5 bottom-5">
-          <p className="text-xs font-black uppercase tracking-[0.18em] text-cyan-100/90">
+          <p className="text-xs font-black uppercase tracking-[0.18em] text-cyan-200">
             {format(new Date(event.startsAt), "EEE, MMM d")}
           </p>
           <h3 className="mt-2 line-clamp-2 text-2xl font-black leading-tight text-white sm:text-3xl">{title}</h3>
-          <p className="mt-1 flex items-center gap-2 text-sm text-white/70">
-            <MapPin className="h-4 w-4 shrink-0 text-cyan-200" />
+          <p className="mt-1 flex items-center gap-2 text-sm text-white/75">
+            <MapPin className="h-4 w-4 shrink-0 text-cyan-300" />
             {event.venueName || event.locationText || "Bahrain"}
           </p>
           <div className="mt-5 flex flex-wrap items-center gap-3">
-            <Button asChild className="rounded-full bg-white px-6 font-black text-black hover:bg-white/90">
+            <Button asChild className="rounded-full bg-gradient-to-r from-blue-600 to-violet-600 px-6 font-black text-white hover:opacity-95">
               <Link href={event.buyUrl}>{buy}</Link>
             </Button>
             <Button
@@ -615,7 +616,7 @@ function HeroFeature({
             >
               {locale === "ar" ? "تفاصيل" : "Details"}
             </Button>
-            <span className="rounded-full border border-white/15 bg-white/10 px-4 py-2 text-sm font-black text-white backdrop-blur">
+            <span className="rounded-full bg-white px-4 py-2 text-sm font-black text-slate-900 shadow">
               {formatMoney(event.minPrice, event.currency, locale)}
             </span>
           </div>
@@ -641,37 +642,37 @@ function eventToModalCard(event: MarketplaceEvent, locale: LocaleCode): ModalCar
     content: (
       <div className="space-y-4">
         <div className="flex flex-wrap gap-2">
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-white/12 bg-white/[0.06] px-3 py-1.5 text-xs font-bold text-white/85">
-            <CalendarDays className="h-3.5 w-3.5 text-cyan-200" />
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-800">
+            <CalendarDays className="h-3.5 w-3.5 text-blue-600" />
             {format(new Date(event.startsAt), "EEEE, MMMM d, yyyy · h:mm a")}
           </span>
           {event.venueName ? (
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-white/12 bg-white/[0.06] px-3 py-1.5 text-xs font-bold text-white/85">
-              <MapPin className="h-3.5 w-3.5 text-pink-300" />
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-800">
+              <MapPin className="h-3.5 w-3.5 text-pink-500" />
               {event.venueName}
             </span>
           ) : null}
           {event.category ? (
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-white/12 bg-white/[0.06] px-3 py-1.5 text-xs font-bold text-white/85">
-              <Sparkles className="h-3.5 w-3.5 text-violet-300" />
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-800">
+              <Sparkles className="h-3.5 w-3.5 text-violet-500" />
               {event.category}
             </span>
           ) : null}
         </div>
-        {description ? <p className="text-base leading-7 text-white/70">{description}</p> : null}
-        <p className="text-sm font-bold text-white/50">{event.organizerName}</p>
+        {description ? <p className="text-base leading-7 text-slate-600">{description}</p> : null}
+        <p className="text-sm font-bold text-slate-500">{event.organizerName}</p>
       </div>
     ),
     actions: (
       <div className="flex flex-wrap items-center justify-between gap-4">
-        <p className="text-lg font-black text-white">
+        <p className="text-lg font-black text-slate-900">
           {formatMoney(event.minPrice, event.currency, locale)}
-          <span className="ms-2 text-xs font-bold uppercase tracking-wider text-white/45">
+          <span className="ms-2 text-xs font-bold uppercase tracking-wider text-slate-500">
             {ar ? "يبدأ من" : "from"}
           </span>
         </p>
         <div className="flex gap-3">
-          <Button asChild variant="outline" className="rounded-full border-white/20 bg-transparent font-black text-white hover:bg-white/10 hover:text-white">
+          <Button asChild variant="outline" className="rounded-full border-slate-300 bg-transparent font-black text-slate-900 hover:bg-slate-100 hover:text-slate-900">
             <Link href={event.publicUrl}>{ar ? "التفاصيل" : "Details"}</Link>
           </Button>
           <Button asChild className="rounded-full bg-cyan-300 px-6 font-black text-black hover:bg-cyan-200">
@@ -721,14 +722,14 @@ function EventCard({
 
   return (
     <Spotlight className="rounded-[1.6rem]">
-    <article className="group overflow-hidden rounded-[1.6rem] border border-white/12 bg-[#0a0f1d]/80 shadow-[0_20px_70px_rgba(0,0,0,0.28)] backdrop-blur transition duration-300 hover:-translate-y-1 hover:border-cyan-200/35 hover:bg-[#0d1426]/90">
+    <article className="group overflow-hidden rounded-[1.6rem] border border-slate-200 bg-white shadow-[0_16px_50px_rgba(15,23,42,0.10)] backdrop-blur transition duration-300 hover:-translate-y-1 hover:border-blue-300 hover:bg-slate-50">
       <button type="button" onClick={() => onQuickView(event)} className="block w-full text-left">
         <div className="relative aspect-[16/11] overflow-hidden bg-slate-900">
           {event.coverImageUrl ? (
             <img src={event.coverImageUrl} alt="" className="h-full w-full object-cover transition duration-500 group-hover:scale-105" />
           ) : (
             <div className="flex h-full w-full items-center justify-center bg-[radial-gradient(circle_at_30%_20%,rgba(56,189,248,0.18),transparent_28%),linear-gradient(135deg,#111827,#281052_58%,#0f172a)]">
-              <Ticket className="h-10 w-10 text-white/55" />
+              <Ticket className="h-10 w-10 text-slate-500" />
             </div>
           )}
           <div className="absolute inset-0 bg-gradient-to-t from-black/86 via-black/18 to-transparent" />
@@ -737,13 +738,13 @@ function EventCard({
               {formatMoney(event.minPrice, event.currency, locale)}
             </span>
             {event.category ? (
-              <span className="rounded-full border border-white/12 bg-black/50 px-3 py-1 text-xs font-bold text-white backdrop-blur">
+              <span className="rounded-full border border-white/25 bg-black/50 px-3 py-1 text-xs font-bold text-white backdrop-blur">
                 {event.category}
               </span>
             ) : null}
           </div>
           <div className="absolute bottom-4 left-4 right-4">
-            <p className="text-xs font-black uppercase tracking-[0.18em] text-cyan-100/90">
+            <p className="text-xs font-black uppercase tracking-[0.18em] text-cyan-200">
               {format(new Date(event.startsAt), "EEE, MMM d")}
             </p>
             <h3 className="mt-2 line-clamp-2 text-2xl font-black leading-[1.05] text-white">{title}</h3>
@@ -752,40 +753,40 @@ function EventCard({
       </button>
       <div className="space-y-4 p-5">
         <div className="flex items-start justify-between gap-4">
-          <p className="min-w-0 text-xs font-black uppercase tracking-[0.22em] text-white/40">
+          <p className="min-w-0 text-xs font-black uppercase tracking-[0.22em] text-slate-500">
             {event.organizerName}
           </p>
           <button
             onClick={toggleFavorite}
             aria-label={saved ? "Remove from favorites" : "Save event"}
-            className="rounded-full border border-white/10 p-2 text-white/70 transition hover:text-pink-300"
+            className="rounded-full border border-slate-200 p-2 text-slate-600 transition hover:text-pink-500"
           >
             <Heart className={saved ? "h-4 w-4 fill-pink-400 text-pink-400" : "h-4 w-4"} />
           </button>
         </div>
-        {description ? <p className="line-clamp-2 min-h-12 text-sm leading-6 text-white/66">{description}</p> : null}
-        <div className="grid gap-2 text-sm text-white/66">
+        {description ? <p className="line-clamp-2 min-h-12 text-sm leading-6 text-slate-600">{description}</p> : null}
+        <div className="grid gap-2 text-sm text-slate-600">
           <span className="flex items-center gap-2">
-            <CalendarDays className="h-4 w-4 shrink-0 text-cyan-200" />
+            <CalendarDays className="h-4 w-4 shrink-0 text-blue-600" />
             {format(new Date(event.startsAt), "EEE, MMM d - h:mm a")}
           </span>
           <span className="flex items-center gap-2">
-            <MapPin className="h-4 w-4 shrink-0 text-cyan-200" />
+            <MapPin className="h-4 w-4 shrink-0 text-blue-600" />
             {event.venueName || event.locationText || "Bahrain"}
           </span>
           <span className="flex items-center gap-2">
-            <UsersRound className="h-4 w-4 shrink-0 text-cyan-200" />
+            <UsersRound className="h-4 w-4 shrink-0 text-blue-600" />
             {event.organizerName}
           </span>
         </div>
         <div className="grid grid-cols-[1fr_auto] gap-2">
-          <Button asChild className="rounded-full bg-white font-black text-black hover:bg-white/90">
+          <Button asChild className="rounded-full bg-gradient-to-r from-blue-600 to-violet-600 font-black text-white hover:opacity-95">
             <Link href={event.buyUrl}>{viewLabel}</Link>
           </Button>
           <Button
             type="button"
             onClick={() => onQuickView(event)}
-            className="rounded-full border border-white/30 bg-white/15 px-5 font-black text-white hover:bg-white/25"
+            className="rounded-full border border-slate-300 bg-slate-100 px-5 font-black text-slate-900 hover:bg-slate-200"
           >
             {locale === "ar" ? "\u062a\u0641\u0627\u0635\u064a\u0644" : "Details"}
           </Button>
@@ -818,12 +819,12 @@ function EventQuickView({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 px-4 py-6 backdrop-blur-md" role="dialog" aria-modal="true">
-      <div className="relative max-h-[92svh] w-full max-w-5xl overflow-hidden rounded-[2rem] border border-white/14 bg-[#080d19] text-white shadow-[0_30px_120px_rgba(0,0,0,0.55)]">
+      <div className="relative max-h-[92svh] w-full max-w-5xl overflow-hidden rounded-[2rem] border border-slate-200 bg-white text-slate-900 shadow-[0_30px_90px_rgba(15,23,42,0.18)]">
         <button
           type="button"
           onClick={onClose}
           aria-label="Close event details"
-          className="absolute right-4 top-4 z-10 rounded-full border border-white/15 bg-black/45 p-2 text-white/80 backdrop-blur transition hover:bg-white/10 hover:text-white"
+          className="absolute right-4 top-4 z-10 rounded-full border border-slate-300 bg-black/45 p-2 text-white backdrop-blur transition hover:bg-black/60"
         >
           <X className="h-5 w-5" />
         </button>
@@ -834,7 +835,7 @@ function EventQuickView({
               <img src={event.coverImageUrl} alt="" className="h-full w-full object-cover" />
             ) : (
               <div className="flex h-full min-h-[300px] items-center justify-center bg-[radial-gradient(circle_at_35%_20%,rgba(56,189,248,0.22),transparent_30%),linear-gradient(135deg,#111827,#2e1065_58%,#0f172a)]">
-                <Ticket className="h-16 w-16 text-white/55" />
+                <Ticket className="h-16 w-16 text-slate-500" />
               </div>
             )}
             <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/18 to-transparent" />
@@ -843,7 +844,7 @@ function EventQuickView({
                 {formatMoney(event.minPrice, event.currency, locale)}
               </span>
               {event.category ? (
-                <span className="ms-2 rounded-full border border-white/15 bg-black/45 px-3 py-1 text-xs font-black text-white backdrop-blur">
+                <span className="ms-2 rounded-full border border-white/25 bg-black/45 px-3 py-1 text-xs font-black text-white backdrop-blur">
                   {event.category}
                 </span>
               ) : null}
@@ -851,11 +852,11 @@ function EventQuickView({
           </div>
 
           <div className="overflow-y-auto p-6 sm:p-8">
-            <p className="text-xs font-black uppercase tracking-[0.28em] text-cyan-200">
+            <p className="text-xs font-black uppercase tracking-[0.28em] text-blue-600">
               {locale === "ar" ? "\u0646\u0638\u0631\u0629 \u0633\u0631\u064a\u0639\u0629" : "Event preview"}
             </p>
             <h2 className="mt-3 text-3xl font-black tracking-tight sm:text-5xl">{title}</h2>
-            {description ? <p className="mt-5 text-base leading-7 text-white/68">{description}</p> : null}
+            {description ? <p className="mt-5 text-base leading-7 text-slate-600">{description}</p> : null}
 
             <div className="mt-7 grid gap-3">
               <DetailRow icon={CalendarDays} label={locale === "ar" ? "\u0627\u0644\u062a\u0627\u0631\u064a\u062e" : "Date"} value={format(new Date(event.startsAt), "EEE, MMM d - h:mm a")} />
@@ -865,10 +866,10 @@ function EventQuickView({
             </div>
 
             <div className="mt-8 grid gap-3 sm:grid-cols-2">
-              <Button asChild className="rounded-full bg-white py-6 font-black text-black hover:bg-white/90">
+              <Button asChild className="rounded-full bg-gradient-to-r from-blue-600 to-violet-600 py-6 font-black text-white hover:opacity-95">
                 <Link href={event.buyUrl}>{buyLabel}</Link>
               </Button>
-              <Button asChild variant="outline" className="rounded-full border-white/15 bg-white/[0.04] py-6 font-black text-white hover:bg-white/[0.08]">
+              <Button asChild variant="outline" className="rounded-full border-slate-300 bg-white py-6 font-black text-slate-900 hover:bg-slate-50">
                 <Link href={event.publicUrl}>{locale === "ar" ? "\u0641\u062a\u062d \u0635\u0641\u062d\u0629 \u0627\u0644\u0641\u0639\u0627\u0644\u064a\u0629" : "Open full event page"}</Link>
               </Button>
               <Button
@@ -882,7 +883,7 @@ function EventQuickView({
                   );
                   onClose();
                 }}
-                className="rounded-full border-cyan-300/40 bg-cyan-300/10 py-6 font-black text-cyan-100 hover:bg-cyan-300/20 sm:col-span-2"
+                className="rounded-full border-blue-300 bg-blue-50 py-6 font-black text-blue-600 hover:bg-blue-100 sm:col-span-2"
               >
                 <Sparkles className="me-2 h-4 w-4" />
                 {locale === "ar" ? "\u0627\u0633\u0623\u0644 \u0627\u0644\u0630\u0643\u0627\u0621 \u0639\u0646 \u0647\u0627\u0644\u0641\u0639\u0627\u0644\u064a\u0629" : "Ask AI about this event"}
@@ -905,11 +906,11 @@ function DetailRow({
   value: string;
 }) {
   return (
-    <div className="flex gap-3 rounded-2xl border border-white/10 bg-white/[0.045] p-4">
-      <Icon className="mt-0.5 h-5 w-5 shrink-0 text-cyan-200" />
+    <div className="flex gap-3 rounded-2xl border border-slate-200 bg-white/[0.045] p-4">
+      <Icon className="mt-0.5 h-5 w-5 shrink-0 text-blue-600" />
       <div>
-        <p className="text-xs font-black uppercase tracking-[0.18em] text-white/35">{label}</p>
-        <p className="mt-1 text-sm font-bold text-white/78">{value}</p>
+        <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">{label}</p>
+        <p className="mt-1 text-sm font-bold text-slate-600">{value}</p>
       </div>
     </div>
   );
@@ -917,10 +918,10 @@ function DetailRow({
 
 function EmptyState({ title, body }: { title: string; body: string }) {
   return (
-    <div className="rounded-[2rem] border border-white/10 bg-white/[0.04] p-10 text-center">
-      <Ticket className="mx-auto h-10 w-10 text-white/45" />
+    <div className="rounded-[2rem] border border-slate-200 bg-white p-10 text-center">
+      <Ticket className="mx-auto h-10 w-10 text-slate-500" />
       <h3 className="mt-4 text-2xl font-black">{title}</h3>
-      <p className="mx-auto mt-3 max-w-xl text-white/55">{body}</p>
+      <p className="mx-auto mt-3 max-w-xl text-slate-500">{body}</p>
     </div>
   );
 }
@@ -944,10 +945,10 @@ function RailSection({
     <section className="mb-16">
       <div className="mb-6 flex items-center justify-between gap-5">
         <Reveal>
-          <p className="text-xs font-black uppercase tracking-[0.28em] text-cyan-200">{eyebrow}</p>
+          <p className="text-xs font-black uppercase tracking-[0.28em] text-blue-600">{eyebrow}</p>
           <h2 className="mt-2 text-2xl font-black tracking-tight sm:text-4xl">{title}</h2>
         </Reveal>
-        <Link href="/" className="inline-flex items-center gap-2 text-sm font-black text-cyan-200">
+        <Link href="/" className="inline-flex items-center gap-2 text-sm font-black text-blue-600">
           {locale === "ar" ? "\u0639\u0631\u0636 \u0627\u0644\u0643\u0644" : "View all"}
           <ChevronRight className="h-4 w-4" />
         </Link>
@@ -976,14 +977,14 @@ function CompactEventCard({
     <button
       type="button"
       onClick={() => onQuickView(event)}
-      className="group min-w-[260px] overflow-hidden rounded-2xl border border-white/10 bg-[#0a0f1d]/75 text-left transition hover:border-cyan-200/30 hover:bg-[#0d1426]/90"
+      className="group min-w-[260px] overflow-hidden rounded-2xl border border-slate-200 bg-white text-left transition hover:border-blue-300 hover:bg-slate-50"
     >
       <div className="relative aspect-[16/10] bg-slate-900">
         {event.coverImageUrl ? (
           <img src={event.coverImageUrl} alt="" className="h-full w-full object-cover transition duration-500 group-hover:scale-105" />
         ) : (
           <div className="flex h-full w-full items-center justify-center bg-[linear-gradient(135deg,#0f172a,#164e63)]">
-            <Ticket className="h-8 w-8 text-white/60" />
+            <Ticket className="h-8 w-8 text-slate-600" />
           </div>
         )}
         <span className="absolute bottom-3 left-3 rounded-full bg-white px-3 py-1 text-xs font-black text-black">
@@ -992,8 +993,8 @@ function CompactEventCard({
       </div>
       <div className="space-y-2 p-4">
         <h3 className="line-clamp-2 min-h-[3rem] text-base font-black leading-6">{title}</h3>
-        <p className="text-xs font-bold text-white/55">{format(new Date(event.startsAt), "EEE, MMM d")}</p>
-        <p className="line-clamp-1 text-xs text-white/50">{event.venueName || event.locationText || "Bahrain"}</p>
+        <p className="text-xs font-bold text-slate-500">{format(new Date(event.startsAt), "EEE, MMM d")}</p>
+        <p className="line-clamp-1 text-xs text-slate-500">{event.venueName || event.locationText || "Bahrain"}</p>
       </div>
     </button>
   );
@@ -1003,13 +1004,13 @@ function ThingsToDo({ copy, locale }: { copy: typeof enCopy; locale: LocaleCode 
   const items = locale === "ar" ? arThingsToDo : enThingsToDo;
 
   return (
-    <section className="mb-16 rounded-[2rem] border border-white/10 bg-white/[0.04] p-6 sm:p-8">
+    <section className="mb-16 rounded-[2rem] border border-slate-200 bg-white p-6 sm:p-8">
       <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="text-xs font-black uppercase tracking-[0.28em] text-pink-300">{copy.thingsEyebrow}</p>
+          <p className="text-xs font-black uppercase tracking-[0.28em] text-pink-500">{copy.thingsEyebrow}</p>
           <h2 className="mt-2 text-2xl font-black tracking-tight sm:text-4xl">{copy.thingsTitle}</h2>
         </div>
-        <Link href="/" className="inline-flex items-center gap-2 text-sm font-black text-cyan-200">
+        <Link href="/" className="inline-flex items-center gap-2 text-sm font-black text-blue-600">
           {copy.explore}
           <ChevronRight className="h-4 w-4" />
         </Link>
@@ -1019,10 +1020,10 @@ function ThingsToDo({ copy, locale }: { copy: typeof enCopy; locale: LocaleCode 
           <Link
             key={item.href}
             href={item.href}
-            className="rounded-2xl border border-white/10 bg-black/20 p-5 transition hover:border-pink-200/40 hover:bg-black/30"
+            className="rounded-2xl border border-slate-200 bg-black/20 p-5 transition hover:border-pink-200/40 hover:bg-black/30"
           >
             <p className="text-lg font-black">{item.title}</p>
-            <p className="mt-2 text-sm leading-6 text-white/55">{item.body}</p>
+            <p className="mt-2 text-sm leading-6 text-slate-500">{item.body}</p>
           </Link>
         ))}
       </div>
