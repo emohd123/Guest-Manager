@@ -98,8 +98,8 @@ function DockItem({
       onBlur={() => isHovered.set(0)}
       onClick={onClick}
       className={cn(
-        'relative inline-flex items-center justify-center rounded-xl border border-white/10 bg-white/[0.06] shadow-md transition-colors',
-        'hover:border-cyan-400/50 hover:bg-cyan-400/10 focus-visible:border-cyan-400/60 focus-visible:bg-cyan-400/10',
+        'relative inline-flex items-center justify-center rounded-xl border border-slate-200 bg-slate-50 shadow-sm transition-colors',
+        'hover:border-blue-400 hover:bg-blue-50 focus-visible:border-blue-500 focus-visible:bg-blue-50',
         'outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/40',
         className
       )}
@@ -146,7 +146,7 @@ function DockLabel({ children, className, isHovered }: DockLabelProps) {
           exit={{ opacity: 0, y: 0 }}
           transition={{ duration: 0.2 }}
           className={cn(
-            'absolute -top-6 left-1/2 w-fit whitespace-pre rounded-md border border-white/14 bg-[#0a0f1d] px-2 py-0.5 text-xs text-white shadow-md',
+            'absolute -top-6 left-1/2 w-fit whitespace-pre rounded-md border border-slate-200 bg-white px-2 py-0.5 text-xs text-slate-900 shadow-md',
             className
           )}
           role="tooltip"
@@ -166,7 +166,7 @@ type DockIconProps = {
 
 function DockIcon({ children, className }: DockIconProps) {
   return (
-    <div className={cn('flex items-center justify-center text-cyan-200', className)}>
+    <div className={cn('flex items-center justify-center text-slate-700', className)}>
       {children}
     </div>
   );
@@ -207,7 +207,7 @@ export function Dock({
           mouseX.set(Infinity);
         }}
         className={cn(
-          'mx-auto flex w-fit items-end gap-4 rounded-2xl border border-white/12 bg-[#0a0f1d]/92 px-4 pb-3 shadow-2xl backdrop-blur',
+          'mx-auto flex w-fit items-end gap-4 rounded-2xl border border-slate-200 bg-white/95 px-4 pb-3 shadow-[0_12px_40px_rgba(15,23,42,0.16)] backdrop-blur',
           className
         )}
         style={{ height: panelHeight }}
