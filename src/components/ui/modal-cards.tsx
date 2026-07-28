@@ -170,7 +170,7 @@ export function ModalCards({
           dir={dir}
           className="fixed inset-0 z-[90] flex items-stretch justify-center"
           style={{
-            background: `radial-gradient(120% 120% at 50% 0%, ${gradientColor} 0%, rgba(3,6,16,0.92) 45%)`,
+            background: `radial-gradient(120% 120% at 50% 0%, ${gradientColor} 0%, rgba(15,23,42,0.55) 45%)`,
             ...(closing ? { animation: anim("mcOverlayOut") } : entrance("mcOverlayIn")),
             pointerEvents: closing ? "none" : "auto",
           }}
@@ -181,7 +181,7 @@ export function ModalCards({
             aria-modal="true"
             aria-label={active.title}
             onClick={(event) => event.stopPropagation()}
-            className="relative m-0 flex h-full w-full max-w-none flex-col overflow-hidden bg-[#05070f] sm:m-6 sm:h-auto sm:max-h-[calc(100vh-3rem)] sm:max-w-4xl sm:rounded-[2rem] sm:border sm:border-white/12"
+            className="relative m-0 flex h-full w-full max-w-none flex-col overflow-hidden bg-white sm:m-6 sm:h-auto sm:max-h-[calc(100vh-3rem)] sm:max-w-4xl sm:rounded-[2rem] sm:border sm:border-slate-200"
             style={closing ? { animation: anim("mcDialogOut") } : entrance("mcDialogIn")}
           >
             <div className="relative h-[38vh] shrink-0 overflow-hidden sm:h-72">
@@ -197,7 +197,7 @@ export function ModalCards({
                       : { animation: `mcImageIn ${durationMs * 1.6}ms ${ease} both` }
                 }
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-[#05070f] via-transparent to-black/30" />
+              <div className="absolute inset-0 bg-gradient-to-t from-white via-transparent to-black/25" />
               <button
                 type="button"
                 onClick={close}
@@ -214,21 +214,21 @@ export function ModalCards({
             </div>
             <div className="flex-1 overflow-y-auto p-6 sm:p-8">
               <h2
-                className="text-3xl font-black tracking-tight text-white sm:text-4xl"
+                className="text-3xl font-black tracking-tight text-slate-900 sm:text-4xl"
                 style={closing ? undefined : entrance("mcRiseIn", 0.25)}
               >
                 {active.title}
               </h2>
-              {active.subtitle ? <p className="mt-2 text-base font-bold text-cyan-100">{active.subtitle}</p> : null}
+              {active.subtitle ? <p className="mt-2 text-base font-bold text-blue-600">{active.subtitle}</p> : null}
               {active.content ? (
-                <div className="mt-5 text-white/75" style={closing ? undefined : entrance("mcRiseIn", 0.4)}>
+                <div className="mt-5 text-slate-600" style={closing ? undefined : entrance("mcRiseIn", 0.4)}>
                   {active.content}
                 </div>
               ) : null}
             </div>
             {active.actions ? (
               <div
-                className="shrink-0 border-t border-white/10 bg-black/30 p-5 sm:p-6"
+                className="shrink-0 border-t border-slate-200 bg-slate-50 p-5 sm:p-6"
                 style={closing ? undefined : entrance("mcRiseIn", 0.5)}
               >
                 {active.actions}

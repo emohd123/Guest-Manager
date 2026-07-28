@@ -297,7 +297,9 @@ export function MarketplaceClient({
         </div>
       </section>
 
-      <main className="relative z-10 mx-auto max-w-none px-4 py-14 before:pointer-events-none before:absolute before:inset-x-0 before:-top-24 before:bottom-0 before:-z-10 before:bg-gradient-to-b before:from-transparent before:via-[#050712]/72 before:to-[#050712]/88 sm:px-8 lg:px-12 2xl:px-20">
+      {/* Content sits directly on the light page. (A dark #050712 scrim used to
+          live here for the old dark theme — it covered the whole content area.) */}
+      <main className="relative z-10 mx-auto max-w-none px-4 py-14 sm:px-8 lg:px-12 2xl:px-20">
         <section className="mb-10 space-y-5">
           <div className="flex flex-wrap justify-center gap-3">
             {dateOptions.map((option) => (
