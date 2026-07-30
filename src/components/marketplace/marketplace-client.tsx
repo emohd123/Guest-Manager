@@ -85,6 +85,7 @@ export function MarketplaceClient({
   const [dateFilter, setDateFilter] = useState(initialDate);
   const [data, setData] = useState(initialData);
   const [loading, setLoading] = useState(false);
+  const [currentTime] = useState(() => Date.now());
   const dir = locale === "ar" ? "rtl" : "ltr";
   const events = data.events;
   const heroEvents = events.slice(0, mode === "home" ? 8 : 48);
@@ -102,10 +103,9 @@ export function MarketplaceClient({
   // "Happening soon" — events starting within 10 hours float to the top for
   // fast purchase, then the rest by soonest start date.
   const soonEvents = useMemo(() => {
-    const now = Date.now();
     const withTime = events.map((event) => ({
       event,
-      hours: (new Date(event.startsAt).getTime() - now) / 3_600_000,
+      hours: (new Date(event.startsAt).getTime() - currentTime) / 3_600_000,
     }));
     const fast = withTime
       .filter((x) => x.hours > 0 && x.hours <= 10)
@@ -116,7 +116,7 @@ export function MarketplaceClient({
     return [...fast, ...rest]
       .slice(0, 3)
       .map((x) => ({ event: x.event, fast: x.hours > 0 && x.hours <= 10, hours: x.hours }));
-  }, [events]);
+  }, [currentTime, events]);
   const hasFast = soonEvents.some((s) => s.fast);
   const copy = locale === "ar" ? arCopy : enCopy;
   const dateOptions = locale === "ar" ? arDateOptions : enDateOptions;
@@ -1036,9 +1036,9 @@ function ThingsToDo({ copy, locale }: { copy: typeof enCopy; locale: LocaleCode 
 const enCopy = {
   eyebrow: "iTicket Bahrain",
   liveInBahrain: "Live in Bahrain",
-  titleLead: "Every event in Bahrain,",
+  titleLead: "Every event,",
   titleAccent: "iTicket",
-  title: "Every event in Bahrain, iTicket",
+  title: "Every event, iTicket",
   subtitle:
     "Browse curated events, reserve QR tickets, and let our team run ticketing, check-in, and guest ops end to end.",
   quickStats: ["BHD payments", "Arabic + English", "QR tickets", "Managed by iTicket"],
