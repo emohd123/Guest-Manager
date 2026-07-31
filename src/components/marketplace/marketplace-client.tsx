@@ -139,6 +139,19 @@ export function MarketplaceClient({
   const [quickViewEvent, setQuickViewEvent] = useState<MarketplaceEvent | null>(null);
 
   useEffect(() => {
+    function resetHomeFilters() {
+      setQuery("");
+      setCategory("");
+      setDateFilter("");
+      setHeroIndex(0);
+      setQuickViewEvent(null);
+    }
+
+    window.addEventListener("iticket:home-reset", resetHomeFilters);
+    return () => window.removeEventListener("iticket:home-reset", resetHomeFilters);
+  }, []);
+
+  useEffect(() => {
     const controller = new AbortController();
 
     async function load() {
@@ -700,7 +713,7 @@ function HeroFeature({
             </Button>
             <Button
               type="button"
-              onClick={() => onQuickView(event)}
+              onClick={() => { window.location.href = event.publicUrl; }}
               className="rounded-full border border-white/30 bg-white/15 px-5 font-black text-white backdrop-blur hover:bg-white/25"
             >
               {locale === "ar" ? "تفاصيل" : "Details"}
@@ -812,7 +825,7 @@ function EventCard({
   return (
     <Spotlight className="rounded-[1.6rem]">
     <article className="group overflow-hidden rounded-[1.6rem] border border-slate-200 bg-white text-slate-900 shadow-[0_16px_50px_rgba(15,23,42,0.10)] backdrop-blur transition duration-300 hover:-translate-y-1 hover:border-blue-300 hover:bg-slate-50">
-      <button type="button" onClick={() => onQuickView(event)} className="block w-full text-left">
+      <button type="button" onClick={() => { window.location.href = event.publicUrl; }} className="block w-full text-left">
         <div className="relative aspect-[16/11] overflow-hidden bg-slate-900">
           {event.coverImageUrl ? (
             <img src={event.coverImageUrl} alt="" className="h-full w-full object-cover transition duration-500 group-hover:scale-105" />
@@ -877,7 +890,7 @@ function EventCard({
           </Button>
           <Button
             type="button"
-            onClick={() => onQuickView(event)}
+            onClick={() => { window.location.href = event.publicUrl; }}
             className="rounded-full border border-slate-300 bg-slate-100 px-5 font-black text-slate-900 hover:bg-slate-200"
           >
             {locale === "ar" ? "\u062a\u0641\u0627\u0635\u064a\u0644" : "Details"}
@@ -1068,7 +1081,7 @@ function CompactEventCard({
   return (
     <button
       type="button"
-      onClick={() => onQuickView(event)}
+      onClick={() => { window.location.href = event.publicUrl; }}
       className="group min-w-[260px] overflow-hidden rounded-2xl border border-slate-200 bg-white text-left text-slate-950 transition hover:border-blue-300 hover:bg-slate-50"
     >
       <div className="relative aspect-[16/10] bg-slate-900">

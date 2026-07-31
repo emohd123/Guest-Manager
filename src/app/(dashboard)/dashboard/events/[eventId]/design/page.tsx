@@ -48,6 +48,8 @@ export default function DesignSetupPage({
   const [locationText, setLocationText] = useState("");
   const [pageCtaLabel, setPageCtaLabel] = useState("");
   const [highlightsCsv, setHighlightsCsv] = useState("");
+  const [galleryUrls, setGalleryUrls] = useState("");
+  const [videoUrl, setVideoUrl] = useState("");
   const [showAgenda, setShowAgenda] = useState(true);
   const [showSponsors, setShowSponsors] = useState(true);
   const [showAppDownload, setShowAppDownload] = useState(true);
@@ -103,6 +105,8 @@ export default function DesignSetupPage({
         setLocationText(settings.publicPage?.locationText || "");
         setPageCtaLabel(settings.publicPage?.ctaLabel || "");
         setHighlightsCsv((settings.publicPage?.highlights ?? []).join("\n"));
+        setGalleryUrls((settings.publicPage?.galleryImages ?? []).join("\n"));
+        setVideoUrl(settings.publicPage?.videoUrl || "");
         setShowAgenda(settings.publicPage?.showAgenda !== false);
         setShowSponsors(settings.publicPage?.showSponsors !== false);
         setShowAppDownload(settings.publicPage?.showAppDownload !== false);
@@ -167,6 +171,11 @@ export default function DesignSetupPage({
             .split("\n")
             .map((line) => line.trim())
             .filter(Boolean),
+          galleryImages: galleryUrls
+            .split("\n")
+            .map((line) => line.trim())
+            .filter(Boolean),
+          videoUrl: videoUrl.trim(),
           showAgenda,
           showSponsors,
           showAppDownload,
@@ -370,6 +379,17 @@ export default function DesignSetupPage({
                   <div className="space-y-3">
                     <Label className="text-[9px] font-black uppercase tracking-[0.3em] text-muted-foreground dark:text-white/40 italic">HIGHLIGHTS</Label>
                     <Textarea value={highlightsCsv} onChange={(e) => setHighlightsCsv(e.target.value)} className="theme-textarea min-h-[160px]" placeholder={"One highlight per line\nKeynote speakers\nPremium networking\nLive sessions"} />
+                  </div>
+
+                  <div className="space-y-3">
+                    <Label className="text-[9px] font-black uppercase tracking-[0.3em] text-muted-foreground dark:text-white/40 italic">GALLERY IMAGE URLS</Label>
+                    <Textarea value={galleryUrls} onChange={(e) => setGalleryUrls(e.target.value)} className="theme-textarea min-h-[120px]" placeholder={"One image URL per line\nhttps://..."} />
+                    <p className="text-xs text-muted-foreground">These images appear in the public event gallery after the cover image.</p>
+                  </div>
+
+                  <div className="space-y-3">
+                    <Label className="text-[9px] font-black uppercase tracking-[0.3em] text-muted-foreground dark:text-white/40 italic">EVENT VIDEO URL</Label>
+                    <Input value={videoUrl} onChange={(e) => setVideoUrl(e.target.value)} className="theme-input" placeholder="https://.../event-video.mp4" />
                   </div>
 
                   <div className="grid gap-4 md:grid-cols-3">
