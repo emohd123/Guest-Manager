@@ -14,10 +14,14 @@ export default function MarketingLayout({
       <Suspense fallback={null}>
         <PublicLocaleSync />
       </Suspense>
-      <MarketingNavbar />
+      <Suspense fallback={<div className="h-16 border-b border-white/10 bg-[#171717]" />}>
+        <MarketingNavbar />
+      </Suspense>
       <main className="flex-1">{children}</main>
       <MarketingFooter />
-      <PublicShortcutDock />
+      <Suspense fallback={null}>
+        <PublicShortcutDock />
+      </Suspense>
     </div>
   );
 }
