@@ -308,7 +308,14 @@ export default function PublicEventPage({
   const eventDate = format(new Date(event.startsAt), "MMMM d, yyyy");
   const eventTime = format(new Date(event.startsAt), "h:mm a");
   const venueLabel = publicPage.venueName || publicPage.locationText || t.locationFallback;
-  const galleryImages = event.coverImageUrl ? [event.coverImageUrl] : [];
+  const publicMedia = (settings.publicPage as { galleryImages?: unknown; videoUrl?: unknown } | undefined);
+  const extraGalleryImages = Array.isArray(publicMedia?.galleryImages)
+    ? publicMedia.galleryImages.filter((item): item is string => typeof item === "string" && item.trim().length > 0)
+    : [];
+  const galleryImages = [...new Set([event.coverImageUrl, ...extraGalleryImages].filter((item): item is string => Boolean(item)))];
+  const videoUrl = typeof publicMedia?.videoUrl === "string" && publicMedia.videoUrl.trim()
+    ? publicMedia.videoUrl
+    : null;
   const importantItems = publicPage.highlights.length
     ? publicPage.highlights.slice(0, 5)
     : [
@@ -454,6 +461,15 @@ export default function PublicEventPage({
                     </div>
                   ))}
                 </div>
+              </section>
+            ) : null}
+
+            {videoUrl ? (
+              <section className="border-t border-zinc-200 pt-7">
+                <h2 className="mb-4 text-2xl font-black tracking-tight">Event video</h2>
+                <video controls preload="metadata" className="aspect-video w-full rounded-2xl bg-zinc-950" src={videoUrl}>
+                  Your browser does not support event video playback.
+                </video>
               </section>
             ) : null}
 

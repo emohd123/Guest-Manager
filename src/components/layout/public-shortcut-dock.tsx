@@ -25,11 +25,22 @@ export function PublicShortcutDock() {
     router.push(localeHref("/"));
   }
 
+  function goHome() {
+    const homeHref = localeHref("/");
+    if (pathname === "/") {
+      window.dispatchEvent(new Event("iticket:home-reset"));
+      router.replace(homeHref);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
+    router.push(homeHref);
+  }
+
   const shortcuts = [
     {
       icon: <Home className="h-5 w-5" />,
       label: isArabic ? "الرئيسية" : "Home",
-      onClick: () => pathname === "/" ? window.scrollTo({ top: 0, behavior: "smooth" }) : router.push(localeHref("/")),
+      onClick: goHome,
     },
     { icon: <Search className="h-5 w-5" />, label: isArabic ? "بحث" : "Search", onClick: focusSearch },
     { icon: <Heart className="h-5 w-5" />, label: isArabic ? "المفضلة" : "Favourite", onClick: () => router.push(localeHref("/account/favorites")) },

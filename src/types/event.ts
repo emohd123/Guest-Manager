@@ -14,6 +14,8 @@ export interface DesignSettings {
     locationText?: string;
     ctaLabel?: string;
     highlights?: string[];
+    galleryImages?: string[];
+    videoUrl?: string;
     showAgenda?: boolean;
     showSponsors?: boolean;
     showAppDownload?: boolean;
