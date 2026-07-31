@@ -393,6 +393,48 @@ html:not(.dark) .public-theme-scope .text-white:not([class*="bg-primary"]) {
   background-color: #202535 !important;
 }
 
+/* Public event pages are opened from the marketplace, so retain the same dark
+   concert palette while preserving their full checkout and event information. */
+.public-event-scope .bg-white,
+.public-event-scope .bg-zinc-50,
+.public-event-scope .bg-\[\#f7f7f8\] {
+  background-color: #141722 !important;
+}
+
+.public-event-scope .bg-zinc-100,
+.public-event-scope .bg-zinc-200 {
+  background-color: #202535 !important;
+}
+
+.public-event-scope .border-zinc-100,
+.public-event-scope .border-zinc-200,
+.public-event-scope .border-zinc-300 {
+  border-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+.public-event-scope .text-zinc-950,
+.public-event-scope .text-zinc-900,
+.public-event-scope .text-zinc-800,
+.public-event-scope .text-zinc-700 {
+  color: #f8fafc !important;
+}
+
+.public-event-scope .text-zinc-600,
+.public-event-scope .text-zinc-500,
+.public-event-scope .text-zinc-400 {
+  color: #a8b4ca !important;
+}
+
+.public-event-scope .bg-zinc-950 {
+  background-color: #67e8f9 !important;
+  color: #0f172a !important;
+}
+
+.public-event-scope .text-violet-600,
+.public-event-scope .text-violet-700 {
+  color: #67e8f9 !important;
+}
+
 @keyframes mesh-flow {
   0% {
     background-position: 0% 0%;

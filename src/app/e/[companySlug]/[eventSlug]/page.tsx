@@ -331,7 +331,7 @@ export default function PublicEventPage({
   ];
 
   return (
-    <div className="min-h-screen bg-[#f7f7f8] text-zinc-950" dir={dir}>
+    <div className="public-event-scope min-h-screen bg-[#080808] text-white" dir={dir}>
       {settings.customCss && <style>{settings.customCss}</style>}
 
       <header className="border-b border-zinc-200 bg-white">
