@@ -190,6 +190,7 @@ export const eventsRouter = router({
         maxCapacity: z.number().int().positive().optional(),
         registrationEnabled: z.boolean().optional(),
         coverImageUrl: z.string().url().optional(),
+        visitorCode: z.string().trim().regex(/^[A-Za-z0-9-]{4,10}$/).optional(),
         settings: z.any().optional(),
       })
     )
@@ -224,6 +225,7 @@ export const eventsRouter = router({
       if (input.maxCapacity !== undefined) payload.max_capacity = input.maxCapacity;
       if (input.registrationEnabled !== undefined) payload.registration_enabled = input.registrationEnabled;
       if (input.coverImageUrl !== undefined) payload.cover_image_url = input.coverImageUrl;
+      if (input.visitorCode !== undefined) payload.visitor_code = input.visitorCode.toUpperCase();
       if (input.settings !== undefined) payload.settings = input.settings;
 
       const { data, error } = await ctx.supabase

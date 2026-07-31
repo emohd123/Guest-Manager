@@ -47,6 +47,13 @@ export type EventAnnouncement = {
   createdAt: string;
 };
 
+export type EventResource = {
+  id: string;
+  title: string;
+  url: string;
+  fileType?: "PDF" | "PPTX" | "DOCX" | "LINK";
+};
+
 export type EventSessionStatus = "upcoming" | "live" | "completed";
 
 export type EventSessionRecord = {
@@ -117,6 +124,8 @@ export type EventAppSettings = {
     featuredProfiles: SponsorProfile[];
   };
   announcements: EventAnnouncement[];
+  venueMapUrl?: string;
+  resources: EventResource[];
   sessionDetails?: Record<string, Partial<EventSessionRecord>>;
   push?: {
     reminderLeadMinutes?: number;

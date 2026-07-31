@@ -8,6 +8,7 @@ import {
   type EventAnnouncement,
   type EventAppSettings,
   type EventFeatureFlags,
+  type EventResource,
   type EventSessionRecord,
   type EventSessionStatus,
   type SponsorProfile,
@@ -151,6 +152,10 @@ export function normalizeEventAppSettings(raw: unknown): EventAppSettings {
         : [],
     },
     announcements: Array.isArray(app.announcements) ? (app.announcements as EventAnnouncement[]) : [],
+    venueMapUrl: typeof app.venueMapUrl === "string" ? app.venueMapUrl : "",
+    resources: Array.isArray(app.resources)
+      ? (app.resources as EventResource[]).filter((resource) => resource?.title && resource?.url)
+      : [],
     sessionDetails:
       app.sessionDetails && typeof app.sessionDetails === "object" ? app.sessionDetails : {},
     push: {

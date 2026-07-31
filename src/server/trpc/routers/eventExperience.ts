@@ -106,6 +106,13 @@ export const eventExperienceRouter = router({
               })
             )
             .default([]),
+          venueMapUrl: z.string().url().optional().or(z.literal("")),
+          resources: z.array(z.object({
+            id: z.string(),
+            title: z.string().min(1),
+            url: z.string().url(),
+            fileType: z.enum(["PDF", "PPTX", "DOCX", "LINK"]).optional(),
+          })).default([]),
           push: z
             .object({
               reminderLeadMinutes: z.number().int().optional(),
