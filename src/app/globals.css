@@ -352,6 +352,47 @@ html:not(.dark) .public-theme-scope .text-white:not([class*="bg-primary"]) {
   color: var(--foreground) !important;
 }
 
+/* Public pages share the marketplace's dark concert palette.  The home view
+   keeps its intentionally white event cards, so these rules only apply to
+   the other top-level marketing routes. */
+.public-theme-scope > main > :not(.home-page-surface) {
+  background-color: #080808 !important;
+  color: #f8fafc !important;
+}
+
+.public-theme-scope > main > :not(.home-page-surface) .bg-\[\#f6f7fb\],
+.public-theme-scope > main > :not(.home-page-surface) .bg-white,
+.public-theme-scope > main > :not(.home-page-surface) .bg-slate-50,
+.public-theme-scope > main > :not(.home-page-surface) .bg-slate-100 {
+  background-color: #141722 !important;
+}
+
+.public-theme-scope > main > :not(.home-page-surface) .border-slate-200,
+.public-theme-scope > main > :not(.home-page-surface) .border-slate-300,
+.public-theme-scope > main > :not(.home-page-surface) .border-white\/5 {
+  border-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+.public-theme-scope > main > :not(.home-page-surface) .text-slate-900,
+.public-theme-scope > main > :not(.home-page-surface) .text-black {
+  color: #f8fafc !important;
+}
+
+.public-theme-scope > main > :not(.home-page-surface) .text-slate-600,
+.public-theme-scope > main > :not(.home-page-surface) .text-slate-500 {
+  color: #a8b4ca !important;
+}
+
+.public-theme-scope > main > :not(.home-page-surface) .placeholder\:text-slate-500::placeholder,
+.public-theme-scope > main > :not(.home-page-surface) .placeholder\:text-slate-600::placeholder {
+  color: #8b98b0 !important;
+}
+
+.public-theme-scope > main > :not(.home-page-surface) .hover\:bg-slate-100:hover,
+.public-theme-scope > main > :not(.home-page-surface) .hover\:bg-white:hover {
+  background-color: #202535 !important;
+}
+
 @keyframes mesh-flow {
   0% {
     background-position: 0% 0%;

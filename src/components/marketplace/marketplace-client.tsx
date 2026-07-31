@@ -1,14 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { format } from "date-fns";
-import { BadgeCheck, CalendarDays, ChevronRight, Headphones, Heart, Home, MapPin, Search, ShieldCheck, Sparkles, Ticket, User, UsersRound, X, Zap } from "lucide-react";
+import { BadgeCheck, CalendarDays, ChevronLeft, ChevronRight, Headphones, Heart, Home, MapPin, Search, ShieldCheck, Sparkles, Ticket, User, UsersRound, X, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { ModalCards, type ModalCard } from "@/components/ui/modal-cards";
 import Dock from "@/components/ui/dock";
-import { PerspectiveGrid } from "@/components/visual/perspective-grid";
-import { FallingSparkles } from "@/components/visual/falling-sparkles";
 import { AiConcierge } from "@/components/marketplace/ai-concierge";
 import { Reveal, Spotlight } from "@/components/visual/reactbits";
 import { eventCategories, formatMoney, normalizeLocale, type LocaleCode } from "@/lib/marketplace";
@@ -20,10 +17,6 @@ import { cn } from "@/lib/utils";
 // inline check icon via `chip-check` so the selection is unmistakable.
 const chipBase =
   "group inline-flex shrink-0 items-center gap-2 rounded-full px-5 py-3 text-sm font-black transition-all duration-200 cursor-pointer select-none active:scale-95 [-webkit-tap-highlight-color:transparent] touch-manipulation focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400";
-const chipActiveWhite = "chip-flash bg-slate-900 text-white shadow-[0_4px_16px_rgba(15,23,42,0.25)]";
-const chipActiveCyan = "chip-flash bg-cyan-300 text-black shadow-[0_0_20px_rgba(103,232,249,0.35)]";
-const chipInactive =
-  "border border-slate-200 bg-white text-slate-600 hover:border-slate-400 hover:text-slate-900";
 
 // Subject-relevant, curated category imagery (stable Unsplash photos).
 const CATEGORY_IMAGE_IDS: Record<string, string> = {
@@ -86,8 +79,30 @@ export function MarketplaceClient({
   const [data, setData] = useState(initialData);
   const [loading, setLoading] = useState(false);
   const [currentTime] = useState(() => Date.now());
+  const [heroIndex, setHeroIndex] = useState(0);
+  const datePickerRef = useRef<HTMLInputElement>(null);
   const dir = locale === "ar" ? "rtl" : "ltr";
-  const events = data.events;
+  const events = useMemo(() => {
+    if (!dateFilter || !["today", "tomorrow"].includes(dateFilter) && !/^\d{4}-\d{2}-\d{2}$/.test(dateFilter)) {
+      return data.events;
+    }
+
+    const target = new Date();
+    if (dateFilter === "tomorrow") target.setDate(target.getDate() + 1);
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dateFilter)) {
+      const [year, month, day] = dateFilter.split("-").map(Number);
+      target.setFullYear(year, month - 1, day);
+    }
+
+    return data.events.filter((event) => {
+      const startsAt = new Date(event.startsAt);
+      return (
+        startsAt.getFullYear() === target.getFullYear() &&
+        startsAt.getMonth() === target.getMonth() &&
+        startsAt.getDate() === target.getDate()
+      );
+    });
+  }, [data.events, dateFilter]);
   const heroEvents = events.slice(0, mode === "home" ? 8 : 48);
   const publicCategories = data.categories.filter((item) => item.kind !== "service");
   const serviceCategories = eventCategories.filter((item) => item.kind === "service");
@@ -99,7 +114,7 @@ export function MarketplaceClient({
     })
     .slice(0, 8);
   const attractionEvents = events.filter((event) => event.categorySlug === "attractions").slice(0, 8);
-  const featured = useMemo(() => events[0], [events]);
+  const featured = events[heroIndex % Math.max(events.length, 1)];
   // "Happening soon" — events starting within 10 hours float to the top for
   // fast purchase, then the rest by soonest start date.
   const soonEvents = useMemo(() => {
@@ -151,43 +166,51 @@ export function MarketplaceClient({
     return () => controller.abort();
   }, [category, dateFilter, locale, query]);
 
+  function openDatePicker() {
+    const input = datePickerRef.current;
+    if (!input) return;
+
+    try {
+      input.showPicker();
+      return;
+    } catch {
+      input.focus();
+      input.click();
+    }
+  }
+
   return (
-    <div dir={dir} className="relative min-h-screen overflow-hidden bg-[#f6f7fb] text-slate-900">
-      <div className="pointer-events-none fixed inset-0 z-0 bg-[#f6f7fb]">
-        <FallingSparkles
-          className="absolute inset-0 h-full w-full"
-          colors={["#3B6CF6", "#6D28D9", "#0EA5E9", "#A855F7"]}
-          density={8}
-          speed={1}
-          composite="source-over"
-        />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_72%_16%,rgba(59,108,246,0.07),transparent_34%),radial-gradient(circle_at_18%_82%,rgba(109,40,217,0.05),transparent_36%)]" />
-        
-      </div>
-
-      <section className="relative z-10 overflow-hidden px-4 pb-16 pt-24 sm:px-8 lg:px-12 2xl:px-20">
-        <div className="absolute inset-0">
-          <PerspectiveGrid className="opacity-[0.45]" color="rgba(103,232,249,0.3)" speed={0.9} lineCount={16} />
-          <div className="absolute left-[8%] top-[22%] h-24 w-24 rounded-full border border-cyan-200/10 bg-cyan-200/[0.025] blur-sm" />
-          <div className="absolute bottom-[24%] right-[12%] h-36 w-36 rounded-full border border-pink-300/10 bg-pink-300/[0.025] blur-sm" />
-        </div>
-
+    <div dir={dir} className="home-page-surface relative min-h-screen overflow-hidden bg-[#080808] text-white">
+      <section className="relative z-10 overflow-hidden bg-[#080808] px-0 pb-0 pt-20">
         <div className="relative z-10 mx-auto flex max-w-none flex-col justify-end">
-          <div className="grid items-start gap-10 lg:grid-cols-[1.08fr_0.92fr]">
-            <div className="min-w-0">
-              <h1 className="text-4xl font-black leading-[0.96] tracking-[-0.03em] text-slate-900 sm:text-5xl lg:text-[3.35rem]">
-                {copy.titleLead}{" "}
-                <span className="bg-gradient-to-r from-cyan-400 via-fuchsia-400 to-amber-400 bg-[length:200%_auto] bg-clip-text text-transparent animate-[shine_5s_linear_infinite]">
-                  {copy.titleAccent}
-                </span>
-              </h1>
-              <p className="mt-5 max-w-[46ch] text-[15px] leading-relaxed text-slate-600">
-                {copy.subtitle}
-              </p>
-
-              <div className="mt-8 rounded-[2rem] border border-slate-200 bg-white p-3 shadow-[0_18px_60px_rgba(15,23,42,0.10)]">
+          <div className="hidden mb-6 flex-col justify-between gap-4 md:flex-row md:items-center">
+            <h1 className="text-3xl font-black tracking-[-0.04em] sm:text-4xl">
+              {locale === "ar" ? "أشياء يمكن القيام بها في " : "Things to do in "}
+              <span className="text-blue-600">Bahrain</span>
+            </h1>
+            <div className="flex flex-wrap gap-2">
+              {dateOptions.map((option) => (
+                <button
+                  key={option.value || "all"}
+                  type="button"
+                  onClick={() => setDateFilter(option.value)}
+                  className={cn(
+                    "rounded-full border px-4 py-2 text-sm font-bold transition",
+                    dateFilter === option.value
+                      ? "border-blue-600 bg-blue-600 text-white"
+                      : "border-slate-200 bg-white text-slate-800 hover:border-blue-300"
+                  )}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="grid items-start gap-8">
+            <div className="hidden min-w-0">
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3 shadow-sm">
                 <div className="grid gap-3 md:grid-cols-[1fr_auto_auto]">
-                  <label className="flex min-h-14 items-center gap-3 rounded-[1.4rem] border border-slate-200 bg-slate-50 px-5">
+                  <label className="flex min-h-12 items-center gap-3 rounded-xl bg-white px-5">
                     <Search className="h-5 w-5 shrink-0 text-slate-600" />
                     <input
                       value={query}
@@ -199,7 +222,7 @@ export function MarketplaceClient({
                   <select
                     value={category}
                     onChange={(event) => setCategory(event.target.value)}
-                    className="min-h-14 rounded-[1.4rem] border border-slate-200 bg-white px-5 text-sm font-bold text-slate-700 outline-none"
+                    className="min-h-12 rounded-xl border border-slate-200 bg-white px-5 text-sm font-bold text-slate-700 outline-none"
                   >
                     <option value="">{copy.allCategories}</option>
                     {publicCategories.map((item) => (
@@ -208,7 +231,7 @@ export function MarketplaceClient({
                       </option>
                     ))}
                   </select>
-                  <Button asChild className="min-h-14 rounded-[1.4rem] bg-gradient-to-r from-blue-600 to-violet-600 px-7 font-black text-white hover:opacity-95">
+                  <Button asChild className="min-h-12 rounded-xl bg-blue-600 px-7 font-black text-white hover:bg-blue-700">
                     <Link href={`/?${new URLSearchParams({ q: query, category, date: dateFilter }).toString()}`}>
                       {copy.explore}
                     </Link>
@@ -216,7 +239,7 @@ export function MarketplaceClient({
                 </div>
               </div>
 
-              <div className="mt-7 flex flex-wrap gap-3 text-xs font-black uppercase tracking-[0.18em] text-slate-600">
+              <div className="mt-5 flex flex-wrap gap-3 text-xs font-black uppercase tracking-[0.18em] text-slate-600">
                 {copy.quickStats.map((item) => (
                   <span key={item} className="rounded-full border border-slate-200 bg-white px-4 py-2 text-slate-600">
                     {item}
@@ -225,7 +248,7 @@ export function MarketplaceClient({
               </div>
 
               {soonEvents.length > 0 ? (
-                <div className="mt-8">
+                <div className="mt-7">
                   <div className="mb-4 flex items-center gap-2">
                     <span className={`h-2 w-2 animate-pulse rounded-full ${hasFast ? "bg-rose-400" : "bg-cyan-300"}`} />
                     <p className="text-[11px] font-black uppercase tracking-[0.22em] text-slate-600">
@@ -289,36 +312,94 @@ export function MarketplaceClient({
             </div>
 
             {featured ? (
-              <div className="order-first lg:order-none">
+              <div className="relative order-first mx-auto w-full max-w-[1280px]">
                 <HeroFeature event={featured} locale={locale} onQuickView={setQuickViewEvent} />
+                {events.length > 1 ? (
+                  <>
+                    <button
+                      type="button"
+                      aria-label="Previous featured event"
+                      onClick={() => setHeroIndex((index) => (index - 1 + events.length) % events.length)}
+                      className="absolute left-4 top-1/2 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-slate-900 shadow-lg transition hover:bg-white lg:flex"
+                    >
+                      <ChevronLeft className="h-5 w-5" />
+                    </button>
+                    <button
+                      type="button"
+                      aria-label="Next featured event"
+                      onClick={() => setHeroIndex((index) => (index + 1) % events.length)}
+                      className="absolute right-4 top-1/2 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-slate-900 shadow-lg transition hover:bg-white lg:flex"
+                    >
+                      <ChevronRight className="h-5 w-5" />
+                    </button>
+                  </>
+                ) : null}
               </div>
             ) : null}
           </div>
+          <nav aria-label="Browse event categories" className="hidden min-h-14 items-center justify-center gap-7 overflow-x-auto bg-[#272727] px-5 text-xs font-black uppercase tracking-[0.08em] text-white sm:gap-10 sm:text-sm">
+            {[
+              { label: locale === "ar" ? "موسيقى" : "Music", value: "concerts" },
+              { label: locale === "ar" ? "كوميديا" : "Comedy", value: "comedy" },
+              { label: locale === "ar" ? "عائلي" : "Family", value: "family" },
+              { label: locale === "ar" ? "العروض" : "Shows", value: "" },
+            ].map((item) => (
+              <button
+                key={item.label}
+                type="button"
+                onClick={() => setCategory(item.value)}
+                className={cn("shrink-0 transition hover:text-cyan-300", category === item.value && "text-cyan-300")}
+              >
+                {item.label}
+              </button>
+            ))}
+          </nav>
+          <nav aria-label="Filter events by date" className="flex min-h-16 items-center justify-center gap-3 overflow-x-auto bg-[#272727] px-5 text-sm font-black text-white">
+            <button
+              type="button"
+              onClick={() => setDateFilter("today")}
+              className={cn("shrink-0 rounded-full px-4 py-2 transition", dateFilter === "today" ? "bg-cyan-300 text-black" : "hover:bg-white/10")}
+            >
+              {locale === "ar" ? "اليوم" : "Today"}
+            </button>
+            <button
+              type="button"
+              onClick={() => setDateFilter("tomorrow")}
+              className={cn("shrink-0 rounded-full px-4 py-2 transition", dateFilter === "tomorrow" ? "bg-cyan-300 text-black" : "hover:bg-white/10")}
+            >
+              {locale === "ar" ? "غدًا" : "Tomorrow"}
+            </button>
+            <div className="relative">
+              <button
+                type="button"
+                onClick={openDatePicker}
+                className={cn("flex shrink-0 items-center gap-2 rounded-full px-4 py-2 transition", /^\d{4}-\d{2}-\d{2}$/.test(dateFilter) ? "bg-cyan-300 text-black" : "hover:bg-white/10")}
+              >
+                <CalendarDays className="h-4 w-4" />
+                <span>{locale === "ar" ? "اختر تاريخًا" : "Choose a date"}</span>
+              </button>
+              <input
+                ref={datePickerRef}
+                type="date"
+                value={/^\d{4}-\d{2}-\d{2}$/.test(dateFilter) ? dateFilter : ""}
+                onChange={(event) => setDateFilter(event.target.value)}
+                aria-label="Choose an event date"
+                className="pointer-events-none absolute h-px w-px opacity-0"
+              />
+            </div>
+          </nav>
         </div>
       </section>
 
       {/* Content sits directly on the light page. (A dark #050712 scrim used to
           live here for the old dark theme — it covered the whole content area.) */}
-      <main className="relative z-10 mx-auto max-w-none px-4 py-14 sm:px-8 lg:px-12 2xl:px-20">
-        <section className="mb-10 space-y-5">
-          <div className="flex flex-wrap justify-center gap-3">
-            {dateOptions.map((option) => (
-              <button
-                key={option.value || "all"}
-                type="button"
-                onClick={() => setDateFilter(option.value)}
-                className={cn(chipBase, dateFilter === option.value ? chipActiveWhite : chipInactive)}
-              >
-                {dateFilter === option.value ? <BadgeCheck className="chip-check h-4 w-4" /> : null}
-                {option.label}
-              </button>
-            ))}
-          </div>
-          <div className="flex flex-wrap justify-center gap-3">
+      <main className="relative z-10 mx-auto max-w-6xl bg-[#080808] px-4 py-14 sm:px-8 lg:px-12">
+        <section className="mb-12">
+          <div className="flex flex-wrap gap-3">
             <button
               type="button"
               onClick={() => setCategory("")}
-              className={cn(chipBase, !category ? chipActiveCyan : chipInactive)}
+              className={cn(chipBase, !category ? "border-cyan-200 bg-cyan-300 text-slate-950" : "border-slate-600 bg-slate-800 text-white hover:border-slate-400 hover:bg-slate-700")}
             >
               {!category ? <BadgeCheck className="chip-check h-4 w-4" /> : null}
               {copy.allCategories}
@@ -328,7 +409,7 @@ export function MarketplaceClient({
                 key={item.slug}
                 type="button"
                 onClick={() => setCategory(item.slug)}
-                className={cn(chipBase, category === item.slug ? chipActiveCyan : chipInactive)}
+                className={cn(chipBase, category === item.slug ? "border-cyan-200 bg-cyan-300 text-slate-950" : "border-slate-600 bg-slate-800 text-white hover:border-slate-400 hover:bg-slate-700")}
               >
                 {category === item.slug ? <BadgeCheck className="chip-check h-4 w-4" /> : null}
                 {locale === "ar" ? item.labelAr : item.label}
@@ -337,21 +418,21 @@ export function MarketplaceClient({
           </div>
         </section>
 
-        <section className="mb-16">
+        <section className="mb-20">
           <div className="mb-7 flex items-end justify-between gap-6">
             <div>
-              <p className="text-xs font-black uppercase tracking-[0.28em] text-pink-700">{copy.discover}</p>
-              <h2 className="mt-2 text-3xl font-black tracking-tight sm:text-5xl">{copy.featured}</h2>
+              <p className="text-xs font-black uppercase tracking-[0.28em] text-cyan-300">{locale === "ar" ? "الأحدث" : "What's new"}</p>
+              <h2 className="mt-2 text-3xl font-black uppercase tracking-tight sm:text-5xl">{locale === "ar" ? "فعاليات مختارة" : "Upcoming events"}</h2>
             </div>
             {loading ? <span className="text-sm font-bold text-slate-600">{copy.loading}</span> : null}
           </div>
 
           {heroEvents.length > 0 ? (
-            <ModalCards
-              dir={dir}
-              gradientColor="rgba(103, 232, 249, 0.28)"
-              cards={heroEvents.map((event) => eventToModalCard(event, locale))}
-            />
+            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              {heroEvents.map((event) => (
+                <EventCard key={event.id} event={event} locale={locale} onQuickView={setQuickViewEvent} />
+              ))}
+            </div>
           ) : (
             <EmptyState title={copy.emptyTitle} body={copy.emptyBody} />
           )}
@@ -480,7 +561,7 @@ export function MarketplaceClient({
       ) : null}
 
       {/* Keep the public quick-nav identical before and after sign-in. */}
-      {mode === "home" ? (
+      {false ? (
         <div className="pointer-events-none fixed inset-x-0 bottom-5 z-40 hidden justify-center md:flex">
           <div className="pointer-events-auto">
             <Dock
@@ -588,8 +669,8 @@ function HeroFeature({
       : "View event";
 
   return (
-    <article className="group relative overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-[0_24px_70px_rgba(15,23,42,0.14)]">
-      <div className="relative aspect-[16/13]">
+    <article className="group relative overflow-hidden bg-black">
+      <div className="relative aspect-[16/10] sm:aspect-[5/2]">
         {event.coverImageUrl ? (
           <img src={event.coverImageUrl} alt="" className="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-105" />
         ) : (
@@ -635,7 +716,7 @@ function HeroFeature({
 }
 
 /** Adapts a marketplace event to the ModalCards item shape (home + events pages). */
-function eventToModalCard(event: MarketplaceEvent, locale: LocaleCode): ModalCard {
+export function eventToModalCard(event: MarketplaceEvent, locale: LocaleCode) {
   const ar = locale === "ar";
   const title = ar && event.titleAr ? event.titleAr : event.title;
   const description = ar && event.shortDescriptionAr ? event.shortDescriptionAr : event.shortDescription;
@@ -730,7 +811,7 @@ function EventCard({
 
   return (
     <Spotlight className="rounded-[1.6rem]">
-    <article className="group overflow-hidden rounded-[1.6rem] border border-slate-200 bg-white shadow-[0_16px_50px_rgba(15,23,42,0.10)] backdrop-blur transition duration-300 hover:-translate-y-1 hover:border-blue-300 hover:bg-slate-50">
+    <article className="group overflow-hidden rounded-[1.6rem] border border-slate-200 bg-white text-slate-900 shadow-[0_16px_50px_rgba(15,23,42,0.10)] backdrop-blur transition duration-300 hover:-translate-y-1 hover:border-blue-300 hover:bg-slate-50">
       <button type="button" onClick={() => onQuickView(event)} className="block w-full text-left">
         <div className="relative aspect-[16/11] overflow-hidden bg-slate-900">
           {event.coverImageUrl ? (
@@ -761,9 +842,12 @@ function EventCard({
       </button>
       <div className="space-y-4 p-5">
         <div className="flex items-start justify-between gap-4">
-          <p className="min-w-0 text-xs font-black uppercase tracking-[0.22em] text-slate-600">
+          <div className="min-w-0">
+            <h3 className="line-clamp-2 text-lg font-black leading-tight text-slate-950">{title}</h3>
+            <p className="mt-2 text-xs font-black uppercase tracking-[0.22em] text-slate-700">
             {event.organizerName}
-          </p>
+            </p>
+          </div>
           <button
             onClick={toggleFavorite}
             aria-label={saved ? "Remove from favorites" : "Save event"}
@@ -772,8 +856,8 @@ function EventCard({
             <Heart className={saved ? "h-4 w-4 fill-pink-400 text-pink-400" : "h-4 w-4"} />
           </button>
         </div>
-        {description ? <p className="line-clamp-2 min-h-12 text-sm leading-6 text-slate-600">{description}</p> : null}
-        <div className="grid gap-2 text-sm text-slate-600">
+        {description ? <p className="line-clamp-2 min-h-12 text-sm leading-6 text-slate-700">{description}</p> : null}
+        <div className="grid gap-2 text-sm font-medium text-slate-700">
           <span className="flex items-center gap-2">
             <CalendarDays className="h-4 w-4 shrink-0 text-blue-600" />
             {format(new Date(event.startsAt), "EEE, MMM d - h:mm a")}
@@ -985,7 +1069,7 @@ function CompactEventCard({
     <button
       type="button"
       onClick={() => onQuickView(event)}
-      className="group min-w-[260px] overflow-hidden rounded-2xl border border-slate-200 bg-white text-left transition hover:border-blue-300 hover:bg-slate-50"
+      className="group min-w-[260px] overflow-hidden rounded-2xl border border-slate-200 bg-white text-left text-slate-950 transition hover:border-blue-300 hover:bg-slate-50"
     >
       <div className="relative aspect-[16/10] bg-slate-900">
         {event.coverImageUrl ? (
@@ -1000,9 +1084,9 @@ function CompactEventCard({
         </span>
       </div>
       <div className="space-y-2 p-4">
-        <h3 className="line-clamp-2 min-h-[3rem] text-base font-black leading-6">{title}</h3>
-        <p className="text-xs font-bold text-slate-600">{format(new Date(event.startsAt), "EEE, MMM d")}</p>
-        <p className="line-clamp-1 text-xs text-slate-600">{event.venueName || event.locationText || "Bahrain"}</p>
+        <h3 className="line-clamp-2 min-h-[3rem] text-base font-black leading-6 text-slate-950">{title}</h3>
+        <p className="text-xs font-bold text-slate-700">{format(new Date(event.startsAt), "EEE, MMM d")}</p>
+        <p className="line-clamp-1 text-xs font-medium text-slate-700">{event.venueName || event.locationText || "Bahrain"}</p>
       </div>
     </button>
   );
@@ -1012,7 +1096,7 @@ function ThingsToDo({ copy, locale }: { copy: typeof enCopy; locale: LocaleCode 
   const items = locale === "ar" ? arThingsToDo : enThingsToDo;
 
   return (
-    <section className="mb-16 rounded-[2rem] border border-slate-200 bg-white p-6 sm:p-8">
+    <section className="mb-16 rounded-[2rem] border border-slate-200 bg-white p-6 text-slate-950 sm:p-8">
       <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="text-xs font-black uppercase tracking-[0.28em] text-pink-700">{copy.thingsEyebrow}</p>
@@ -1030,8 +1114,8 @@ function ThingsToDo({ copy, locale }: { copy: typeof enCopy; locale: LocaleCode 
             href={item.href}
             className="rounded-2xl border border-slate-200 bg-slate-50 p-5 transition hover:border-pink-300 hover:bg-white hover:shadow-md"
           >
-            <p className="text-lg font-black">{item.title}</p>
-            <p className="mt-2 text-sm leading-6 text-slate-600">{item.body}</p>
+            <p className="text-lg font-black text-slate-950">{item.title}</p>
+            <p className="mt-2 text-sm leading-6 text-slate-700">{item.body}</p>
           </Link>
         ))}
       </div>
