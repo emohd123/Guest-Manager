@@ -479,7 +479,7 @@ export function MarketplaceClient({
         <EventQuickView event={quickViewEvent} locale={locale} onClose={() => setQuickViewEvent(null)} />
       ) : null}
 
-      {/* Floating quick-nav dock (desktop only; mobile uses the top nav). */}
+      {/* Keep the public quick-nav identical before and after sign-in. */}
       {mode === "home" ? (
         <div className="pointer-events-none fixed inset-x-0 bottom-5 z-40 hidden justify-center md:flex">
           <div className="pointer-events-auto">
@@ -502,14 +502,19 @@ export function MarketplaceClient({
                   },
                 },
                 {
-                  icon: <Ticket className="h-5 w-5 text-slate-800" />,
-                  label: locale === "ar" ? "تذاكري" : "My Tickets",
-                  onClick: () => { window.location.href = "/account"; },
+                  icon: <Heart className="h-5 w-5 text-slate-800" />,
+                  label: locale === "ar" ? "المفضلة" : "Favourite",
+                  onClick: () => { window.location.href = "/account/favorites"; },
+                },
+                {
+                  icon: <CalendarDays className="h-5 w-5 text-slate-800" />,
+                  label: locale === "ar" ? "فعالية خاصة" : "Private Event",
+                  onClick: () => { window.location.href = "/contact?service=private-events"; },
                 },
                 {
                   icon: <User className="h-5 w-5 text-slate-800" />,
-                  label: locale === "ar" ? "حسابي" : "Account",
-                  onClick: () => { window.location.href = "/account/login"; },
+                  label: locale === "ar" ? "الملف الشخصي" : "Profile",
+                  onClick: () => { window.location.href = "/account"; },
                 },
               ]}
             />
