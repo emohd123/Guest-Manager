@@ -74,6 +74,7 @@ export default function EventSettingsPage({
   const [timezone, setTimezone] = useState("America/Los_Angeles");
   const [maxCapacity, setMaxCapacity] = useState("");
   const [registrationEnabled, setRegistrationEnabled] = useState(false);
+  const [visitorCode, setVisitorCode] = useState("");
   const [welcomeMessage, setWelcomeMessage] = useState("");
   const [homeHeadline, setHomeHeadline] = useState("");
   const [liveStreamUrl, setLiveStreamUrl] = useState("");
@@ -86,6 +87,8 @@ export default function EventSettingsPage({
   const [sponsorsIntro, setSponsorsIntro] = useState("");
   const [sponsorsCsv, setSponsorsCsv] = useState("");
   const [announcementsCsv, setAnnouncementsCsv] = useState("");
+  const [venueMapUrl, setVenueMapUrl] = useState("");
+  const [resourcesCsv, setResourcesCsv] = useState("");
   const [interestsCsv, setInterestsCsv] = useState("");
   const [goalsCsv, setGoalsCsv] = useState("");
   const [industriesCsv, setIndustriesCsv] = useState("");
@@ -109,6 +112,7 @@ export default function EventSettingsPage({
     setTimezone(event.timezone ?? "America/Los_Angeles");
     setMaxCapacity(event.maxCapacity?.toString() ?? "");
     setRegistrationEnabled(event.registrationEnabled ?? false);
+    setVisitorCode(event.visitorCode ?? "");
   }, [event]);
 
   useEffect(() => {
@@ -144,6 +148,8 @@ export default function EventSettingsPage({
         .map((item) => `${item.title} :: ${item.body}`)
         .join("\n")
     );
+    setVenueMapUrl(experience.settings.venueMapUrl ?? "");
+    setResourcesCsv((experience.settings.resources ?? []).map((resource) => `${resource.title} | ${resource.url} | ${resource.fileType ?? "LINK"}`).join("\n"));
     setInterestsCsv((experience.settings.networking.taxonomy.interests ?? []).join(", "));
     setGoalsCsv((experience.settings.networking.taxonomy.goals ?? []).join(", "));
     setIndustriesCsv((experience.settings.networking.taxonomy.industries ?? []).join(", "));
@@ -219,6 +225,7 @@ export default function EventSettingsPage({
       timezone,
       maxCapacity: maxCapacity ? parseInt(maxCapacity) : undefined,
       registrationEnabled,
+      visitorCode: eventType === "conference" && visitorCode.trim() ? visitorCode.trim().toUpperCase() : undefined,
     });
   };
 
@@ -273,6 +280,12 @@ export default function EventSettingsPage({
         };
       });
 
+  const parseResources = (value: string) =>
+    value.split("\n").map((line) => line.trim()).filter(Boolean).map((line, index) => {
+      const [title, url, fileType] = line.split("|").map((item) => item.trim());
+      return { id: `resource-${index + 1}`, title: title || `Resource ${index + 1}`, url, fileType: (["PDF", "PPTX", "DOCX", "LINK"].includes(fileType?.toUpperCase()) ? fileType.toUpperCase() : "LINK") as "PDF" | "PPTX" | "DOCX" | "LINK" };
+    }).filter((resource) => /^https?:\/\//.test(resource.url));
+
   const handleSaveExperience = () => {
     updateExperience.mutate({
       eventId,
@@ -312,6 +325,8 @@ export default function EventSettingsPage({
           featuredProfiles: parseSponsors(sponsorsCsv),
         },
         announcements: parseAnnouncements(announcementsCsv),
+        venueMapUrl: venueMapUrl.trim(),
+        resources: parseResources(resourcesCsv),
         push: experience?.settings.push ?? { reminderLeadMinutes: 15 },
       },
     });
@@ -602,6 +617,36 @@ export default function EventSettingsPage({
               </SelectContent>
             </Select>
           </div>
+
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="venueMapUrl">Venue Floor Plan / Map URL</Label>
+              <Input id="venueMapUrl" value={venueMapUrl} onChange={(e) => setVenueMapUrl(e.target.value)} placeholder="https://..." />
+              <p className="text-xs text-muted-foreground">Upload the floor plan first, then add its public URL.</p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="resourcesCsv">Conference Resources</Label>
+              <Textarea id="resourcesCsv" rows={4} value={resourcesCsv} onChange={(e) => setResourcesCsv(e.target.value)} placeholder="Event programme | https://.../programme.pdf | PDF" />
+              <p className="text-xs text-muted-foreground">One per line: Title | URL | PDF, PPTX, DOCX, or LINK.</p>
+            </div>
+          </div>
+
+          {eventType === "conference" && (
+            <div className="space-y-2 rounded-lg border border-cyan-500/25 bg-cyan-500/5 p-4">
+              <Label htmlFor="edit-visitorCode">Private Event Code</Label>
+              <Input
+                id="edit-visitorCode"
+                value={visitorCode}
+                onChange={(e) => setVisitorCode(e.target.value.toUpperCase())}
+                placeholder="e.g. CONF2026"
+                maxLength={10}
+                className="font-mono tracking-[0.2em]"
+              />
+              <p className="text-xs text-muted-foreground">
+                Give this code to conference customers. They enter it from Private Event to open the conference portal.
+              </p>
+            </div>
+          )}
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">

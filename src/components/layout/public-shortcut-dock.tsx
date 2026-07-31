@@ -44,7 +44,7 @@ export function PublicShortcutDock() {
     },
     { icon: <Search className="h-5 w-5" />, label: isArabic ? "بحث" : "Search", onClick: focusSearch },
     { icon: <Heart className="h-5 w-5" />, label: isArabic ? "المفضلة" : "Favourite", onClick: () => router.push(localeHref("/account/favorites")) },
-    { icon: <CalendarDays className="h-5 w-5" />, label: isArabic ? "فعالية خاصة" : "Private Event", onClick: () => router.push(localeHref("/contact?service=private-events")) },
+    { icon: <CalendarDays className="h-5 w-5" />, label: isArabic ? "فعالية خاصة" : "Private Event", onClick: () => router.push(localeHref("/private-event")) },
     { icon: <User className="h-5 w-5" />, label: isArabic ? "الملف الشخصي" : "Profile", onClick: () => router.push(localeHref("/account")) },
   ];
 
