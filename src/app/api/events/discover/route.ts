@@ -228,8 +228,16 @@ export async function GET(request: NextRequest) {
         const startsAt = new Date(event.startsAt);
         if (Number.isNaN(startsAt.getTime())) return false;
         if (dateFilter === "today") return isSameDay(startsAt, today);
+        if (dateFilter === "tomorrow") {
+          const tomorrow = new Date(today);
+          tomorrow.setDate(today.getDate() + 1);
+          return isSameDay(startsAt, tomorrow);
+        }
         if (dateFilter === "weekend") return isInUpcomingWeekend(startsAt, today);
         if (dateFilter === "month") return isInCurrentMonth(startsAt, today);
+        if (/^\d{4}-\d{2}-\d{2}$/.test(dateFilter)) {
+          return isSameDay(startsAt, new Date(`${dateFilter}T00:00:00`));
+        }
         return true;
       });
     }

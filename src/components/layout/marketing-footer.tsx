@@ -28,27 +28,27 @@ const footerLinks = {
 
 export function MarketingFooter() {
   return (
-    <footer className="border-t border-slate-200 bg-white backdrop-blur-xl relative z-20">
+    <footer className="relative z-20 border-t border-white/10 bg-[#101114] text-white backdrop-blur-xl">
       <div className="mx-auto max-w-none px-4 py-16 sm:px-8 lg:px-12 2xl:px-20">
         <div className="grid gap-12 md:grid-cols-2 lg:grid-cols-6">
           {/* Brand */}
-          <div className="lg:col-span-2">
+          <div dir="ltr" className="lg:col-span-2">
             <Link href="/" aria-label="iTicket home">
               <BrandWordmark
                 className="gap-3.5"
                 markClassName="h-16 w-16 sm:h-18 sm:w-18"
-                textClassName="text-[2.1rem] text-slate-900 sm:text-[2.6rem]"
+                textClassName="text-[2.1rem] text-white sm:text-[2.6rem]"
               />
             </Link>
             <a
               href="https://onestoneads.com/"
               target="_blank"
               rel="noopener noreferrer"
-              className="mt-2 inline-block text-[10px] font-black uppercase tracking-[0.24em] text-slate-600 transition-colors hover:text-blue-600"
+              className="mt-2 inline-block text-[10px] font-black uppercase tracking-[0.24em] text-slate-400 transition-colors hover:text-cyan-300"
             >
               A OneStone Platform
             </a>
-            <p className="mt-6 text-sm text-slate-600 leading-relaxed">
+            <p className="mt-6 text-sm leading-relaxed text-slate-400">
               Bahrain event discovery, ticketing, check-in, and managed event operations.
               Built by the iTicket team for public and corporate experiences.
             </p>
@@ -57,13 +57,13 @@ export function MarketingFooter() {
           {/* Link columns */}
           {Object.entries(footerLinks).map(([category, links]) => (
             <div key={category}>
-              <h4 className="mb-3 text-sm font-semibold text-slate-900">{category}</h4>
+              <h4 className="mb-3 text-sm font-semibold text-white">{category}</h4>
               <ul className="space-y-2">
                 {links.map((link) => (
                   <li key={link.name}>
                     <Link
                       href={link.href}
-                      className="text-sm text-slate-600 transition-colors hover:text-slate-900"
+                      className="text-sm text-slate-400 transition-colors hover:text-cyan-300"
                     >
                       {link.name}
                     </Link>
@@ -74,14 +74,14 @@ export function MarketingFooter() {
           ))}
         </div>
 
-        <div className="mt-12 flex flex-col items-center justify-between border-t border-slate-200 pt-8 md:flex-row">
-          <p className="text-sm text-slate-600">
+        <div className="mt-12 flex flex-col items-center justify-between border-t border-white/10 pt-8 md:flex-row">
+          <p className="text-sm text-slate-400">
             &copy; {new Date().getFullYear()} iTicket. All rights reserved. Powered by{" "}
             <a
               href="https://onestoneads.com/"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-violet-700 hover:underline font-semibold"
+              className="font-semibold text-cyan-300 hover:underline"
             >
               OneStone Ads
             </a>.
@@ -89,19 +89,19 @@ export function MarketingFooter() {
           <div className="mt-4 flex gap-6 md:mt-0">
             <Link
               href="/contact"
-              className="text-sm text-slate-600 hover:text-slate-900"
+              className="text-sm text-slate-400 hover:text-cyan-300"
             >
               Support
             </Link>
             <Link
               href="/privacy-policy"
-              className="text-sm text-slate-600 hover:text-slate-900"
+              className="text-sm text-slate-400 hover:text-cyan-300"
             >
               Privacy
             </Link>
             <Link
               href="/terms-of-service"
-              className="text-sm text-slate-600 hover:text-slate-900"
+              className="text-sm text-slate-400 hover:text-cyan-300"
             >
               Terms
             </Link>

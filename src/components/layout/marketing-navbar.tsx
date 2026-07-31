@@ -1,251 +1,135 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useTheme } from "next-themes";
-import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { usePathname, useSearchParams } from "next/navigation";
+import type { User } from "@supabase/supabase-js";
+import { Search, UserRound } from "lucide-react";
 import { BrandWordmark } from "@/components/brand/brand-wordmark";
-import { Menu, X, ChevronDown, BriefcaseBusiness, CalendarDays, Ticket, Sparkles } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
 
-const products = [
-  {
-    name: "Browse Events",
-    description: "Concerts, exhibitions, family shows, business events, and more",
-    href: "/",
-    icon: CalendarDays,
-  },
-  {
-    name: "My Tickets",
-    description: "Open buyer account, orders, QR tickets, and saved events",
-    href: "/account",
-    icon: Ticket,
-  },
-  {
-    name: "Our Services",
-    description: "Ticketing, staffing, check-in operations, and guest support",
-    href: "/events",
-    icon: BriefcaseBusiness,
-  },
-];
+type AccountIdentity = {
+  name: string;
+  avatarUrl: string | null;
+};
+
+function accountIdentity(user: User): AccountIdentity {
+  const metadata = user.user_metadata ?? {};
+  const name = typeof metadata.name === "string" && metadata.name.trim()
+    ? metadata.name
+    : user.email?.split("@")[0] ?? "My profile";
+  const avatarUrl = typeof metadata.avatar_url === "string"
+    ? metadata.avatar_url
+    : typeof metadata.picture === "string"
+      ? metadata.picture
+      : null;
+
+  return { name, avatarUrl };
+}
 
 export function MarketingNavbar() {
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
-  const [lang, setLang] = useState<"en" | "ar">("en");
   const pathname = usePathname();
-  const { setTheme, resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
+  const searchParams = useSearchParams();
+  const lang = searchParams.get("locale") === "ar" ? "ar" : "en";
+  const [account, setAccount] = useState<AccountIdentity | null>(null);
   const nextLang = lang === "ar" ? "en" : "ar";
+  const languageParams = new URLSearchParams(searchParams.toString());
+  languageParams.set("locale", nextLang);
+  const languageHref = `${pathname || "/"}?${languageParams.toString()}`;
 
   useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 10);
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
+    const supabase = createClient();
+    let active = true;
+
+    supabase.auth.getUser().then(({ data }) => {
+      if (active) setAccount(data.user ? accountIdentity(data.user) : null);
+    });
+
+    try {
+      const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+        setAccount(session?.user ? accountIdentity(session.user) : null);
+      });
+      return () => {
+        active = false;
+        listener.subscription.unsubscribe();
+      };
+    } catch {
+      return () => {
+        active = false;
+      };
+    }
   }, []);
 
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    setLang(params.get("locale") === "ar" ? "ar" : "en");
-  }, [pathname]);
-
   return (
-    <>
-      <header
-        className={`fixed top-0 w-full z-50 transition-all duration-300 ${
-          scrolled
-            ? "bg-white/85 backdrop-blur-md border-b border-white/5 shadow-[0_4px_30px_rgba(0,0,0,0.3)]"
-            : "bg-transparent border-transparent"
-        }`}
-      >
-        <div className="mx-auto flex h-20 max-w-none items-center justify-between px-4 sm:px-8 lg:px-12 2xl:px-20">
-          <div className="flex items-center gap-8">
-            <div className="flex flex-col">
-              <div className="flex items-center gap-2.5">
-                <Link href="/" aria-label="iTicket home">
-                  <BrandWordmark
-                    className="gap-x-5"
-                    markClassName="h-10 w-10 sm:h-14 sm:w-14"
-                    textClassName="text-[1.5rem] text-slate-900 sm:text-[2.35rem]"
-                  />
-                </Link>
-                <span className="inline-flex items-center gap-1 rounded-full border border-cyan-300/45 bg-gradient-to-r from-cyan-400/20 to-fuchsia-500/20 px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.12em] text-blue-600 shadow-[0_0_14px_rgba(103,232,249,0.25)]">
-                  <Sparkles className="h-3 w-3" />
-                  AI
-                </span>
-              </div>
-              <a
-                href="https://onestoneads.com/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-1 w-fit pl-1 text-[9px] font-black uppercase tracking-[0.24em] text-slate-600 transition-colors hover:text-blue-600 sm:text-[10px]"
-              >
-                A OneStone Platform
-              </a>
-            </div>
-
-            <nav className="hidden items-center gap-2 md:flex">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="gap-1 hover:bg-slate-100 transition-colors text-slate-700">
-                    Explore <ChevronDown className="h-3.5 w-3.5 opacity-70" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className="w-[320px] p-2 border-slate-200 bg-white text-slate-900 shadow-xl">
-                  {products.map((product) => (
-                    <DropdownMenuItem key={product.href} asChild className="rounded-xl p-3 hover:bg-slate-100 cursor-pointer transition-colors duration-200">
-                      <Link
-                        href={product.href}
-                        className="flex items-start gap-4"
-                      >
-                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary shadow-[0_0_15px_rgba(124,77,255,0.15)]">
-                          <product.icon className="h-5 w-5" />
-                        </div>
-                        <div>
-                          <p className="font-semibold text-slate-900">{product.name}</p>
-                          <p className="text-sm text-slate-600 mt-0.5">
-                            {product.description}
-                          </p>
-                        </div>
-                      </Link>
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
-
-              <Link href="/events">
-                <Button
-                  variant="ghost"
-                  className={`hover:bg-slate-100 transition-colors text-slate-700 ${pathname?.startsWith("/events") ? "text-blue-600 font-bold" : ""}`}
-                >
-                  Our Services
-                </Button>
-              </Link>
-
-              <Link href="/account">
-                <Button
-                  variant="ghost"
-                  className={`hover:bg-slate-100 transition-colors text-slate-700 ${pathname?.startsWith("/account") ? "text-blue-600 font-bold" : ""}`}
-                >
-                  My Tickets
-                </Button>
-              </Link>
-
-              <Link href="/contact">
-                <Button
-                  variant="ghost"
-                  className={`hover:bg-slate-100 transition-colors text-slate-700 ${pathname === "/contact" ? "text-blue-600 font-bold" : ""}`}
-                >
-                  Contact
-                </Button>
-              </Link>
-            </nav>
-          </div>
-
-          <div className="hidden items-center gap-3 md:flex">
-            <span className="inline-flex items-center gap-2 rounded-full border border-slate-300 bg-white px-3.5 py-1.5 text-[11px] font-black uppercase tracking-[0.14em] text-slate-700">
-              <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-500" />
-              Live in Bahrain
-            </span>
-            <Button asChild variant="ghost" className="rounded-full border border-slate-300 px-4 font-bold hover:bg-slate-100">
-              <Link href={`${pathname || "/"}?locale=${nextLang}`}>{lang === "ar" ? "English" : "العربية"}</Link>
-            </Button>
-            <Button asChild variant="ghost" className="text-slate-700 hover:bg-slate-100 transition-colors">
-              <Link href="/account/login">Buyer Login</Link>
-            </Button>
-             <Button asChild className="shadow-[0_4px_20px_0_rgba(124,77,255,0.4)] hover:shadow-[0_6px_25px_0_rgba(124,77,255,0.55)] transition-all duration-300 bg-brand-gradient hover:opacity-95 text-white">
-               <Link href="/">Browse Events</Link>
-             </Button>
-          </div>
-
-          {/* Mobile menu toggle */}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="md:hidden hover:bg-slate-100 text-slate-700"
-            onClick={() => setMobileOpen(!mobileOpen)}
+    <header dir="ltr" className="fixed top-0 z-50 w-full border-b border-white/10 bg-[#171717]">
+      <div className="mx-auto flex h-16 max-w-[1600px] items-center justify-between px-4 sm:px-8 lg:px-12">
+        <div dir="ltr" className="flex flex-col">
+          <Link href="/" aria-label="iTicket home">
+            <BrandWordmark
+              className="gap-x-4"
+              markClassName="h-9 w-9 sm:h-10 sm:w-10"
+              textClassName="text-[1.5rem] text-white sm:text-[1.8rem]"
+            />
+          </Link>
+          <a
+            href="https://onestoneads.com/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-1 w-fit pl-1 text-[9px] font-black uppercase tracking-[0.24em] text-slate-400 transition hover:text-cyan-300 sm:text-[10px]"
           >
-            {mobileOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-          </Button>
+            A OneStone Platform
+          </a>
         </div>
 
-      {/* Mobile menu */}
-      {mobileOpen && (
-        <div className="border-b border-white/5 bg-white/95 backdrop-blur-xl px-4 py-4 md:hidden">
-          <nav className="flex flex-col gap-2">
-            {products.map((product) => (
-              <Link
-                key={product.href}
-                href={product.href}
-                className="flex items-center gap-3 rounded-lg p-3 hover:bg-slate-100"
-                onClick={() => setMobileOpen(false)}
-              >
-                <product.icon className="h-5 w-5 text-primary" />
-                <div>
-                  <p className="font-medium">{product.name}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {product.description}
-                  </p>
-                </div>
-              </Link>
-            ))}
-            <hr className="my-2" />
-            <Link
-              href="/events"
-              className="rounded-lg p-3 hover:bg-slate-100"
-              onClick={() => setMobileOpen(false)}
-            >
-              Our Services
-            </Link>
+        <form action="/" method="get" className="mx-5 hidden w-full max-w-md items-center rounded-full border border-white/20 bg-white/5 px-4 transition focus-within:border-cyan-300 sm:flex">
+          <input type="hidden" name="locale" value={lang} />
+          <Search className="h-4 w-4 shrink-0 text-slate-400" />
+          <input
+            name="q"
+            type="search"
+            placeholder={lang === "ar" ? "ابحث عن فعاليات..." : "Search events..."}
+            className="h-10 w-full bg-transparent px-3 text-sm text-white outline-none placeholder:text-slate-400"
+          />
+          <button type="submit" aria-label="Search events" className="rounded-full p-1 text-slate-300 transition hover:text-cyan-300">
+            <Search className="h-4 w-4" />
+          </button>
+        </form>
+
+        <div className="flex items-center gap-3">
+          {account ? (
             <Link
               href="/account"
-              className="rounded-lg p-3 hover:bg-slate-100"
-              onClick={() => setMobileOpen(false)}
+              aria-label="Open my profile and tickets"
+              title="My profile and tickets"
+              className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border border-cyan-300/70 bg-cyan-300/10 text-cyan-100 transition hover:scale-105 hover:border-cyan-200"
             >
-              My Tickets
+              {account.avatarUrl ? (
+                <img src={account.avatarUrl} alt={account.name} className="h-full w-full object-cover" />
+              ) : (
+                <span className="text-sm font-black">{account.name.slice(0, 1).toUpperCase()}</span>
+              )}
             </Link>
+          ) : (
             <Link
-              href="/contact"
-              className="rounded-lg p-3 hover:bg-slate-100"
-              onClick={() => setMobileOpen(false)}
+              href="/account/login"
+              className="inline-flex h-10 items-center gap-2 rounded-full bg-cyan-300 px-4 text-sm font-black text-black transition hover:bg-cyan-200"
             >
-              Contact
+              <UserRound className="h-4 w-4" />
+              {lang === "ar" ? "تسجيل الدخول" : "Login"}
             </Link>
-            <div className="flex items-center justify-between rounded-lg border border-border p-3">
-              <span className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-[0.14em] text-muted-foreground">
-                <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-500" />
-                Live in Bahrain
-              </span>
-              <Button asChild variant="outline" size="sm" className="rounded-full px-4 font-bold">
-                <Link href={`${pathname || "/"}?locale=${nextLang}`} onClick={() => setMobileOpen(false)}>
-                  {lang === "ar" ? "English" : "العربية"}
-                </Link>
-              </Button>
-            </div>
-            <hr className="my-2" />
-            <div className="flex gap-2">
-
-              <Button asChild variant="outline" className="flex-1 w-full">
-                <Link href="/account/login" onClick={() => setMobileOpen(false)}>
-                  Buyer Login
-                </Link>
-              </Button>
-              <Button asChild className="flex-1 w-full">
-                <Link href="/" onClick={() => setMobileOpen(false)}>
-                  Browse
-                </Link>
-              </Button>
-            </div>
-          </nav>
+          )}
+          <Link
+            href={languageHref}
+            onClick={(event) => {
+              event.preventDefault();
+              window.location.assign(languageHref);
+            }}
+            className="inline-flex h-10 items-center rounded-full border border-white/20 px-4 text-sm font-bold text-white transition hover:border-white/50 hover:bg-white/10"
+          >
+            {lang === "ar" ? "English" : "العربية"}
+          </Link>
         </div>
-      )}
+      </div>
     </header>
-    </>
   );
 }
