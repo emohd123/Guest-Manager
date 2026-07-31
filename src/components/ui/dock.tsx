@@ -37,6 +37,7 @@ export type DockProps = {
   baseItemSize?: number;
   dockHeight?: number;
   magnification?: number;
+  disableMagnification?: boolean;
   spring?: SpringOptions;
 };
 
@@ -181,13 +182,17 @@ export function Dock({
   panelHeight = 68,
   dockHeight = 256,
   baseItemSize = 50,
+  disableMagnification = false,
 }: DockProps) {
   const mouseX = useMotionValue(Infinity);
   const isHovered = useMotionValue(0);
+  const effectiveMagnification = disableMagnification ? baseItemSize : magnification;
 
   const maxHeight = useMemo(
-    () => Math.max(dockHeight, magnification + magnification / 2 + 4),
-    [magnification, dockHeight]
+    () => disableMagnification
+      ? panelHeight
+      : Math.max(dockHeight, effectiveMagnification + effectiveMagnification / 2 + 4),
+    [disableMagnification, dockHeight, effectiveMagnification, panelHeight]
   );
   const heightRow = useTransform(isHovered, [0, 1], [panelHeight, maxHeight]);
   const height = useSpring(heightRow, spring);
@@ -222,7 +227,7 @@ export function Dock({
             mouseX={mouseX}
             spring={spring}
             distance={distance}
-            magnification={magnification}
+            magnification={effectiveMagnification}
             baseItemSize={baseItemSize}
             label={item.label}
           >
