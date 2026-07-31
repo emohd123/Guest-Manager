@@ -487,6 +487,7 @@ export function MarketplaceClient({
               panelHeight={64}
               baseItemSize={46}
               magnification={72}
+              disableMagnification
               items={[
                 {
                   icon: <Home className="h-5 w-5 text-blue-600" />,
