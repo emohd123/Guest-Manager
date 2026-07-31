@@ -1,8 +1,8 @@
 export const palette = {
   // Deep-space canvas — matches the iTicket design system (#050712 base).
-  bg: "#050712",
-  bgElevated: "#0C1226",
-  bgMuted: "#141E3E",
+  bg: "#080808",
+  bgElevated: "#101114",
+  bgMuted: "#141722",
   surface: "#F7F8FF",
   surfaceRaised: "#FFFFFF",
   surfaceTint: "#EEF2FF",
@@ -14,13 +14,13 @@ export const palette = {
   lineInverse: "rgba(255,255,255,0.14)",
   accent: "#7C3AED",
   accentStrong: "#2563EB",
-  accentCool: "#6D5BFF",
+  accentCool: "#6D28D9",
   accentLive: "#DB2777",
   accentSoft: "#EEF2FF",
   accentPink: "#DB2777",
   // Cyan accent range from the design (mobile home eyebrows, prices, live dots).
-  accentCyan: "#38BDF8",
-  accentCyanSoft: "#A5F3FC",
+  accentCyan: "#67E8F9",
+  accentCyanSoft: "#67E8F9",
   success: "#27C07D",
   warning: "#F5A524",
   danger: "#F35E73",
