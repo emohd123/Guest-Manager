@@ -55,6 +55,7 @@ const mapLabelInput = z.object({
   x: z.number().min(0).max(100),
   y: z.number().min(0).max(100),
   width: z.number().min(5).max(100),
+  height: z.number().min(5).max(100).optional(),
   color: z.string().regex(/^#[0-9a-f]{6}$/i),
 });
 

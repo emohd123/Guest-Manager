@@ -917,7 +917,7 @@ export default function PublicEventPage({
                       {selectedSeatIds.length} selected
                     </span>
                   </div>
-                  {seatingPlan.floor_plan_url &&
+                  {!seatingPlan.floor_plan_url ||
                   !/\.pdf(?:$|[?#])/i.test(seatingPlan.floor_plan_url) ? (
                     <CustomerHallMap
                       plan={seatingPlan}
