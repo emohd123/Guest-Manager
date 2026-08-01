@@ -134,7 +134,7 @@ export function CustomerHallMap({
       <div className="grid lg:grid-cols-[minmax(0,1fr)_280px]">
         <div className="min-w-0">
           <div
-            className="relative max-h-[650px] min-h-[480px] cursor-grab overflow-hidden bg-white active:cursor-grabbing"
+            className="relative min-h-[360px] cursor-grab overflow-hidden bg-white active:cursor-grabbing sm:min-h-[520px] lg:min-h-[640px]"
             onPointerDown={(event) => {
               if ((event.target as HTMLElement).closest("button")) return;
               drag.current = {
@@ -224,6 +224,7 @@ export function CustomerHallMap({
                           <button
                             type="button"
                             key={seat.id}
+                            data-seat-id={seat.id}
                             disabled={seat.unavailable}
                             onMouseEnter={() =>
                               setHoveredSeat({

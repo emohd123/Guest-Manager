@@ -481,6 +481,35 @@ export default function SeatingPage({
       </div>
 
       <div className="rounded-[32px] border border-cyan-300/20 bg-[#08131b] p-6 text-white">
+        <div className="mb-6 rounded-2xl border border-cyan-300/25 bg-cyan-300/[.06] p-4">
+          <p className="text-xs font-black uppercase tracking-[.2em] text-cyan-300">
+            Publish the customer map
+          </p>
+          <div className="mt-3 grid gap-2 text-xs sm:grid-cols-4">
+            {[
+              ["1", "Upload", Boolean(floorPlanUrl)],
+              ["2", "Analyse or generate", sections.length > 0],
+              ["3", "Review and approve seats", sections.some((section) => section.rows.some((row) => row.seatCount > 0))],
+              ["4", "Enable and save", reservedEnabled],
+            ].map(([step, label, complete]) => (
+              <div
+                key={String(step)}
+                className={`rounded-xl border p-3 ${complete ? "border-emerald-300/30 bg-emerald-300/10 text-emerald-100" : "border-white/10 bg-white/5 text-white/55"}`}
+              >
+                <span className="mr-2 font-black">{String(step)}.</span>
+                {String(label)}
+                <span className="mt-1 block text-[10px] font-bold uppercase tracking-wider">
+                  {complete ? "Ready" : "Required"}
+                </span>
+              </div>
+            ))}
+          </div>
+          <p className="mt-3 text-xs leading-5 text-white/55">
+            The map becomes visible to customers only after it contains at
+            least one section with seats, “Enable customer seat selection” is
+            checked, and you click “Save reserved seating plan”.
+          </p>
+        </div>
         <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
           <div>
             <p className="text-[10px] font-black uppercase tracking-[.24em] text-cyan-300">

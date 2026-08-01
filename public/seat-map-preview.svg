@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900">
+  <rect width="1600" height="900" fill="#ffffff"/>
+  <path d="M160 140h1280v620H160z" fill="#f8fafc" stroke="#e2e8f0" stroke-width="4"/>
+  <path d="M520 680h560v88H520z" rx="18" fill="#d7dce2"/>
+  <text x="800" y="735" text-anchor="middle" font-family="Arial" font-size="30" font-weight="700" fill="#64748b">STAGE</text>
+  <path d="M800 170v430M300 410h1000" stroke="#e2e8f0" stroke-width="3" stroke-dasharray="10 14"/>
+</svg>
