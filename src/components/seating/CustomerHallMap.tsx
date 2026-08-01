@@ -38,7 +38,7 @@ export function CustomerHallMap({
 }: CustomerHallMapProps) {
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
-  const [aspect, setAspect] = useState(16 / 9);
+  const aspect = 16 / 9;
   const [hoveredSeat, setHoveredSeat] = useState<any>(null);
   const [fullScreen, setFullScreen] = useState(startFullScreen);
   const drag = useRef<{
@@ -65,6 +65,45 @@ export function CustomerHallMap({
   const selected = allSeats.filter((item: any) =>
     selectedSeatIds.includes(item.seat.id),
   );
+  const fittedLayout = useMemo(() => {
+    const sections = plan.sections ?? [];
+    const labels = plan.metadata?.labels ?? [];
+    const hasStage = labels.some((label: any) =>
+      String(label.text ?? "").toLowerCase().includes("stage"),
+    );
+    if (!hasStage || !sections.length) return { sections, labels };
+
+    const top = Math.min(
+      ...sections.map(
+        (section: any) =>
+          Number(section.y ?? 50) - Number(section.height ?? 20) / 2,
+      ),
+    );
+    const bottom = Math.max(
+      ...sections.map(
+        (section: any) =>
+          Number(section.y ?? 50) + Number(section.height ?? 20) / 2,
+      ),
+    );
+    const sourceHeight = Math.max(1, bottom - top);
+    const targetTop = 5;
+    const targetBottom = 70;
+    const scale = Math.min(1, (targetBottom - targetTop) / sourceHeight);
+    return {
+      sections: sections.map((section: any) => {
+        const height = Number(section.height ?? 20) * scale;
+        const originalTop =
+          Number(section.y ?? 50) - Number(section.height ?? 20) / 2;
+        const fittedTop = targetTop + (originalTop - top) * scale;
+        return { ...section, y: fittedTop + height / 2, height };
+      }),
+      labels: labels.map((label: any) =>
+        String(label.text ?? "").toLowerCase().includes("stage")
+          ? { ...label, x: 50, y: 86, height: 11, width: Math.max(34, label.width ?? 34) }
+          : label,
+      ),
+    };
+  }, [plan]);
   const legend = Array.from(
     new Map(
       allSeats.map((item: any) => [`${item.color}-${item.price}`, item]),
@@ -178,22 +217,8 @@ export function CustomerHallMap({
                   transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
                 }}
               >
-                {plan.floor_plan_url && !fullScreen ? (
-                  <img
-                    src={plan.floor_plan_url}
-                    alt="Venue floor plan"
-                    draggable={false}
-                    onLoad={(event) => {
-                      const image = event.currentTarget;
-                      if (image.naturalWidth && image.naturalHeight)
-                        setAspect(image.naturalWidth / image.naturalHeight);
-                    }}
-                    className="pointer-events-none absolute inset-0 h-full w-full select-none object-contain"
-                  />
-                ) : (
-                  <div className="pointer-events-none absolute inset-0 bg-white" />
-                )}
-                {(plan.metadata?.labels ?? []).map((label: any) => (
+                <div className="pointer-events-none absolute inset-0 bg-white" />
+                {fittedLayout.labels.map((label: any) => (
                   <div
                     key={label.id}
                     className="pointer-events-none absolute flex -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-md border border-slate-300 px-3 py-2 text-center text-[10px] font-black uppercase tracking-widest text-white"
@@ -210,7 +235,7 @@ export function CustomerHallMap({
                     {label.text}
                   </div>
                 ))}
-                {plan.sections.map((section: any) => {
+                {fittedLayout.sections.map((section: any) => {
                   const density = getSeatDensity(section.rows ?? []);
                   return (
                     <div
