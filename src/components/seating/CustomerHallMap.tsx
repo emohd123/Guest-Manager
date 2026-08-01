@@ -191,7 +191,7 @@ export function CustomerHallMap({
                     className="pointer-events-none absolute inset-0 h-full w-full select-none object-contain"
                   />
                 ) : (
-                  <div className={fullScreen ? "pointer-events-none absolute inset-0 bg-white" : "pointer-events-none absolute inset-0 bg-[linear-gradient(#e2e8f0_1px,transparent_1px),linear-gradient(90deg,#e2e8f0_1px,transparent_1px)] bg-[size:28px_28px]"} />
+                  <div className="pointer-events-none absolute inset-0 bg-white" />
                 )}
                 {(plan.metadata?.labels ?? []).map((label: any) => (
                   <div
