@@ -12,6 +12,7 @@ import {
   X,
 } from "lucide-react";
 import { getSeatDensity } from "@/components/seating/layout-density";
+import { fitMapLayout } from "@/components/seating/fit-map-layout";
 
 type CustomerHallMapProps = {
   plan: any;
@@ -65,45 +66,7 @@ export function CustomerHallMap({
   const selected = allSeats.filter((item: any) =>
     selectedSeatIds.includes(item.seat.id),
   );
-  const fittedLayout = useMemo(() => {
-    const sections = plan.sections ?? [];
-    const labels = plan.metadata?.labels ?? [];
-    const hasStage = labels.some((label: any) =>
-      String(label.text ?? "").toLowerCase().includes("stage"),
-    );
-    if (!hasStage || !sections.length) return { sections, labels };
-
-    const top = Math.min(
-      ...sections.map(
-        (section: any) =>
-          Number(section.y ?? 50) - Number(section.height ?? 20) / 2,
-      ),
-    );
-    const bottom = Math.max(
-      ...sections.map(
-        (section: any) =>
-          Number(section.y ?? 50) + Number(section.height ?? 20) / 2,
-      ),
-    );
-    const sourceHeight = Math.max(1, bottom - top);
-    const targetTop = 5;
-    const targetBottom = 70;
-    const scale = Math.min(1, (targetBottom - targetTop) / sourceHeight);
-    return {
-      sections: sections.map((section: any) => {
-        const height = Number(section.height ?? 20) * scale;
-        const originalTop =
-          Number(section.y ?? 50) - Number(section.height ?? 20) / 2;
-        const fittedTop = targetTop + (originalTop - top) * scale;
-        return { ...section, y: fittedTop + height / 2, height };
-      }),
-      labels: labels.map((label: any) =>
-        String(label.text ?? "").toLowerCase().includes("stage")
-          ? { ...label, x: 50, y: 86, height: 11, width: Math.max(34, label.width ?? 34) }
-          : label,
-      ),
-    };
-  }, [plan]);
+  const fittedLayout = useMemo(() => fitMapLayout(plan, 10), [plan]);
   const legend = Array.from(
     new Map(
       allSeats.map((item: any) => [`${item.color}-${item.price}`, item]),
@@ -221,7 +184,7 @@ export function CustomerHallMap({
                 {fittedLayout.labels.map((label: any) => (
                   <div
                     key={label.id}
-                    className="pointer-events-none absolute flex -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-md border border-slate-300 px-3 py-2 text-center text-[10px] font-black uppercase tracking-widest text-white"
+                    className="pointer-events-none absolute z-40 flex -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-md border-2 border-slate-400 px-3 py-2 text-center text-[clamp(11px,2vw,28px)] font-black uppercase tracking-widest text-white shadow-sm"
                     style={{
                       left: `${label.x}%`,
                       top: `${label.y}%`,
