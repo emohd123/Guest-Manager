@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useState, useMemo, useEffect } from "react";
+import { use, useState, useMemo, useEffect, useRef } from "react";
 import Link from "next/link";
 import { trpc } from "@/lib/trpc/client";
 import { Button } from "@/components/ui/button";
@@ -17,6 +17,10 @@ import {
   Zap,
   Target,
   ArrowRight,
+  ExternalLink,
+  FileText,
+  Loader2,
+  UploadCloud,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { GuestModal } from "@/components/guests/GuestModal";
@@ -24,6 +28,19 @@ import type { Guest } from "@/types/guest";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { createClient } from "@/lib/supabase/client";
+
+const FLOOR_PLAN_TYPES = [
+  "image/png",
+  "image/jpeg",
+  "image/webp",
+  "application/pdf",
+];
+
+function floorPlanKind(url: string): "image" | "pdf" | null {
+  if (!url) return null;
+  return /\.pdf(?:$|[?#])/i.test(url) ? "pdf" : "image";
+}
 
 export default function SeatingPage({
   params,
@@ -35,6 +52,13 @@ export default function SeatingPage({
   const [selectedGuest, setSelectedGuest] = useState<Guest | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [floorPlanUrl, setFloorPlanUrl] = useState("");
+  const [floorPlanFileName, setFloorPlanFileName] = useState("");
+  const [floorPlanMime, setFloorPlanMime] = useState("");
+  const [floorPlanAspectRatio, setFloorPlanAspectRatio] = useState<
+    number | null
+  >(null);
+  const [isUploadingFloorPlan, setIsUploadingFloorPlan] = useState(false);
+  const floorPlanInputRef = useRef<HTMLInputElement>(null);
   const [reservedEnabled, setReservedEnabled] = useState(false);
   const [sections, setSections] = useState<
     Array<{
@@ -56,6 +80,52 @@ export default function SeatingPage({
   const saveReserved = trpc.seating.save.useMutation({
     onSuccess: () => toast.success("Reserved seating plan saved"),
   });
+  const displayedFloorPlanKind = floorPlanMime
+    ? floorPlanMime === "application/pdf"
+      ? "pdf"
+      : "image"
+    : floorPlanKind(floorPlanUrl);
+
+  async function uploadFloorPlan(file: File) {
+    if (!FLOOR_PLAN_TYPES.includes(file.type)) {
+      toast.error("Choose a PNG, JPEG, WebP, or PDF floor plan.");
+      return;
+    }
+
+    setIsUploadingFloorPlan(true);
+    try {
+      const supabase = createClient();
+      const safeName = file.name.replace(/[^a-zA-Z0-9._-]+/g, "-");
+      const filePath = `floor-plans/${eventId}/${crypto.randomUUID()}-${safeName}`;
+      const { error } = await supabase.storage
+        .from("events")
+        .upload(filePath, file, {
+          cacheControl: "3600",
+          contentType: file.type,
+          upsert: false,
+        });
+      if (error) throw error;
+
+      const { data: publicUrlData } = supabase.storage
+        .from("events")
+        .getPublicUrl(filePath);
+      setFloorPlanUrl(publicUrlData.publicUrl);
+      setFloorPlanFileName(file.name);
+      setFloorPlanMime(file.type);
+      setFloorPlanAspectRatio(null);
+      toast.success(
+        "Original floor plan uploaded. Save the seating plan to keep it.",
+      );
+    } catch (error) {
+      console.error("Floor plan upload failed", error);
+      toast.error(
+        error instanceof Error ? error.message : "Floor plan upload failed.",
+      );
+    } finally {
+      setIsUploadingFloorPlan(false);
+      if (floorPlanInputRef.current) floorPlanInputRef.current.value = "";
+    }
+  }
   useEffect(() => {
     if (reservedPlan) {
       setFloorPlanUrl(reservedPlan.floor_plan_url ?? "");
@@ -175,10 +245,10 @@ export default function SeatingPage({
               Floor plan and seat inventory
             </h2>
             <p className="mt-2 max-w-2xl text-sm text-white/50">
-              Working first version: provide an uploaded floor-plan image URL,
-              then define positioned sections, rows, seat counts and price
-              overrides. The structure is ready for a future drag-and-drop
-              canvas.
+              Upload the original venue plan, then position sections with the
+              X/Y controls and define rows, seats and price overrides. Image
+              plans are used as the aligned overlay canvas; PDFs remain an
+              original reference preview.
             </p>
           </div>
           <label className="flex items-center gap-2 text-sm font-bold">
@@ -193,23 +263,139 @@ export default function SeatingPage({
         <div className="mt-6 grid gap-6 lg:grid-cols-[.9fr_1.1fr]">
           <div>
             <label className="text-xs font-black uppercase tracking-widest text-white/50">
-              Floor-plan image URL
+              Original floor plan
             </label>
-            <Input
-              value={floorPlanUrl}
-              onChange={(e) => setFloorPlanUrl(e.target.value)}
-              placeholder="https://.../floor-plan.png"
-              className="mt-2 bg-white/5 border-white/10"
+            <input
+              ref={floorPlanInputRef}
+              type="file"
+              accept="image/png,image/jpeg,image/webp,application/pdf,.png,.jpg,.jpeg,.webp,.pdf"
+              className="hidden"
+              disabled={isUploadingFloorPlan}
+              onChange={(event) => {
+                const file = event.target.files?.[0];
+                if (file) void uploadFloorPlan(file);
+              }}
             />
+            <button
+              type="button"
+              disabled={isUploadingFloorPlan}
+              onClick={() => floorPlanInputRef.current?.click()}
+              className="mt-2 flex min-h-28 w-full items-center justify-center gap-3 rounded-2xl border border-dashed border-cyan-300/30 bg-cyan-300/[.04] px-5 text-left transition hover:border-cyan-300/60 hover:bg-cyan-300/[.08] disabled:opacity-60"
+            >
+              {isUploadingFloorPlan ? (
+                <Loader2 className="h-7 w-7 animate-spin text-cyan-300" />
+              ) : (
+                <UploadCloud className="h-7 w-7 text-cyan-300" />
+              )}
+              <span>
+                <span className="block text-sm font-black">
+                  {isUploadingFloorPlan
+                    ? "Uploading original file…"
+                    : floorPlanUrl
+                      ? "Replace floor plan"
+                      : "Upload floor plan"}
+                </span>
+                <span className="mt-1 block text-xs text-white/40">
+                  PNG, JPEG, WebP or PDF. The original file is stored unchanged.
+                </span>
+              </span>
+            </button>
+
             {floorPlanUrl ? (
-              <img
-                src={floorPlanUrl}
-                alt="Floor plan preview"
-                className="mt-4 max-h-72 w-full rounded-2xl bg-white/5 object-contain"
-              />
+              <div className="mt-4 space-y-3">
+                <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2">
+                  <div className="flex min-w-0 items-center gap-2">
+                    {displayedFloorPlanKind === "pdf" ? (
+                      <FileText className="h-4 w-4 shrink-0 text-cyan-300" />
+                    ) : (
+                      <Armchair className="h-4 w-4 shrink-0 text-cyan-300" />
+                    )}
+                    <span className="truncate text-xs text-white/60">
+                      {floorPlanFileName || "Previously saved floor plan"}
+                    </span>
+                  </div>
+                  <a
+                    href={floorPlanUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    download
+                    className="inline-flex items-center gap-1 text-xs font-bold text-cyan-300 hover:text-cyan-200"
+                  >
+                    Open original <ExternalLink className="h-3.5 w-3.5" />
+                  </a>
+                </div>
+
+                {displayedFloorPlanKind === "pdf" ? (
+                  <div className="overflow-hidden rounded-2xl border border-white/10 bg-white">
+                    <iframe
+                      title="Original floor plan PDF"
+                      src={`${floorPlanUrl}#view=FitH&toolbar=1`}
+                      className="h-[520px] w-full"
+                    />
+                    <div className="border-t border-black/10 bg-white px-3 py-2 text-xs text-slate-600">
+                      PDF plans are preserved as reference previews. Upload an
+                      image version to position interactive seat overlays on the
+                      plan.
+                    </div>
+                  </div>
+                ) : (
+                  <div
+                    className="relative w-full overflow-hidden rounded-2xl border border-cyan-300/20 bg-white/5"
+                    style={{ aspectRatio: floorPlanAspectRatio ?? 16 / 9 }}
+                  >
+                    <img
+                      src={floorPlanUrl}
+                      alt="Interactive floor plan"
+                      onLoad={(event) => {
+                        const image = event.currentTarget;
+                        if (image.naturalWidth && image.naturalHeight)
+                          setFloorPlanAspectRatio(
+                            image.naturalWidth / image.naturalHeight,
+                          );
+                      }}
+                      className="absolute inset-0 h-full w-full object-contain"
+                    />
+                    {sections.map((section, sectionIndex) => (
+                      <div
+                        key={`${section.name}-${sectionIndex}`}
+                        className="absolute z-10 max-w-[45%] -translate-x-1/2 -translate-y-1/2 rounded-xl border border-cyan-200/70 bg-[#06131d]/90 p-2 shadow-xl backdrop-blur-sm"
+                        style={{ left: `${section.x}%`, top: `${section.y}%` }}
+                        title={`${section.name} at ${section.x}%, ${section.y}%`}
+                      >
+                        <p className="truncate text-[10px] font-black uppercase tracking-wider text-cyan-200">
+                          {section.name}
+                        </p>
+                        <div className="mt-1 space-y-1">
+                          {section.rows.slice(0, 4).map((row, rowIndex) => (
+                            <div
+                              key={`${row.label}-${rowIndex}`}
+                              className="flex items-center gap-1"
+                            >
+                              <span className="w-3 text-[8px] font-bold text-white/60">
+                                {row.label}
+                              </span>
+                              <div className="flex flex-wrap gap-0.5">
+                                {Array.from(
+                                  { length: Math.min(row.seatCount, 12) },
+                                  (_, seatIndex) => (
+                                    <span
+                                      key={seatIndex}
+                                      className="h-1.5 w-1.5 rounded-sm bg-cyan-300"
+                                    />
+                                  ),
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             ) : (
               <div className="mt-4 grid h-48 place-items-center rounded-2xl border border-dashed border-white/10 text-xs text-white/30">
-                Floor-plan preview
+                Upload a floor plan to begin
               </div>
             )}
           </div>
@@ -466,7 +652,7 @@ export default function SeatingPage({
         </div>
         <div className="mt-6 flex justify-end">
           <Button
-            disabled={saveReserved.isPending}
+            disabled={saveReserved.isPending || isUploadingFloorPlan}
             onClick={() =>
               saveReserved.mutate({
                 eventId,
