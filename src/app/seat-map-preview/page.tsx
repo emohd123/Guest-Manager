@@ -16,7 +16,11 @@ function buildPreviewPlan() {
     enabled: true,
     floor_plan_url: "/seat-map-preview.svg",
     metadata: { labels: [] },
-    sections: TIERS.map((tier, sectionIndex) => ({
+    sections: TIERS.map((tier, sectionIndex) => {
+      const denseRegression = sectionIndex === 2;
+      const rowTotal = denseRegression ? 30 : 7;
+      const seatTotal = denseRegression ? 30 : 12;
+      return {
       id: `section-${sectionIndex}`,
       name: tier.name,
       price: tier.price,
@@ -26,21 +30,21 @@ function buildPreviewPlan() {
       width: 26,
       height: 48,
       rotation: 0,
-      rows: Array.from({ length: 7 }, (_, rowIndex) => ({
+      rows: Array.from({ length: rowTotal }, (_, rowIndex) => ({
         id: `row-${sectionIndex}-${rowIndex}`,
         label: String.fromCharCode(65 + rowIndex),
         price: null,
         color: null,
-        seats: Array.from({ length: 12 }, (_, seatIndex) => {
+        seats: Array.from({ length: seatTotal }, (_, seatIndex) => {
           const unavailable =
             (sectionIndex === 0 && rowIndex === 1 && seatIndex === 5) ||
             (sectionIndex === 1 && rowIndex === 3 && seatIndex === 7) ||
-            (sectionIndex === 2 && rowIndex === 5 && seatIndex < 3);
+            (sectionIndex === 2 && rowIndex === 28 && seatIndex < 3);
           return {
             id: `preview-${sectionIndex}-${rowIndex}-${seatIndex}`,
             label: String(seatIndex + 1),
-            x: ((seatIndex + 1) / 13) * 100,
-            y: ((rowIndex + 1) / 8) * 100,
+            x: ((seatIndex + 1) / (seatTotal + 1)) * 100,
+            y: ((rowIndex + 1) / (rowTotal + 1)) * 100,
             price: null,
             color: null,
             category: tier.name,
@@ -51,7 +55,8 @@ function buildPreviewPlan() {
           };
         }),
       })),
-    })),
+      };
+    }),
   };
 }
 
