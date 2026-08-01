@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useState } from "react";
+import { use, useEffect, useState } from "react";
 import { trpc } from "@/lib/trpc/client";
 import { format } from "date-fns";
 import {
@@ -186,6 +186,10 @@ export default function PublicEventPage({
   const [attendeeEmail, setAttendeeEmail] = useState("");
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [selectedSeatIds, setSelectedSeatIds] = useState<string[]>([]);
+  const [publicSeating, setPublicSeating] = useState<{
+    loaded: boolean;
+    plan: any | null;
+  }>({ loaded: false, plan: null });
 
   const { data: event, isLoading: eventLoading } =
     trpc.events.getBySlug.useQuery({
@@ -202,10 +206,26 @@ export default function PublicEventPage({
     { eventId: event?.id as string },
     { enabled: !!event?.id },
   );
-  const { data: seatingPlan } = trpc.seating.publicPlan.useQuery(
-    { eventId: event?.id as string },
-    { enabled: !!event?.id },
-  );
+  useEffect(() => {
+    if (!event?.id) return;
+    let cancelled = false;
+    setPublicSeating({ loaded: false, plan: null });
+    void fetch(`/api/events/${event.id}/seating`, { cache: "no-store" })
+      .then(async (response) => {
+        if (!response.ok) throw new Error("Seating map request failed");
+        return response.json();
+      })
+      .then((payload) => {
+        if (!cancelled)
+          setPublicSeating({ loaded: true, plan: payload.plan ?? null });
+      })
+      .catch(() => {
+        if (!cancelled) setPublicSeating({ loaded: true, plan: null });
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [event?.id]);
 
   if (eventLoading) {
     return <LandingPageSkeleton />;
@@ -305,7 +325,7 @@ export default function PublicEventPage({
       0,
     );
     let seatHoldToken: string | undefined;
-    if (seatingPlan?.enabled) {
+    if (hasActiveSeatMap) {
       if (selectedSeatIds.length !== requestedQuantity) {
         toast.error(
           `Select ${requestedQuantity} seat${requestedQuantity === 1 ? "" : "s"} before checkout.`,
@@ -384,6 +404,22 @@ export default function PublicEventPage({
     pricedTickets.map((ticket) => ticket.price ?? 0).sort((a, b) => a - b)[0] ??
     0;
   const currency = tickets[0]?.currency ?? "BHD";
+  const seatingPlan = publicSeating.plan;
+  const reservedSeatCount =
+    seatingPlan?.sections?.reduce(
+      (sectionTotal: number, section: any) =>
+        sectionTotal +
+        (section.rows ?? []).reduce(
+          (rowTotal: number, row: any) => rowTotal + (row.seats?.length ?? 0),
+          0,
+        ),
+      0,
+    ) ?? 0;
+  const hasActiveSeatMap = Boolean(
+    seatingPlan?.enabled &&
+      seatingPlan.sections?.length &&
+      reservedSeatCount > 0,
+  );
   const priceFrom = publicPage.isPaidEvent
     ? formatMoney(lowestPrice, currency, locale)
     : t.freeEvent;
@@ -545,7 +581,7 @@ export default function PublicEventPage({
           </button>
         </section>
 
-        <div className="mt-8 grid gap-9 lg:grid-cols-[minmax(0,1fr)_360px]">
+        <div className="mt-8 grid gap-9">
           <article className="space-y-9">
             <section className="space-y-4">
               <div className="flex flex-wrap items-center gap-3">
@@ -774,7 +810,7 @@ export default function PublicEventPage({
             </section>
           </article>
 
-          <aside className="space-y-4 lg:sticky lg:top-6 lg:self-start">
+          <aside className="space-y-4">
             <section className="rounded-2xl border border-zinc-300 bg-white p-5 shadow-sm">
               <p className="text-xs font-semibold text-zinc-500">Price from:</p>
               <div className="mt-1 flex items-center justify-between gap-4">
@@ -868,7 +904,7 @@ export default function PublicEventPage({
                 </p>
               </div>
 
-              {seatingPlan?.enabled ? (
+              {hasActiveSeatMap ? (
                 <div className="mb-5">
                   <div className="mb-3 flex items-center justify-between">
                     <div>
@@ -959,7 +995,23 @@ export default function PublicEventPage({
                     </div>
                   )}
                 </div>
-              ) : null}
+              ) : publicSeating.loaded ? (
+                <div className="mb-5 rounded-2xl border border-cyan-200 bg-cyan-50 p-5 text-sm text-slate-800">
+                  <p className="text-xs font-black uppercase tracking-[.18em] text-cyan-700">
+                    Choose seats on map
+                  </p>
+                  <p className="mt-2 font-black">
+                    A reserved seating map is not configured for this event.
+                  </p>
+                  <p className="mt-1 leading-6 text-slate-600">
+                    Continue with General Admission below. When the organiser
+                    activates a plan containing sections and seats, the
+                    interactive hall map will appear here automatically.
+                  </p>
+                </div>
+              ) : (
+                <div className="mb-5 h-24 animate-pulse rounded-2xl bg-zinc-100" />
+              )}
 
               <div className="mb-5 grid gap-3">
                 <Input
