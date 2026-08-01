@@ -15,7 +15,19 @@ function buildPreviewPlan() {
     id: "local-preview",
     enabled: true,
     floor_plan_url: "/seat-map-preview.svg",
-    metadata: { labels: [] },
+    metadata: {
+      labels: [
+        {
+          id: "preview-stage",
+          text: "STAGE",
+          x: 50,
+          y: 92,
+          width: 42,
+          height: 12,
+          color: "#64748b",
+        },
+      ],
+    },
     sections: TIERS.map((tier, sectionIndex) => {
       const denseRegression = sectionIndex === 2;
       const rowTotal = denseRegression ? 30 : 7;
