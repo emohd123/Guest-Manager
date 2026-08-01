@@ -482,6 +482,7 @@ export default function DesignSetupPage({
               <div className="mb-12">
                 <p className="theme-eyebrow mb-2">Ticket Layout</p>
                 <h2 className="text-3xl font-black text-foreground dark:text-white italic uppercase tracking-tighter">PDF Ticket Design</h2>
+                <p className="mt-3 max-w-2xl text-sm text-muted-foreground dark:text-white/50">The uploaded ticket image fills the upper half of every customer PDF. Ticket details and the scannable QR code are placed below it automatically.</p>
               </div>
               <TicketDesignEditor
                 design={ticketDesign}

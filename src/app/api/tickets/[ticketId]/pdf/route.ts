@@ -18,6 +18,7 @@ type TicketRow = {
   barcode: string;
   pdf_url: string | null;
   attendee_name: string | null;
+  metadata: Record<string, any> | null;
 };
 
 type TicketTypeRow = {
@@ -29,6 +30,8 @@ type EventRow = {
   id: string;
   title: string;
   starts_at: string | null;
+  cover_image_url: string | null;
+  visitor_code: string | null;
   settings: Record<string, unknown> | null;
 };
 
@@ -47,7 +50,7 @@ export async function GET(
 
     const { data: ticketData, error: ticketError } = await supabase
       .from("tickets")
-      .select("id,event_id,ticket_type_id,order_id,barcode,pdf_url,attendee_name")
+      .select("id,event_id,ticket_type_id,order_id,barcode,pdf_url,attendee_name,metadata")
       .eq("id", ticketId)
       .maybeSingle();
 
@@ -70,7 +73,7 @@ export async function GET(
     const [eventResult, ticketTypeResult, orderResult] = await Promise.all([
       supabase
         .from("events")
-        .select("id,title,starts_at,settings")
+        .select("id,title,starts_at,cover_image_url,visitor_code,settings")
         .eq("id", ticket.event_id)
         .maybeSingle(),
       ticket.ticket_type_id
@@ -120,11 +123,16 @@ export async function GET(
         orderNumber: order?.order_number ?? ticket.barcode,
         qrCodeDataUri,
         design: {
-          backgroundImageUrl: ticketDesign.backgroundImageUrl,
+          backgroundImageUrl: ticketDesign.backgroundImageUrl ?? event?.cover_image_url ?? undefined,
           labelColor: ticketDesign.labelColor ?? "#2563EB",
           textColor: ticketDesign.textColor ?? "#111111",
+          showVisitorCode: ticketDesign.showVisitorCode,
           visibleFields: ticketDesign.visibleFields,
         },
+        visitorCode: event?.visitor_code ?? undefined,
+        seat: ticket.metadata?.seat
+          ? `${ticket.metadata.seat.section} · Row ${ticket.metadata.seat.row} · Seat ${ticket.metadata.seat.seat}`
+          : undefined,
       },
     }) as ReactElement<DocumentProps, string | JSXElementConstructor<unknown>>;
 

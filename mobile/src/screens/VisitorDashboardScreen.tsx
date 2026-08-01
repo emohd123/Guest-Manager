@@ -1003,17 +1003,17 @@ export function VisitorDashboardScreen({
             <View style={styles.discoverHead}>
               <View style={styles.sectionAccentBar} />
               <View style={{ flex: 1 }}>
-                <Text style={styles.discoverEyebrow}>Your agenda</Text>
-                <Text style={styles.discoverSub}>Sessions, speakers, and live links</Text>
+                <Text style={styles.discoverEyebrow}>Your favourites</Text>
+                <Text style={styles.discoverSub}>Sessions you saved for your personal event plan</Text>
               </View>
             </View>
-            {agenda.length === 0 ? (
+            {agenda.filter((sessionItem) => sessionItem.isSaved).length === 0 ? (
               <EmptyState
-                title="No sessions published yet"
-                body="Once the iTicket team publishes the agenda, your full schedule and live links will appear here."
+                title="No favourites yet"
+                body="Save sessions from your conference agenda and they will appear here for quick access."
               />
             ) : (
-              agenda.map((sessionItem, index) => (
+              agenda.filter((sessionItem) => sessionItem.isSaved).map((sessionItem, index) => (
                 <AnimatedEntrance key={sessionItem.id} delay={index * 70}>
                 <View style={styles.sessionCard}>
                   <View style={styles.sessionHeader}>
@@ -1114,7 +1114,22 @@ export function VisitorDashboardScreen({
               <>
                 <View style={styles.sectionCard}>
                   <View style={styles.sectionHeader}>
-                    <Text style={styles.sectionTitle}>Your networking profile</Text>
+                    <Text style={styles.sectionTitle}>Your profile</Text>
+                    <Text style={styles.helperText}>{session.name || "iTicket attendee"} · {session.email}</Text>
+                  </View>
+                  <Text style={styles.discoverEyebrow}>Your tickets</Text>
+                  {events.length === 0 ? (
+                    <Text style={styles.helperText}>Tickets for your registered events will appear here.</Text>
+                  ) : events.map((visitorEvent) => (
+                    <Pressable key={visitorEvent.eventId} style={styles.eventChip} onPress={() => { setSelectedEventId(visitorEvent.eventId); setTab("ticket"); }}>
+                      <View style={{ flex: 1 }}><Text style={styles.eventChipTitle}>{visitorEvent.eventName}</Text><Text style={styles.eventChipMeta}>{fmtDate(visitorEvent.startsAt)} · {visitorEvent.ticketStatus}</Text></View>
+                      <Ionicons name="ticket-outline" size={20} color="#67E8F9" />
+                    </Pressable>
+                  ))}
+                </View>
+                <View style={styles.sectionCard}>
+                  <View style={styles.sectionHeader}>
+                    <Text style={styles.sectionTitle}>Networking profile</Text>
                     <Text style={styles.helperText}>
                       {networking.introText ?? "Opt in to appear in attendee discovery."}
                     </Text>
@@ -1577,46 +1592,41 @@ export function VisitorDashboardScreen({
               key: "home",
               label: "Home",
               active: tab === "home",
-              icon: <Ionicons name="home-outline" size={22} color="#8D98C5" />,
-              activeIcon: <Ionicons name="home" size={22} color="#FFFFFF" />,
+              icon: <Ionicons name="home-outline" size={22} color="#334155" />,
+              activeIcon: <Ionicons name="home" size={22} color="#2563EB" />,
               onPress: () => setTab("home"),
             },
             {
               key: "discover",
-              label: "Discover",
+              label: "Search",
               active: tab === "discover",
-              icon: <Ionicons name="compass-outline" size={22} color="#8D98C5" />,
-              activeIcon: <Ionicons name="compass" size={22} color="#FFFFFF" />,
+              icon: <Ionicons name="search-outline" size={22} color="#334155" />,
+              activeIcon: <Ionicons name="search" size={22} color="#2563EB" />,
               onPress: () => setTab("discover"),
             },
             {
               key: "agenda",
-              label: "Agenda",
+              label: "Favourite",
               active: tab === "agenda",
-              icon: <Ionicons name="calendar-outline" size={22} color="#8D98C5" />,
-              activeIcon: <Ionicons name="calendar" size={22} color="#FFFFFF" />,
+              icon: <Ionicons name="heart-outline" size={22} color="#334155" />,
+              activeIcon: <Ionicons name="heart" size={22} color="#2563EB" />,
               onPress: () => setTab("agenda"),
             },
             {
-              key: "inbox",
-              label: "Inbox",
-              active: tab === "inbox",
-              badge: unreadCount,
-              icon: <Ionicons name="chatbubble-ellipses-outline" size={22} color="#8D98C5" />,
-              activeIcon: <Ionicons name="chatbubble-ellipses" size={22} color="#FFFFFF" />,
-              onPress: () => {
-                setTab("inbox");
-                markNotificationsRead(session.token).catch(() => undefined);
-                setUnreadCount(0);
-              },
+              key: "private-event",
+              label: "Private Event",
+              active: false,
+              icon: <Ionicons name="calendar-outline" size={22} color="#334155" />,
+              activeIcon: <Ionicons name="calendar" size={22} color="#2563EB" />,
+              onPress: onJoinEvent,
             },
             {
               key: "ticket",
-              label: "Ticket",
-              active: tab === "ticket",
-              icon: <Ionicons name="ticket-outline" size={22} color="#8D98C5" />,
-              activeIcon: <Ionicons name="ticket" size={22} color="#FFFFFF" />,
-              onPress: () => setTab("ticket"),
+              label: "Profile",
+              active: tab === "networking",
+              icon: <Ionicons name="person-outline" size={22} color="#334155" />,
+              activeIcon: <Ionicons name="person" size={22} color="#2563EB" />,
+              onPress: () => setTab("networking"),
             },
           ]}
         />
@@ -2115,6 +2125,9 @@ const styles = StyleSheet.create({
   emptyState: { borderRadius: 24, backgroundColor: "rgba(255,255,255,0.08)", borderWidth: 1, borderColor: "rgba(255,255,255,0.1)", padding: 24, alignItems: "center", gap: 10 },
   emptyStateTitle: { color: "#FFFFFF", fontSize: 20, fontWeight: "900", textAlign: "center" },
   emptyStateBody: { color: "#AEB7D6", fontSize: 14, lineHeight: 21, textAlign: "center" },
+  eventChip: { flexDirection: "row", alignItems: "center", gap: 12, marginTop: 10, padding: 13, borderRadius: 16, backgroundColor: "rgba(103,232,249,0.08)", borderWidth: 1, borderColor: "rgba(103,232,249,0.18)" },
+  eventChipTitle: { color: "#FFFFFF", fontSize: 14, fontWeight: "800" },
+  eventChipMeta: { color: "#AEB7D6", fontSize: 12, marginTop: 3 },
   // Sits above the Android gesture/nav area (app runs edge-to-edge).
   tabBarWrap: { position: "absolute", left: 16, right: 16, bottom: Platform.OS === "android" ? 38 : 22, alignItems: "center" },
   tabBar: {

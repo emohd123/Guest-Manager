@@ -30,6 +30,14 @@ import type { DesignSettings } from "@/types/event";
 import { toast } from "sonner";
 import { formatMoney, getLocalizedText, marketplaceLocales, normalizeLocale } from "@/lib/marketplace";
 
+const CUSTOMER_TERMS = [
+  "QR tickets are valid once for the stated event and date.",
+  "Entry is subject to venue and organiser safety rules.",
+  "Unauthorized resale or copying of tickets is not permitted.",
+  "Schedules, performers, and artists may change where necessary.",
+  "Refund and transfer requests follow the organiser's policy and applicable law.",
+];
+
 const labels = {
   en: {
     eventNotFound: "Event not found",
@@ -155,6 +163,7 @@ export default function PublicEventPage({
   const [attendeeName, setAttendeeName] = useState("");
   const [attendeeEmail, setAttendeeEmail] = useState("");
   const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const [selectedSeatIds, setSelectedSeatIds] = useState<string[]>([]);
 
   const { data: event, isLoading: eventLoading } = trpc.events.getBySlug.useQuery({ 
     companySlug, 
@@ -169,6 +178,7 @@ export default function PublicEventPage({
     { eventId: event?.id as string },
     { enabled: !!event?.id }
   );
+  const {data: seatingPlan} = trpc.seating.publicPlan.useQuery({eventId:event?.id as string},{enabled:!!event?.id});
 
   if (eventLoading) {
     return <LandingPageSkeleton />;
@@ -250,6 +260,19 @@ export default function PublicEventPage({
       return;
     }
 
+    const requestedQuantity = cartItems.reduce((sum, item) => sum + item.quantity, 0);
+    let seatHoldToken: string | undefined;
+    if (seatingPlan?.enabled) {
+      if (selectedSeatIds.length !== requestedQuantity) {
+        toast.error(`Select ${requestedQuantity} seat${requestedQuantity === 1 ? "" : "s"} before checkout.`);
+        return;
+      }
+      const holdResponse = await fetch(`/api/events/${event.id}/seating/hold`,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({seatIds:selectedSeatIds})});
+      const hold = await holdResponse.json();
+      if(!holdResponse.ok){toast.error(hold.error ?? "Those seats are no longer available.");return;}
+      seatHoldToken=hold.holdToken;
+    }
+
     try {
       setCheckoutLoading(true);
       const response = await fetch("/api/orders", {
@@ -261,6 +284,8 @@ export default function PublicEventPage({
           attendeeName: attendeeName.trim(),
           attendeeEmail: attendeeEmail.trim(),
           cartItems,
+          selectedSeatIds,
+          seatHoldToken,
         }),
       });
 
@@ -620,6 +645,13 @@ export default function PublicEventPage({
                 </p>
               </div>
 
+              {seatingPlan?.enabled ? <div className="mb-5 overflow-hidden rounded-2xl border border-cyan-300/30 bg-[#08131b] p-4 text-white">
+                <div className="mb-4 flex items-center justify-between"><div><p className="text-xs font-black uppercase tracking-[.18em] text-cyan-300">Reserved seating</p><h4 className="mt-1 font-black">Choose your seats</h4></div><span className="rounded-full bg-cyan-300/10 px-3 py-1 text-xs font-bold text-cyan-200">{selectedSeatIds.length} selected</span></div>
+                {seatingPlan.floor_plan_url ? <img src={seatingPlan.floor_plan_url} alt="Event floor plan" className="mb-4 max-h-56 w-full rounded-xl object-contain bg-white/5" /> : null}
+                <div className="space-y-5">{seatingPlan.sections.map((section:any)=><div key={section.id}><div className="mb-2 flex items-center justify-between"><span className="font-black">{section.name}</span>{section.price!=null?<span className="text-xs text-cyan-200">{formatMoney(section.price,currency,locale)}</span>:null}</div>{section.rows.map((row:any)=><div key={row.id} className="mb-2 flex items-center gap-2"><span className="w-8 text-xs font-black text-slate-400">{row.label}</span><div className="flex flex-wrap gap-2">{row.seats.map((seat:any)=>{const active=selectedSeatIds.includes(seat.id);return <button type="button" key={seat.id} disabled={seat.unavailable} onClick={()=>setSelectedSeatIds((current)=>active?current.filter((id)=>id!==seat.id):[...current,seat.id])} className={`h-9 min-w-9 rounded-lg border px-2 text-xs font-black ${seat.unavailable?"cursor-not-allowed border-white/5 bg-white/5 text-white/20":active?"border-cyan-200 bg-cyan-300 text-slate-950":"border-cyan-300/25 bg-white/5 text-white hover:border-cyan-300"}`}>{seat.label}</button>})}</div></div>)}</div>)}</div>
+                <p className="mt-4 text-[11px] leading-5 text-slate-400">Seats are held for 10 minutes when you continue to checkout. Grey seats are sold or temporarily held.</p>
+              </div>:null}
+
               <div className="mb-5 grid gap-3">
                 <Input
                   value={attendeeName}
@@ -637,6 +669,24 @@ export default function PublicEventPage({
                   className="h-12 rounded-xl bg-zinc-50"
                 />
               </div>
+
+              <details className="group mb-5 overflow-hidden rounded-xl border border-cyan-300/30 bg-[#0b151d] text-white">
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-4 font-black marker:content-none">
+                  <span className="flex items-center gap-2">
+                    <ShieldCheck className="h-5 w-5 text-cyan-300" />
+                    Terms &amp; Conditions
+                  </span>
+                  <ChevronRight className="h-4 w-4 text-cyan-300 transition-transform group-open:rotate-90" />
+                </summary>
+                <ul className="space-y-2 border-t border-white/10 px-5 py-4 text-xs leading-5 text-slate-300">
+                  {CUSTOMER_TERMS.map((term) => (
+                    <li key={term} className="flex gap-2">
+                      <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-cyan-300" />
+                      <span>{term}</span>
+                    </li>
+                  ))}
+                </ul>
+              </details>
 
               {ticketsLoading ? (
                 <div className="space-y-3">

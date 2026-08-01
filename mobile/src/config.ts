@@ -16,11 +16,10 @@ function normalizeBaseUrl(value?: string) {
 }
 
 export function getApiBaseUrl() {
-  const webBaseUrl = getWebBaseUrl();
   return normalizeBaseUrl(
     process.env.EXPO_PUBLIC_API_URL ||
-      webBaseUrl ||
       extra.apiBaseUrl ||
+      getWebBaseUrl() ||
       fallbackBaseUrl
   );
 }

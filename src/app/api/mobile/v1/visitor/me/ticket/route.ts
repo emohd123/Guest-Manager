@@ -25,6 +25,7 @@ type TicketRow = {
   barcode: string;
   status: string | null;
   created_at: string;
+  seat_id: string | null;
 };
 
 type EventRow = {
@@ -68,7 +69,7 @@ export async function GET(request: NextRequest) {
     const guestIds = guestRows.map((guest) => guest.id);
     const { data: ticketRowsData, error: ticketError } = await supabase
       .from("tickets")
-      .select("id,guest_id,event_id,ticket_type_id,barcode,status,created_at")
+      .select("id,guest_id,event_id,ticket_type_id,barcode,status,created_at,seat_id")
       .in("guest_id", guestIds)
       .order("created_at", { ascending: false });
 
@@ -125,6 +126,16 @@ export async function GET(request: NextRequest) {
     const settings = (event.settings ?? {}) as Record<string, any>;
     const agendaSettings = (settings.agenda ?? {}) as Record<string, any>;
     const ticketDesign = (settings.ticketDesign ?? {}) as Record<string, any>;
+    let seat: { section: string; row: string; seat: string } | null = null;
+    if (ticket.seat_id) {
+      const { data: seatData } = await supabase
+        .from("reserved_seats")
+        .select("label,seat_rows(label,seat_sections(name))")
+        .eq("id", ticket.seat_id)
+        .maybeSingle();
+      const rowData = seatData?.seat_rows as any;
+      if (seatData && rowData) seat = { section: rowData.seat_sections?.name ?? "Section", row: rowData.label, seat: seatData.label };
+    }
 
     return NextResponse.json({
       ticket: {
@@ -133,6 +144,7 @@ export async function GET(request: NextRequest) {
         barcode: ticket.barcode,
         status: ticket.status ?? "valid",
         ticketType: ticketTypeData?.name ?? "General",
+        seat,
         rsvpStatus: guest.rsvp_status,
         rsvpAt: guest.rsvp_at,
         event: {
