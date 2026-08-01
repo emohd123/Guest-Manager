@@ -243,7 +243,7 @@ export async function POST(request: NextRequest) {
         SELECT rs.id,rs.label,sr.label row_label,ss.name section_name,COALESCE(rs.price,sr.price,ss.price)::int price
         FROM reserved_seats rs JOIN seat_rows sr ON sr.id=rs.row_id JOIN seat_sections ss ON ss.id=sr.section_id
         JOIN seating_plans sp ON sp.id=ss.plan_id JOIN seat_holds sh ON sh.seat_id=rs.id
-        WHERE sp.event_id=${event[0].id} AND rs.id=ANY(${selectedSeatIds}::uuid[]) AND rs.sold_ticket_id IS NULL
+        WHERE sp.event_id=${event[0].id} AND rs.id=ANY(${selectedSeatIds}::uuid[]) AND rs.sold_ticket_id IS NULL AND rs.inventory_status='available'
           AND sh.hold_token=${seatHoldToken}::uuid AND sh.status='pending' AND sh.expires_at>now()
         ORDER BY ss.sort_order,sr.sort_order,rs.label`);
       selectedSeats = result as unknown as typeof selectedSeats;

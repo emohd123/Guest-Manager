@@ -27,6 +27,23 @@ const sectionInput = z.object({
         seatColors: z
           .record(z.string(), z.string().regex(/^#[0-9a-f]{6}$/i))
           .optional(),
+        seatDetails: z
+          .array(
+            z.object({
+              label: z.string().min(1).max(30),
+              x: z.number().int().min(0).max(100),
+              y: z.number().int().min(0).max(100),
+              price: z.number().int().min(0).nullable(),
+              color: z
+                .string()
+                .regex(/^#[0-9a-f]{6}$/i)
+                .nullable(),
+              category: z.string().max(80).nullable(),
+              status: z.enum(["available", "blocked"]),
+            }),
+          )
+          .max(200)
+          .optional(),
       }),
     )
     .max(100),
@@ -88,6 +105,7 @@ async function nestedPlan(
             .map((seat: any) => ({
               ...seat,
               unavailable:
+                seat.inventory_status === "blocked" ||
                 Boolean(seat.sold_ticket_id) ||
                 (seat.seat_holds ?? []).some(
                   (hold: any) =>
@@ -229,22 +247,36 @@ export const seatingRouter = router({
             section.rows.length === 1
               ? 50
               : 50 - rowSpan / 2 + (ri / (section.rows.length - 1)) * rowSpan;
+          const generatedSeats = Array.from(
+            { length: row.seatCount },
+            (_, i) => ({
+              label: String(i + 1),
+              price: row.seatPrices?.[String(i + 1)] ?? null,
+              color: row.seatColors?.[String(i + 1)] ?? null,
+              category: null,
+              inventory_status: "available",
+              x: Math.round(
+                row.seatCount === 1
+                  ? 50
+                  : 50 - seatSpan / 2 + (i / (row.seatCount - 1)) * seatSpan,
+              ),
+              y: Math.round(seatY),
+            }),
+          );
+          const seatsToSave = row.seatDetails?.length
+            ? row.seatDetails.map((seat) => ({
+                label: seat.label,
+                price: seat.price,
+                color: seat.color,
+                category: seat.category,
+                inventory_status: seat.status,
+                x: seat.x,
+                y: seat.y,
+              }))
+            : generatedSeats;
           await admin
             .from("reserved_seats")
-            .insert(
-              Array.from({ length: row.seatCount }, (_, i) => ({
-                row_id: r.id,
-                label: String(i + 1),
-                price: row.seatPrices?.[String(i + 1)] ?? null,
-                color: row.seatColors?.[String(i + 1)] ?? null,
-                x: Math.round(
-                  row.seatCount === 1
-                    ? 50
-                    : 50 - seatSpan / 2 + (i / (row.seatCount - 1)) * seatSpan,
-                ),
-                y: Math.round(seatY),
-              })),
-            );
+            .insert(seatsToSave.map((seat) => ({ row_id: r.id, ...seat })));
         }
       }
       return nestedPlan(admin, input.eventId);
