@@ -59,6 +59,20 @@ export default function SeatingPage({
   >(null);
   const [isUploadingFloorPlan, setIsUploadingFloorPlan] = useState(false);
   const floorPlanInputRef = useRef<HTMLInputElement>(null);
+  const hallCanvasRef = useRef<HTMLDivElement>(null);
+  const [selectedSectionIndex, setSelectedSectionIndex] = useState(0);
+  const [generatorRows, setGeneratorRows] = useState(5);
+  const [generatorSeats, setGeneratorSeats] = useState(10);
+  const [mapLabels, setMapLabels] = useState<
+    Array<{
+      id: string;
+      text: string;
+      x: number;
+      y: number;
+      width: number;
+      color: string;
+    }>
+  >([]);
   const [reservedEnabled, setReservedEnabled] = useState(false);
   const [sections, setSections] = useState<
     Array<{
@@ -66,11 +80,19 @@ export default function SeatingPage({
       price: number | null;
       x: number;
       y: number;
+      width: number;
+      height: number;
+      rotation: number;
+      color: string;
+      seatSpacing: number;
+      rowSpacing: number;
       rows: Array<{
         label: string;
         price: number | null;
         seatCount: number;
         seatPrices?: Record<string, number>;
+        color: string | null;
+        seatColors?: Record<string, string>;
       }>;
     }>
   >([]);
@@ -126,24 +148,97 @@ export default function SeatingPage({
       if (floorPlanInputRef.current) floorPlanInputRef.current.value = "";
     }
   }
+
+  function beginSectionDrag(sectionIndex: number, event: React.PointerEvent) {
+    event.preventDefault();
+    setSelectedSectionIndex(sectionIndex);
+    const canvas = hallCanvasRef.current;
+    if (!canvas) return;
+    const move = (pointerEvent: PointerEvent) => {
+      const bounds = canvas.getBoundingClientRect();
+      const x = Math.max(
+        0,
+        Math.min(
+          100,
+          ((pointerEvent.clientX - bounds.left) / bounds.width) * 100,
+        ),
+      );
+      const y = Math.max(
+        0,
+        Math.min(
+          100,
+          ((pointerEvent.clientY - bounds.top) / bounds.height) * 100,
+        ),
+      );
+      setSections((current) =>
+        current.map((section, index) =>
+          index === sectionIndex
+            ? { ...section, x: Math.round(x), y: Math.round(y) }
+            : section,
+        ),
+      );
+    };
+    const stop = () => {
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", stop);
+    };
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", stop);
+  }
+
+  function generateGrid(sectionIndex: number) {
+    setSections((current) =>
+      current.map((section, index) =>
+        index === sectionIndex
+          ? {
+              ...section,
+              rows: Array.from({ length: generatorRows }, (_, rowIndex) => ({
+                label: String.fromCharCode(65 + rowIndex),
+                price: null,
+                color: null,
+                seatCount: generatorSeats,
+                seatPrices: {},
+                seatColors: {},
+              })),
+            }
+          : section,
+      ),
+    );
+    toast.success(
+      `Generated ${generatorRows} rows × ${generatorSeats} seats. Review before saving.`,
+    );
+  }
   useEffect(() => {
     if (reservedPlan) {
       setFloorPlanUrl(reservedPlan.floor_plan_url ?? "");
       setReservedEnabled(reservedPlan.enabled);
+      setMapLabels((reservedPlan.metadata as any)?.labels ?? []);
       setSections(
         reservedPlan.sections.map((s: any) => ({
           name: s.name,
           price: s.price,
           x: s.x,
           y: s.y,
+          width: s.width ?? 30,
+          height: s.height ?? 20,
+          rotation: s.rotation ?? 0,
+          color: s.color ?? "#22d3ee",
+          seatSpacing: s.seat_spacing ?? 100,
+          rowSpacing: s.row_spacing ?? 100,
           rows: s.rows.map((r: any) => ({
             label: r.label,
             price: r.price,
+            color: r.color ?? null,
             seatCount: r.seats.length,
             seatPrices: Object.fromEntries(
               r.seats
                 .filter((seat: any) => seat.price != null)
                 .map((seat: any) => [seat.label, seat.price]),
+            ),
+            seatColors: Object.fromEntries(
+              r.seats
+                .filter((seat: any) => seat.color)
+                .map((seat: any) => [seat.label, seat.color]),
             ),
           })),
         })),
@@ -340,6 +435,7 @@ export default function SeatingPage({
                   </div>
                 ) : (
                   <div
+                    ref={hallCanvasRef}
                     className="relative w-full overflow-hidden rounded-2xl border border-cyan-300/20 bg-white/5"
                     style={{ aspectRatio: floorPlanAspectRatio ?? 16 / 9 }}
                   >
@@ -355,39 +451,58 @@ export default function SeatingPage({
                       }}
                       className="absolute inset-0 h-full w-full object-contain"
                     />
+                    {mapLabels.map((label) => (
+                      <div
+                        key={label.id}
+                        className="pointer-events-none absolute -translate-x-1/2 -translate-y-1/2 rounded-md border border-white/40 bg-black/65 px-2 py-1 text-center text-[9px] font-black uppercase tracking-widest"
+                        style={{
+                          left: `${label.x}%`,
+                          top: `${label.y}%`,
+                          width: `${label.width}%`,
+                          color: label.color,
+                        }}
+                      >
+                        {label.text}
+                      </div>
+                    ))}
                     {sections.map((section, sectionIndex) => (
                       <div
                         key={`${section.name}-${sectionIndex}`}
-                        className="absolute z-10 max-w-[45%] -translate-x-1/2 -translate-y-1/2 rounded-xl border border-cyan-200/70 bg-[#06131d]/90 p-2 shadow-xl backdrop-blur-sm"
-                        style={{ left: `${section.x}%`, top: `${section.y}%` }}
+                        onPointerDown={(event) =>
+                          beginSectionDrag(sectionIndex, event)
+                        }
+                        className={`absolute z-10 cursor-move rounded-xl border bg-[#06131d]/75 p-2 shadow-xl backdrop-blur-sm ${selectedSectionIndex === sectionIndex ? "border-white ring-2 ring-cyan-300" : "border-cyan-200/70"}`}
+                        style={{
+                          left: `${section.x}%`,
+                          top: `${section.y}%`,
+                          width: `${section.width}%`,
+                          height: `${section.height}%`,
+                          transform: `translate(-50%,-50%) rotate(${section.rotation}deg)`,
+                        }}
                         title={`${section.name} at ${section.x}%, ${section.y}%`}
                       >
                         <p className="truncate text-[10px] font-black uppercase tracking-wider text-cyan-200">
                           {section.name}
                         </p>
-                        <div className="mt-1 space-y-1">
-                          {section.rows.slice(0, 4).map((row, rowIndex) => (
-                            <div
-                              key={`${row.label}-${rowIndex}`}
-                              className="flex items-center gap-1"
-                            >
-                              <span className="w-3 text-[8px] font-bold text-white/60">
-                                {row.label}
-                              </span>
-                              <div className="flex flex-wrap gap-0.5">
-                                {Array.from(
-                                  { length: Math.min(row.seatCount, 12) },
-                                  (_, seatIndex) => (
-                                    <span
-                                      key={seatIndex}
-                                      className="h-1.5 w-1.5 rounded-sm bg-cyan-300"
-                                    />
-                                  ),
-                                )}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
+                        {section.rows.map((row, rowIndex) =>
+                          Array.from(
+                            { length: row.seatCount },
+                            (_, seatIndex) => (
+                              <span
+                                key={`${rowIndex}-${seatIndex}`}
+                                className="absolute h-1.5 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-t-sm border border-black/30"
+                                style={{
+                                  left: `${((seatIndex + 1) / (row.seatCount + 1)) * 100}%`,
+                                  top: `${((rowIndex + 1) / (section.rows.length + 1)) * 100}%`,
+                                  backgroundColor:
+                                    row.seatColors?.[String(seatIndex + 1)] ??
+                                    row.color ??
+                                    section.color,
+                                }}
+                              />
+                            ),
+                          ),
+                        )}
                       </div>
                     ))}
                   </div>
@@ -460,12 +575,152 @@ export default function SeatingPage({
                     }
                     placeholder="Y %"
                   />
+                  <label className="flex h-10 items-center gap-2 rounded-md border border-white/10 px-3 text-xs text-white/50">
+                    Color
+                    <input
+                      type="color"
+                      value={section.color}
+                      onChange={(e) =>
+                        setSections((current) =>
+                          current.map((s, i) =>
+                            i === si ? { ...s, color: e.target.value } : s,
+                          ),
+                        )
+                      }
+                      className="ml-auto h-7 w-10 bg-transparent"
+                    />
+                  </label>
+                  <Input
+                    type="number"
+                    min={5}
+                    max={100}
+                    value={section.width}
+                    onChange={(e) =>
+                      setSections((current) =>
+                        current.map((s, i) =>
+                          i === si
+                            ? { ...s, width: Number(e.target.value) }
+                            : s,
+                        ),
+                      )
+                    }
+                    placeholder="Width %"
+                  />
+                  <Input
+                    type="number"
+                    min={5}
+                    max={100}
+                    value={section.height}
+                    onChange={(e) =>
+                      setSections((current) =>
+                        current.map((s, i) =>
+                          i === si
+                            ? { ...s, height: Number(e.target.value) }
+                            : s,
+                        ),
+                      )
+                    }
+                    placeholder="Height %"
+                  />
+                  <Input
+                    type="number"
+                    min={-180}
+                    max={180}
+                    value={section.rotation}
+                    onChange={(e) =>
+                      setSections((current) =>
+                        current.map((s, i) =>
+                          i === si
+                            ? { ...s, rotation: Number(e.target.value) }
+                            : s,
+                        ),
+                      )
+                    }
+                    placeholder="Rotation"
+                  />
+                  <Input
+                    type="number"
+                    min={40}
+                    max={200}
+                    value={section.seatSpacing}
+                    onChange={(e) =>
+                      setSections((current) =>
+                        current.map((s, i) =>
+                          i === si
+                            ? { ...s, seatSpacing: Number(e.target.value) }
+                            : s,
+                        ),
+                      )
+                    }
+                    placeholder="Seat spacing %"
+                  />
+                  <Input
+                    type="number"
+                    min={40}
+                    max={200}
+                    value={section.rowSpacing}
+                    onChange={(e) =>
+                      setSections((current) =>
+                        current.map((s, i) =>
+                          i === si
+                            ? { ...s, rowSpacing: Number(e.target.value) }
+                            : s,
+                        ),
+                      )
+                    }
+                    placeholder="Row spacing %"
+                  />
+                </div>
+                <div className="mt-3 rounded-xl border border-cyan-300/15 bg-cyan-300/[.04] p-3">
+                  <div className="flex flex-wrap items-end gap-2">
+                    <label className="text-[10px] font-bold uppercase text-white/40">
+                      Rows
+                      <Input
+                        type="number"
+                        min={1}
+                        max={26}
+                        value={generatorRows}
+                        onChange={(e) =>
+                          setGeneratorRows(
+                            Math.max(1, Math.min(26, Number(e.target.value))),
+                          )
+                        }
+                        className="mt-1 w-20"
+                      />
+                    </label>
+                    <label className="text-[10px] font-bold uppercase text-white/40">
+                      Seats / row
+                      <Input
+                        type="number"
+                        min={1}
+                        max={100}
+                        value={generatorSeats}
+                        onChange={(e) =>
+                          setGeneratorSeats(
+                            Math.max(1, Math.min(100, Number(e.target.value))),
+                          )
+                        }
+                        className="mt-1 w-24"
+                      />
+                    </label>
+                    <Button
+                      type="button"
+                      size="sm"
+                      onClick={() => generateGrid(si)}
+                    >
+                      Generate rectangular grid
+                    </Button>
+                  </div>
+                  <p className="mt-2 text-[10px] text-white/35">
+                    Assisted generation creates a reviewable grid; it does not
+                    claim to detect seats from the image.
+                  </p>
                 </div>
                 <div className="mt-3 space-y-2">
                   {section.rows.map((row, ri) => (
                     <div
                       key={ri}
-                      className="grid gap-2 sm:grid-cols-[.7fr_.7fr_.8fr_1.5fr_auto]"
+                      className="grid gap-2 sm:grid-cols-[.6fr_.6fr_.7fr_.7fr_1.2fr_1.2fr_auto]"
                     >
                       <Input
                         value={row.label}
@@ -537,6 +792,30 @@ export default function SeatingPage({
                         }
                         placeholder="Row price"
                       />
+                      <label className="flex h-10 items-center rounded-md border border-white/10 px-2 text-[10px] text-white/40">
+                        Row
+                        <input
+                          type="color"
+                          value={row.color ?? section.color}
+                          onChange={(e) =>
+                            setSections((current) =>
+                              current.map((s, i) =>
+                                i === si
+                                  ? {
+                                      ...s,
+                                      rows: s.rows.map((r, j) =>
+                                        j === ri
+                                          ? { ...r, color: e.target.value }
+                                          : r,
+                                      ),
+                                    }
+                                  : s,
+                              ),
+                            )
+                          }
+                          className="ml-auto h-7 w-8 bg-transparent"
+                        />
+                      </label>
                       <Input
                         value={Object.entries(row.seatPrices ?? {})
                           .map(([seat, price]) => `${seat}:${price}`)
@@ -568,6 +847,35 @@ export default function SeatingPage({
                           );
                         }}
                         placeholder="Seat prices 1:25, 2:30"
+                      />
+                      <Input
+                        value={Object.entries(row.seatColors ?? {})
+                          .map(([seat, color]) => `${seat}:${color}`)
+                          .join(", ")}
+                        onChange={(e) => {
+                          const seatColors = Object.fromEntries(
+                            e.target.value
+                              .split(",")
+                              .map((value) => value.trim().split(":"))
+                              .filter(
+                                ([seat, color]) =>
+                                  seat && /^#[0-9a-f]{6}$/i.test(color ?? ""),
+                              ),
+                          );
+                          setSections((current) =>
+                            current.map((s, i) =>
+                              i === si
+                                ? {
+                                    ...s,
+                                    rows: s.rows.map((r, j) =>
+                                      j === ri ? { ...r, seatColors } : r,
+                                    ),
+                                  }
+                                : s,
+                            ),
+                          );
+                        }}
+                        placeholder="Seat colors 1:#f59e0b"
                       />
                       <Button
                         variant="ghost"
@@ -607,6 +915,9 @@ export default function SeatingPage({
                                     ),
                                     price: null,
                                     seatCount: 10,
+                                    color: null,
+                                    seatPrices: {},
+                                    seatColors: {},
                                   },
                                 ],
                               }
@@ -641,13 +952,136 @@ export default function SeatingPage({
                     price: null,
                     x: 10 + current.length * 10,
                     y: 10 + current.length * 10,
-                    rows: [{ label: "A", price: null, seatCount: 10 }],
+                    width: 30,
+                    height: 20,
+                    rotation: 0,
+                    color: "#22d3ee",
+                    seatSpacing: 100,
+                    rowSpacing: 100,
+                    rows: [
+                      {
+                        label: "A",
+                        price: null,
+                        color: null,
+                        seatCount: 10,
+                        seatPrices: {},
+                        seatColors: {},
+                      },
+                    ],
                   },
                 ])
               }
             >
               Add section
             </Button>
+            <div className="rounded-2xl border border-white/10 bg-white/[.03] p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-black uppercase tracking-wider">
+                    Map labels / stage
+                  </p>
+                  <p className="mt-1 text-[10px] text-white/35">
+                    Add reference labels over the image.
+                  </p>
+                </div>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() =>
+                    setMapLabels((current) => [
+                      ...current,
+                      {
+                        id: crypto.randomUUID(),
+                        text: current.length
+                          ? `Label ${current.length + 1}`
+                          : "STAGE",
+                        x: 50,
+                        y: 8,
+                        width: 30,
+                        color: "#ffffff",
+                      },
+                    ])
+                  }
+                >
+                  Add label
+                </Button>
+              </div>
+              <div className="mt-3 space-y-2">
+                {mapLabels.map((label, labelIndex) => (
+                  <div
+                    key={label.id}
+                    className="grid grid-cols-[1fr_.6fr_.6fr_.6fr_auto] gap-2"
+                  >
+                    <Input
+                      value={label.text}
+                      onChange={(e) =>
+                        setMapLabels((current) =>
+                          current.map((item, index) =>
+                            index === labelIndex
+                              ? { ...item, text: e.target.value }
+                              : item,
+                          ),
+                        )
+                      }
+                    />
+                    <Input
+                      type="number"
+                      value={label.x}
+                      onChange={(e) =>
+                        setMapLabels((current) =>
+                          current.map((item, index) =>
+                            index === labelIndex
+                              ? { ...item, x: Number(e.target.value) }
+                              : item,
+                          ),
+                        )
+                      }
+                      placeholder="X"
+                    />
+                    <Input
+                      type="number"
+                      value={label.y}
+                      onChange={(e) =>
+                        setMapLabels((current) =>
+                          current.map((item, index) =>
+                            index === labelIndex
+                              ? { ...item, y: Number(e.target.value) }
+                              : item,
+                          ),
+                        )
+                      }
+                      placeholder="Y"
+                    />
+                    <Input
+                      type="number"
+                      value={label.width}
+                      onChange={(e) =>
+                        setMapLabels((current) =>
+                          current.map((item, index) =>
+                            index === labelIndex
+                              ? { ...item, width: Number(e.target.value) }
+                              : item,
+                          ),
+                        )
+                      }
+                      placeholder="Width"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      onClick={() =>
+                        setMapLabels((current) =>
+                          current.filter((_, index) => index !== labelIndex),
+                        )
+                      }
+                    >
+                      ×
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
         <div className="mt-6 flex justify-end">
@@ -658,6 +1092,7 @@ export default function SeatingPage({
                 eventId,
                 floorPlanUrl: floorPlanUrl || null,
                 enabled: reservedEnabled,
+                labels: mapLabels,
                 sections,
               })
             }
