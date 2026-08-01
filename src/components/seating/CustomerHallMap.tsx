@@ -5,12 +5,10 @@ import {
   ArrowLeft,
   Calendar,
   MapPin,
-  Minus,
-  Plus,
-  RotateCcw,
   ShoppingCart,
   X,
 } from "lucide-react";
+import { getSeatDensity } from "@/components/seating/layout-density";
 
 type CustomerHallMapProps = {
   plan: any;
@@ -100,13 +98,15 @@ export function CustomerHallMap({
             </div>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="relative z-50 flex items-center gap-2">
           <button
             type="button"
             onClick={() => setZoom((value) => Math.max(1, value - 0.2))}
-            className="grid h-9 w-9 place-items-center rounded-full border border-slate-200 bg-white shadow"
+            className="grid h-10 w-10 place-items-center rounded-full border-2 border-slate-700 bg-slate-950 text-xl font-black leading-none text-white shadow-lg hover:bg-cyan-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500"
+            aria-label="Zoom out seating map"
+            title="Zoom out"
           >
-            <Minus className="h-4 w-4" />
+            <span aria-hidden="true">−</span>
           </button>
           <span className="min-w-12 text-center text-xs font-bold">
             {Math.round(zoom * 100)}%
@@ -114,9 +114,11 @@ export function CustomerHallMap({
           <button
             type="button"
             onClick={() => setZoom((value) => Math.min(3, value + 0.2))}
-            className="grid h-9 w-9 place-items-center rounded-full border border-slate-200 bg-white shadow"
+            className="grid h-10 w-10 place-items-center rounded-full border-2 border-slate-700 bg-slate-950 text-xl font-black leading-none text-white shadow-lg hover:bg-cyan-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500"
+            aria-label="Zoom in seating map"
+            title="Zoom in"
           >
-            <Plus className="h-4 w-4" />
+            <span aria-hidden="true">+</span>
           </button>
           <button
             type="button"
@@ -124,10 +126,11 @@ export function CustomerHallMap({
               setZoom(1);
               setPan({ x: 0, y: 0 });
             }}
-            className="grid h-9 w-9 place-items-center rounded-full border border-slate-200 bg-white shadow"
-            title="Reset view"
+            className="h-10 rounded-full border-2 border-slate-700 bg-white px-3 text-xs font-black text-slate-950 shadow-lg hover:bg-cyan-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500"
+            aria-label="Fit seating map to view"
+            title="Fit map to view"
           >
-            <RotateCcw className="h-4 w-4" />
+            Fit
           </button>
         </div>
       </div>
@@ -158,9 +161,11 @@ export function CustomerHallMap({
           >
             <div className="absolute inset-0 grid place-items-center p-4">
               <div
-                className="relative w-full origin-center transition-transform duration-100"
+                className="relative max-h-full max-w-full origin-center transition-transform duration-100"
                 style={{
                   aspectRatio: aspect,
+                  width: aspect >= 1 ? "100%" : "auto",
+                  height: aspect >= 1 ? "auto" : "100%",
                   transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
                 }}
               >
@@ -196,18 +201,21 @@ export function CustomerHallMap({
                     {label.text}
                   </div>
                 ))}
-                {plan.sections.map((section: any) => (
-                  <div
-                    key={section.id}
-                    className="pointer-events-none absolute -translate-x-1/2 -translate-y-1/2"
-                    style={{
-                      left: `${section.x}%`,
-                      top: `${section.y}%`,
-                      width: `${section.width ?? 30}%`,
-                      height: `${section.height ?? 20}%`,
-                      transform: `translate(-50%,-50%) rotate(${section.rotation ?? 0}deg)`,
-                    }}
-                  >
+                {plan.sections.map((section: any) => {
+                  const density = getSeatDensity(section.rows ?? []);
+                  return (
+                    <div
+                      key={section.id}
+                      className="pointer-events-none absolute -translate-x-1/2 -translate-y-1/2"
+                      style={{
+                        left: `${section.x}%`,
+                        top: `${section.y}%`,
+                        width: `${section.width ?? 30}%`,
+                        height: `${section.height ?? 20}%`,
+                        containerType: "size",
+                        transform: `translate(-50%,-50%) rotate(${section.rotation ?? 0}deg)`,
+                      }}
+                    >
                     <div
                       className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-full whitespace-nowrap rounded bg-black/75 px-2 py-0.5 text-[8px] font-black uppercase"
                       style={{ color: section.color }}
@@ -252,8 +260,10 @@ export function CustomerHallMap({
                             }
                             onMouseLeave={() => setHoveredSeat(null)}
                             onClick={() => toggle(seat.id)}
-                            className={`pointer-events-auto absolute grid h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border transition hover:z-20 hover:scale-[1.8] ${sold ? "cursor-not-allowed border-slate-300 opacity-55" : held ? "cursor-not-allowed border-slate-300 opacity-70" : active ? "z-10 border-slate-900 ring-2 ring-cyan-400" : "border-black/10"}`}
+                            className={`pointer-events-auto absolute grid -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border transition hover:z-20 hover:scale-[1.8] ${sold ? "cursor-not-allowed border-slate-300 opacity-55" : held ? "cursor-not-allowed border-slate-300 opacity-70" : active ? "z-10 border-slate-900 ring-2 ring-cyan-400" : "border-black/10"}`}
                             style={{
+                              width: density.dotSize,
+                              height: density.dotSize,
                               left: `${seat.x ?? ((seatIndex + 1) / (row.seats.length + 1)) * 100}%`,
                               top: `${seat.y ?? ((rowIndex + 1) / (section.rows.length + 1)) * 100}%`,
                               backgroundColor:
@@ -271,8 +281,9 @@ export function CustomerHallMap({
                         );
                       }),
                     )}
-                  </div>
-                ))}
+                    </div>
+                  );
+                })}
               </div>
             </div>
             {hoveredSeat ? (
