@@ -164,25 +164,33 @@ export function CustomerHallMap({
                   transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
                 }}
               >
-                <img
-                  src={plan.floor_plan_url}
-                  alt="Venue floor plan"
-                  draggable={false}
-                  onLoad={(event) => {
-                    const image = event.currentTarget;
-                    if (image.naturalWidth && image.naturalHeight)
-                      setAspect(image.naturalWidth / image.naturalHeight);
-                  }}
-                  className="pointer-events-none absolute inset-0 h-full w-full select-none object-contain"
-                />
+                {plan.floor_plan_url ? (
+                  <img
+                    src={plan.floor_plan_url}
+                    alt="Venue floor plan"
+                    draggable={false}
+                    onLoad={(event) => {
+                      const image = event.currentTarget;
+                      if (image.naturalWidth && image.naturalHeight)
+                        setAspect(image.naturalWidth / image.naturalHeight);
+                    }}
+                    className="pointer-events-none absolute inset-0 h-full w-full select-none object-contain"
+                  />
+                ) : (
+                  <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(#e2e8f0_1px,transparent_1px),linear-gradient(90deg,#e2e8f0_1px,transparent_1px)] bg-[size:28px_28px]" />
+                )}
                 {(plan.metadata?.labels ?? []).map((label: any) => (
                   <div
                     key={label.id}
-                    className="pointer-events-none absolute -translate-x-1/2 -translate-y-1/2 rounded-md border border-slate-300 bg-slate-200 px-3 py-2 text-center text-[10px] font-black uppercase tracking-widest text-slate-600"
+                    className="pointer-events-none absolute flex -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-md border border-slate-300 px-3 py-2 text-center text-[10px] font-black uppercase tracking-widest text-white"
                     style={{
                       left: `${label.x}%`,
                       top: `${label.y}%`,
                       width: `${label.width}%`,
+                      height: `${label.height ?? 10}%`,
+                      backgroundColor:
+                        label.color === "#ffffff" ? "#64748b" : label.color,
+                      color: "#ffffff",
                     }}
                   >
                     {label.text}

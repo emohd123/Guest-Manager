@@ -1,1672 +1,475 @@
 "use client";
 
-import { use, useState, useMemo, useEffect, useRef } from "react";
-import Link from "next/link";
-import { trpc } from "@/lib/trpc/client";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
+import { use, useEffect, useMemo, useRef, useState } from "react";
 import {
   Armchair,
-  Users,
-  Search,
-  ChevronRight,
-  MoreVertical,
-  UserPlus,
-  Activity,
-  Zap,
-  Target,
-  ArrowRight,
-  ExternalLink,
-  FileText,
+  ChevronLeft,
+  Grid3X3,
+  ImagePlus,
+  Layers3,
   Loader2,
-  UploadCloud,
+  MousePointer2,
+  Redo2,
+  RotateCcw,
+  Save,
+  Square,
+  Trash2,
+  Undo2,
+  ZoomIn,
+  ZoomOut,
 } from "lucide-react";
-import { Input } from "@/components/ui/input";
-import { GuestModal } from "@/components/guests/GuestModal";
-import type { Guest } from "@/types/guest";
-import { motion, AnimatePresence } from "framer-motion";
-import { cn } from "@/lib/utils";
+import Link from "next/link";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { CustomerHallMap } from "@/components/seating/CustomerHallMap";
+import { trpc } from "@/lib/trpc/client";
 import { createClient } from "@/lib/supabase/client";
 
-const FLOOR_PLAN_TYPES = [
-  "image/png",
-  "image/jpeg",
-  "image/webp",
-  "application/pdf",
-];
+type Seat = {
+  id: string;
+  label: string;
+  x: number;
+  y: number;
+  price: number | null;
+  color: string | null;
+  category: string | null;
+  status: "available" | "blocked";
+  sold?: boolean;
+  held?: boolean;
+};
 
-function floorPlanKind(url: string): "image" | "pdf" | null {
-  if (!url) return null;
-  return /\.pdf(?:$|[?#])/i.test(url) ? "pdf" : "image";
-}
+type Row = {
+  id: string;
+  label: string;
+  price: number | null;
+  color: string | null;
+  seats: Seat[];
+};
 
-export default function SeatingPage({
-  params,
-}: {
-  params: Promise<{ eventId: string }>;
-}) {
-  const { eventId } = use(params);
-  const [search, setSearch] = useState("");
-  const [selectedGuest, setSelectedGuest] = useState<Guest | null>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [floorPlanUrl, setFloorPlanUrl] = useState("");
-  const [floorPlanFileName, setFloorPlanFileName] = useState("");
-  const [floorPlanMime, setFloorPlanMime] = useState("");
-  const [floorPlanAspectRatio, setFloorPlanAspectRatio] = useState<
-    number | null
-  >(null);
-  const [isUploadingFloorPlan, setIsUploadingFloorPlan] = useState(false);
-  const floorPlanInputRef = useRef<HTMLInputElement>(null);
-  const hallCanvasRef = useRef<HTMLDivElement>(null);
-  const [selectedSectionIndex, setSelectedSectionIndex] = useState(0);
-  const [generatorRows, setGeneratorRows] = useState(5);
-  const [generatorSeats, setGeneratorSeats] = useState(10);
-  const [mapLabels, setMapLabels] = useState<
-    Array<{
-      id: string;
-      text: string;
-      x: number;
-      y: number;
-      width: number;
-      color: string;
-    }>
-  >([]);
-  const [analysisBusy, setAnalysisBusy] = useState(false);
-  const [analysisResult, setAnalysisResult] = useState<any>(null);
-  const [selectedAdminSeats, setSelectedAdminSeats] = useState<string[]>([]);
-  const [massPrice, setMassPrice] = useState("");
-  const [massColor, setMassColor] = useState("#22d3ee");
-  const [reservedEnabled, setReservedEnabled] = useState(false);
-  const [sections, setSections] = useState<
-    Array<{
-      name: string;
-      price: number | null;
-      x: number;
-      y: number;
-      width: number;
-      height: number;
-      rotation: number;
-      color: string;
-      seatSpacing: number;
-      rowSpacing: number;
-      rows: Array<{
-        label: string;
-        price: number | null;
-        seatCount: number;
-        seatPrices?: Record<string, number>;
-        color: string | null;
-        seatColors?: Record<string, string>;
-        seatDetails?: Array<{
-          label: string;
-          x: number;
-          y: number;
-          price: number | null;
-          color: string | null;
-          category: string | null;
-          status: "available" | "blocked";
-        }>;
-      }>;
-    }>
-  >([]);
+type Section = {
+  id: string;
+  name: string;
+  price: number | null;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  rotation: number;
+  color: string;
+  seatSpacing: number;
+  rowSpacing: number;
+  rows: Row[];
+};
 
-  const { data, refetch } = trpc.guests.list.useQuery({ eventId });
-  const { data: reservedPlan } = trpc.seating.get.useQuery({ eventId });
-  const saveReserved = trpc.seating.save.useMutation({
-    onSuccess: () => toast.success("Reserved seating plan saved"),
-  });
-  const displayedFloorPlanKind = floorPlanMime
-    ? floorPlanMime === "application/pdf"
-      ? "pdf"
-      : "image"
-    : floorPlanKind(floorPlanUrl);
+type Stage = {
+  id: string;
+  text: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  color: string;
+};
 
-  async function uploadFloorPlan(file: File) {
-    if (!FLOOR_PLAN_TYPES.includes(file.type)) {
-      toast.error("Choose a PNG, JPEG, WebP, or PDF floor plan.");
-      return;
-    }
+type Snapshot = { sections: Section[]; stages: Stage[] };
+type Selection = {
+  section: number | null;
+  row: number | null;
+  seats: string[];
+  stage: number | null;
+};
 
-    setIsUploadingFloorPlan(true);
-    try {
-      const supabase = createClient();
-      const safeName = file.name.replace(/[^a-zA-Z0-9._-]+/g, "-");
-      const filePath = `floor-plans/${eventId}/${crypto.randomUUID()}-${safeName}`;
-      const { error } = await supabase.storage
-        .from("events")
-        .upload(filePath, file, {
-          cacheControl: "3600",
-          contentType: file.type,
-          upsert: false,
-        });
-      if (error) throw error;
+const COLORS = ["#2563eb", "#9333ea", "#ef4444", "#06b6d4", "#f59e0b", "#10b981"];
+const SNAP = 2;
+const EMPTY_SELECTION: Selection = {
+  section: null,
+  row: null,
+  seats: [],
+  stage: null,
+};
 
-      const { data: publicUrlData } = supabase.storage
-        .from("events")
-        .getPublicUrl(filePath);
-      setFloorPlanUrl(publicUrlData.publicUrl);
-      setFloorPlanFileName(file.name);
-      setFloorPlanMime(file.type);
-      setFloorPlanAspectRatio(null);
-      toast.success(
-        "Original floor plan uploaded. Save the seating plan to keep it.",
-      );
-    } catch (error) {
-      console.error("Floor plan upload failed", error);
-      toast.error(
-        error instanceof Error ? error.message : "Floor plan upload failed.",
-      );
-    } finally {
-      setIsUploadingFloorPlan(false);
-      if (floorPlanInputRef.current) floorPlanInputRef.current.value = "";
-    }
-  }
+const uid = () => crypto.randomUUID();
+const clone = <T,>(value: T): T => structuredClone(value);
+const snap = (value: number) => Math.max(0, Math.min(100, Math.round(value / SNAP) * SNAP));
 
-  function beginSectionDrag(sectionIndex: number, event: React.PointerEvent) {
-    event.preventDefault();
-    setSelectedSectionIndex(sectionIndex);
-    const canvas = hallCanvasRef.current;
-    if (!canvas) return;
-    const move = (pointerEvent: PointerEvent) => {
-      const bounds = canvas.getBoundingClientRect();
-      const x = Math.max(
-        0,
-        Math.min(
-          100,
-          ((pointerEvent.clientX - bounds.left) / bounds.width) * 100,
-        ),
-      );
-      const y = Math.max(
-        0,
-        Math.min(
-          100,
-          ((pointerEvent.clientY - bounds.top) / bounds.height) * 100,
-        ),
-      );
-      setSections((current) =>
-        current.map((section, index) =>
-          index === sectionIndex
-            ? { ...section, x: Math.round(x), y: Math.round(y) }
-            : section,
-        ),
-      );
-    };
-    const stop = () => {
-      window.removeEventListener("pointermove", move);
-      window.removeEventListener("pointerup", stop);
-    };
-    window.addEventListener("pointermove", move);
-    window.addEventListener("pointerup", stop);
-  }
-
-  function generateGrid(sectionIndex: number) {
-    setSections((current) =>
-      current.map((section, index) =>
-        index === sectionIndex
-          ? {
-              ...section,
-              rows: Array.from({ length: generatorRows }, (_, rowIndex) => ({
-                label: String.fromCharCode(65 + rowIndex),
-                price: null,
-                color: null,
-                seatCount: generatorSeats,
-                seatPrices: {},
-                seatColors: {},
-                seatDetails: Array.from(
-                  { length: generatorSeats },
-                  (_, seatIndex) => ({
-                    label: String(seatIndex + 1),
-                    x: Math.round(
-                      ((seatIndex + 1) / (generatorSeats + 1)) * 100,
-                    ),
-                    y: Math.round(((rowIndex + 1) / (generatorRows + 1)) * 100),
-                    price: null,
-                    color: null,
-                    category: null,
-                    status: "available" as const,
-                  }),
-                ),
-              })),
-            }
-          : section,
-      ),
-    );
-    toast.success(
-      `Generated ${generatorRows} rows × ${generatorSeats} seats. Review before saving.`,
-    );
-  }
-  async function analyseFloorPlan() {
-    if (!floorPlanUrl) {
-      toast.error("Upload a floor plan first.");
-      return;
-    }
-    setAnalysisBusy(true);
-    try {
-      const response = await fetch(
-        `/api/dashboard/events/${eventId}/seating/analyse`,
-        {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({
-            floorPlanUrl,
-            kind: displayedFloorPlanKind ?? "image",
-            rows: generatorRows,
-            seatsPerRow: generatorSeats,
-          }),
-        },
-      );
-      const result = await response.json();
-      if (!response.ok) throw new Error(result.error ?? "Analysis failed");
-      setAnalysisResult(result);
-      toast.success(
-        result.mode === "ai"
-          ? "AI proposal ready for review."
-          : "Assisted fallback proposal ready for review.",
-      );
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Analysis failed");
-    } finally {
-      setAnalysisBusy(false);
-    }
-  }
-  function approveProposal() {
-    if (!analysisResult?.proposal) return;
-    setSections(
-      analysisResult.proposal.blocks.map((block: any) => ({
-        name: block.name,
-        price: block.price,
-        x: Math.round(block.x),
-        y: Math.round(block.y),
-        width: Math.round(block.width),
-        height: Math.round(block.height),
-        rotation: Math.round(block.rotation),
-        color: block.color,
-        seatSpacing: 100,
-        rowSpacing: 100,
-        rows: Array.from(
-          { length: block.rowCount },
-          (_: unknown, rowIndex: number) => ({
-            label: String.fromCharCode(65 + rowIndex),
-            price: null,
-            color: null,
-            seatCount: block.seatsPerRow,
-            seatPrices: {},
-            seatColors: {},
-            seatDetails: Array.from(
-              { length: block.seatsPerRow },
-              (_: unknown, seatIndex: number) => ({
-                label: String(seatIndex + 1),
-                x: Math.round(
-                  ((seatIndex + 1) / (block.seatsPerRow + 1)) * 100,
-                ),
-                y: Math.round(((rowIndex + 1) / (block.rowCount + 1)) * 100),
-                price: null,
-                color: null,
-                category: block.category,
-                status: "available" as const,
-              }),
-            ),
-          }),
-        ),
-      })),
-    );
-    if (analysisResult.proposal.stage)
-      setMapLabels([
-        {
-          id: crypto.randomUUID(),
-          ...analysisResult.proposal.stage,
-          color: "#ffffff",
-        },
-      ]);
-    setAnalysisResult(null);
-    setSelectedAdminSeats([]);
-    toast.success("Proposal applied locally. Review and save when ready.");
-  }
-  function editSelectedSeats(
-    patch: Partial<{
-      price: number | null;
-      color: string | null;
-      category: string | null;
-      status: "available" | "blocked";
-      label: string;
-      x: number;
-      y: number;
-    }>,
-  ) {
-    setSections((current) =>
-      current.map((section, si) => ({
-        ...section,
-        rows: section.rows.map((row, ri) => ({
-          ...row,
-          seatDetails: (row.seatDetails ?? []).map((seat, seatIndex) =>
-            selectedAdminSeats.includes(`${si}:${ri}:${seatIndex}`)
-              ? { ...seat, ...patch }
-              : seat,
+function normalizePlan(plan: any): { sections: Section[]; stages: Stage[] } {
+  return {
+    sections: (plan?.sections ?? []).map((section: any, sectionIndex: number) => ({
+      id: section.id ?? uid(),
+      name: section.name ?? `Section ${sectionIndex + 1}`,
+      price: section.price ?? null,
+      x: section.x ?? 50,
+      y: section.y ?? 45,
+      width: section.width ?? 30,
+      height: section.height ?? 28,
+      rotation: section.rotation ?? 0,
+      color: section.color ?? COLORS[sectionIndex % COLORS.length],
+      seatSpacing: section.seat_spacing ?? 100,
+      rowSpacing: section.row_spacing ?? 100,
+      rows: (section.rows ?? []).map((row: any, rowIndex: number) => ({
+        id: row.id ?? uid(),
+        label: row.label ?? String.fromCharCode(65 + rowIndex),
+        price: row.price ?? null,
+        color: row.color ?? null,
+        seats: (row.seats ?? []).map((seat: any, seatIndex: number) => ({
+          id: seat.id ?? uid(),
+          label: seat.label ?? String(seatIndex + 1),
+          x: seat.x ?? 50,
+          y: seat.y ?? 50,
+          price: seat.price ?? null,
+          color: seat.color ?? null,
+          category: seat.category ?? null,
+          status: seat.inventory_status === "blocked" ? "blocked" : "available",
+          sold: Boolean(seat.sold_ticket_id),
+          held: (seat.seat_holds ?? []).some(
+            (hold: any) =>
+              hold.status === "pending" && new Date(hold.expires_at).getTime() > Date.now(),
           ),
         })),
       })),
-    );
-  }
+    })),
+    stages: (plan?.metadata?.labels ?? []).map((label: any) => ({
+      id: label.id ?? uid(),
+      text: label.text ?? "STAGE",
+      x: label.x ?? 50,
+      y: label.y ?? 10,
+      width: label.width ?? 34,
+      height: label.height ?? 10,
+      color: label.color ?? "#64748b",
+    })),
+  };
+}
+
+function makeRows(rowCount: number, seatsPerRow: number): Row[] {
+  return Array.from({ length: rowCount }, (_, rowIndex) => ({
+    id: uid(),
+    label: String.fromCharCode(65 + rowIndex),
+    price: null,
+    color: null,
+    seats: Array.from({ length: seatsPerRow }, (_, seatIndex) => ({
+      id: uid(),
+      label: String(seatIndex + 1),
+      x: Math.round(((seatIndex + 1) / (seatsPerRow + 1)) * 100),
+      y: Math.round(((rowIndex + 1) / (rowCount + 1)) * 100),
+      price: null,
+      color: null,
+      category: null,
+      status: "available" as const,
+    })),
+  }));
+}
+
+export default function SeatingBuilderPage({ params }: { params: Promise<{ eventId: string }> }) {
+  const { eventId } = use(params);
+  const { data: savedPlan, isLoading } = trpc.seating.get.useQuery({ eventId });
+  const savePlan = trpc.seating.save.useMutation({
+    onSuccess: () => toast.success("Seat map saved. Customer preview is now up to date."),
+    onError: (error) => toast.error(error.message),
+  });
+  const [sections, setSections] = useState<Section[]>([]);
+  const [stages, setStages] = useState<Stage[]>([]);
+  const [selection, setSelection] = useState<Selection>(EMPTY_SELECTION);
+  const [enabled, setEnabled] = useState(false);
+  const [floorPlanUrl, setFloorPlanUrl] = useState("");
+  const [loaded, setLoaded] = useState(false);
+  const [zoom, setZoom] = useState(1);
+  const [pan, setPan] = useState({ x: 0, y: 0 });
+  const [rowCount, setRowCount] = useState(6);
+  const [seatsPerRow, setSeatsPerRow] = useState(12);
+  const [batchPrice, setBatchPrice] = useState("15");
+  const [batchColor, setBatchColor] = useState(COLORS[0]);
+  const [preview, setPreview] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [undoStack, setUndoStack] = useState<Snapshot[]>([]);
+  const [redoStack, setRedoStack] = useState<Snapshot[]>([]);
+  const canvasRef = useRef<HTMLDivElement>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const dragRef = useRef<any>(null);
+
   useEffect(() => {
-    if (reservedPlan) {
-      setFloorPlanUrl(reservedPlan.floor_plan_url ?? "");
-      setReservedEnabled(reservedPlan.enabled);
-      setMapLabels((reservedPlan.metadata as any)?.labels ?? []);
-      setSections(
-        reservedPlan.sections.map((s: any) => ({
-          name: s.name,
-          price: s.price,
-          x: s.x,
-          y: s.y,
-          width: s.width ?? 30,
-          height: s.height ?? 20,
-          rotation: s.rotation ?? 0,
-          color: s.color ?? "#22d3ee",
-          seatSpacing: s.seat_spacing ?? 100,
-          rowSpacing: s.row_spacing ?? 100,
-          rows: s.rows.map((r: any) => ({
-            label: r.label,
-            price: r.price,
-            color: r.color ?? null,
-            seatCount: r.seats.length,
-            seatPrices: Object.fromEntries(
-              r.seats
-                .filter((seat: any) => seat.price != null)
-                .map((seat: any) => [seat.label, seat.price]),
-            ),
-            seatColors: Object.fromEntries(
-              r.seats
-                .filter((seat: any) => seat.color)
-                .map((seat: any) => [seat.label, seat.color]),
-            ),
-            seatDetails: r.seats.map((seat: any) => ({
-              label: seat.label,
-              x: seat.x ?? 50,
-              y: seat.y ?? 50,
-              price: seat.price,
-              color: seat.color,
-              category: seat.category,
-              status:
-                seat.inventory_status === "blocked" ? "blocked" : "available",
-            })),
-          })),
-        })),
-      );
+    if (loaded || isLoading) return;
+    const normalized = normalizePlan(savedPlan);
+    setSections(normalized.sections);
+    setStages(normalized.stages);
+    setEnabled(Boolean(savedPlan?.enabled));
+    setFloorPlanUrl(savedPlan?.floor_plan_url ?? "");
+    setLoaded(true);
+  }, [isLoading, loaded, savedPlan]);
+
+  const lockedInventory = useMemo(
+    () => sections.some((section) => section.rows.some((row) => row.seats.some((seat) => seat.sold || seat.held))),
+    [sections],
+  );
+  const seatCount = useMemo(
+    () => sections.reduce((total, section) => total + section.rows.reduce((sum, row) => sum + row.seats.length, 0), 0),
+    [sections],
+  );
+
+  function checkpoint() {
+    setUndoStack((items) => [...items.slice(-29), clone({ sections, stages })]);
+    setRedoStack([]);
+  }
+
+  function restore(snapshot: Snapshot) {
+    setSections(clone(snapshot.sections));
+    setStages(clone(snapshot.stages));
+    setSelection(EMPTY_SELECTION);
+  }
+
+  function undo() {
+    const previous = undoStack.at(-1);
+    if (!previous) return;
+    setRedoStack((items) => [...items, clone({ sections, stages })]);
+    setUndoStack((items) => items.slice(0, -1));
+    restore(previous);
+  }
+
+  function redo() {
+    const next = redoStack.at(-1);
+    if (!next) return;
+    setUndoStack((items) => [...items, clone({ sections, stages })]);
+    setRedoStack((items) => items.slice(0, -1));
+    restore(next);
+  }
+
+  function addStage() {
+    checkpoint();
+    setStages((items) => [...items, { id: uid(), text: "STAGE", x: 50, y: 12, width: 36, height: 10, color: "#64748b" }]);
+    setSelection({ ...EMPTY_SELECTION, stage: stages.length });
+  }
+
+  function addSection() {
+    checkpoint();
+    const index = sections.length;
+    setSections((items) => [
+      ...items,
+      {
+        id: uid(),
+        name: `Section ${index + 1}`,
+        price: null,
+        x: 25 + (index % 3) * 25,
+        y: 48,
+        width: 22,
+        height: 34,
+        rotation: 0,
+        color: COLORS[index % COLORS.length],
+        seatSpacing: 100,
+        rowSpacing: 100,
+        rows: [],
+      },
+    ]);
+    setSelection({ ...EMPTY_SELECTION, section: index });
+  }
+
+  function generateChairs() {
+    if (selection.section === null) return toast.error("Select a section first.");
+    const current = sections[selection.section];
+    if (current.rows.length && lockedInventory)
+      return toast.error("This plan contains held or sold seats. Destructive rebuilding is blocked.");
+    if (current.rows.length && !confirm(`Replace all chairs in ${current.name}?`)) return;
+    checkpoint();
+    setSections((items) => items.map((section, index) => index === selection.section ? { ...section, rows: makeRows(rowCount, seatsPerRow) } : section));
+    setSelection((value) => ({ ...value, row: null, seats: [] }));
+  }
+
+  function deleteSelection() {
+    if (lockedInventory) return toast.error("Held or sold inventory protects this plan from destructive changes.");
+    checkpoint();
+    if (selection.stage !== null) setStages((items) => items.filter((_, index) => index !== selection.stage));
+    else if (selection.seats.length && selection.section !== null) {
+      setSections((items) => items.map((section, si) => si !== selection.section ? section : {
+        ...section,
+        rows: section.rows.map((row) => ({ ...row, seats: row.seats.filter((seat) => !selection.seats.includes(seat.id)) })),
+      }));
+    } else if (selection.row !== null && selection.section !== null) {
+      setSections((items) => items.map((section, si) => si === selection.section ? { ...section, rows: section.rows.filter((_, ri) => ri !== selection.row) } : section));
+    } else if (selection.section !== null) setSections((items) => items.filter((_, index) => index !== selection.section));
+    setSelection(EMPTY_SELECTION);
+  }
+
+  function applyPricing() {
+    if (selection.section === null) return toast.error("Select a section, row, or chairs first.");
+    const price = Math.round(Number(batchPrice) * 100);
+    if (!Number.isFinite(price) || price < 0) return toast.error("Enter a valid BHD price.");
+    checkpoint();
+    setSections((items) => items.map((section, si) => {
+      if (si !== selection.section) return section;
+      if (selection.seats.length) return {
+        ...section,
+        rows: section.rows.map((row) => ({ ...row, seats: row.seats.map((seat) => selection.seats.includes(seat.id) ? { ...seat, price, color: batchColor, category: `${batchPrice} BHD` } : seat) })),
+      };
+      if (selection.row !== null) return {
+        ...section,
+        rows: section.rows.map((row, ri) => ri === selection.row ? { ...row, price, color: batchColor } : row),
+      };
+      return { ...section, price, color: batchColor };
+    }));
+    toast.success("Price and colour applied.");
+  }
+
+  function pointerPosition(event: React.PointerEvent) {
+    const bounds = canvasRef.current?.getBoundingClientRect();
+    if (!bounds) return { x: 0, y: 0 };
+    return { x: ((event.clientX - bounds.left) / bounds.width) * 100, y: ((event.clientY - bounds.top) / bounds.height) * 100 };
+  }
+
+  function beginMove(kind: "section" | "stage" | "resize-section" | "resize-stage", index: number, event: React.PointerEvent) {
+    event.stopPropagation();
+    checkpoint();
+    const point = pointerPosition(event);
+    const item = kind.includes("section") ? sections[index] : stages[index];
+    dragRef.current = { kind, index, start: point, item: clone(item) };
+    event.currentTarget.setPointerCapture(event.pointerId);
+  }
+
+  function movePointer(event: React.PointerEvent) {
+    const drag = dragRef.current;
+    if (!drag) return;
+    if (drag.kind === "pan") {
+      setPan({
+        x: drag.pan.x + event.clientX - drag.client.x,
+        y: drag.pan.y + event.clientY - drag.client.y,
+      });
+      return;
     }
-  }, [reservedPlan]);
-  const guests = useMemo(() => data?.guests ?? [], [data]);
+    const point = pointerPosition(event);
+    const dx = point.x - drag.start.x;
+    const dy = point.y - drag.start.y;
+    if (drag.kind === "section" || drag.kind === "resize-section") {
+      setSections((items) => items.map((section, index) => index !== drag.index ? section : drag.kind === "section"
+        ? { ...section, x: snap(drag.item.x + dx), y: snap(drag.item.y + dy) }
+        : { ...section, width: Math.max(8, snap(drag.item.width + dx * 2)), height: Math.max(8, snap(drag.item.height + dy * 2)) }));
+    } else {
+      setStages((items) => items.map((stage, index) => index !== drag.index ? stage : drag.kind === "stage"
+        ? { ...stage, x: snap(drag.item.x + dx), y: snap(drag.item.y + dy) }
+        : { ...stage, width: Math.max(8, snap(drag.item.width + dx * 2)), height: Math.max(5, snap(drag.item.height + dy * 2)) }));
+    }
+  }
 
-  const tableGroups = useMemo(() => {
-    const groups: Record<string, any[]> = {};
-    guests.forEach((guest: any) => {
-      const table = guest.tableNumber || "UNASSIGNED";
-      if (!groups[table]) groups[table] = [];
-      groups[table].push(guest);
+  async function uploadBackground(file: File) {
+    if (!file.type.startsWith("image/")) return toast.error("Choose a PNG, JPEG, or WebP image.");
+    setUploading(true);
+    try {
+      const supabase = createClient();
+      const safeName = file.name.replace(/[^a-zA-Z0-9._-]+/g, "-");
+      const path = `floor-plans/${eventId}/${uid()}-${safeName}`;
+      const { error } = await supabase.storage.from("events").upload(path, file, { contentType: file.type, upsert: false });
+      if (error) throw error;
+      setFloorPlanUrl(supabase.storage.from("events").getPublicUrl(path).data.publicUrl);
+      toast.success("Background reference uploaded.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Upload failed");
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  function save() {
+    if (!sections.length || !seatCount) return toast.error("Add at least one section with chairs before saving.");
+    savePlan.mutate({
+      eventId,
+      floorPlanUrl: floorPlanUrl || null,
+      enabled,
+      labels: stages,
+      sections: sections.map((section) => ({
+        name: section.name,
+        price: section.price,
+        x: Math.round(section.x), y: Math.round(section.y), width: Math.round(section.width), height: Math.round(section.height),
+        rotation: Math.round(section.rotation), color: section.color, seatSpacing: section.seatSpacing, rowSpacing: section.rowSpacing,
+        rows: section.rows.map((row) => ({
+          label: row.label, price: row.price, color: row.color, seatCount: Math.max(1, row.seats.length),
+          seatDetails: row.seats.map((seat) => ({ label: seat.label, x: Math.round(seat.x), y: Math.round(seat.y), price: seat.price, color: seat.color, category: seat.category, status: seat.status })),
+        })),
+      })),
     });
-    return groups;
-  }, [guests]);
+  }
 
-  const tables = Object.entries(tableGroups).sort(([a], [b]) => {
-    if (a === "UNASSIGNED") return 1;
-    if (b === "UNASSIGNED") return -1;
-    return a.localeCompare(b, undefined, { numeric: true });
-  });
+  const previewPlan = useMemo(() => ({
+    enabled: true,
+    floor_plan_url: floorPlanUrl || null,
+    metadata: { labels: stages },
+    sections: sections.map((section) => ({
+      ...section,
+      rows: section.rows.map((row) => ({ ...row, seats: row.seats.map((seat) => ({
+        ...seat, inventory_status: seat.status, unavailable: seat.status === "blocked" || seat.sold || seat.held,
+      })) })),
+    })),
+  }), [floorPlanUrl, sections, stages]);
 
-  const filteredTables = tables.filter(([tableName, members]) => {
-    if (!search) return true;
-    return (
-      tableName.toLowerCase().includes(search.toLowerCase()) ||
-      members.some(
-        (m) =>
-          m.firstName?.toLowerCase().includes(search.toLowerCase()) ||
-          m.lastName?.toLowerCase().includes(search.toLowerCase()),
-      )
-    );
-  });
+  if (isLoading || !loaded) return <div className="grid min-h-[70vh] place-items-center"><Loader2 className="h-8 w-8 animate-spin text-cyan-400" /></div>;
 
-  const totalGuests = guests.length;
-  const assignedGuests = guests.filter(
-    (g) => g.tableNumber && g.tableNumber !== "UNASSIGNED",
-  ).length;
-  const unassignedGuests = totalGuests - assignedGuests;
-  const assignmentPercentage =
-    totalGuests > 0 ? (assignedGuests / totalGuests) * 100 : 0;
+  const activeSection = selection.section === null ? null : sections[selection.section];
+  const activeStage = selection.stage === null ? null : stages[selection.stage];
 
   return (
-    <div className="space-y-12 pb-20 px-2">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-8">
-        <div className="flex items-center gap-6">
-          <Link href={`/dashboard/events/${eventId}`}>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-14 w-14 rounded-2xl bg-white/5 border border-white/10 text-white/40 hover:text-white transition-all group"
-            >
-              <ChevronRight className="h-6 w-6 rotate-180 group-hover:-translate-x-1 transition-transform" />
-            </Button>
-          </Link>
-          <motion.div
-            initial={{ x: -20, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-          >
-            <h1 className="text-4xl font-black text-white italic tracking-tighter uppercase leading-none">
-              Venue
-            </h1>
-            <p className="text-white/40 font-bold uppercase tracking-[0.2em] text-[10px] mt-2 italic flex items-center gap-2">
-              <Activity className="h-3 w-3 text-primary animate-pulse" />
-              Seating and table assignments
-            </p>
-          </motion.div>
-        </div>
-
-        <div className="flex flex-wrap gap-3">
-          <Button
-            variant="outline"
-            className="h-12 px-6 rounded-2xl bg-white/5 border-white/10 text-white/60 hover:text-white font-black italic uppercase tracking-widest text-[10px] transition-all flex gap-3"
-          >
-            Export Floor Plan
-          </Button>
-          <Button
-            className="h-12 px-8 rounded-2xl bg-primary text-white shadow-2xl shadow-primary/20 font-black italic uppercase tracking-widest text-[10px] flex gap-3 transition-all hover:scale-105 active:scale-95"
-            onClick={() => {
-              setSelectedGuest(null);
-              setIsModalOpen(true);
-            }}
-          >
-            <UserPlus className="h-5 w-5" /> Add Guest
-          </Button>
-        </div>
-      </div>
-
-      <div className="rounded-[32px] border border-cyan-300/20 bg-[#08131b] p-6 text-white">
-        <div className="mb-6 rounded-2xl border border-cyan-300/25 bg-cyan-300/[.06] p-4">
-          <p className="text-xs font-black uppercase tracking-[.2em] text-cyan-300">
-            Publish the customer map
-          </p>
-          <div className="mt-3 grid gap-2 text-xs sm:grid-cols-4">
-            {[
-              ["1", "Upload", Boolean(floorPlanUrl)],
-              ["2", "Analyse or generate", sections.length > 0],
-              ["3", "Review and approve seats", sections.some((section) => section.rows.some((row) => row.seatCount > 0))],
-              ["4", "Enable and save", reservedEnabled],
-            ].map(([step, label, complete]) => (
-              <div
-                key={String(step)}
-                className={`rounded-xl border p-3 ${complete ? "border-emerald-300/30 bg-emerald-300/10 text-emerald-100" : "border-white/10 bg-white/5 text-white/55"}`}
-              >
-                <span className="mr-2 font-black">{String(step)}.</span>
-                {String(label)}
-                <span className="mt-1 block text-[10px] font-bold uppercase tracking-wider">
-                  {complete ? "Ready" : "Required"}
-                </span>
-              </div>
-            ))}
+    <div className="min-h-screen bg-[#071018] text-white">
+      <header className="border-b border-white/10 bg-[#09141d] px-5 py-4">
+        <div className="mx-auto flex max-w-[1800px] flex-wrap items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <Link href={`/dashboard/events/${eventId}`} className="grid h-10 w-10 place-items-center rounded-xl border border-white/10"><ChevronLeft className="h-5 w-5" /></Link>
+            <div><p className="text-xs font-black uppercase tracking-[.2em] text-cyan-300">Seating designer</p><h1 className="text-xl font-black">Build your hall map</h1></div>
           </div>
-          <p className="mt-3 text-xs leading-5 text-white/55">
-            The map becomes visible to customers only after it contains at
-            least one section with seats, “Enable customer seat selection” is
-            checked, and you click “Save reserved seating plan”.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-          <div>
-            <p className="text-[10px] font-black uppercase tracking-[.24em] text-cyan-300">
-              Reserved seating designer
-            </p>
-            <h2 className="mt-2 text-2xl font-black">
-              Floor plan and seat inventory
-            </h2>
-            <p className="mt-2 max-w-2xl text-sm text-white/50">
-              Upload the original venue plan, then position sections with the
-              X/Y controls and define rows, seats and price overrides. Image
-              plans are used as the aligned overlay canvas; PDFs remain an
-              original reference preview.
-            </p>
-          </div>
-          <label className="flex items-center gap-2 text-sm font-bold">
-            <input
-              type="checkbox"
-              checked={reservedEnabled}
-              onChange={(e) => setReservedEnabled(e.target.checked)}
-            />
-            Enable customer seat selection
-          </label>
-        </div>
-        <div className="mt-6 grid gap-6 lg:grid-cols-[.9fr_1.1fr]">
-          <div>
-            <label className="text-xs font-black uppercase tracking-widest text-white/50">
-              Original floor plan
-            </label>
-            <input
-              ref={floorPlanInputRef}
-              type="file"
-              accept="image/png,image/jpeg,image/webp,application/pdf,.png,.jpg,.jpeg,.webp,.pdf"
-              className="hidden"
-              disabled={isUploadingFloorPlan}
-              onChange={(event) => {
-                const file = event.target.files?.[0];
-                if (file) void uploadFloorPlan(file);
-              }}
-            />
-            <button
-              type="button"
-              disabled={isUploadingFloorPlan}
-              onClick={() => floorPlanInputRef.current?.click()}
-              className="mt-2 flex min-h-28 w-full items-center justify-center gap-3 rounded-2xl border border-dashed border-cyan-300/30 bg-cyan-300/[.04] px-5 text-left transition hover:border-cyan-300/60 hover:bg-cyan-300/[.08] disabled:opacity-60"
-            >
-              {isUploadingFloorPlan ? (
-                <Loader2 className="h-7 w-7 animate-spin text-cyan-300" />
-              ) : (
-                <UploadCloud className="h-7 w-7 text-cyan-300" />
-              )}
-              <span>
-                <span className="block text-sm font-black">
-                  {isUploadingFloorPlan
-                    ? "Uploading original file…"
-                    : floorPlanUrl
-                      ? "Replace floor plan"
-                      : "Upload floor plan"}
-                </span>
-                <span className="mt-1 block text-xs text-white/40">
-                  PNG, JPEG, WebP or PDF. The original file is stored unchanged.
-                </span>
-              </span>
-            </button>
-            <Button
-              type="button"
-              onClick={() => void analyseFloorPlan()}
-              disabled={!floorPlanUrl || analysisBusy}
-              className="mt-3 w-full bg-violet-500 text-white hover:bg-violet-400"
-            >
-              {analysisBusy ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Analysing floor plan…
-                </>
-              ) : (
-                "Analyse floor plan"
-              )}
-            </Button>
-            {analysisResult ? (
-              <div className="mt-3 rounded-2xl border border-violet-300/30 bg-violet-400/10 p-4">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <p className="text-xs font-black uppercase tracking-wider text-violet-200">
-                      {analysisResult.mode === "ai"
-                        ? "AI vision proposal"
-                        : "Assisted fallback proposal"}
-                    </p>
-                    <p className="mt-1 text-xs text-white/55">
-                      {analysisResult.reason}
-                    </p>
-                  </div>
-                  <span className="rounded-full bg-white/10 px-2 py-1 text-[10px] font-bold">
-                    {analysisResult.proposal.blocks.length} blocks
-                  </span>
-                </div>
-                <p className="mt-3 text-xs text-white/70">
-                  {analysisResult.proposal.summary}
-                </p>
-                <div className="mt-3 flex gap-2">
-                  <Button type="button" size="sm" onClick={approveProposal}>
-                    Approve and edit proposal
-                  </Button>
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => setAnalysisResult(null)}
-                  >
-                    Discard
-                  </Button>
-                </div>
-                <p className="mt-2 text-[10px] text-amber-200">
-                  Review is mandatory: nothing is saved until you approve, edit,
-                  and click Save.
-                </p>
-              </div>
-            ) : null}
-
-            {floorPlanUrl ? (
-              <div className="mt-4 space-y-3">
-                <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2">
-                  <div className="flex min-w-0 items-center gap-2">
-                    {displayedFloorPlanKind === "pdf" ? (
-                      <FileText className="h-4 w-4 shrink-0 text-cyan-300" />
-                    ) : (
-                      <Armchair className="h-4 w-4 shrink-0 text-cyan-300" />
-                    )}
-                    <span className="truncate text-xs text-white/60">
-                      {floorPlanFileName || "Previously saved floor plan"}
-                    </span>
-                  </div>
-                  <a
-                    href={floorPlanUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    download
-                    className="inline-flex items-center gap-1 text-xs font-bold text-cyan-300 hover:text-cyan-200"
-                  >
-                    Open original <ExternalLink className="h-3.5 w-3.5" />
-                  </a>
-                </div>
-
-                {displayedFloorPlanKind === "pdf" ? (
-                  <div className="overflow-hidden rounded-2xl border border-white/10 bg-white">
-                    <iframe
-                      title="Original floor plan PDF"
-                      src={`${floorPlanUrl}#view=FitH&toolbar=1`}
-                      className="h-[520px] w-full"
-                    />
-                    <div className="border-t border-black/10 bg-white px-3 py-2 text-xs text-slate-600">
-                      PDF plans are preserved as reference previews. Upload an
-                      image version to position interactive seat overlays on the
-                      plan.
-                    </div>
-                  </div>
-                ) : (
-                  <div
-                    ref={hallCanvasRef}
-                    className="relative w-full overflow-hidden rounded-2xl border border-cyan-300/20 bg-white/5"
-                    style={{ aspectRatio: floorPlanAspectRatio ?? 16 / 9 }}
-                  >
-                    <img
-                      src={floorPlanUrl}
-                      alt="Interactive floor plan"
-                      onLoad={(event) => {
-                        const image = event.currentTarget;
-                        if (image.naturalWidth && image.naturalHeight)
-                          setFloorPlanAspectRatio(
-                            image.naturalWidth / image.naturalHeight,
-                          );
-                      }}
-                      className="absolute inset-0 h-full w-full object-contain"
-                    />
-                    {mapLabels.map((label) => (
-                      <div
-                        key={label.id}
-                        className="pointer-events-none absolute -translate-x-1/2 -translate-y-1/2 rounded-md border border-white/40 bg-black/65 px-2 py-1 text-center text-[9px] font-black uppercase tracking-widest"
-                        style={{
-                          left: `${label.x}%`,
-                          top: `${label.y}%`,
-                          width: `${label.width}%`,
-                          color: label.color,
-                        }}
-                      >
-                        {label.text}
-                      </div>
-                    ))}
-                    {sections.map((section, sectionIndex) => (
-                      <div
-                        key={`${section.name}-${sectionIndex}`}
-                        onPointerDown={(event) =>
-                          beginSectionDrag(sectionIndex, event)
-                        }
-                        className={`absolute z-10 cursor-move rounded-xl border bg-[#06131d]/75 p-2 shadow-xl backdrop-blur-sm ${selectedSectionIndex === sectionIndex ? "border-white ring-2 ring-cyan-300" : "border-cyan-200/70"}`}
-                        style={{
-                          left: `${section.x}%`,
-                          top: `${section.y}%`,
-                          width: `${section.width}%`,
-                          height: `${section.height}%`,
-                          transform: `translate(-50%,-50%) rotate(${section.rotation}deg)`,
-                        }}
-                        title={`${section.name} at ${section.x}%, ${section.y}%`}
-                      >
-                        <p className="truncate text-[10px] font-black uppercase tracking-wider text-cyan-200">
-                          {section.name}
-                        </p>
-                        {section.rows.map((row, rowIndex) =>
-                          (
-                            row.seatDetails ??
-                            Array.from(
-                              { length: row.seatCount },
-                              (_, seatIndex) => ({
-                                label: String(seatIndex + 1),
-                                x:
-                                  ((seatIndex + 1) / (row.seatCount + 1)) * 100,
-                                y:
-                                  ((rowIndex + 1) / (section.rows.length + 1)) *
-                                  100,
-                                price: null,
-                                color: null,
-                                category: null,
-                                status: "available" as const,
-                              }),
-                            )
-                          ).map((seat, seatIndex) => {
-                            const key = `${sectionIndex}:${rowIndex}:${seatIndex}`;
-                            const selected = selectedAdminSeats.includes(key);
-                            return (
-                              <button
-                                type="button"
-                                key={key}
-                                onPointerDown={(event) =>
-                                  event.stopPropagation()
-                                }
-                                onClick={() =>
-                                  setSelectedAdminSeats((current) =>
-                                    selected
-                                      ? current.filter((item) => item !== key)
-                                      : [...current, key],
-                                  )
-                                }
-                                title={`${section.name} ${row.label}-${seat.label}`}
-                                className={`absolute h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full border ${selected ? "z-20 scale-150 border-white ring-2 ring-violet-400" : "border-black/30"} ${seat.status === "blocked" ? "opacity-45 grayscale" : ""}`}
-                                style={{
-                                  left: `${seat.x}%`,
-                                  top: `${seat.y}%`,
-                                  backgroundColor:
-                                    seat.color ?? row.color ?? section.color,
-                                }}
-                              />
-                            );
-                          }),
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="mt-4 grid h-48 place-items-center rounded-2xl border border-dashed border-white/10 text-xs text-white/30">
-                Upload a floor plan to begin
-              </div>
-            )}
-            {selectedAdminSeats.length ? (
-              <div className="mt-4 rounded-2xl border border-violet-300/30 bg-violet-400/10 p-4">
-                <div className="flex items-center justify-between">
-                  <p className="text-xs font-black">
-                    {selectedAdminSeats.length} seat
-                    {selectedAdminSeats.length === 1 ? "" : "s"} selected
-                  </p>
-                  <button
-                    type="button"
-                    className="text-xs text-white/50"
-                    onClick={() => setSelectedAdminSeats([])}
-                  >
-                    Clear
-                  </button>
-                </div>
-                <div className="mt-3 grid grid-cols-2 gap-2">
-                  <Input
-                    type="number"
-                    value={massPrice}
-                    onChange={(e) => setMassPrice(e.target.value)}
-                    placeholder="Price"
-                  />
-                  <input
-                    type="color"
-                    value={massColor}
-                    onChange={(e) => setMassColor(e.target.value)}
-                    className="h-10 w-full rounded-md border border-white/10 bg-transparent"
-                  />
-                  <Input
-                    onBlur={(e) =>
-                      e.target.value &&
-                      editSelectedSeats({ category: e.target.value })
-                    }
-                    placeholder="Category / tier"
-                  />
-                  <select
-                    className="h-10 rounded-md border border-white/10 bg-[#111827] px-2 text-xs"
-                    onChange={(e) =>
-                      editSelectedSeats({
-                        status: e.target.value as "available" | "blocked",
-                      })
-                    }
-                  >
-                    <option value="available">Available</option>
-                    <option value="blocked">Blocked</option>
-                  </select>
-                </div>
-                <div className="mt-2 flex gap-2">
-                  <Button
-                    type="button"
-                    size="sm"
-                    onClick={() =>
-                      editSelectedSeats({
-                        price: massPrice ? Number(massPrice) : null,
-                        color: massColor,
-                      })
-                    }
-                  >
-                    Apply price & color
-                  </Button>
-                  {selectedAdminSeats.length === 1 ? (
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="outline"
-                      onClick={() => {
-                        const label = window.prompt("Seat label");
-                        const x = window.prompt("X position (0-100)");
-                        const y = window.prompt("Y position (0-100)");
-                        editSelectedSeats({
-                          ...(label ? { label } : {}),
-                          ...(x
-                            ? { x: Math.max(0, Math.min(100, Number(x))) }
-                            : {}),
-                          ...(y
-                            ? { y: Math.max(0, Math.min(100, Number(y))) }
-                            : {}),
-                        });
-                      }}
-                    >
-                      Edit label & location
-                    </Button>
-                  ) : null}
-                </div>
-              </div>
-            ) : null}
-          </div>
-          <div className="space-y-4">
-            {sections.map((section, si) => (
-              <div
-                key={si}
-                className="rounded-2xl border border-white/10 bg-white/5 p-4"
-              >
-                <div className="grid gap-2 sm:grid-cols-4">
-                  <Input
-                    value={section.name}
-                    onChange={(e) =>
-                      setSections((current) =>
-                        current.map((s, i) =>
-                          i === si ? { ...s, name: e.target.value } : s,
-                        ),
-                      )
-                    }
-                    placeholder="Section name"
-                  />
-                  <Input
-                    type="number"
-                    value={section.price ?? ""}
-                    onChange={(e) =>
-                      setSections((current) =>
-                        current.map((s, i) =>
-                          i === si
-                            ? {
-                                ...s,
-                                price: e.target.value
-                                  ? Number(e.target.value)
-                                  : null,
-                              }
-                            : s,
-                        ),
-                      )
-                    }
-                    placeholder="Section price"
-                  />
-                  <Input
-                    type="number"
-                    value={section.x}
-                    onChange={(e) =>
-                      setSections((current) =>
-                        current.map((s, i) =>
-                          i === si ? { ...s, x: Number(e.target.value) } : s,
-                        ),
-                      )
-                    }
-                    placeholder="X %"
-                  />
-                  <Input
-                    type="number"
-                    value={section.y}
-                    onChange={(e) =>
-                      setSections((current) =>
-                        current.map((s, i) =>
-                          i === si ? { ...s, y: Number(e.target.value) } : s,
-                        ),
-                      )
-                    }
-                    placeholder="Y %"
-                  />
-                  <label className="flex h-10 items-center gap-2 rounded-md border border-white/10 px-3 text-xs text-white/50">
-                    Color
-                    <input
-                      type="color"
-                      value={section.color}
-                      onChange={(e) =>
-                        setSections((current) =>
-                          current.map((s, i) =>
-                            i === si ? { ...s, color: e.target.value } : s,
-                          ),
-                        )
-                      }
-                      className="ml-auto h-7 w-10 bg-transparent"
-                    />
-                  </label>
-                  <Input
-                    type="number"
-                    min={5}
-                    max={100}
-                    value={section.width}
-                    onChange={(e) =>
-                      setSections((current) =>
-                        current.map((s, i) =>
-                          i === si
-                            ? { ...s, width: Number(e.target.value) }
-                            : s,
-                        ),
-                      )
-                    }
-                    placeholder="Width %"
-                  />
-                  <Input
-                    type="number"
-                    min={5}
-                    max={100}
-                    value={section.height}
-                    onChange={(e) =>
-                      setSections((current) =>
-                        current.map((s, i) =>
-                          i === si
-                            ? { ...s, height: Number(e.target.value) }
-                            : s,
-                        ),
-                      )
-                    }
-                    placeholder="Height %"
-                  />
-                  <Input
-                    type="number"
-                    min={-180}
-                    max={180}
-                    value={section.rotation}
-                    onChange={(e) =>
-                      setSections((current) =>
-                        current.map((s, i) =>
-                          i === si
-                            ? { ...s, rotation: Number(e.target.value) }
-                            : s,
-                        ),
-                      )
-                    }
-                    placeholder="Rotation"
-                  />
-                  <Input
-                    type="number"
-                    min={40}
-                    max={200}
-                    value={section.seatSpacing}
-                    onChange={(e) =>
-                      setSections((current) =>
-                        current.map((s, i) =>
-                          i === si
-                            ? { ...s, seatSpacing: Number(e.target.value) }
-                            : s,
-                        ),
-                      )
-                    }
-                    placeholder="Seat spacing %"
-                  />
-                  <Input
-                    type="number"
-                    min={40}
-                    max={200}
-                    value={section.rowSpacing}
-                    onChange={(e) =>
-                      setSections((current) =>
-                        current.map((s, i) =>
-                          i === si
-                            ? { ...s, rowSpacing: Number(e.target.value) }
-                            : s,
-                        ),
-                      )
-                    }
-                    placeholder="Row spacing %"
-                  />
-                </div>
-                <div className="mt-3 rounded-xl border border-cyan-300/15 bg-cyan-300/[.04] p-3">
-                  <div className="flex flex-wrap items-end gap-2">
-                    <label className="text-[10px] font-bold uppercase text-white/40">
-                      Rows
-                      <Input
-                        type="number"
-                        min={1}
-                        max={26}
-                        value={generatorRows}
-                        onChange={(e) =>
-                          setGeneratorRows(
-                            Math.max(1, Math.min(26, Number(e.target.value))),
-                          )
-                        }
-                        className="mt-1 w-20"
-                      />
-                    </label>
-                    <label className="text-[10px] font-bold uppercase text-white/40">
-                      Seats / row
-                      <Input
-                        type="number"
-                        min={1}
-                        max={100}
-                        value={generatorSeats}
-                        onChange={(e) =>
-                          setGeneratorSeats(
-                            Math.max(1, Math.min(100, Number(e.target.value))),
-                          )
-                        }
-                        className="mt-1 w-24"
-                      />
-                    </label>
-                    <Button
-                      type="button"
-                      size="sm"
-                      onClick={() => generateGrid(si)}
-                    >
-                      Generate rectangular grid
-                    </Button>
-                  </div>
-                  <p className="mt-2 text-[10px] text-white/35">
-                    Assisted generation creates a reviewable grid; it does not
-                    claim to detect seats from the image.
-                  </p>
-                </div>
-                <div className="mt-3 space-y-2">
-                  {section.rows.map((row, ri) => (
-                    <div
-                      key={ri}
-                      className="grid gap-2 sm:grid-cols-[.6fr_.6fr_.7fr_.7fr_1.2fr_1.2fr_auto]"
-                    >
-                      <Input
-                        value={row.label}
-                        onChange={(e) =>
-                          setSections((current) =>
-                            current.map((s, i) =>
-                              i === si
-                                ? {
-                                    ...s,
-                                    rows: s.rows.map((r, j) =>
-                                      j === ri
-                                        ? { ...r, label: e.target.value }
-                                        : r,
-                                    ),
-                                  }
-                                : s,
-                            ),
-                          )
-                        }
-                        placeholder="Row A"
-                      />
-                      <Input
-                        type="number"
-                        value={row.seatCount}
-                        onChange={(e) =>
-                          setSections((current) =>
-                            current.map((s, i) =>
-                              i === si
-                                ? {
-                                    ...s,
-                                    rows: s.rows.map((r, j) =>
-                                      j === ri
-                                        ? {
-                                            ...r,
-                                            seatCount: Number(e.target.value),
-                                          }
-                                        : r,
-                                    ),
-                                  }
-                                : s,
-                            ),
-                          )
-                        }
-                        placeholder="Seats"
-                      />
-                      <Input
-                        type="number"
-                        value={row.price ?? ""}
-                        onChange={(e) =>
-                          setSections((current) =>
-                            current.map((s, i) =>
-                              i === si
-                                ? {
-                                    ...s,
-                                    rows: s.rows.map((r, j) =>
-                                      j === ri
-                                        ? {
-                                            ...r,
-                                            price: e.target.value
-                                              ? Number(e.target.value)
-                                              : null,
-                                          }
-                                        : r,
-                                    ),
-                                  }
-                                : s,
-                            ),
-                          )
-                        }
-                        placeholder="Row price"
-                      />
-                      <label className="flex h-10 items-center rounded-md border border-white/10 px-2 text-[10px] text-white/40">
-                        Row
-                        <input
-                          type="color"
-                          value={row.color ?? section.color}
-                          onChange={(e) =>
-                            setSections((current) =>
-                              current.map((s, i) =>
-                                i === si
-                                  ? {
-                                      ...s,
-                                      rows: s.rows.map((r, j) =>
-                                        j === ri
-                                          ? { ...r, color: e.target.value }
-                                          : r,
-                                      ),
-                                    }
-                                  : s,
-                              ),
-                            )
-                          }
-                          className="ml-auto h-7 w-8 bg-transparent"
-                        />
-                      </label>
-                      <Input
-                        value={Object.entries(row.seatPrices ?? {})
-                          .map(([seat, price]) => `${seat}:${price}`)
-                          .join(", ")}
-                        onChange={(e) => {
-                          const seatPrices = Object.fromEntries(
-                            e.target.value
-                              .split(",")
-                              .map((value) => value.trim().split(":"))
-                              .filter(
-                                ([seat, price]) =>
-                                  seat &&
-                                  price !== undefined &&
-                                  !Number.isNaN(Number(price)),
-                              )
-                              .map(([seat, price]) => [seat, Number(price)]),
-                          );
-                          setSections((current) =>
-                            current.map((s, i) =>
-                              i === si
-                                ? {
-                                    ...s,
-                                    rows: s.rows.map((r, j) =>
-                                      j === ri ? { ...r, seatPrices } : r,
-                                    ),
-                                  }
-                                : s,
-                            ),
-                          );
-                        }}
-                        placeholder="Seat prices 1:25, 2:30"
-                      />
-                      <Input
-                        value={Object.entries(row.seatColors ?? {})
-                          .map(([seat, color]) => `${seat}:${color}`)
-                          .join(", ")}
-                        onChange={(e) => {
-                          const seatColors = Object.fromEntries(
-                            e.target.value
-                              .split(",")
-                              .map((value) => value.trim().split(":"))
-                              .filter(
-                                ([seat, color]) =>
-                                  seat && /^#[0-9a-f]{6}$/i.test(color ?? ""),
-                              ),
-                          );
-                          setSections((current) =>
-                            current.map((s, i) =>
-                              i === si
-                                ? {
-                                    ...s,
-                                    rows: s.rows.map((r, j) =>
-                                      j === ri ? { ...r, seatColors } : r,
-                                    ),
-                                  }
-                                : s,
-                            ),
-                          );
-                        }}
-                        placeholder="Seat colors 1:#f59e0b"
-                      />
-                      <Button
-                        variant="ghost"
-                        onClick={() =>
-                          setSections((current) =>
-                            current.map((s, i) =>
-                              i === si
-                                ? {
-                                    ...s,
-                                    rows: s.rows.filter((_, j) => j !== ri),
-                                  }
-                                : s,
-                            ),
-                          )
-                        }
-                      >
-                        ×
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-                <div className="mt-3 flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() =>
-                      setSections((current) =>
-                        current.map((s, i) =>
-                          i === si
-                            ? {
-                                ...s,
-                                rows: [
-                                  ...s.rows,
-                                  {
-                                    label: String.fromCharCode(
-                                      65 + s.rows.length,
-                                    ),
-                                    price: null,
-                                    seatCount: 10,
-                                    color: null,
-                                    seatPrices: {},
-                                    seatColors: {},
-                                  },
-                                ],
-                              }
-                            : s,
-                        ),
-                      )
-                    }
-                  >
-                    Add row
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() =>
-                      setSections((current) =>
-                        current.filter((_, i) => i !== si),
-                      )
-                    }
-                  >
-                    Remove section
-                  </Button>
-                </div>
-              </div>
-            ))}
-            <Button
-              variant="outline"
-              onClick={() =>
-                setSections((current) => [
-                  ...current,
-                  {
-                    name: `Section ${current.length + 1}`,
-                    price: null,
-                    x: 10 + current.length * 10,
-                    y: 10 + current.length * 10,
-                    width: 30,
-                    height: 20,
-                    rotation: 0,
-                    color: "#22d3ee",
-                    seatSpacing: 100,
-                    rowSpacing: 100,
-                    rows: [
-                      {
-                        label: "A",
-                        price: null,
-                        color: null,
-                        seatCount: 10,
-                        seatPrices: {},
-                        seatColors: {},
-                      },
-                    ],
-                  },
-                ])
-              }
-            >
-              Add section
-            </Button>
-            <div className="rounded-2xl border border-white/10 bg-white/[.03] p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs font-black uppercase tracking-wider">
-                    Map labels / stage
-                  </p>
-                  <p className="mt-1 text-[10px] text-white/35">
-                    Add reference labels over the image.
-                  </p>
-                </div>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="outline"
-                  onClick={() =>
-                    setMapLabels((current) => [
-                      ...current,
-                      {
-                        id: crypto.randomUUID(),
-                        text: current.length
-                          ? `Label ${current.length + 1}`
-                          : "STAGE",
-                        x: 50,
-                        y: 8,
-                        width: 30,
-                        color: "#ffffff",
-                      },
-                    ])
-                  }
-                >
-                  Add label
-                </Button>
-              </div>
-              <div className="mt-3 space-y-2">
-                {mapLabels.map((label, labelIndex) => (
-                  <div
-                    key={label.id}
-                    className="grid grid-cols-[1fr_.6fr_.6fr_.6fr_auto] gap-2"
-                  >
-                    <Input
-                      value={label.text}
-                      onChange={(e) =>
-                        setMapLabels((current) =>
-                          current.map((item, index) =>
-                            index === labelIndex
-                              ? { ...item, text: e.target.value }
-                              : item,
-                          ),
-                        )
-                      }
-                    />
-                    <Input
-                      type="number"
-                      value={label.x}
-                      onChange={(e) =>
-                        setMapLabels((current) =>
-                          current.map((item, index) =>
-                            index === labelIndex
-                              ? { ...item, x: Number(e.target.value) }
-                              : item,
-                          ),
-                        )
-                      }
-                      placeholder="X"
-                    />
-                    <Input
-                      type="number"
-                      value={label.y}
-                      onChange={(e) =>
-                        setMapLabels((current) =>
-                          current.map((item, index) =>
-                            index === labelIndex
-                              ? { ...item, y: Number(e.target.value) }
-                              : item,
-                          ),
-                        )
-                      }
-                      placeholder="Y"
-                    />
-                    <Input
-                      type="number"
-                      value={label.width}
-                      onChange={(e) =>
-                        setMapLabels((current) =>
-                          current.map((item, index) =>
-                            index === labelIndex
-                              ? { ...item, width: Number(e.target.value) }
-                              : item,
-                          ),
-                        )
-                      }
-                      placeholder="Width"
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      onClick={() =>
-                        setMapLabels((current) =>
-                          current.filter((_, index) => index !== labelIndex),
-                        )
-                      }
-                    >
-                      ×
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            </div>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={() => setPreview((value) => !value)}>{preview ? "Back to builder" : "Customer preview"}</Button>
+            <label className="flex h-10 items-center gap-2 rounded-xl border border-white/10 px-3 text-xs font-bold"><input type="checkbox" checked={enabled} onChange={(event) => setEnabled(event.target.checked)} /> Map active</label>
+            <Button onClick={save} disabled={savePlan.isPending || lockedInventory} className="bg-cyan-400 font-black text-slate-950 hover:bg-cyan-300"><Save className="mr-2 h-4 w-4" />{savePlan.isPending ? "Saving…" : "Save & publish map"}</Button>
           </div>
         </div>
-        <div className="mt-6 flex justify-end">
-          <Button
-            disabled={saveReserved.isPending || isUploadingFloorPlan}
-            onClick={() =>
-              saveReserved.mutate({
-                eventId,
-                floorPlanUrl: floorPlanUrl || null,
-                enabled: reservedEnabled,
-                labels: mapLabels,
-                sections,
-              })
-            }
-          >
-            {saveReserved.isPending ? "Saving…" : "Save reserved seating plan"}
-          </Button>
-        </div>
-      </div>
+      </header>
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-        {/* Main Venue Grid */}
-        <div className="lg:col-span-3 space-y-10">
-          <div className="relative group">
-            <Search className="absolute left-6 top-1/2 h-5 w-5 -translate-y-1/2 text-white/20 group-focus-within:text-primary transition-colors" />
-            <Input
-              placeholder="Search tables or guests..."
-              className="h-14 pl-16 pr-6 rounded-2xl bg-white/5 border-white/10 text-white font-black italic uppercase tracking-widest text-[10px] focus:ring-primary transition-all"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-          </div>
+      <main className="mx-auto max-w-[1800px] p-4 lg:p-6">
+        {lockedInventory ? <div className="mb-4 rounded-2xl border border-amber-300/40 bg-amber-300/10 p-4 text-sm text-amber-100"><strong>Protected live inventory:</strong> this plan contains held or sold seats. Destructive rebuild, deletion and save are disabled so ticket assignments remain safe.</div> : null}
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <AnimatePresence mode="popLayout">
-              {filteredTables.map(([tableName, members], i) => (
-                <motion.div
-                  layout
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: i * 0.05 }}
-                  key={tableName}
-                  className="group rounded-[40px] bg-white/5 border border-white/10 p-10 hover:bg-white/8 transition-all relative overflow-hidden"
-                >
-                  <div className="relative z-10 flex items-start justify-between mb-10">
-                    <div className="flex items-center gap-6">
-                      <div className="h-16 w-16 rounded-[28px] bg-primary/10 border border-primary/20 flex items-center justify-center transition-transform group-hover:rotate-12 group-hover:scale-110 duration-500">
-                        <Armchair className="h-8 w-8 text-primary" />
-                      </div>
-                      <div>
-                        <h3 className="text-2xl font-black text-white italic uppercase tracking-tighter leading-none mb-1">
-                          {tableName}
-                        </h3>
-                        <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] italic">
-                          {members.length} GUESTS ASSIGNED
-                        </p>
-                      </div>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-10 w-10 text-white/10 hover:text-white hover:bg-white/5 rounded-xl border border-white/5"
-                    >
-                      <MoreVertical className="h-4 w-4" />
-                    </Button>
-                  </div>
+        {preview ? (
+          <CustomerHallMap plan={previewPlan} selectedSeatIds={[]} onChange={() => {}} currency="BHD" locale="en" eventContext={{ title: "Dashboard customer preview", date: "Event date", time: "Event time", location: "Venue" }} />
+        ) : (
+          <div className="grid gap-4 xl:grid-cols-[250px_minmax(0,1fr)_320px]">
+            <aside className="space-y-4 rounded-2xl border border-white/10 bg-[#0b1822] p-4">
+              <div><p className="text-xs font-black uppercase tracking-widest text-cyan-300">Five simple steps</p><div className="mt-3 space-y-2 text-sm">
+                {["Create stage", "Create sections", "Generate chairs", "Set prices & colours", "Preview, activate & save"].map((label, index) => <div key={label} className="flex gap-3 rounded-xl bg-white/[.04] p-3"><span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-cyan-400 font-black text-slate-950">{index + 1}</span><span>{label}</span></div>)}
+              </div></div>
+              <div className="border-t border-white/10 pt-4"><p className="text-xs font-black uppercase tracking-widest text-white/50">Background reference</p><p className="mt-1 text-xs leading-5 text-white/40">Optional. Build from blank or add an image behind your seats.</p><input ref={fileRef} type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={(event) => { const file = event.target.files?.[0]; if (file) void uploadBackground(file); }} /><Button variant="outline" className="mt-3 w-full" disabled={uploading} onClick={() => fileRef.current?.click()}><ImagePlus className="mr-2 h-4 w-4" />{uploading ? "Uploading…" : floorPlanUrl ? "Replace background" : "Add background"}</Button>{floorPlanUrl ? <button className="mt-2 w-full text-xs text-red-300" onClick={() => setFloorPlanUrl("")}>Remove background</button> : null}</div>
+              <div className="rounded-xl bg-white/[.04] p-3 text-xs text-white/55"><strong className="text-white">Map summary</strong><p className="mt-2">{stages.length} stage · {sections.length} sections · {seatCount} chairs</p></div>
+            </aside>
 
-                  <div className="space-y-2 relative z-10">
-                    {members.slice(0, 5).map((m) => (
-                      <div
-                        key={m.id}
-                        className="flex items-center justify-between p-4 rounded-2xl bg-white/2 hover:bg-white/5 border border-transparent hover:border-white/5 transition-all cursor-pointer group/item"
-                        onClick={() => {
-                          setSelectedGuest(m);
-                          setIsModalOpen(true);
-                        }}
-                      >
-                        <div className="flex items-center gap-4">
-                          <div className="h-10 w-10 rounded-xl bg-white/3 flex items-center justify-center font-black italic text-[10px] text-white/40 border border-white/5 group-hover/item:text-white transition-colors">
-                            {m.firstName?.[0]}
-                            {m.lastName?.[0]}
-                          </div>
-                          <div>
-                            <p className="text-[11px] font-black text-white italic truncate uppercase tracking-tight group-hover/item:text-primary transition-colors leading-none mb-1">
-                              {m.firstName} {m.lastName}
-                            </p>
-                            <p className="text-[9px] font-bold text-white/10 uppercase tracking-widest font-mono">
-                              ID: {m.id.split("-")[0]}
-                            </p>
-                          </div>
-                        </div>
-                        {m.seatNumber && (
-                          <span className="text-[10px] font-black text-primary italic uppercase tracking-widest bg-primary/5 px-2 py-0.5 rounded-lg border border-primary/10 tracking-widest">
-                            S-{m.seatNumber}
-                          </span>
-                        )}
-                      </div>
-                    ))}
-                    {members.length > 5 && (
-                      <button className="w-full py-4 text-[9px] font-black text-white/20 uppercase tracking-[0.3em] hover:text-primary hover:tracking-[0.4em] transition-all italic mt-4">
-                        + {members.length - 5} MORE GUESTS
-                      </button>
-                    )}
-                    {members.length === 0 && (
-                      <div className="py-20 text-center space-y-4 border-2 border-dashed border-white/5 rounded-[32px]">
-                        <Target className="h-10 w-10 text-white/5 mx-auto" />
-                        <p className="text-[10px] font-black text-white/10 uppercase tracking-widest italic">
-                          NO GUESTS ASSIGNED
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                  <div className="absolute right-0 bottom-0 h-32 w-32 bg-primary/5 rounded-full blur-3xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
-                </motion.div>
-              ))}
-            </AnimatePresence>
-          </div>
-        </div>
-
-        {/* Sidebar Summary */}
-        <div className="space-y-8">
-          <motion.div
-            initial={{ x: 20, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            className="p-8 rounded-[40px] bg-primary text-white shadow-2xl shadow-primary/20 relative overflow-hidden group"
-          >
-            <div className="relative z-10 space-y-10">
-              <div className="flex items-center justify-between">
-                <Activity className="h-10 w-10 text-white/40 animate-pulse" />
-                <Badge className="bg-white/10 text-white border-none backdrop-blur-md px-4 py-1.5 rounded-full font-black text-[9px] uppercase tracking-widest italic">
-                  LIVE SEATING
-                </Badge>
+            <section className="min-w-0 overflow-hidden rounded-2xl border border-white/10 bg-[#0a151e]">
+              <div className="flex flex-wrap items-center gap-2 border-b border-white/10 p-3">
+                <Button size="sm" onClick={addStage}><Square className="mr-2 h-4 w-4" />Add stage</Button>
+                <Button size="sm" onClick={addSection}><Layers3 className="mr-2 h-4 w-4" />Add section</Button>
+                <Button size="sm" variant="outline" onClick={generateChairs} disabled={selection.section === null}><Armchair className="mr-2 h-4 w-4" />Add rows & chairs</Button>
+                <span className="mx-1 h-6 w-px bg-white/10" />
+                <Button size="icon" variant="ghost" onClick={undo} disabled={!undoStack.length}><Undo2 className="h-4 w-4" /></Button>
+                <Button size="icon" variant="ghost" onClick={redo} disabled={!redoStack.length}><Redo2 className="h-4 w-4" /></Button>
+                <Button size="icon" variant="ghost" onClick={deleteSelection} disabled={selection.section === null && selection.stage === null}><Trash2 className="h-4 w-4 text-red-300" /></Button>
+                <div className="ml-auto flex items-center gap-1"><Button size="icon" variant="ghost" onClick={() => setZoom((value) => Math.max(.6, value - .1))}><ZoomOut className="h-4 w-4" /></Button><span className="w-12 text-center text-xs">{Math.round(zoom * 100)}%</span><Button size="icon" variant="ghost" onClick={() => setZoom((value) => Math.min(2, value + .1))}><ZoomIn className="h-4 w-4" /></Button><Button size="icon" variant="ghost" onClick={() => { setZoom(1); setPan({ x: 0, y: 0 }); }}><RotateCcw className="h-4 w-4" /></Button></div>
               </div>
-              <div className="space-y-4">
-                <p className="text-[10px] font-black uppercase tracking-[0.3em] opacity-60 italic">
-                  Assigned Guests
-                </p>
-                <div className="text-5xl font-black italic tracking-tighter leading-none">
-                  {assignedGuests}{" "}
-                  <span className="text-xl opacity-30">/ {totalGuests}</span>
+              <div className="relative min-h-[650px] cursor-grab overflow-hidden bg-slate-100 active:cursor-grabbing" onPointerDown={(event) => { if ((event.target as HTMLElement).closest("[data-map-item]")) return; dragRef.current = { kind: "pan", client: { x: event.clientX, y: event.clientY }, pan: clone(pan) }; event.currentTarget.setPointerCapture(event.pointerId); }} onPointerMove={movePointer} onPointerUp={() => { dragRef.current = null; }} onClick={() => setSelection(EMPTY_SELECTION)}>
+                <div ref={canvasRef} className="absolute left-1/2 top-1/2 aspect-video w-[94%] -translate-x-1/2 -translate-y-1/2 overflow-hidden border border-slate-300 bg-white shadow-2xl" style={{ transform: `translate(calc(-50% + ${pan.x}px),calc(-50% + ${pan.y}px)) scale(${zoom})`, backgroundImage: floorPlanUrl ? `url(${floorPlanUrl})` : "linear-gradient(#e2e8f0 1px,transparent 1px),linear-gradient(90deg,#e2e8f0 1px,transparent 1px)", backgroundSize: floorPlanUrl ? "contain" : "24px 24px", backgroundPosition: "center", backgroundRepeat: "no-repeat" }}>
+                  {stages.map((stage, index) => <div data-map-item key={stage.id} onClick={(event) => { event.stopPropagation(); setSelection({ ...EMPTY_SELECTION, stage: index }); }} onPointerDown={(event) => beginMove("stage", index, event)} className={`absolute grid cursor-move place-items-center rounded-md border-2 text-xs font-black tracking-widest ${selection.stage === index ? "border-cyan-500 ring-2 ring-cyan-300" : "border-slate-500/40"}`} style={{ left: `${stage.x}%`, top: `${stage.y}%`, width: `${stage.width}%`, height: `${stage.height}%`, transform: "translate(-50%,-50%)", backgroundColor: stage.color, color: "white" }}>{stage.text}<button onPointerDown={(event) => beginMove("resize-stage", index, event)} className="absolute -bottom-2 -right-2 h-4 w-4 rounded bg-cyan-500" /></div>)}
+                  {sections.map((section, sectionIndex) => <div data-map-item key={section.id} onClick={(event) => { event.stopPropagation(); setSelection({ ...EMPTY_SELECTION, section: sectionIndex }); }} onPointerDown={(event) => beginMove("section", sectionIndex, event)} className={`absolute cursor-move rounded-xl border-2 ${selection.section === sectionIndex ? "border-cyan-500 ring-2 ring-cyan-300/70" : "border-slate-400/60"}`} style={{ left: `${section.x}%`, top: `${section.y}%`, width: `${section.width}%`, height: `${section.height}%`, transform: `translate(-50%,-50%) rotate(${section.rotation}deg)`, backgroundColor: `${section.color}18` }}>
+                    <span className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-full rounded-t bg-slate-900 px-2 py-1 text-[8px] font-black text-white">{section.name}</span>
+                    {section.rows.flatMap((row, rowIndex) => row.seats.map((seat) => { const selected = selection.seats.includes(seat.id); return <button key={seat.id} data-seat-id={seat.id} onPointerDown={(event) => event.stopPropagation()} onClick={(event) => { event.stopPropagation(); setSelection((value) => ({ section: sectionIndex, row: rowIndex, stage: null, seats: event.shiftKey ? value.seats.includes(seat.id) ? value.seats.filter((id) => id !== seat.id) : [...value.seats, seat.id] : [seat.id] })); }} className={`absolute h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full border border-black/10 hover:scale-150 ${selected ? "ring-2 ring-cyan-500 ring-offset-1" : ""}`} style={{ left: `${seat.x}%`, top: `${seat.y}%`, backgroundColor: seat.status === "blocked" || seat.sold || seat.held ? "#cbd5e1" : seat.color ?? row.color ?? section.color }} title={`${section.name} · ${row.label}-${seat.label}`} />; }))}
+                    <button onPointerDown={(event) => beginMove("resize-section", sectionIndex, event)} className="absolute -bottom-2 -right-2 h-4 w-4 rounded bg-cyan-500" />
+                  </div>)}
+                  {!sections.length && !stages.length ? <div className="absolute inset-0 grid place-items-center text-center text-slate-400"><div><Grid3X3 className="mx-auto h-12 w-12" /><p className="mt-3 font-black text-slate-600">Start with a blank hall</p><p className="mt-1 text-sm">Add a stage, then create your first seating section.</p></div></div> : null}
                 </div>
               </div>
-              <div className="space-y-4">
-                <div className="h-3 bg-white/10 rounded-full overflow-hidden p-0.5">
-                  <motion.div
-                    initial={{ width: 0 }}
-                    animate={{ width: `${assignmentPercentage}%` }}
-                    className="h-full bg-white rounded-full shadow-[0_0_15px_rgba(255,255,255,0.5)]"
-                  />
-                </div>
-                <p className="text-[10px] text-right font-black uppercase tracking-widest italic opacity-60">
-                  {Math.round(assignmentPercentage)}% ASSIGNED
-                </p>
-              </div>
-            </div>
-            <div className="absolute -right-10 -top-10 h-48 w-48 bg-white/10 rounded-full blur-3xl" />
-          </motion.div>
+            </section>
 
-          <motion.div
-            initial={{ x: 20, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            transition={{ delay: 0.1 }}
-            className="rounded-[40px] bg-white/5 border border-white/10 overflow-hidden backdrop-blur-xl"
-          >
-            <div className="p-8 border-b border-white/5 bg-white/2">
-              <h3 className="text-xl font-black text-white italic uppercase tracking-tighter leading-none mb-1">
-                Unassigned Guests
-              </h3>
-              <p className="text-[10px] font-black text-white/20 uppercase tracking-widest italic">
-                {unassignedGuests} GUESTS WITHOUT A TABLE
-              </p>
-            </div>
-            <div className="max-h-[500px] overflow-y-auto custom-scrollbar">
-              <div className="divide-y divide-white/5">
-                {guests
-                  .filter(
-                    (g) => !g.tableNumber || g.tableNumber === "UNASSIGNED",
-                  )
-                  .map((g) => (
-                    <div
-                      key={g.id}
-                      className="p-6 flex items-center justify-between hover:bg-white/5 transition-colors group cursor-move"
-                    >
-                      <div className="flex items-center gap-4">
-                        <div className="h-12 w-12 rounded-2xl bg-white/3 flex items-center justify-center font-black italic text-sm text-white/40 border border-white/5 group-hover:text-primary transition-colors">
-                          {g.firstName?.[0]}
-                          {g.lastName?.[0]}
-                        </div>
-                        <div className="flex flex-col">
-                          <span className="text-xs font-black text-white uppercase tracking-tight italic leading-none mb-1 group-hover:text-primary transition-colors">
-                            {g.firstName} {g.lastName}
-                          </span>
-                          <span className="text-[9px] font-bold text-white/20 uppercase tracking-widest">
-                            {g.guestType || "STANDARD"}
-                          </span>
-                        </div>
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-10 w-10 text-white/10 hover:text-white hover:bg-primary rounded-xl transition-all"
-                        onClick={() => {
-                          setSelectedGuest(g);
-                          setIsModalOpen(true);
-                        }}
-                      >
-                        <ArrowRight className="h-5 w-5" />
-                      </Button>
-                    </div>
-                  ))}
-                {unassignedGuests === 0 && (
-                  <div className="p-20 text-center space-y-6">
-                    <div className="h-16 w-16 rounded-[32px] bg-green-500/10 text-green-500 flex items-center justify-center mx-auto transition-transform hover:scale-110">
-                      <Users className="h-8 w-8" />
-                    </div>
-                    <div className="space-y-1">
-                      <h4 className="text-lg font-black text-white italic uppercase tracking-tighter">
-                        ALL GUESTS ASSIGNED
-                      </h4>
-                      <p className="text-[9px] font-black text-white/20 uppercase tracking-widest italic">
-                        Every guest has a table assignment
-                      </p>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          </motion.div>
-        </div>
-      </div>
-
-      <GuestModal
-        open={isModalOpen}
-        onOpenChange={setIsModalOpen}
-        eventId={eventId}
-        guest={selectedGuest}
-        onSuccess={refetch}
-      />
+            <aside className="space-y-4 rounded-2xl border border-white/10 bg-[#0b1822] p-4">
+              <div><p className="text-xs font-black uppercase tracking-widest text-cyan-300">Inspector</p><p className="mt-1 text-xs text-white/40">Select an item on the canvas to edit it.</p></div>
+              {activeStage ? <div className="space-y-3"><p className="font-black">Stage</p><label className="block text-xs text-white/50">Label<Input className="mt-1" value={activeStage.text} onChange={(event) => setStages((items) => items.map((stage, index) => index === selection.stage ? { ...stage, text: event.target.value } : stage))} /></label><label className="block text-xs text-white/50">Colour<Input className="mt-1 h-10" type="color" value={activeStage.color} onChange={(event) => setStages((items) => items.map((stage, index) => index === selection.stage ? { ...stage, color: event.target.value } : stage))} /></label><div className="grid grid-cols-2 gap-2"><label className="text-xs text-white/50">Width<Input type="number" value={activeStage.width} onChange={(event) => setStages((items) => items.map((stage, index) => index === selection.stage ? { ...stage, width: Number(event.target.value) } : stage))} /></label><label className="text-xs text-white/50">Height<Input type="number" value={activeStage.height} onChange={(event) => setStages((items) => items.map((stage, index) => index === selection.stage ? { ...stage, height: Number(event.target.value) } : stage))} /></label></div></div> : null}
+              {activeSection ? <div className="space-y-4"><div><p className="font-black">{selection.seats.length ? `${selection.seats.length} selected chairs` : selection.row !== null ? `Row ${activeSection.rows[selection.row]?.label}` : "Section"}</p><div className="mt-2 flex flex-wrap gap-2"><Button size="sm" variant="outline" onClick={() => setSelection((value) => ({ ...value, row: null, seats: activeSection.rows.flatMap((row) => row.seats.map((seat) => seat.id)) }))}>All chairs</Button>{activeSection.rows.map((row, rowIndex) => <Button key={row.id} size="sm" variant="outline" onClick={() => setSelection((value) => ({ ...value, row: rowIndex, seats: row.seats.map((seat) => seat.id) }))}>Row {row.label}</Button>)}</div></div>
+                <label className="block text-xs text-white/50">Section name<Input className="mt-1" value={activeSection.name} onChange={(event) => setSections((items) => items.map((section, index) => index === selection.section ? { ...section, name: event.target.value } : section))} /></label>
+                <div className="rounded-xl border border-white/10 p-3"><p className="text-xs font-black uppercase tracking-wider">Generate chairs</p><div className="mt-3 grid grid-cols-2 gap-2"><label className="text-xs text-white/50">Rows<Input type="number" min={1} max={30} value={rowCount} onChange={(event) => setRowCount(Number(event.target.value))} /></label><label className="text-xs text-white/50">Seats / row<Input type="number" min={1} max={50} value={seatsPerRow} onChange={(event) => setSeatsPerRow(Number(event.target.value))} /></label></div><Button className="mt-3 w-full" onClick={generateChairs}><Armchair className="mr-2 h-4 w-4" />Generate visible chairs</Button></div>
+                <div className="rounded-xl border border-white/10 p-3"><p className="text-xs font-black uppercase tracking-wider">Pricing & colour</p><p className="mt-1 text-[10px] text-white/40">Applies to selected chairs, selected row, or the whole section.</p><label className="mt-3 block text-xs text-white/50">Price in BHD<Input type="number" min={0} step="0.5" value={batchPrice} onChange={(event) => setBatchPrice(event.target.value)} /></label><div className="mt-3 flex flex-wrap gap-2">{COLORS.map((color) => <button key={color} onClick={() => setBatchColor(color)} className={`h-8 w-8 rounded-full ${batchColor === color ? "ring-2 ring-white ring-offset-2 ring-offset-slate-900" : ""}`} style={{ backgroundColor: color }} />)}</div><Button className="mt-3 w-full bg-violet-500 hover:bg-violet-400" onClick={applyPricing}>Apply price & colour</Button></div>
+                {selection.seats.length === 1 ? <div className="rounded-xl border border-white/10 p-3"><p className="text-xs font-black uppercase tracking-wider">Individual chair</p>{(() => { const row = activeSection.rows.find((item) => item.seats.some((seat) => seat.id === selection.seats[0])); const seat = row?.seats.find((item) => item.id === selection.seats[0]); if (!row || !seat) return null; const updateSeat = (change: Partial<Seat>) => setSections((items) => items.map((section, si) => si !== selection.section ? section : { ...section, rows: section.rows.map((candidate) => candidate.id !== row.id ? candidate : { ...candidate, seats: candidate.seats.map((candidateSeat) => candidateSeat.id === seat.id ? { ...candidateSeat, ...change } : candidateSeat) }) })); return <div className="mt-3 grid grid-cols-2 gap-2"><label className="text-xs text-white/50">Label<Input value={seat.label} onChange={(event) => updateSeat({ label: event.target.value })} /></label><label className="text-xs text-white/50">Status<select className="mt-2 h-10 w-full rounded-md bg-slate-900 px-2" value={seat.status} onChange={(event) => updateSeat({ status: event.target.value as Seat["status"] })}><option value="available">Available</option><option value="blocked">Blocked</option></select></label><label className="text-xs text-white/50">X position<Input type="number" min={0} max={100} value={seat.x} onChange={(event) => updateSeat({ x: snap(Number(event.target.value)) })} /></label><label className="text-xs text-white/50">Y position<Input type="number" min={0} max={100} value={seat.y} onChange={(event) => updateSeat({ y: snap(Number(event.target.value)) })} /></label></div>; })()}</div> : null}
+              </div> : !activeStage ? <div className="grid min-h-52 place-items-center rounded-xl border border-dashed border-white/10 text-center text-white/30"><div><MousePointer2 className="mx-auto h-8 w-8" /><p className="mt-2 text-sm">Nothing selected</p></div></div> : null}
+            </aside>
+          </div>
+        )}
+      </main>
     </div>
   );
 }
