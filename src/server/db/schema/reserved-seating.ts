@@ -75,6 +75,10 @@ export const reservedSeats = pgTable(
     label: varchar("label", { length: 30 }).notNull(),
     price: integer("price"),
     color: varchar("color", { length: 20 }),
+    category: varchar("category", { length: 80 }),
+    inventoryStatus: varchar("inventory_status", { length: 20 })
+      .default("available")
+      .notNull(),
     x: integer("x"),
     y: integer("y"),
     accessible: boolean("accessible").default(false).notNull(),

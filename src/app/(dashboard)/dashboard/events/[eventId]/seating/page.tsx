@@ -73,6 +73,11 @@ export default function SeatingPage({
       color: string;
     }>
   >([]);
+  const [analysisBusy, setAnalysisBusy] = useState(false);
+  const [analysisResult, setAnalysisResult] = useState<any>(null);
+  const [selectedAdminSeats, setSelectedAdminSeats] = useState<string[]>([]);
+  const [massPrice, setMassPrice] = useState("");
+  const [massColor, setMassColor] = useState("#22d3ee");
   const [reservedEnabled, setReservedEnabled] = useState(false);
   const [sections, setSections] = useState<
     Array<{
@@ -93,6 +98,15 @@ export default function SeatingPage({
         seatPrices?: Record<string, number>;
         color: string | null;
         seatColors?: Record<string, string>;
+        seatDetails?: Array<{
+          label: string;
+          x: number;
+          y: number;
+          price: number | null;
+          color: string | null;
+          category: string | null;
+          status: "available" | "blocked";
+        }>;
       }>;
     }>
   >([]);
@@ -199,6 +213,20 @@ export default function SeatingPage({
                 seatCount: generatorSeats,
                 seatPrices: {},
                 seatColors: {},
+                seatDetails: Array.from(
+                  { length: generatorSeats },
+                  (_, seatIndex) => ({
+                    label: String(seatIndex + 1),
+                    x: Math.round(
+                      ((seatIndex + 1) / (generatorSeats + 1)) * 100,
+                    ),
+                    y: Math.round(((rowIndex + 1) / (generatorRows + 1)) * 100),
+                    price: null,
+                    color: null,
+                    category: null,
+                    status: "available" as const,
+                  }),
+                ),
               })),
             }
           : section,
@@ -206,6 +234,118 @@ export default function SeatingPage({
     );
     toast.success(
       `Generated ${generatorRows} rows × ${generatorSeats} seats. Review before saving.`,
+    );
+  }
+  async function analyseFloorPlan() {
+    if (!floorPlanUrl) {
+      toast.error("Upload a floor plan first.");
+      return;
+    }
+    setAnalysisBusy(true);
+    try {
+      const response = await fetch(
+        `/api/dashboard/events/${eventId}/seating/analyse`,
+        {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            floorPlanUrl,
+            kind: displayedFloorPlanKind ?? "image",
+            rows: generatorRows,
+            seatsPerRow: generatorSeats,
+          }),
+        },
+      );
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error ?? "Analysis failed");
+      setAnalysisResult(result);
+      toast.success(
+        result.mode === "ai"
+          ? "AI proposal ready for review."
+          : "Assisted fallback proposal ready for review.",
+      );
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Analysis failed");
+    } finally {
+      setAnalysisBusy(false);
+    }
+  }
+  function approveProposal() {
+    if (!analysisResult?.proposal) return;
+    setSections(
+      analysisResult.proposal.blocks.map((block: any) => ({
+        name: block.name,
+        price: block.price,
+        x: Math.round(block.x),
+        y: Math.round(block.y),
+        width: Math.round(block.width),
+        height: Math.round(block.height),
+        rotation: Math.round(block.rotation),
+        color: block.color,
+        seatSpacing: 100,
+        rowSpacing: 100,
+        rows: Array.from(
+          { length: block.rowCount },
+          (_: unknown, rowIndex: number) => ({
+            label: String.fromCharCode(65 + rowIndex),
+            price: null,
+            color: null,
+            seatCount: block.seatsPerRow,
+            seatPrices: {},
+            seatColors: {},
+            seatDetails: Array.from(
+              { length: block.seatsPerRow },
+              (_: unknown, seatIndex: number) => ({
+                label: String(seatIndex + 1),
+                x: Math.round(
+                  ((seatIndex + 1) / (block.seatsPerRow + 1)) * 100,
+                ),
+                y: Math.round(((rowIndex + 1) / (block.rowCount + 1)) * 100),
+                price: null,
+                color: null,
+                category: block.category,
+                status: "available" as const,
+              }),
+            ),
+          }),
+        ),
+      })),
+    );
+    if (analysisResult.proposal.stage)
+      setMapLabels([
+        {
+          id: crypto.randomUUID(),
+          ...analysisResult.proposal.stage,
+          color: "#ffffff",
+        },
+      ]);
+    setAnalysisResult(null);
+    setSelectedAdminSeats([]);
+    toast.success("Proposal applied locally. Review and save when ready.");
+  }
+  function editSelectedSeats(
+    patch: Partial<{
+      price: number | null;
+      color: string | null;
+      category: string | null;
+      status: "available" | "blocked";
+      label: string;
+      x: number;
+      y: number;
+    }>,
+  ) {
+    setSections((current) =>
+      current.map((section, si) => ({
+        ...section,
+        rows: section.rows.map((row, ri) => ({
+          ...row,
+          seatDetails: (row.seatDetails ?? []).map((seat, seatIndex) =>
+            selectedAdminSeats.includes(`${si}:${ri}:${seatIndex}`)
+              ? { ...seat, ...patch }
+              : seat,
+          ),
+        })),
+      })),
     );
   }
   useEffect(() => {
@@ -240,6 +380,16 @@ export default function SeatingPage({
                 .filter((seat: any) => seat.color)
                 .map((seat: any) => [seat.label, seat.color]),
             ),
+            seatDetails: r.seats.map((seat: any) => ({
+              label: seat.label,
+              x: seat.x ?? 50,
+              y: seat.y ?? 50,
+              price: seat.price,
+              color: seat.color,
+              category: seat.category,
+              status:
+                seat.inventory_status === "blocked" ? "blocked" : "available",
+            })),
           })),
         })),
       );
@@ -395,6 +545,60 @@ export default function SeatingPage({
                 </span>
               </span>
             </button>
+            <Button
+              type="button"
+              onClick={() => void analyseFloorPlan()}
+              disabled={!floorPlanUrl || analysisBusy}
+              className="mt-3 w-full bg-violet-500 text-white hover:bg-violet-400"
+            >
+              {analysisBusy ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Analysing floor plan…
+                </>
+              ) : (
+                "Analyse floor plan"
+              )}
+            </Button>
+            {analysisResult ? (
+              <div className="mt-3 rounded-2xl border border-violet-300/30 bg-violet-400/10 p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-xs font-black uppercase tracking-wider text-violet-200">
+                      {analysisResult.mode === "ai"
+                        ? "AI vision proposal"
+                        : "Assisted fallback proposal"}
+                    </p>
+                    <p className="mt-1 text-xs text-white/55">
+                      {analysisResult.reason}
+                    </p>
+                  </div>
+                  <span className="rounded-full bg-white/10 px-2 py-1 text-[10px] font-bold">
+                    {analysisResult.proposal.blocks.length} blocks
+                  </span>
+                </div>
+                <p className="mt-3 text-xs text-white/70">
+                  {analysisResult.proposal.summary}
+                </p>
+                <div className="mt-3 flex gap-2">
+                  <Button type="button" size="sm" onClick={approveProposal}>
+                    Approve and edit proposal
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => setAnalysisResult(null)}
+                  >
+                    Discard
+                  </Button>
+                </div>
+                <p className="mt-2 text-[10px] text-amber-200">
+                  Review is mandatory: nothing is saved until you approve, edit,
+                  and click Save.
+                </p>
+              </div>
+            ) : null}
 
             {floorPlanUrl ? (
               <div className="mt-4 space-y-3">
@@ -485,23 +689,51 @@ export default function SeatingPage({
                           {section.name}
                         </p>
                         {section.rows.map((row, rowIndex) =>
-                          Array.from(
-                            { length: row.seatCount },
-                            (_, seatIndex) => (
-                              <span
-                                key={`${rowIndex}-${seatIndex}`}
-                                className="absolute h-1.5 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-t-sm border border-black/30"
+                          (
+                            row.seatDetails ??
+                            Array.from(
+                              { length: row.seatCount },
+                              (_, seatIndex) => ({
+                                label: String(seatIndex + 1),
+                                x:
+                                  ((seatIndex + 1) / (row.seatCount + 1)) * 100,
+                                y:
+                                  ((rowIndex + 1) / (section.rows.length + 1)) *
+                                  100,
+                                price: null,
+                                color: null,
+                                category: null,
+                                status: "available" as const,
+                              }),
+                            )
+                          ).map((seat, seatIndex) => {
+                            const key = `${sectionIndex}:${rowIndex}:${seatIndex}`;
+                            const selected = selectedAdminSeats.includes(key);
+                            return (
+                              <button
+                                type="button"
+                                key={key}
+                                onPointerDown={(event) =>
+                                  event.stopPropagation()
+                                }
+                                onClick={() =>
+                                  setSelectedAdminSeats((current) =>
+                                    selected
+                                      ? current.filter((item) => item !== key)
+                                      : [...current, key],
+                                  )
+                                }
+                                title={`${section.name} ${row.label}-${seat.label}`}
+                                className={`absolute h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full border ${selected ? "z-20 scale-150 border-white ring-2 ring-violet-400" : "border-black/30"} ${seat.status === "blocked" ? "opacity-45 grayscale" : ""}`}
                                 style={{
-                                  left: `${((seatIndex + 1) / (row.seatCount + 1)) * 100}%`,
-                                  top: `${((rowIndex + 1) / (section.rows.length + 1)) * 100}%`,
+                                  left: `${seat.x}%`,
+                                  top: `${seat.y}%`,
                                   backgroundColor:
-                                    row.seatColors?.[String(seatIndex + 1)] ??
-                                    row.color ??
-                                    section.color,
+                                    seat.color ?? row.color ?? section.color,
                                 }}
                               />
-                            ),
-                          ),
+                            );
+                          }),
                         )}
                       </div>
                     ))}
@@ -513,6 +745,92 @@ export default function SeatingPage({
                 Upload a floor plan to begin
               </div>
             )}
+            {selectedAdminSeats.length ? (
+              <div className="mt-4 rounded-2xl border border-violet-300/30 bg-violet-400/10 p-4">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-black">
+                    {selectedAdminSeats.length} seat
+                    {selectedAdminSeats.length === 1 ? "" : "s"} selected
+                  </p>
+                  <button
+                    type="button"
+                    className="text-xs text-white/50"
+                    onClick={() => setSelectedAdminSeats([])}
+                  >
+                    Clear
+                  </button>
+                </div>
+                <div className="mt-3 grid grid-cols-2 gap-2">
+                  <Input
+                    type="number"
+                    value={massPrice}
+                    onChange={(e) => setMassPrice(e.target.value)}
+                    placeholder="Price"
+                  />
+                  <input
+                    type="color"
+                    value={massColor}
+                    onChange={(e) => setMassColor(e.target.value)}
+                    className="h-10 w-full rounded-md border border-white/10 bg-transparent"
+                  />
+                  <Input
+                    onBlur={(e) =>
+                      e.target.value &&
+                      editSelectedSeats({ category: e.target.value })
+                    }
+                    placeholder="Category / tier"
+                  />
+                  <select
+                    className="h-10 rounded-md border border-white/10 bg-[#111827] px-2 text-xs"
+                    onChange={(e) =>
+                      editSelectedSeats({
+                        status: e.target.value as "available" | "blocked",
+                      })
+                    }
+                  >
+                    <option value="available">Available</option>
+                    <option value="blocked">Blocked</option>
+                  </select>
+                </div>
+                <div className="mt-2 flex gap-2">
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={() =>
+                      editSelectedSeats({
+                        price: massPrice ? Number(massPrice) : null,
+                        color: massColor,
+                      })
+                    }
+                  >
+                    Apply price & color
+                  </Button>
+                  {selectedAdminSeats.length === 1 ? (
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        const label = window.prompt("Seat label");
+                        const x = window.prompt("X position (0-100)");
+                        const y = window.prompt("Y position (0-100)");
+                        editSelectedSeats({
+                          ...(label ? { label } : {}),
+                          ...(x
+                            ? { x: Math.max(0, Math.min(100, Number(x))) }
+                            : {}),
+                          ...(y
+                            ? { y: Math.max(0, Math.min(100, Number(y))) }
+                            : {}),
+                        });
+                      }}
+                    >
+                      Edit label & location
+                    </Button>
+                  ) : null}
+                </div>
+              </div>
+            ) : null}
           </div>
           <div className="space-y-4">
             {sections.map((section, si) => (

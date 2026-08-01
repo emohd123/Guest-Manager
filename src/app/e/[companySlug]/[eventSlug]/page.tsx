@@ -889,6 +889,12 @@ export default function PublicEventPage({
                       onChange={setSelectedSeatIds}
                       currency={currency}
                       locale={locale}
+                      eventContext={{
+                        title: eventTitle,
+                        date: eventDate,
+                        time: eventTime,
+                        location: venueLabel,
+                      }}
                     />
                   ) : (
                     <div className="space-y-4 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
