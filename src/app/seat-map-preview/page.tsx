@@ -93,6 +93,7 @@ export default function SeatMapPreviewPage() {
             time: "8:00 PM",
             location: "Demo Events Co, Bahrain",
           }}
+          startFullScreen
         />
         <div className="mt-5 rounded-2xl border border-cyan-300/20 bg-cyan-300/[.06] p-4 text-sm text-slate-300">
           Click available dots to update the cart. Hover for section, row, seat and price; drag to pan and use + / − to zoom.

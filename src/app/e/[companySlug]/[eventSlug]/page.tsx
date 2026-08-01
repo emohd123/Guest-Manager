@@ -931,6 +931,7 @@ export default function PublicEventPage({
                         time: eventTime,
                         location: venueLabel,
                       }}
+                      startFullScreen
                     />
                   ) : (
                     <div className="space-y-4 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">

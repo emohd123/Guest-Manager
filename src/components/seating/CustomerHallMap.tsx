@@ -1,11 +1,14 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowLeft,
   Calendar,
   MapPin,
+  Maximize2,
+  Minimize2,
   ShoppingCart,
+  Ticket,
   X,
 } from "lucide-react";
 import { getSeatDensity } from "@/components/seating/layout-density";
@@ -17,6 +20,7 @@ type CustomerHallMapProps = {
   currency: string;
   locale: string;
   eventContext: { title: string; date: string; time: string; location: string };
+  startFullScreen?: boolean;
 };
 
 function seatPrice(seat: any, row: any, section: any) {
@@ -30,11 +34,13 @@ export function CustomerHallMap({
   currency,
   locale,
   eventContext,
+  startFullScreen = false,
 }: CustomerHallMapProps) {
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [aspect, setAspect] = useState(16 / 9);
   const [hoveredSeat, setHoveredSeat] = useState<any>(null);
+  const [fullScreen, setFullScreen] = useState(startFullScreen);
   const drag = useRef<{
     x: number;
     y: number;
@@ -77,13 +83,33 @@ export function CustomerHallMap({
         : [...selectedSeatIds, id],
     );
 
+  useEffect(() => {
+    if (!fullScreen) return;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previous;
+    };
+  }, [fullScreen]);
+
   return (
-    <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white text-slate-900 shadow-2xl">
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 px-5 py-4">
+    <div className={fullScreen ? "fixed inset-0 z-[200] overflow-y-auto bg-white text-slate-900" : "overflow-hidden rounded-3xl border border-slate-200 bg-white text-slate-900 shadow-2xl"}>
+      {fullScreen ? (
+        <div className="sticky top-0 z-[70] border-b border-slate-200 bg-white/95 backdrop-blur">
+          <div className="mx-auto flex h-16 max-w-[1500px] items-center justify-between px-5">
+            <div className="flex items-center gap-3 text-lg font-black">
+              <span className="grid h-9 w-9 place-items-center rounded-lg bg-[#071017] text-cyan-300"><Ticket className="h-5 w-5" /></span>
+              iTicket
+            </div>
+            <div className="text-xs font-bold text-slate-500">EN / BHD</div>
+          </div>
+        </div>
+      ) : null}
+      <div className={fullScreen ? "mx-auto mt-5 flex max-w-[1200px] flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-md" : "flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 px-5 py-4"}>
         <div className="flex items-start gap-3">
-          <span className="grid h-9 w-9 place-items-center rounded-full bg-slate-100">
+          <button type="button" onClick={() => fullScreen && setFullScreen(false)} aria-label={fullScreen ? "Close full seat map" : "Event details"} className="grid h-9 w-9 place-items-center rounded-full bg-slate-100 hover:bg-slate-200">
             <ArrowLeft className="h-4 w-4" />
-          </span>
+          </button>
           <div>
             <p className="font-black">{eventContext.title}</p>
             <div className="mt-1 flex flex-wrap gap-3 text-[11px] text-slate-500">
@@ -99,45 +125,23 @@ export function CustomerHallMap({
           </div>
         </div>
         <div className="relative z-50 flex items-center gap-2">
+          <span className="rounded-full bg-cyan-50 px-3 py-2 text-xs font-black text-cyan-800">{selectedSeatIds.length} selected</span>
           <button
             type="button"
-            onClick={() => setZoom((value) => Math.max(1, value - 0.2))}
-            className="grid h-10 w-10 place-items-center rounded-full border-2 border-slate-700 bg-slate-950 text-xl font-black leading-none text-white shadow-lg hover:bg-cyan-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500"
-            aria-label="Zoom out seating map"
-            title="Zoom out"
+            onClick={() => setFullScreen((value) => !value)}
+            className="inline-flex h-10 items-center gap-2 rounded-full border border-slate-300 bg-white px-4 text-xs font-black shadow hover:bg-slate-50"
+            aria-label={fullScreen ? "Exit full seat map" : "Open full seat map"}
+            title={fullScreen ? "Exit full screen" : "Open full map"}
           >
-            <span aria-hidden="true">−</span>
-          </button>
-          <span className="min-w-12 text-center text-xs font-bold">
-            {Math.round(zoom * 100)}%
-          </span>
-          <button
-            type="button"
-            onClick={() => setZoom((value) => Math.min(3, value + 0.2))}
-            className="grid h-10 w-10 place-items-center rounded-full border-2 border-slate-700 bg-slate-950 text-xl font-black leading-none text-white shadow-lg hover:bg-cyan-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500"
-            aria-label="Zoom in seating map"
-            title="Zoom in"
-          >
-            <span aria-hidden="true">+</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              setZoom(1);
-              setPan({ x: 0, y: 0 });
-            }}
-            className="h-10 rounded-full border-2 border-slate-700 bg-white px-3 text-xs font-black text-slate-950 shadow-lg hover:bg-cyan-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500"
-            aria-label="Fit seating map to view"
-            title="Fit map to view"
-          >
-            Fit
+            {fullScreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+            {fullScreen ? "Exit full map" : "Open full map"}
           </button>
         </div>
       </div>
-      <div className="grid lg:grid-cols-[minmax(0,1fr)_280px]">
+      <div className={fullScreen ? "mx-auto mt-8 max-w-[1500px] px-5 pb-8" : "grid lg:grid-cols-[minmax(0,1fr)_280px]"}>
         <div className="min-w-0">
           <div
-            className="relative min-h-[360px] cursor-grab overflow-hidden bg-white active:cursor-grabbing sm:min-h-[520px] lg:min-h-[640px]"
+            className={fullScreen ? "relative h-[clamp(430px,62vh,720px)] cursor-grab overflow-hidden border border-slate-200 bg-white active:cursor-grabbing" : "relative min-h-[360px] cursor-grab overflow-hidden bg-white active:cursor-grabbing sm:min-h-[520px] lg:min-h-[640px]"}
             onPointerDown={(event) => {
               if ((event.target as HTMLElement).closest("button")) return;
               drag.current = {
@@ -159,6 +163,11 @@ export function CustomerHallMap({
               drag.current = null;
             }}
           >
+            <div className="absolute right-4 top-1/2 z-[60] flex -translate-y-1/2 flex-col gap-3">
+              <button type="button" onClick={() => setZoom((value) => Math.min(3, value + 0.2))} className="grid h-12 w-12 place-items-center rounded-full border border-slate-200 bg-white text-2xl font-light text-slate-950 shadow-lg hover:bg-slate-50" aria-label="Zoom in seating map" title="Zoom in">+</button>
+              <button type="button" onClick={() => setZoom((value) => Math.max(1, value - 0.2))} className="grid h-12 w-12 place-items-center rounded-full border border-slate-200 bg-white text-2xl font-light text-slate-950 shadow-lg hover:bg-slate-50" aria-label="Zoom out seating map" title="Zoom out">−</button>
+              <button type="button" onClick={() => { setZoom(1); setPan({ x: 0, y: 0 }); }} className="h-9 rounded-full border border-slate-200 bg-white px-3 text-[10px] font-black text-slate-950 shadow-lg hover:bg-slate-50" aria-label="Fit seating map to view" title="Fit map to view">Fit</button>
+            </div>
             <div className="absolute inset-0 grid place-items-center p-4">
               <div
                 className="relative max-h-full max-w-full origin-center transition-transform duration-100"
@@ -169,7 +178,7 @@ export function CustomerHallMap({
                   transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
                 }}
               >
-                {plan.floor_plan_url ? (
+                {plan.floor_plan_url && !fullScreen ? (
                   <img
                     src={plan.floor_plan_url}
                     alt="Venue floor plan"
@@ -182,7 +191,7 @@ export function CustomerHallMap({
                     className="pointer-events-none absolute inset-0 h-full w-full select-none object-contain"
                   />
                 ) : (
-                  <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(#e2e8f0_1px,transparent_1px),linear-gradient(90deg,#e2e8f0_1px,transparent_1px)] bg-[size:28px_28px]" />
+                  <div className={fullScreen ? "pointer-events-none absolute inset-0 bg-white" : "pointer-events-none absolute inset-0 bg-[linear-gradient(#e2e8f0_1px,transparent_1px),linear-gradient(90deg,#e2e8f0_1px,transparent_1px)] bg-[size:28px_28px]"} />
                 )}
                 {(plan.metadata?.labels ?? []).map((label: any) => (
                   <div
@@ -206,7 +215,7 @@ export function CustomerHallMap({
                   return (
                     <div
                       key={section.id}
-                      className="pointer-events-none absolute -translate-x-1/2 -translate-y-1/2"
+                      className={fullScreen ? "pointer-events-none absolute -translate-x-1/2 -translate-y-1/2 border border-slate-200 bg-white" : "pointer-events-none absolute -translate-x-1/2 -translate-y-1/2"}
                       style={{
                         left: `${section.x}%`,
                         top: `${section.y}%`,
@@ -218,7 +227,7 @@ export function CustomerHallMap({
                     >
                     <div
                       className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-full whitespace-nowrap rounded bg-black/75 px-2 py-0.5 text-[8px] font-black uppercase"
-                      style={{ color: section.color }}
+                      style={{ color: section.color, display: fullScreen ? "none" : undefined }}
                     >
                       {section.name}
                     </div>
@@ -330,7 +339,7 @@ export function CustomerHallMap({
             </div>
           </div>
         </div>
-        <aside className="border-t border-slate-200 bg-slate-50 p-4 lg:border-l lg:border-t-0">
+        <aside className={fullScreen ? "hidden" : "border-t border-slate-200 bg-slate-50 p-4 lg:border-l lg:border-t-0"}>
           <div className="flex items-center gap-2">
             <ShoppingCart className="h-4 w-4 text-cyan-300" />
             <h5 className="font-black">Your seats</h5>
