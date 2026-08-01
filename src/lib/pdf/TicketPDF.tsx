@@ -46,11 +46,13 @@ export interface TicketPDFData {
   visitorCode?: string;
   /** QR code data URI pointing to the app download page, shown next to the visitor code */
   appDownloadQrUri?: string;
+  seat?: string;
 }
 
-// Ticket is landscape credit-card size: 3.375" × 2.125" → 243 × 153 pt
-const W = 595; // Use A4 width for compatibility
-const H = 374; // ~half A4 height, landscape feel
+// A4 portrait ticket: a visual upper half and a practical detail/QR lower half.
+const W = 595;
+const H = 842;
+const HERO_H = 404;
 
 export function TicketPDFDocument({ data }: { data: TicketPDFData }) {
   const accentColor = data.design.labelColor ?? "#2563EB";
@@ -71,32 +73,33 @@ export function TicketPDFDocument({ data }: { data: TicketPDFData }) {
     page: {
       width: W,
       height: H,
-      backgroundColor: "#1a2340",
+      backgroundColor: "#ffffff",
       fontFamily: "Helvetica",
       position: "relative",
     },
     bgImage: {
       position: "absolute",
-      top: -(H * (posY / 100) * (imgScale - 1)),
+      top: -(HERO_H * (posY / 100) * (imgScale - 1)),
       left: -(W * (posX / 100) * (imgScale - 1)),
       width: W * imgScale,
-      height: H * imgScale,
+      height: HERO_H * imgScale,
     },
     overlay: {
       position: "absolute",
       top: 0,
       left: 0,
       width: W,
-      height: H,
+      height: HERO_H,
       backgroundColor: "rgba(0,0,0,0.15)",
     },
     bottomStrip: {
       position: "absolute",
-      bottom: 0,
+      top: HERO_H,
       left: 0,
       right: 0,
-      backgroundColor: "rgba(255,255,255,0.97)",
-      padding: "12 16 12 16",
+      bottom: 0,
+      backgroundColor: "#ffffff",
+      padding: "28 32 28 32",
       flexDirection: "row",
       alignItems: "flex-start",
       gap: 12,
@@ -105,14 +108,14 @@ export function TicketPDFDocument({ data }: { data: TicketPDFData }) {
       flex: 1,
       flexDirection: "row",
       flexWrap: "wrap",
-      gap: 10,
+      gap: 16,
     },
     fieldItem: {
-      minWidth: 100,
-      maxWidth: 160,
+      minWidth: 150,
+      maxWidth: 230,
     },
     fieldLabel: {
-      fontSize: 6,
+      fontSize: 7,
       fontFamily: "Helvetica-Bold",
       textTransform: "uppercase",
       letterSpacing: 1.2,
@@ -120,7 +123,7 @@ export function TicketPDFDocument({ data }: { data: TicketPDFData }) {
       color: accentColor,
     },
     fieldValue: {
-      fontSize: 9,
+      fontSize: 11,
       fontFamily: "Helvetica-Bold",
       color: textColor,
       lineHeight: 1.3,
@@ -130,13 +133,13 @@ export function TicketPDFDocument({ data }: { data: TicketPDFData }) {
       gap: 4,
     },
     qrImage: {
-      width: 72,
-      height: 72,
+      width: 132,
+      height: 132,
       backgroundColor: "#fff",
       padding: 2,
     },
     barcodeText: {
-      fontSize: 5,
+      fontSize: 7,
       fontFamily: "Helvetica",
       color: "#9ca3af",
       textAlign: "center",
@@ -170,6 +173,7 @@ export function TicketPDFDocument({ data }: { data: TicketPDFData }) {
             {visible.eventName && renderField("EVENT", data.eventName)}
             {visible.startDate && renderField("DATE", data.startDate)}
             {visible.ticketType && renderField("TICKET TYPE", data.ticketType)}
+            {data.seat && renderField("RESERVED SEAT", data.seat)}
             {visible.venue && renderField("VENUE", data.venue)}
             {visible.attendeeName && renderField("ATTENDEE", data.attendeeName)}
             {visible.price && data.price && renderField("PRICE", data.price)}

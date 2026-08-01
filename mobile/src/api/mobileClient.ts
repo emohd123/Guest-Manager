@@ -544,6 +544,19 @@ export async function fetchDiscoverEvents() {
   );
 }
 
+export async function accessPrivateEvent(username: string, eventCode: string) {
+  return apiRequest<{ portalUrl: string }>(
+    "/api/private-events/access",
+    {
+      method: "POST",
+      body: JSON.stringify({
+        username: username.trim(),
+        eventCode: eventCode.trim().toUpperCase(),
+      }),
+    }
+  );
+}
+
 /** Registers this device for "new event" broadcast pushes (pre-auth Discover). */
 export async function registerDiscoverPushToken(payload: {
   token: string;
@@ -569,6 +582,8 @@ export async function createPublicOrder(payload: {
     currency: string;
     quantity: number;
   }>;
+  selectedSeatIds?: string[];
+  seatHoldToken?: string;
 }) {
   return apiRequest<{ success?: boolean; orderId?: string; checkoutUrl?: string; error?: string }>(
     "/api/orders",
@@ -577,4 +592,12 @@ export async function createPublicOrder(payload: {
       body: JSON.stringify(payload),
     }
   );
+}
+
+export async function fetchPublicSeating(eventId: string) {
+  return apiRequest<{plan: any}>(`/api/events/${eventId}/seating`, {method:"GET"});
+}
+
+export async function holdPublicSeats(eventId: string, seatIds: string[]) {
+  return apiRequest<{holdToken:string;expiresAt:string}>(`/api/events/${eventId}/seating/hold`, {method:"POST",body:JSON.stringify({seatIds})});
 }

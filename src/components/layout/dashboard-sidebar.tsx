@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import {
   LayoutDashboard,
@@ -12,10 +11,7 @@ import {
   Settings,
   ChevronLeft,
   LogOut,
-  Contact,
-  ScanLine,
-  FileText,
-  MessageSquare,
+  LockKeyhole,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -38,9 +34,9 @@ const navigation = [
     icon: CalendarDays,
   },
   {
-    label: "Contacts",
-    href: "/dashboard/contacts",
-    icon: Contact,
+    label: "Private Conferences",
+    href: "/dashboard/private-events",
+    icon: LockKeyhole,
   },
   {
     label: "Tickets",
@@ -48,25 +44,9 @@ const navigation = [
     icon: Ticket,
   },
   {
-    label: "Scans",
-    href: "/dashboard/scans",
-    icon: ScanLine, // Make sure to import ScanLine
-  },
-  {
-    label: "Form Responses",
-    href: "/dashboard/form-responses",
-    icon: FileText,
-  },
-  {
     label: "Reports",
     href: "/dashboard/reports",
     icon: BarChart3,
-  },
-  {
-    label: "Messages",
-    href: "/dashboard/messages",
-    icon: MessageSquare,
-    badge: true, // show unread count badge
   },
 ];
 
@@ -86,23 +66,6 @@ interface DashboardSidebarProps {
 export function DashboardSidebar({ collapsed, onToggle }: DashboardSidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
-  const [messagesUnread, setMessagesUnread] = useState(0);
-
-  useEffect(() => {
-    let cancelled = false;
-    const fetchUnread = async () => {
-      try {
-        const res = await fetch("/api/dashboard/messages");
-        if (!res.ok) return;
-        const data = await res.json() as { unreadCount?: number };
-        if (!cancelled) setMessagesUnread(data.unreadCount ?? 0);
-      } catch { /* ignore */ }
-    };
-    fetchUnread();
-    const interval = setInterval(fetchUnread, 60_000);
-    return () => { cancelled = true; clearInterval(interval); };
-  }, []);
-
   const handleSignOut = async () => {
     const supabase = createClient();
     await supabase.auth.signOut();
@@ -158,7 +121,6 @@ export function DashboardSidebar({ collapsed, onToggle }: DashboardSidebarProps)
             const isActive = (item as { exact?: boolean }).exact
               ? pathname === item.href
               : pathname === item.href || pathname.startsWith(item.href + "/");
-            const showBadge = (item as { badge?: boolean }).badge && !isActive && messagesUnread > 0;
             return (
               <Link
                 key={item.href}
@@ -177,14 +139,6 @@ export function DashboardSidebar({ collapsed, onToggle }: DashboardSidebarProps)
                   isActive ? "text-white" : "text-muted-foreground group-hover:text-primary"
                 )} />
                 {!collapsed && <span>{item.label}</span>}
-                {showBadge && (
-                  <span className={cn(
-                    "ml-auto text-[10px] font-bold bg-primary text-white rounded-full px-1.5 py-0.5 leading-none animate-pulse",
-                    collapsed && "absolute top-2 right-2 px-1"
-                  )}>
-                    {messagesUnread > 9 ? "9+" : messagesUnread}
-                  </span>
-                )}
                 {isActive && !collapsed && (
                   <div className="absolute right-2 h-1.5 w-1.5 rounded-full bg-white/80" />
                 )}

@@ -197,6 +197,7 @@ export async function POST(request: NextRequest) {
         .limit(1);
 
       const orderNumber = generateOrderNumber();
+      const seatHoldToken = metadata.seatHoldToken || null;
       const ticketTasks: Array<{
         ticketId: string;
         barcode: string;
@@ -293,6 +294,14 @@ export async function POST(request: NextRequest) {
               ticketTypeName: ticketTypeNameById.get(item.ticketTypeId) ?? item.name,
             });
           }
+        }
+
+        if (seatHoldToken) {
+          await tx.execute(sql`select finalize_seat_hold(
+            ${seatHoldToken}::uuid,
+            ${order.id}::uuid,
+            ${ticketTasks.map((task) => task.ticketId)}::uuid[]
+          )`);
         }
       });
 

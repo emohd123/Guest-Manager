@@ -148,6 +148,7 @@ export type VisitorTicket = {
   barcode: string;
   status: string;
   ticketType: string;
+  seat?: { section: string; row: string; seat: string } | null;
   rsvpStatus: string | null;
   rsvpAt: string | null;
   event: {

@@ -242,9 +242,14 @@ export default function DevicesPage({ params }: { params: Promise<{ eventId: str
       <div className="grid gap-4 lg:grid-cols-3">
         <Card className="lg:col-span-1">
           <CardHeader>
-            <CardTitle>Access Code + PIN</CardTitle>
+            <CardTitle>Check-in Team Access</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3 text-sm">
+            <div className="space-y-1.5 text-muted-foreground">
+              <p>Share these credentials only with trusted check-in staff.</p>
+              <p>In iTicket, choose <span className="font-medium text-foreground">Staff Access</span>, then enter the access code and PIN.</p>
+              <p>Each paired device is restricted to this event.</p>
+            </div>
             <div className="rounded border p-3">
               <div className="text-muted-foreground">Access Code</div>
               <div className="mt-1 flex items-center justify-between">
@@ -265,7 +270,7 @@ export default function DevicesPage({ params }: { params: Promise<{ eventId: str
                 <span className="font-mono text-lg">
                   {pairingAccess?.pin === "HIDDEN"
                     ? "****"
-                    : (pairingAccess?.pin ?? "Rotate to reveal new PIN")}
+                    : (pairingAccess?.pin ?? "Generate to reveal new PIN")}
                 </span>
                 {pairingAccess?.pin && pairingAccess.pin !== "HIDDEN" ? (
                   <Button
@@ -278,19 +283,23 @@ export default function DevicesPage({ params }: { params: Promise<{ eventId: str
                 ) : null}
               </div>
             </div>
+            <div className="flex gap-2 rounded-md border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-900 dark:text-amber-200">
+              <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0" />
+              <p><span className="font-semibold">Event-day security:</span> Generate fresh staff credentials before doors open, and replace them immediately if they are shared outside the check-in team.</p>
+            </div>
             <Button
               className="w-full"
               onClick={() => rotatePairing.mutate({ eventId })}
               disabled={rotatePairing.isPending}
             >
-              Rotate Code + PIN
+              Generate new staff code and PIN
             </Button>
           </CardContent>
         </Card>
 
         <Card className="lg:col-span-1">
           <CardHeader>
-            <CardTitle>QR Pairing</CardTitle>
+            <CardTitle>One-time QR pairing</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3 text-sm">
             <Button

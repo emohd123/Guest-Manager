@@ -15,6 +15,7 @@ export const tickets = pgTable("tickets", {
   ticketTypeId: uuid("ticket_type_id").references(() => ticketTypes.id).notNull(),
   orderId: uuid("order_id"),
   guestId: uuid("guest_id").references(() => guests.id),
+  seatId: uuid("seat_id"),
   contactId: uuid("contact_id").references(() => contacts.id),
   barcode: varchar("barcode", { length: 255 }).unique().notNull(),
   barcodeType: varchar("barcode_type", { length: 20 }).default("qr"),

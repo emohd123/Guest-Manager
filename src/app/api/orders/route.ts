@@ -24,7 +24,7 @@ class CheckoutValidationError extends Error {}
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { companySlug, eventSlug, attendeeName, attendeeEmail, cartItems } = body as {
+    const { companySlug, eventSlug, attendeeName, attendeeEmail, cartItems, selectedSeatIds, seatHoldToken } = body as {
       companySlug: string;
       eventSlug: string;
       attendeeName: string;
@@ -36,6 +36,8 @@ export async function POST(request: NextRequest) {
         currency: string;
         quantity: number;
       }>;
+      selectedSeatIds?: string[];
+      seatHoldToken?: string;
     };
 
     if (!companySlug || !eventSlug || !attendeeName || !attendeeEmail || !cartItems?.length) {
@@ -138,7 +140,24 @@ export async function POST(request: NextRequest) {
       };
     }).filter(Boolean) as Array<(typeof aggregatedCart)[number] & { price: number; currency: string; name: string }>;
 
-    const subtotal = normalizedCartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+    const requestedQuantity = normalizedCartItems.reduce((sum, item) => sum + item.quantity, 0);
+    let selectedSeats: Array<{id:string; label:string; row_label:string; section_name:string; price:number}> = [];
+    if (selectedSeatIds?.length || seatHoldToken) {
+      if (!seatHoldToken || selectedSeatIds?.length !== requestedQuantity) {
+        return NextResponse.json({error:"Choose one available seat for every ticket."},{status:400});
+      }
+      const result = await db.execute(sql`
+        SELECT rs.id,rs.label,sr.label row_label,ss.name section_name,COALESCE(rs.price,sr.price,ss.price,0)::int price
+        FROM reserved_seats rs JOIN seat_rows sr ON sr.id=rs.row_id JOIN seat_sections ss ON ss.id=sr.section_id
+        JOIN seating_plans sp ON sp.id=ss.plan_id JOIN seat_holds sh ON sh.seat_id=rs.id
+        WHERE sp.event_id=${event[0].id} AND rs.id=ANY(${selectedSeatIds}::uuid[]) AND rs.sold_ticket_id IS NULL
+          AND sh.hold_token=${seatHoldToken}::uuid AND sh.status='pending' AND sh.expires_at>now()
+        ORDER BY ss.sort_order,sr.sort_order,rs.label`);
+      selectedSeats = result as unknown as typeof selectedSeats;
+      if (selectedSeats.length !== requestedQuantity) return NextResponse.json({error:"Your seat hold expired or a seat is unavailable. Please select again."},{status:409});
+    }
+
+    const subtotal = selectedSeats.length ? selectedSeats.reduce((sum, seat) => sum + seat.price, 0) : normalizedCartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
     const currencies = [...new Set(normalizedCartItems.map((item) => item.currency.toUpperCase()))];
     if (currencies.length > 1) {
       return NextResponse.json({ error: "Please checkout one currency at a time." }, { status: 400 });
@@ -147,7 +166,9 @@ export async function POST(request: NextRequest) {
     if (subtotal > 0) {
       const stripe = getStripeClient();
       const origin = request.nextUrl.origin;
-      const lineItems = normalizedCartItems.map((item) => ({
+      const lineItems = selectedSeats.length ? selectedSeats.map((seat) => ({
+        price_data: {currency: currencies[0].toLowerCase(),product_data:{name:`${event[0].title} — ${seat.section_name}, Row ${seat.row_label}, Seat ${seat.label}`},unit_amount:toStripeUnitAmount(seat.price,currencies[0])},quantity:1,
+      })) : normalizedCartItems.map((item) => ({
         price_data: {
           currency: item.currency.toLowerCase(),
           product_data: {
@@ -169,6 +190,7 @@ export async function POST(request: NextRequest) {
           attendeeName,
           attendeeEmail,
           cartItems: JSON.stringify(normalizedCartItems),
+          seatHoldToken: seatHoldToken ?? "",
         },
         success_url: `${origin}/e/${companySlug}/${eventSlug}?success=1&session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${origin}/e/${companySlug}/${eventSlug}?cancelled=1`,
@@ -274,6 +296,9 @@ export async function POST(request: NextRequest) {
             ticketTypeName: ticketType?.name ?? item.name,
           });
         }
+      }
+      if (seatHoldToken) {
+        await tx.execute(sql`SELECT finalize_seat_hold(${seatHoldToken}::uuid, ${order.id}::uuid, ${ticketTasks.map((task) => task.ticketId)}::uuid[])`);
       }
     });
 

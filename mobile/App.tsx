@@ -51,6 +51,7 @@ import { PremiumIntroScreen } from "./src/screens/PremiumIntroScreen";
 import { VisitorLoginScreen } from "./src/screens/VisitorLoginScreen";
 import { VisitorSignupScreen } from "./src/screens/VisitorSignupScreen";
 import { VisitorDashboardScreen } from "./src/screens/VisitorDashboardScreen";
+import { PublicHubScreen } from "./src/screens/PublicHubScreen";
 import { JoinEventScreen } from "./src/screens/JoinEventScreen";
 import { ComposeMessageScreen } from "./src/screens/ComposeMessageScreen";
 import { EventHomeScreen } from "./src/screens/EventHomeScreen";
@@ -559,25 +560,11 @@ function AppShell() {
     }
     return (
       <SafeAreaView style={styles.full}>
-        <VisitorDashboardScreen
+        <PublicHubScreen
           session={visitorSession}
+          onSignIn={() => setAuthStep("visitor_login")}
           onSignOut={visitorSignOut}
-          onJoinEvent={() => setAuthStep("visitor_join")}
-          onComposeMessage={() => setAuthStep("visitor_compose")}
-          fetchTicket={loadVisitorTicket}
-          fetchEvents={loadVisitorEvents}
-          fetchNotifications={loadVisitorNotifications}
-          fetchMessages={loadVisitorMessages}
-          markNotificationsRead={handleMarkNotificationsRead}
-          confirmAttendance={handleVisitorAttendanceConfirm}
-          fetchHome={fetchVisitorHome}
-          fetchSessions={fetchVisitorSessions}
-          fetchNetworking={fetchVisitorNetworking}
-          fetchChat={fetchVisitorChat}
-          sendChatMessage={sendVisitorChatMessage}
-          updateProfile={updateVisitorProfile}
-          sendNetworkingRequest={sendNetworkingRequest}
-          respondToNetworkingRequest={respondVisitorNetworkingRequest}
+          onStaff={() => setAuthStep("staff_choice")}
         />
       </SafeAreaView>
     );
@@ -648,9 +635,11 @@ function AppShell() {
   return (
     <SafeAreaView style={styles.full}>
       {authStep === "role_choice" && (
-        <RoleChoiceScreen
-          onSelectStaff={() => setAuthStep("staff_choice")}
-          onSelectVisitor={() => setAuthStep("visitor_login")}
+        <PublicHubScreen
+          session={null}
+          onSignIn={() => setAuthStep("visitor_login")}
+          onSignOut={() => undefined}
+          onStaff={() => setAuthStep("staff_choice")}
         />
       )}
 

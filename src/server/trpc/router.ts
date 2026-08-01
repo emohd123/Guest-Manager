@@ -16,6 +16,7 @@ import { dataImportsRouter } from "./routers/dataImports";
 import { reportsRouter } from "./routers/reports";
 import { sentEmailsRouter } from "./routers/sentEmails";
 import { eventExperienceRouter } from "./routers/eventExperience";
+import { seatingRouter } from "./routers/seating";
 
 export const appRouter = router({
   events: eventsRouter,
@@ -35,6 +36,7 @@ export const appRouter = router({
   reports: reportsRouter,
   sentEmails: sentEmailsRouter,
   eventExperience: eventExperienceRouter,
+  seating: seatingRouter,
 });
 
 export type AppRouter = typeof appRouter;
