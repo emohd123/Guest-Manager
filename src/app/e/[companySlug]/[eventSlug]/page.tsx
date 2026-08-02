@@ -495,8 +495,8 @@ export default function PublicEventPage({
     >
       {settings.customCss && <style>{settings.customCss}</style>}
 
-      <main className="mx-auto max-w-7xl px-4 pb-28 pt-24 sm:px-6 lg:px-8">
-        <div className="mb-5 flex flex-col gap-4 text-sm md:flex-row md:items-center md:justify-between">
+      <main className="mx-auto max-w-7xl px-3 pb-24 pt-20 sm:px-6 sm:pb-28 sm:pt-24 lg:px-8">
+        <div className="mb-4 flex flex-col gap-3 text-sm md:mb-5 md:flex-row md:items-center md:justify-between md:gap-4">
           <div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-zinc-500">
             <Link href="/" className="hover:text-zinc-950">
               Home
@@ -510,7 +510,7 @@ export default function PublicEventPage({
               {event.title}
             </span>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="hidden items-center gap-3 sm:flex">
             <Button
               variant="ghost"
               size="sm"
@@ -531,8 +531,8 @@ export default function PublicEventPage({
           </div>
         </div>
 
-        <section className="relative overflow-hidden rounded-[32px] bg-zinc-200 shadow-[0_24px_70px_rgba(15,23,42,0.16)]">
-          <div className="aspect-[16/7] min-h-[300px] w-full">
+        <section className="relative overflow-hidden rounded-2xl bg-zinc-200 shadow-[0_18px_44px_rgba(15,23,42,0.14)] sm:rounded-[32px] sm:shadow-[0_24px_70px_rgba(15,23,42,0.16)]">
+          <div className="aspect-[4/3] w-full sm:aspect-[16/7] sm:min-h-[300px]">
             {event.coverImageUrl ? (
               <img
                 src={event.coverImageUrl}
@@ -564,14 +564,14 @@ export default function PublicEventPage({
           </button>
         </section>
 
-        <div className="mt-8 grid gap-9 lg:grid-cols-[minmax(0,1fr)_380px] lg:items-start">
-          <article className="space-y-9">
-            <section id="details" className="scroll-mt-24 space-y-5 rounded-[28px] border border-slate-200 bg-white p-6 shadow-[0_12px_40px_rgba(15,23,42,0.08)] sm:p-8">
+        <div className="mt-5 grid gap-7 sm:mt-8 sm:gap-9 lg:grid-cols-[minmax(0,1fr)_380px] lg:items-start">
+          <article className="space-y-7 sm:space-y-9">
+            <section id="details" className="scroll-mt-20 space-y-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_10px_28px_rgba(15,23,42,0.07)] sm:scroll-mt-24 sm:space-y-5 sm:rounded-[28px] sm:p-8 sm:shadow-[0_12px_40px_rgba(15,23,42,0.08)]">
               <p className="text-xs font-black uppercase tracking-[0.2em] text-cyan-700">iTicket event</p>
-              <h1 className="max-w-3xl text-4xl font-black tracking-tight text-zinc-950 md:text-5xl">
+              <h1 className="max-w-3xl text-2xl font-black leading-tight tracking-tight text-zinc-950 sm:text-4xl md:text-5xl">
                 {eventTitle}
               </h1>
-              <div className="flex flex-wrap items-center gap-5 text-sm font-semibold text-zinc-600">
+              <div className="flex flex-col gap-2 text-xs font-semibold text-zinc-600 sm:flex-row sm:flex-wrap sm:items-center sm:gap-5 sm:text-sm">
                 <span className="inline-flex items-center gap-2">
                   <MapPin className="h-4 w-4 text-violet-600" />
                   {venueLabel}
@@ -586,18 +586,18 @@ export default function PublicEventPage({
                 </span>
               </div>
               {publicPage.subheadline ? (
-                <p className="max-w-3xl text-lg leading-8 text-zinc-600">
+                <p className="max-w-3xl text-base leading-7 text-zinc-600 sm:text-lg sm:leading-8">
                   {publicPage.subheadline}
                 </p>
               ) : null}
-              <p className="max-w-3xl text-[15px] leading-7 text-zinc-700">
+              <p className="max-w-3xl text-sm leading-6 text-zinc-700 sm:text-[15px] sm:leading-7">
                 {eventDescription}
               </p>
             </section>
 
             <section className="border-t border-zinc-200 pt-7">
               <div className="mb-4 flex items-center justify-between">
-                <h2 className="text-2xl font-black tracking-tight">
+                <h2 className="text-xl font-black tracking-tight sm:text-2xl">
                   Important Information
                 </h2>
                 <Info className="h-5 w-5 text-zinc-400" />
@@ -615,7 +615,7 @@ export default function PublicEventPage({
             {false && galleryImages.length ? (
               <section className="border-t border-zinc-200 pt-7">
                 <div className="mb-4 flex items-center justify-between">
-                  <h2 className="text-2xl font-black tracking-tight">
+                  <h2 className="text-xl font-black tracking-tight sm:text-2xl">
                     Gallery
                   </h2>
                   <span className="text-sm font-bold text-violet-600">
@@ -647,7 +647,7 @@ export default function PublicEventPage({
 
             {videoUrl ? (
               <section className="border-t border-zinc-200 pt-7">
-                <h2 className="mb-4 text-2xl font-black tracking-tight">
+                <h2 className="mb-4 text-xl font-black tracking-tight sm:text-2xl">
                   Event video
                 </h2>
                 <video
@@ -662,7 +662,7 @@ export default function PublicEventPage({
             ) : null}
 
             <section id="location" className="scroll-mt-24 border-t border-zinc-200 pt-7">
-              <h2 className="mb-4 text-2xl font-black tracking-tight">
+              <h2 className="mb-4 text-xl font-black tracking-tight sm:text-2xl">
                 {t.location}
               </h2>
               <a href={mapHref ?? undefined} target={mapHref ? "_blank" : undefined} rel={mapHref ? "noreferrer" : undefined} className={`block overflow-hidden rounded-2xl border border-zinc-200 bg-white transition ${mapHref ? "cursor-pointer hover:border-cyan-400 hover:shadow-lg" : ""}`}>
@@ -729,7 +729,7 @@ export default function PublicEventPage({
 
             {publicPage.showAgenda ? (
               <section id="lineup" className="scroll-mt-24 border-t border-zinc-200 pt-7">
-                <h2 className="mb-4 text-2xl font-black tracking-tight">
+                <h2 className="mb-4 text-xl font-black tracking-tight sm:text-2xl">
                   Lineup &amp; schedule
                 </h2>
                 {experience?.sessions?.length ? <div className="space-y-3">
@@ -763,7 +763,7 @@ export default function PublicEventPage({
             {organiserEvents?.length ? (
               <section id="organiser" className="scroll-mt-24 border-t border-zinc-200 pt-7">
                 <div className="mb-4 flex items-center justify-between gap-4">
-                  <div><p className="text-xs font-black uppercase tracking-[.18em] text-cyan-600">More to explore</p><h2 className="mt-1 text-2xl font-black tracking-tight">More from this organiser</h2></div>
+                  <div><p className="text-xs font-black uppercase tracking-[.18em] text-cyan-600">More to explore</p><h2 className="mt-1 text-xl font-black tracking-tight sm:text-2xl">More from this organiser</h2></div>
                   <Link href="/" className="text-sm font-black text-cyan-700 hover:underline">View all events</Link>
                 </div>
                 <div className="grid gap-4 sm:grid-cols-3">
@@ -781,7 +781,7 @@ export default function PublicEventPage({
               <section className="border-t border-zinc-200 pt-7">
                 <div className="mb-4">
                   <p className="text-xs font-black uppercase tracking-[.18em] text-cyan-600">Discover more</p>
-                  <h2 className="mt-1 text-2xl font-black tracking-tight">You might also like</h2>
+                  <h2 className="mt-1 text-xl font-black tracking-tight sm:text-2xl">You might also like</h2>
                 </div>
                 <div className="grid gap-4 sm:grid-cols-3">
                   {categoryEvents.map((related) => (
@@ -795,7 +795,7 @@ export default function PublicEventPage({
             ) : null}
 
             {false && <section className="border-t border-zinc-200 pt-7">
-              <h2 className="mb-4 text-2xl font-black tracking-tight">
+              <h2 className="mb-4 text-xl font-black tracking-tight sm:text-2xl">
                 Rating
               </h2>
               <div className="flex flex-wrap items-center gap-4 rounded-2xl border border-zinc-200 bg-white p-5">
