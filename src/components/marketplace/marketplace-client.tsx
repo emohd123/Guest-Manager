@@ -16,7 +16,7 @@ import { cn } from "@/lib/utils";
 // chip becomes active (keyframes in globals.css); the active chips also render an
 // inline check icon via `chip-check` so the selection is unmistakable.
 const chipBase =
-  "group inline-flex shrink-0 items-center gap-2 rounded-full px-5 py-3 text-sm font-black transition-all duration-200 cursor-pointer select-none active:scale-95 [-webkit-tap-highlight-color:transparent] touch-manipulation focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400";
+  "group inline-flex shrink-0 items-center gap-1.5 rounded-full px-4 py-2 text-xs font-black transition-all duration-200 cursor-pointer select-none active:scale-95 [-webkit-tap-highlight-color:transparent] touch-manipulation focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 sm:gap-2 sm:px-5 sm:py-3 sm:text-sm";
 
 // Subject-relevant, curated category imagery (stable Unsplash photos).
 const CATEGORY_IMAGE_IDS: Record<string, string> = {
@@ -333,17 +333,17 @@ export function MarketplaceClient({
                       type="button"
                       aria-label="Previous featured event"
                       onClick={() => setHeroIndex((index) => (index - 1 + events.length) % events.length)}
-                      className="absolute left-4 top-1/2 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-slate-900 shadow-lg transition hover:bg-white lg:flex"
+                      className="absolute left-2 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-slate-900 shadow-lg transition hover:bg-white sm:left-4 sm:h-11 sm:w-11"
                     >
-                      <ChevronLeft className="h-5 w-5" />
+                      <ChevronLeft className="h-4 w-4 sm:h-5 sm:w-5" />
                     </button>
                     <button
                       type="button"
                       aria-label="Next featured event"
                       onClick={() => setHeroIndex((index) => (index + 1) % events.length)}
-                      className="absolute right-4 top-1/2 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-slate-900 shadow-lg transition hover:bg-white lg:flex"
+                      className="absolute right-2 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-slate-900 shadow-lg transition hover:bg-white sm:right-4 sm:h-11 sm:w-11"
                     >
-                      <ChevronRight className="h-5 w-5" />
+                      <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5" />
                     </button>
                   </>
                 ) : null}
@@ -367,18 +367,18 @@ export function MarketplaceClient({
               </button>
             ))}
           </nav>
-          <nav aria-label="Filter events by date" className="flex min-h-16 items-center justify-center gap-3 overflow-x-auto border-y border-slate-200 bg-white px-5 text-sm font-black text-slate-700 shadow-sm dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100">
+          <nav aria-label="Filter events by date" className="flex min-h-14 items-center justify-start gap-2 overflow-x-auto border-y border-slate-200 bg-white px-3 text-xs font-black text-slate-700 shadow-sm dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100 sm:min-h-16 sm:justify-center sm:gap-3 sm:px-5 sm:text-sm">
             <button
               type="button"
               onClick={() => setDateFilter("today")}
-              className={cn("shrink-0 rounded-full px-4 py-2 transition", dateFilter === "today" ? "bg-cyan-500 text-white shadow-sm" : "border border-slate-200 bg-white text-slate-700 hover:border-cyan-300 hover:bg-cyan-50 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:hover:bg-slate-800")}
+              className={cn("shrink-0 whitespace-nowrap rounded-full px-3 py-2 transition sm:px-4", dateFilter === "today" ? "bg-cyan-500 text-white shadow-sm" : "border border-slate-200 bg-white text-slate-700 hover:border-cyan-300 hover:bg-cyan-50 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:hover:bg-slate-800")}
             >
               {locale === "ar" ? "اليوم" : "Today"}
             </button>
             <button
               type="button"
               onClick={() => setDateFilter("tomorrow")}
-              className={cn("shrink-0 rounded-full px-4 py-2 transition", dateFilter === "tomorrow" ? "bg-cyan-500 text-white shadow-sm" : "border border-slate-200 bg-white text-slate-700 hover:border-cyan-300 hover:bg-cyan-50 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:hover:bg-slate-800")}
+              className={cn("shrink-0 whitespace-nowrap rounded-full px-3 py-2 transition sm:px-4", dateFilter === "tomorrow" ? "bg-cyan-500 text-white shadow-sm" : "border border-slate-200 bg-white text-slate-700 hover:border-cyan-300 hover:bg-cyan-50 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:hover:bg-slate-800")}
             >
               {locale === "ar" ? "غدًا" : "Tomorrow"}
             </button>
@@ -386,7 +386,7 @@ export function MarketplaceClient({
               <button
                 type="button"
                 onClick={openDatePicker}
-                className={cn("flex shrink-0 items-center gap-2 rounded-full px-4 py-2 transition", /^\d{4}-\d{2}-\d{2}$/.test(dateFilter) ? "bg-cyan-500 text-white shadow-sm" : "border border-slate-200 bg-white text-slate-700 hover:border-cyan-300 hover:bg-cyan-50 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:hover:bg-slate-800")}
+                className={cn("flex shrink-0 whitespace-nowrap items-center gap-1.5 rounded-full px-3 py-2 transition sm:gap-2 sm:px-4", /^\d{4}-\d{2}-\d{2}$/.test(dateFilter) ? "bg-cyan-500 text-white shadow-sm" : "border border-slate-200 bg-white text-slate-700 hover:border-cyan-300 hover:bg-cyan-50 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:hover:bg-slate-800")}
               >
                 <CalendarDays className="h-4 w-4" />
                 <span>{locale === "ar" ? "اختر تاريخًا" : "Choose a date"}</span>
@@ -406,9 +406,9 @@ export function MarketplaceClient({
 
       {/* Content sits directly on the light page. (A dark #050712 scrim used to
           live here for the old dark theme — it covered the whole content area.) */}
-      <main className="relative z-10 mx-auto max-w-6xl bg-white px-4 py-14 dark:bg-slate-950 sm:px-8 lg:px-12">
-        <section className="mb-12">
-          <div className="flex flex-wrap gap-3">
+      <main className="relative z-10 mx-auto max-w-6xl bg-white px-4 py-7 dark:bg-slate-950 sm:px-8 sm:py-14 lg:px-12">
+        <section className="mb-7 sm:mb-12">
+          <div className="flex flex-wrap gap-2 sm:gap-3">
             <button
               type="button"
               onClick={() => setCategory("")}
@@ -690,35 +690,35 @@ function HeroFeature({
           <div className="absolute inset-0 bg-[linear-gradient(135deg,#111827,#281052_58%,#0f172a)]" />
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/92 via-black/35 to-transparent" />
-        <span className="absolute left-5 top-5 rounded-full bg-cyan-300 px-3 py-1 text-xs font-black uppercase tracking-wider text-black shadow-lg">
+        {false && <span className="absolute left-4 top-4 rounded-full bg-cyan-300 px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-black shadow-lg sm:left-5 sm:top-5 sm:px-3 sm:text-xs">
           {locale === "ar" ? "مميّز" : "Featured"}
-        </span>
+        </span>}
         {event.category ? (
-          <span className="absolute right-5 top-5 rounded-full border border-white/25 bg-black/50 px-3 py-1 text-xs font-bold text-white backdrop-blur">
+          <span className="absolute right-4 top-4 rounded-full border border-white/25 bg-black/50 px-2.5 py-1 text-[10px] font-bold text-white backdrop-blur sm:right-5 sm:top-5 sm:px-3 sm:text-xs">
             {event.category}
           </span>
         ) : null}
-        <div className="absolute inset-x-5 bottom-5">
-          <p className="text-xs font-black uppercase tracking-[0.18em] text-cyan-200">
+        <div className="absolute inset-x-4 bottom-4 sm:inset-x-5 sm:bottom-5">
+          <p className="text-[10px] font-black uppercase tracking-[0.14em] text-cyan-200 sm:text-xs sm:tracking-[0.18em]">
             {format(new Date(event.startsAt), "EEE, MMM d")}
           </p>
-          <h3 className="mt-2 line-clamp-2 text-2xl font-black leading-tight text-white sm:text-3xl">{title}</h3>
-          <p className="mt-1 flex items-center gap-2 text-sm text-white/75">
-            <MapPin className="h-4 w-4 shrink-0 text-cyan-300" />
+          <h3 className="mt-1 line-clamp-2 text-xl font-black leading-tight text-white sm:mt-2 sm:text-3xl">{title}</h3>
+          <p className="mt-1 flex items-center gap-1.5 text-xs text-white/75 sm:gap-2 sm:text-sm">
+            <MapPin className="h-3.5 w-3.5 shrink-0 text-cyan-300 sm:h-4 sm:w-4" />
             {event.venueName || event.locationText || "Bahrain"}
           </p>
-          <div className="mt-5 flex flex-wrap items-center gap-3">
-            <Button asChild className="rounded-full bg-gradient-to-r from-blue-600 to-violet-600 px-6 font-black text-white hover:opacity-95">
+          <div className="mt-3 flex flex-wrap items-center gap-2 sm:mt-5 sm:gap-3">
+            <Button asChild className="h-10 rounded-full bg-gradient-to-r from-blue-600 to-violet-600 px-4 text-sm font-black text-white hover:opacity-95 sm:px-6">
               <Link href={event.buyUrl}>{buy}</Link>
             </Button>
             <Button
               type="button"
               onClick={() => { window.location.href = event.publicUrl; }}
-              className="rounded-full border border-white/30 bg-white/15 px-5 font-black text-white backdrop-blur hover:bg-white/25"
+              className="h-10 rounded-full border border-white/30 bg-white/15 px-4 text-sm font-black text-white backdrop-blur hover:bg-white/25 sm:px-5"
             >
               {locale === "ar" ? "تفاصيل" : "Details"}
             </Button>
-            <span className="rounded-full bg-white px-4 py-2 text-sm font-black text-slate-900 shadow">
+            <span className="rounded-full bg-white px-3 py-2 text-xs font-black text-slate-900 shadow sm:px-4 sm:text-sm">
               {formatMoney(event.minPrice, event.currency, locale)}
             </span>
           </div>
