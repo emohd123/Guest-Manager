@@ -623,7 +623,7 @@ export default function PublicEventPage({
                     <img
                       key={image}
                       src={image}
-                      alt={`${event.title} gallery`}
+                      alt={`${event?.title ?? "Event"} gallery`}
                       className="aspect-[4/3] rounded-xl object-cover"
                     />
                   ))}
@@ -696,7 +696,7 @@ export default function PublicEventPage({
 
             {false && <section className="border-t border-zinc-200 pt-7">
               <h2 className="mb-4 text-2xl font-black tracking-tight">
-                {event.title} ticket prices
+                {event?.title ?? "Event"} ticket prices
               </h2>
               <div className="divide-y divide-zinc-200 rounded-2xl border border-zinc-200 bg-white">
                 {tickets.length ? (
