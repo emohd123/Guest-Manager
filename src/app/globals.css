@@ -347,8 +347,7 @@ html:not(.dark) .hover\:text-white\/30:hover {
   color: var(--foreground) !important;
 }
 
-html:not(.dark) .dashboard-theme-scope .text-white:not([class*="bg-primary"]):not([class*="bg-[#635BFF]"]),
-html:not(.dark) .public-theme-scope .text-white:not([class*="bg-primary"]):not([class*="bg-cyan"]):not([class*="bg-blue"]):not([class*="bg-emerald"]):not([class*="bg-red"]) {
+html:not(.dark) .dashboard-theme-scope .text-white:not([class*="bg-primary"]):not([class*="bg-[#635BFF]"]) {
   color: var(--foreground) !important;
 }
 
@@ -367,10 +366,6 @@ html:not(.dark) .public-theme-scope .text-white:not([class*="bg-primary"]):not([
 .public-theme-scope .border-white\/10,
 .public-theme-scope .border-white\/20 {
   border-color: #e2e8f0 !important;
-}
-
-.public-theme-scope .text-white:not([class*="bg-cyan"]):not([class*="bg-blue"]):not([class*="bg-primary"]):not([class*="bg-emerald"]):not([class*="bg-red"]) {
-  color: #172033 !important;
 }
 
 .dark .public-theme-scope .bg-\[\#080808\],
