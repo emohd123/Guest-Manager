@@ -103,7 +103,7 @@ export function DashboardTopbar({
           <>
 
 
-            <DropdownMenu>
+              <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button className="h-11 px-6 rounded-2xl bg-primary hover:bg-primary/90 text-white font-bold shadow-lg shadow-primary/20 gap-2">
                   <Plus className="h-5 w-5" />
@@ -136,7 +136,18 @@ export function DashboardTopbar({
                   </Link>
                 </DropdownMenuItem>
               </DropdownMenuContent>
-            </DropdownMenu>
+              </DropdownMenu>
+
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setTheme(isDark ? "light" : "dark")}
+                aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
+                title={isDark ? "Light mode" : "Dark mode"}
+                className="h-11 w-11 rounded-2xl border border-border bg-card text-foreground hover:bg-muted"
+              >
+                {isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+              </Button>
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
