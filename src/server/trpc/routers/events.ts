@@ -372,6 +372,31 @@ export const eventsRouter = router({
       return mapEvent(data as EventRow, company.slug);
     }),
 
+  relatedByCompany: publicProcedure
+    .input(z.object({ companySlug: z.string(), excludeEventId: z.string().uuid(), limit: z.number().min(1).max(8).default(3) }))
+    .query(async ({ input }) => {
+      const supabase = createSupabaseAdminClient();
+      const { data: company, error: companyError } = await supabase
+        .from("companies")
+        .select("id,slug")
+        .eq("slug", input.companySlug)
+        .maybeSingle();
+      if (companyError) throw new Error(companyError.message);
+      if (!company) return [];
+
+      const { data, error } = await supabase
+        .from("events")
+        .select("*")
+        .eq("company_id", company.id)
+        .eq("status", "published")
+        .neq("id", input.excludeEventId)
+        .is("deleted_at", null)
+        .order("starts_at", { ascending: true })
+        .limit(input.limit);
+      if (error) throw new Error(error.message);
+      return (data ?? []).map((row) => mapEvent(row as EventRow, company.slug));
+    }),
+
   stats: protectedProcedure.query(async ({ ctx }) => {
     const [{ count: eventsCount, error: eventsError }, { count: guestsCount, error: guestsError }, { count: checkInsCount, error: checkInsError }] = await Promise.all([
       ctx.supabase.from("events").select("id", { count: "exact", head: true }).eq("company_id", ctx.companyId).is("deleted_at", null),

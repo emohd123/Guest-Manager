@@ -206,6 +206,10 @@ export default function PublicEventPage({
     { eventId: event?.id as string },
     { enabled: !!event?.id },
   );
+  const { data: organiserEvents } = trpc.events.relatedByCompany.useQuery(
+    { companySlug, excludeEventId: event?.id ?? "00000000-0000-0000-0000-000000000000", limit: 3 },
+    { enabled: !!event?.id },
+  );
   useEffect(() => {
     if (!event?.id) return;
     let cancelled = false;
@@ -272,6 +276,9 @@ export default function PublicEventPage({
     .trim();
   const mapHref = mapQuery
     ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapQuery)}`
+    : null;
+  const appleMapsHref = mapQuery
+    ? `https://maps.apple.com/?q=${encodeURIComponent(mapQuery)}`
     : null;
 
   if (!publicPage.enabled) {
@@ -484,35 +491,7 @@ export default function PublicEventPage({
     >
       {settings.customCss && <style>{settings.customCss}</style>}
 
-      <header className="border-b border-zinc-200 bg-white">
-        <div className="mx-auto flex h-20 max-w-7xl items-center justify-between gap-6 px-4 sm:px-6 lg:px-8">
-          <Link href="/" className="flex items-center gap-3">
-            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-zinc-950 text-white">
-              <Ticket className="h-5 w-5" />
-            </span>
-            <span className="text-xl font-black tracking-tight">iTicket</span>
-          </Link>
-          <nav className="hidden items-center gap-7 text-sm font-bold text-zinc-600 md:flex">
-            <Link href="/events" className="hover:text-zinc-950">
-              Events
-            </Link>
-            <Link href="/account" className="hover:text-zinc-950">
-              My Tickets
-            </Link>
-            <Link href="/#contact" className="hover:text-zinc-950">
-              Support
-            </Link>
-          </nav>
-          <Button
-            asChild
-            className="h-11 rounded-xl bg-zinc-950 px-5 text-sm font-black text-white hover:bg-zinc-800"
-          >
-            <a href="#tickets">Select tickets</a>
-          </Button>
-        </div>
-      </header>
-
-      <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+      <main className="mx-auto max-w-7xl px-4 pb-28 pt-22 sm:px-6 lg:px-8">
         <div className="mb-5 flex flex-col gap-4 text-sm md:flex-row md:items-center md:justify-between">
           <div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-zinc-500">
             <Link href="/" className="hover:text-zinc-950">
@@ -581,7 +560,7 @@ export default function PublicEventPage({
           </button>
         </section>
 
-        <div className="mt-8 grid gap-9">
+        <div className="mt-8 grid gap-9 lg:grid-cols-[minmax(0,1fr)_380px] lg:items-start">
           <article className="space-y-9">
             <section className="space-y-4">
               <div className="flex flex-wrap items-center gap-3">
@@ -714,16 +693,10 @@ export default function PublicEventPage({
                     <span className="flex h-12 w-12 items-center justify-center rounded-full bg-violet-600 text-white shadow-lg">
                       <MapPin className="h-6 w-6" />
                     </span>
-                    {mapHref ? (
-                      <a
-                        href={mapHref}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="rounded-full bg-white px-4 py-2 text-xs font-black text-zinc-950 shadow"
-                      >
-                        {t.showMap}
-                      </a>
-                    ) : null}
+                    <div className="flex flex-wrap justify-center gap-2">
+                      {mapHref ? <a href={mapHref} target="_blank" rel="noreferrer" className="rounded-full bg-white px-4 py-2 text-xs font-black text-zinc-950 shadow">Google Maps</a> : null}
+                      {appleMapsHref ? <a href={appleMapsHref} target="_blank" rel="noreferrer" className="rounded-full bg-zinc-950 px-4 py-2 text-xs font-black text-white shadow">Apple Maps</a> : null}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -758,12 +731,12 @@ export default function PublicEventPage({
               </div>
             </section>
 
-            {publicPage.showAgenda && experience?.sessions?.length ? (
+            {publicPage.showAgenda ? (
               <section className="border-t border-zinc-200 pt-7">
                 <h2 className="mb-4 text-2xl font-black tracking-tight">
-                  Agenda
+                  Lineup &amp; schedule
                 </h2>
-                <div className="space-y-3">
+                {experience?.sessions?.length ? <div className="space-y-3">
                   {experience.sessions.slice(0, 6).map((session) => (
                     <div
                       key={session.id}
@@ -786,6 +759,23 @@ export default function PublicEventPage({
                         </p>
                       ) : null}
                     </div>
+                  ))}
+                </div> : <div className="rounded-2xl border border-dashed border-zinc-300 bg-zinc-50 p-5 text-sm text-zinc-600">The artist lineup and event schedule will be announced by the organiser.</div>}
+              </section>
+            ) : null}
+
+            {organiserEvents?.length ? (
+              <section className="border-t border-zinc-200 pt-7">
+                <div className="mb-4 flex items-center justify-between gap-4">
+                  <div><p className="text-xs font-black uppercase tracking-[.18em] text-cyan-600">More to explore</p><h2 className="mt-1 text-2xl font-black tracking-tight">More from this organiser</h2></div>
+                  <Link href="/" className="text-sm font-black text-cyan-700 hover:underline">View all events</Link>
+                </div>
+                <div className="grid gap-4 sm:grid-cols-3">
+                  {organiserEvents.map((related) => (
+                    <Link key={related.id} href={`/e/${companySlug}/${related.slug}`} className="group overflow-hidden rounded-2xl border border-zinc-200 bg-white transition hover:-translate-y-0.5 hover:border-cyan-300 hover:shadow-lg">
+                      <div className="aspect-[4/3] bg-zinc-100">{related.coverImageUrl ? <img src={related.coverImageUrl} alt="" className="h-full w-full object-cover transition group-hover:scale-105" /> : <div className="grid h-full place-items-center bg-slate-900 text-white"><Ticket className="h-6 w-6" /></div>}</div>
+                      <div className="p-4"><p className="text-xs font-bold text-cyan-700">{format(new Date(related.startsAt), "MMM d, yyyy")}</p><h3 className="mt-1 line-clamp-2 font-black text-zinc-950">{related.title}</h3></div>
+                    </Link>
                   ))}
                 </div>
               </section>
@@ -810,7 +800,7 @@ export default function PublicEventPage({
             </section>
           </article>
 
-          <aside className="space-y-4">
+          <aside className="space-y-4 lg:sticky lg:top-20">
             <section className="rounded-2xl border border-zinc-300 bg-white p-5 shadow-sm">
               <p className="text-xs font-semibold text-zinc-500">Price from:</p>
               <div className="mt-1 flex items-center justify-between gap-4">
