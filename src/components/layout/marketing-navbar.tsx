@@ -65,36 +65,36 @@ export function MarketingNavbar() {
   }, []);
 
   return (
-    <header dir="ltr" className="fixed top-0 z-50 w-full border-b border-slate-200/90 bg-white/95 text-slate-950 shadow-sm backdrop-blur-xl">
+    <header dir="ltr" className="fixed top-0 z-50 w-full border-b border-slate-200/90 bg-white/95 text-slate-950 shadow-sm backdrop-blur-xl dark:border-slate-700 dark:bg-slate-950/95 dark:text-white">
       <div className="mx-auto flex h-16 max-w-[1600px] items-center justify-between px-4 sm:px-8 lg:px-12">
         <div dir="ltr" className="flex flex-col">
           <Link href="/" aria-label="iTicket home">
             <BrandWordmark
               className="gap-x-4"
               markClassName="h-9 w-9 sm:h-10 sm:w-10"
-              textClassName="text-[1.5rem] text-slate-950 sm:text-[1.8rem]"
+              textClassName="text-[1.5rem] text-slate-950 dark:text-white sm:text-[1.8rem]"
             />
           </Link>
           <a
             href="https://onestoneads.com/"
             target="_blank"
             rel="noopener noreferrer"
-            className="mt-1 w-fit pl-1 text-[9px] font-black uppercase tracking-[0.24em] text-slate-500 transition hover:text-cyan-700 sm:text-[10px]"
+            className="mt-1 w-fit pl-1 text-[9px] font-black uppercase tracking-[0.24em] text-slate-500 transition hover:text-cyan-700 dark:text-slate-400 dark:hover:text-cyan-300 sm:text-[10px]"
           >
             A OneStone Platform
           </a>
         </div>
 
-        <form action="/" method="get" className="mx-5 hidden w-full max-w-md items-center rounded-full border border-slate-200 bg-slate-50 px-4 transition focus-within:border-cyan-500 focus-within:bg-white sm:flex">
+        <form action="/" method="get" className="mx-5 hidden w-full max-w-md items-center rounded-full border border-slate-200 bg-slate-50 px-4 transition focus-within:border-cyan-500 focus-within:bg-white dark:border-slate-700 dark:bg-slate-900 dark:focus-within:bg-slate-900 sm:flex">
           <input type="hidden" name="locale" value={lang} />
-          <Search className="h-4 w-4 shrink-0 text-slate-500" />
+          <Search className="h-4 w-4 shrink-0 text-slate-500 dark:text-slate-400" />
           <input
             name="q"
             type="search"
             placeholder={lang === "ar" ? "ابحث عن فعاليات..." : "Search events..."}
-            className="h-10 w-full bg-transparent px-3 text-sm text-slate-900 outline-none placeholder:text-slate-400"
+            className="h-10 w-full bg-transparent px-3 text-sm text-slate-900 outline-none placeholder:text-slate-400 dark:text-white dark:placeholder:text-slate-500"
           />
-          <button type="submit" aria-label="Search events" className="rounded-full p-1 text-slate-500 transition hover:text-cyan-700">
+          <button type="submit" aria-label="Search events" className="rounded-full p-1 text-slate-500 transition hover:text-cyan-700 dark:text-slate-400 dark:hover:text-cyan-300">
             <Search className="h-4 w-4" />
           </button>
         </form>
@@ -105,7 +105,7 @@ export function MarketingNavbar() {
             onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
             aria-label={resolvedTheme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
             title={resolvedTheme === "dark" ? "Light mode" : "Dark mode"}
-            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 transition hover:border-cyan-300 hover:bg-cyan-50 hover:text-cyan-700"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 transition hover:border-cyan-300 hover:bg-cyan-50 hover:text-cyan-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800 dark:hover:text-cyan-300"
           >
             {mounted && resolvedTheme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
           </button>
@@ -114,7 +114,7 @@ export function MarketingNavbar() {
               href="/account"
               aria-label="Open my profile and tickets"
               title="My profile and tickets"
-              className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border border-cyan-300 bg-cyan-50 text-cyan-800 transition hover:scale-105 hover:border-cyan-500"
+              className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border border-cyan-300 bg-cyan-50 text-cyan-800 transition hover:scale-105 hover:border-cyan-500 dark:bg-cyan-400/10 dark:text-cyan-200"
             >
               {account.avatarUrl ? (
                 <img src={account.avatarUrl} alt={account.name} className="h-full w-full object-cover" />
@@ -137,7 +137,7 @@ export function MarketingNavbar() {
               event.preventDefault();
               window.location.assign(languageHref);
             }}
-            className="inline-flex h-10 items-center rounded-full border border-slate-200 px-4 text-sm font-bold text-slate-700 transition hover:border-cyan-300 hover:bg-cyan-50"
+            className="inline-flex h-10 items-center rounded-full border border-slate-200 px-4 text-sm font-bold text-slate-700 transition hover:border-cyan-300 hover:bg-cyan-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
           >
             {lang === "ar" ? "English" : "العربية"}
           </Link>

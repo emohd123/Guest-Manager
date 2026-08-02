@@ -193,8 +193,8 @@ export function MarketplaceClient({
   }
 
   return (
-    <div dir={dir} className="home-page-surface relative min-h-screen overflow-hidden bg-white text-slate-900">
-      <section className="relative z-10 overflow-hidden bg-white px-0 pb-0 pt-20">
+    <div dir={dir} className="home-page-surface relative min-h-screen overflow-hidden bg-white text-slate-900 dark:bg-slate-950 dark:text-white">
+      <section className="relative z-10 overflow-hidden bg-white px-0 pb-0 pt-20 dark:bg-slate-950">
         <div className="relative z-10 mx-auto flex max-w-none flex-col justify-end">
           <div className="hidden mb-6 flex-col justify-between gap-4 md:flex-row md:items-center">
             <h1 className="text-3xl font-black tracking-[-0.04em] sm:text-4xl">
@@ -367,18 +367,18 @@ export function MarketplaceClient({
               </button>
             ))}
           </nav>
-          <nav aria-label="Filter events by date" className="flex min-h-16 items-center justify-center gap-3 overflow-x-auto border-y border-slate-200 bg-white px-5 text-sm font-black text-slate-700 shadow-sm">
+          <nav aria-label="Filter events by date" className="flex min-h-16 items-center justify-center gap-3 overflow-x-auto border-y border-slate-200 bg-white px-5 text-sm font-black text-slate-700 shadow-sm dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100">
             <button
               type="button"
               onClick={() => setDateFilter("today")}
-              className={cn("shrink-0 rounded-full px-4 py-2 transition", dateFilter === "today" ? "bg-cyan-500 text-white shadow-sm" : "border border-slate-200 bg-white text-slate-700 hover:border-cyan-300 hover:bg-cyan-50")}
+              className={cn("shrink-0 rounded-full px-4 py-2 transition", dateFilter === "today" ? "bg-cyan-500 text-white shadow-sm" : "border border-slate-200 bg-white text-slate-700 hover:border-cyan-300 hover:bg-cyan-50 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:hover:bg-slate-800")}
             >
               {locale === "ar" ? "اليوم" : "Today"}
             </button>
             <button
               type="button"
               onClick={() => setDateFilter("tomorrow")}
-              className={cn("shrink-0 rounded-full px-4 py-2 transition", dateFilter === "tomorrow" ? "bg-cyan-500 text-white shadow-sm" : "border border-slate-200 bg-white text-slate-700 hover:border-cyan-300 hover:bg-cyan-50")}
+              className={cn("shrink-0 rounded-full px-4 py-2 transition", dateFilter === "tomorrow" ? "bg-cyan-500 text-white shadow-sm" : "border border-slate-200 bg-white text-slate-700 hover:border-cyan-300 hover:bg-cyan-50 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:hover:bg-slate-800")}
             >
               {locale === "ar" ? "غدًا" : "Tomorrow"}
             </button>
@@ -386,7 +386,7 @@ export function MarketplaceClient({
               <button
                 type="button"
                 onClick={openDatePicker}
-                className={cn("flex shrink-0 items-center gap-2 rounded-full px-4 py-2 transition", /^\d{4}-\d{2}-\d{2}$/.test(dateFilter) ? "bg-cyan-500 text-white shadow-sm" : "border border-slate-200 bg-white text-slate-700 hover:border-cyan-300 hover:bg-cyan-50")}
+                className={cn("flex shrink-0 items-center gap-2 rounded-full px-4 py-2 transition", /^\d{4}-\d{2}-\d{2}$/.test(dateFilter) ? "bg-cyan-500 text-white shadow-sm" : "border border-slate-200 bg-white text-slate-700 hover:border-cyan-300 hover:bg-cyan-50 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:hover:bg-slate-800")}
               >
                 <CalendarDays className="h-4 w-4" />
                 <span>{locale === "ar" ? "اختر تاريخًا" : "Choose a date"}</span>
@@ -406,13 +406,13 @@ export function MarketplaceClient({
 
       {/* Content sits directly on the light page. (A dark #050712 scrim used to
           live here for the old dark theme — it covered the whole content area.) */}
-      <main className="relative z-10 mx-auto max-w-6xl bg-white px-4 py-14 sm:px-8 lg:px-12">
+      <main className="relative z-10 mx-auto max-w-6xl bg-white px-4 py-14 dark:bg-slate-950 sm:px-8 lg:px-12">
         <section className="mb-12">
           <div className="flex flex-wrap gap-3">
             <button
               type="button"
               onClick={() => setCategory("")}
-              className={cn(chipBase, !category ? "border-cyan-500 bg-cyan-500 text-white shadow-sm" : "border-slate-200 bg-white text-slate-700 hover:border-cyan-300 hover:bg-cyan-50")}
+              className={cn(chipBase, !category ? "border-cyan-500 bg-cyan-500 text-white shadow-sm" : "border-slate-200 bg-white text-slate-700 hover:border-cyan-300 hover:bg-cyan-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800")}
             >
               {!category ? <BadgeCheck className="chip-check h-4 w-4" /> : null}
               {copy.allCategories}
@@ -422,7 +422,7 @@ export function MarketplaceClient({
                 key={item.slug}
                 type="button"
                 onClick={() => setCategory(item.slug)}
-                className={cn(chipBase, category === item.slug ? "border-cyan-500 bg-cyan-500 text-white shadow-sm" : "border-slate-200 bg-white text-slate-700 hover:border-cyan-300 hover:bg-cyan-50")}
+                className={cn(chipBase, category === item.slug ? "border-cyan-500 bg-cyan-500 text-white shadow-sm" : "border-slate-200 bg-white text-slate-700 hover:border-cyan-300 hover:bg-cyan-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800")}
               >
                 {category === item.slug ? <BadgeCheck className="chip-check h-4 w-4" /> : null}
                 {locale === "ar" ? item.labelAr : item.label}

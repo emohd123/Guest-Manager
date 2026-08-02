@@ -50,15 +50,15 @@ export function PublicShortcutDock() {
 
   return (
     <div className="pointer-events-none fixed inset-x-0 bottom-3 z-50 flex justify-center px-2">
-      <nav dir="ltr" aria-label="Application shortcuts" className="pointer-events-auto flex items-stretch rounded-2xl border border-slate-200 bg-white/95 p-1 shadow-[0_12px_40px_rgba(15,23,42,0.2)] backdrop-blur">
+      <nav dir="ltr" aria-label="Application shortcuts" className="pointer-events-auto flex items-stretch rounded-2xl border border-slate-200 bg-white/95 p-1 shadow-[0_12px_40px_rgba(15,23,42,0.2)] backdrop-blur dark:border-slate-700 dark:bg-slate-900/95">
         {shortcuts.map((shortcut) => (
           <button
             key={shortcut.label}
             type="button"
             onClick={shortcut.onClick}
-            className="flex min-w-[58px] flex-col items-center gap-1 rounded-xl px-2 py-2 text-[10px] font-black leading-tight text-slate-700 transition hover:bg-slate-100 hover:text-blue-600 sm:min-w-[74px]"
+            className="flex min-w-[58px] flex-col items-center gap-1 rounded-xl px-2 py-2 text-[10px] font-black leading-tight text-slate-700 transition hover:bg-slate-100 hover:text-blue-600 dark:text-slate-200 dark:hover:bg-slate-800 dark:hover:text-cyan-300 sm:min-w-[74px]"
           >
-            <span className={shortcut.label === "Home" ? "text-blue-600" : "text-slate-800"}>{shortcut.icon}</span>
+            <span className={shortcut.label === "Home" ? "text-blue-600 dark:text-cyan-300" : "text-slate-800 dark:text-slate-200"}>{shortcut.icon}</span>
             <span className="text-center">{shortcut.label}</span>
           </button>
         ))}
