@@ -491,7 +491,7 @@ export default function PublicEventPage({
     >
       {settings.customCss && <style>{settings.customCss}</style>}
 
-      <main className="mx-auto max-w-7xl px-4 pb-28 pt-22 sm:px-6 lg:px-8">
+      <main className="mx-auto max-w-7xl px-4 pb-28 pt-24 sm:px-6 lg:px-8">
         <div className="mb-5 flex flex-col gap-4 text-sm md:flex-row md:items-center md:justify-between">
           <div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-zinc-500">
             <Link href="/" className="hover:text-zinc-950">
@@ -527,8 +527,8 @@ export default function PublicEventPage({
           </div>
         </div>
 
-        <section className="relative overflow-hidden rounded-[28px] bg-zinc-200 shadow-sm">
-          <div className="aspect-[16/6.2] min-h-[260px] w-full">
+        <section className="relative overflow-hidden rounded-[32px] bg-zinc-200 shadow-[0_24px_70px_rgba(15,23,42,0.16)]">
+          <div className="aspect-[16/7] min-h-[300px] w-full">
             {event.coverImageUrl ? (
               <img
                 src={event.coverImageUrl}
@@ -560,9 +560,15 @@ export default function PublicEventPage({
           </button>
         </section>
 
+        <nav aria-label="Event sections" className="relative z-10 -mt-6 mx-auto flex w-fit max-w-full gap-1 overflow-x-auto rounded-2xl border border-slate-200 bg-white/95 p-1.5 shadow-xl backdrop-blur">
+          {[['details', 'Event details'], ['tickets', 'Tickets'], ['lineup', 'Lineup'], ['location', 'Location'], ['terms', 'Terms']].map(([id, label]) => (
+            <a key={id} href={`#${id}`} className="shrink-0 rounded-xl px-4 py-2.5 text-xs font-black text-slate-600 transition hover:bg-cyan-50 hover:text-cyan-800">{label}</a>
+          ))}
+        </nav>
+
         <div className="mt-8 grid gap-9 lg:grid-cols-[minmax(0,1fr)_380px] lg:items-start">
           <article className="space-y-9">
-            <section className="space-y-4">
+            <section id="details" className="scroll-mt-24 space-y-5 rounded-[28px] border border-slate-200 bg-white p-6 shadow-[0_12px_40px_rgba(15,23,42,0.08)] sm:p-8">
               <div className="flex flex-wrap items-center gap-3">
                 <span className="rounded-md bg-[#21c55d] px-2 py-1 text-xs font-black text-white">
                   4.8
@@ -669,7 +675,7 @@ export default function PublicEventPage({
               </section>
             ) : null}
 
-            <section className="border-t border-zinc-200 pt-7">
+            <section id="location" className="scroll-mt-24 border-t border-zinc-200 pt-7">
               <h2 className="mb-4 text-2xl font-black tracking-tight">
                 {t.location}
               </h2>
@@ -732,7 +738,7 @@ export default function PublicEventPage({
             </section>
 
             {publicPage.showAgenda ? (
-              <section className="border-t border-zinc-200 pt-7">
+              <section id="lineup" className="scroll-mt-24 border-t border-zinc-200 pt-7">
                 <h2 className="mb-4 text-2xl font-black tracking-tight">
                   Lineup &amp; schedule
                 </h2>
@@ -765,7 +771,7 @@ export default function PublicEventPage({
             ) : null}
 
             {organiserEvents?.length ? (
-              <section className="border-t border-zinc-200 pt-7">
+              <section id="organiser" className="scroll-mt-24 border-t border-zinc-200 pt-7">
                 <div className="mb-4 flex items-center justify-between gap-4">
                   <div><p className="text-xs font-black uppercase tracking-[.18em] text-cyan-600">More to explore</p><h2 className="mt-1 text-2xl font-black tracking-tight">More from this organiser</h2></div>
                   <Link href="/" className="text-sm font-black text-cyan-700 hover:underline">View all events</Link>
@@ -1022,7 +1028,7 @@ export default function PublicEventPage({
                 />
               </div>
 
-              <details className="group mb-5 overflow-hidden rounded-xl border border-cyan-300/30 bg-[#0b151d] text-white">
+              <details id="terms" className="group mb-5 scroll-mt-24 overflow-hidden rounded-xl border border-cyan-300/30 bg-[#0b151d] text-white">
                 <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-4 font-black marker:content-none">
                   <span className="flex items-center gap-2">
                     <ShieldCheck className="h-5 w-5 text-cyan-300" />
