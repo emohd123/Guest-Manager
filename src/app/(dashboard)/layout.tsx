@@ -31,7 +31,7 @@ export default function DashboardLayout({
   return (
     <div
       suppressHydrationWarning
-      className="dashboard-theme-scope dark flex h-screen relative overflow-hidden text-foreground bg-modychat transition-colors duration-300"
+      className="dashboard-theme-scope flex h-screen relative overflow-hidden text-foreground bg-background transition-colors duration-300"
     >
 
       {mounted ? <CommandPalette /> : null}

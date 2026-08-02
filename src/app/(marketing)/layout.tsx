@@ -10,11 +10,11 @@ export default function MarketingLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="public-theme-scope dark flex min-h-screen flex-col bg-[#080808] text-white selection:bg-cyan-300 selection:text-slate-950">
+    <div className="public-theme-scope flex min-h-screen flex-col bg-background text-foreground selection:bg-cyan-200 selection:text-slate-950">
       <Suspense fallback={null}>
         <PublicLocaleSync />
       </Suspense>
-      <Suspense fallback={<div className="h-16 border-b border-white/10 bg-[#171717]" />}>
+      <Suspense fallback={<div className="h-16 border-b border-border bg-white" />}>
         <MarketingNavbar />
       </Suspense>
       <main className="flex-1">{children}</main>

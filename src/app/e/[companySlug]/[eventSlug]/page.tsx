@@ -479,7 +479,7 @@ export default function PublicEventPage({
 
   return (
     <div
-      className="public-event-scope min-h-screen bg-[#080808] text-white"
+      className="public-event-scope min-h-screen bg-white text-zinc-950"
       dir={dir}
     >
       {settings.customCss && <style>{settings.customCss}</style>}
