@@ -397,6 +397,29 @@ export const eventsRouter = router({
       return (data ?? []).map((row) => mapEvent(row as EventRow, company.slug));
     }),
 
+  relatedByCategory: publicProcedure
+    .input(z.object({ categoryId: z.string().uuid(), excludeEventId: z.string().uuid(), limit: z.number().min(1).max(8).default(3) }))
+    .query(async ({ input }) => {
+      const supabase = createSupabaseAdminClient();
+      const { data, error } = await supabase
+        .from("events")
+        .select("*")
+        .eq("category_id", input.categoryId)
+        .eq("status", "published")
+        .neq("id", input.excludeEventId)
+        .is("deleted_at", null)
+        .order("starts_at", { ascending: true })
+        .limit(input.limit);
+      if (error) throw new Error(error.message);
+      const companyIds = [...new Set((data ?? []).map((row) => row.company_id))];
+      const { data: companies, error: companiesError } = companyIds.length
+        ? await supabase.from("companies").select("id,slug").in("id", companyIds)
+        : { data: [], error: null };
+      if (companiesError) throw new Error(companiesError.message);
+      const slugs = new Map((companies ?? []).map((company) => [company.id, company.slug]));
+      return (data ?? []).map((row) => mapEvent(row as EventRow, slugs.get(row.company_id) ?? null));
+    }),
+
   stats: protectedProcedure.query(async ({ ctx }) => {
     const [{ count: eventsCount, error: eventsError }, { count: guestsCount, error: guestsError }, { count: checkInsCount, error: checkInsError }] = await Promise.all([
       ctx.supabase.from("events").select("id", { count: "exact", head: true }).eq("company_id", ctx.companyId).is("deleted_at", null),

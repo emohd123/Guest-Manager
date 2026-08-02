@@ -210,6 +210,10 @@ export default function PublicEventPage({
     { companySlug, excludeEventId: event?.id ?? "00000000-0000-0000-0000-000000000000", limit: 3 },
     { enabled: !!event?.id },
   );
+  const { data: categoryEvents } = trpc.events.relatedByCategory.useQuery(
+    { categoryId: event?.categoryId ?? "00000000-0000-0000-0000-000000000000", excludeEventId: event?.id ?? "00000000-0000-0000-0000-000000000000", limit: 3 },
+    { enabled: !!event?.id && !!event?.categoryId },
+  );
   useEffect(() => {
     if (!event?.id) return;
     let cancelled = false;
@@ -765,6 +769,23 @@ export default function PublicEventPage({
                 <div className="grid gap-4 sm:grid-cols-3">
                   {organiserEvents.map((related) => (
                     <Link key={related.id} href={`/e/${companySlug}/${related.slug}`} className="group overflow-hidden rounded-2xl border border-zinc-200 bg-white transition hover:-translate-y-0.5 hover:border-cyan-300 hover:shadow-lg">
+                      <div className="aspect-[4/3] bg-zinc-100">{related.coverImageUrl ? <img src={related.coverImageUrl} alt="" className="h-full w-full object-cover transition group-hover:scale-105" /> : <div className="grid h-full place-items-center bg-slate-900 text-white"><Ticket className="h-6 w-6" /></div>}</div>
+                      <div className="p-4"><p className="text-xs font-bold text-cyan-700">{format(new Date(related.startsAt), "MMM d, yyyy")}</p><h3 className="mt-1 line-clamp-2 font-black text-zinc-950">{related.title}</h3></div>
+                    </Link>
+                  ))}
+                </div>
+              </section>
+            ) : null}
+
+            {categoryEvents?.length ? (
+              <section className="border-t border-zinc-200 pt-7">
+                <div className="mb-4">
+                  <p className="text-xs font-black uppercase tracking-[.18em] text-cyan-600">Discover more</p>
+                  <h2 className="mt-1 text-2xl font-black tracking-tight">You might also like</h2>
+                </div>
+                <div className="grid gap-4 sm:grid-cols-3">
+                  {categoryEvents.map((related) => (
+                    <Link key={related.id} href={`/e/${related.companySlug ?? companySlug}/${related.slug}`} className="group overflow-hidden rounded-2xl border border-zinc-200 bg-white transition hover:-translate-y-0.5 hover:border-cyan-300 hover:shadow-lg">
                       <div className="aspect-[4/3] bg-zinc-100">{related.coverImageUrl ? <img src={related.coverImageUrl} alt="" className="h-full w-full object-cover transition group-hover:scale-105" /> : <div className="grid h-full place-items-center bg-slate-900 text-white"><Ticket className="h-6 w-6" /></div>}</div>
                       <div className="p-4"><p className="text-xs font-bold text-cyan-700">{format(new Date(related.startsAt), "MMM d, yyyy")}</p><h3 className="mt-1 line-clamp-2 font-black text-zinc-950">{related.title}</h3></div>
                     </Link>
