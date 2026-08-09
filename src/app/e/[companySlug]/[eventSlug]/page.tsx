@@ -691,7 +691,6 @@ export default function PublicEventPage({
                     </p>
                     </div>
                     </div>
-                    {mapHref ? <div className="mt-8 border-t border-zinc-100 pt-5"><p className="font-black">How do you want to get there?</p><div className="mt-3 space-y-2 text-sm font-bold text-blue-700"><span className="block">🚗 Driving</span><span className="block">🚌 Public transport</span><span className="block">🚲 Biking</span><span className="block">🚶 Walking</span></div></div> : null}
                   </div>
                 <div className="relative h-56 overflow-hidden rounded-xl bg-[linear-gradient(90deg,#e5e7eb_1px,transparent_1px),linear-gradient(#e5e7eb_1px,transparent_1px)] bg-[size:32px_32px]">
                   <div className="absolute inset-0 bg-gradient-to-br from-cyan-100/80 via-transparent to-violet-100/90" />
