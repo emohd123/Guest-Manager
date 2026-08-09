@@ -201,7 +201,7 @@ export function MarketplaceClient({
           <div className="hidden mb-6 flex-col justify-between gap-4 md:flex-row md:items-center">
             <h1 className="text-3xl font-black tracking-[-0.04em] sm:text-4xl">
               {locale === "ar" ? "أشياء يمكن القيام بها في " : "Things to do in "}
-              <span className="text-blue-600">Bahrain</span>
+              <span className="text-blue-600">Cairo</span>
             </h1>
             <div className="flex flex-wrap gap-2">
               {dateOptions.map((option) => (
@@ -1105,8 +1105,8 @@ function CompactEventCard({
 }
 
 const enCopy = {
-  eyebrow: "iTicket Bahrain",
-  liveInBahrain: "Live in Bahrain",
+  eyebrow: "iTicket Cairo",
+  liveInBahrain: "Live in Cairo",
   titleLead: "Every event,",
   titleAccent: "iTicket",
   title: "Every event, iTicket",
