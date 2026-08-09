@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Mail, MapPin, Phone, MessageSquare, Send, Clock, Sparkles, ArrowRight } from "lucide-react";
+import { Mail, MapPin, Phone, MessageSquare, Send, Clock } from "lucide-react";
 import { toast } from "sonner";
 
 export default function ContactPage() {
@@ -153,23 +153,6 @@ export default function ContactPage() {
               </div>
             </div>
 
-            <div className="rounded-2xl border border-purple-500/20 bg-purple-500/5 p-6 text-center">
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-purple-500/10 border border-purple-500/20 mx-auto mb-4">
-                <Sparkles className="h-6 w-6 text-purple-400" />
-              </div>
-              <h3 className="font-bold text-slate-900">Enterprise Sales</h3>
-              <p className="mt-2 text-sm text-slate-600 leading-relaxed">
-                Managing 10,000+ guests per event? Let&apos;s build a custom
-                solution for your organization.
-              </p>
-              <Button
-                asChild
-                variant="outline"
-                className="mt-4 w-full border-purple-500/30 bg-purple-500/10 text-purple-300 hover:bg-purple-500/20 hover:text-slate-900 rounded-xl font-bold"
-              >
-                <Link href="/pricing">View Enterprise Plan <ArrowRight className="h-4 w-4 ml-1" /></Link>
-              </Button>
-            </div>
           </div>
         </div>
       </section>
