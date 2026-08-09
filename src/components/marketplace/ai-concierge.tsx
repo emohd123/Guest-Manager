@@ -110,13 +110,13 @@ export function AiConcierge({ locale }: { locale: LocaleCode }) {
     <>
       {/* FAB */}
       {!open ? (
-        <StarBorder className="fixed bottom-6 right-6 z-40 shadow-[0_10px_40px_rgba(34,211,238,0.35)]">
+        <StarBorder className="fixed bottom-24 right-4 z-[60] shadow-[0_10px_40px_rgba(34,211,238,0.35)] sm:bottom-6 sm:right-6">
           <button
             type="button"
             onClick={() => setOpen(true)}
-            className="inline-flex items-center gap-2 rounded-full px-5 py-3.5 text-sm font-black text-white transition hover:scale-[1.03]"
+            className="inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-xs font-black text-white transition hover:scale-[1.03] sm:gap-2 sm:px-5 sm:py-3.5 sm:text-sm"
           >
-            <Sparkles className="h-4 w-4 text-cyan-300" />
+            <Sparkles className="h-3.5 w-3.5 text-cyan-300 sm:h-4 sm:w-4" />
             {ar ? "اسأل الذكاء" : "Ask AI"}
           </button>
         </StarBorder>
@@ -124,7 +124,7 @@ export function AiConcierge({ locale }: { locale: LocaleCode }) {
 
       {/* Panel */}
       {open ? (
-        <div className="fixed bottom-4 right-4 z-50 flex h-[560px] w-[min(94vw,400px)] flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white text-slate-900 shadow-[0_30px_90px_rgba(15,23,42,0.20)]">
+        <div className="fixed bottom-20 right-3 z-[60] flex h-[min(560px,calc(100dvh-7rem))] w-[min(94vw,400px)] flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white text-slate-900 shadow-[0_30px_90px_rgba(15,23,42,0.20)] sm:bottom-4 sm:right-4 sm:h-[560px]">
           {/* Header */}
           <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3">
             <div className="flex items-center gap-2">
