@@ -164,6 +164,7 @@ function getPublicPageSettings(
     subheadline: localizedValue(publicPage.subheadline, locale),
     venueName: localizedValue(publicPage.venueName, locale),
     locationText: localizedValue(publicPage.locationText, locale),
+    mapUrl: typeof (publicPage as any).mapUrl === "string" ? (publicPage as any).mapUrl : "",
     ctaLabel: localizedValue(publicPage.ctaLabel, locale),
     highlights: publicPage.highlights ?? [],
     showAgenda: publicPage.showAgenda !== false,
