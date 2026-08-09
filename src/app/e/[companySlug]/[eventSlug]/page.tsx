@@ -903,7 +903,7 @@ export default function PublicEventPage({
               </div>
             </section>
 
-            {false && <section
+            <section
               id="tickets"
               className="scroll-mt-6 rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm"
             >
@@ -1090,7 +1090,7 @@ export default function PublicEventPage({
               <p className="mt-5 border-t border-zinc-100 pt-4 text-xs leading-5 text-zinc-500">
                 {t.terms}
               </p>
-            </section>}
+            </section>
 
             {false && publicPage.showAppDownload ? (
               <section className="rounded-2xl border border-zinc-200 bg-white p-5">
