@@ -391,6 +391,46 @@ html:not(.dark) .dashboard-theme-scope .text-white:not([class*="bg-primary"]):no
   color: #0e7490 !important;
 }
 
+/* Public event detail pages use explicit light utility colours.  Mirror the
+   full canvas, cards, dividers and text when the customer chooses dark mode,
+   rather than leaving a white page below the dark navigation. */
+.dark .public-event-scope {
+  background-color: #080d18 !important;
+  color: #f8fafc !important;
+}
+
+.dark .public-event-scope .bg-white,
+.dark .public-event-scope .bg-zinc-50,
+.dark .public-event-scope .bg-zinc-100,
+.dark .public-event-scope .bg-zinc-200,
+.dark .public-event-scope .bg-slate-50 {
+  background-color: #111827 !important;
+}
+
+.dark .public-event-scope .border-slate-200,
+.dark .public-event-scope .border-zinc-100,
+.dark .public-event-scope .border-zinc-200,
+.dark .public-event-scope .border-zinc-300,
+.dark .public-event-scope .divide-zinc-200 {
+  border-color: #334155 !important;
+}
+
+.dark .public-event-scope .text-zinc-950,
+.dark .public-event-scope .text-zinc-900,
+.dark .public-event-scope .text-zinc-800,
+.dark .public-event-scope .text-slate-900 {
+  color: #f8fafc !important;
+}
+
+.dark .public-event-scope .text-zinc-700,
+.dark .public-event-scope .text-zinc-600,
+.dark .public-event-scope .text-zinc-500,
+.dark .public-event-scope .text-zinc-400,
+.dark .public-event-scope .text-slate-800,
+.dark .public-event-scope .text-slate-600 {
+  color: #cbd5e1 !important;
+}
+
 @keyframes mesh-flow {
   0% {
     background-position: 0% 0%;
