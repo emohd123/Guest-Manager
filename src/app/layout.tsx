@@ -15,11 +15,11 @@ const inter = Inter({
 export const metadata: Metadata = {
   metadataBase: getAppUrlObject(),
   title: {
-    default: "iTicket - Bahrain Events, Tickets & Managed Event Services",
+    default: "iTicket - Cairo Events, Tickets & Managed Event Services",
     template: "%s | iTicket",
   },
   description:
-    "Discover Bahrain events, buy tickets, manage QR passes, and work with iTicket for ticketing, check-in, staffing, and managed event operations.",
+    "Discover Cairo events, buy tickets, manage QR passes, and work with iTicket for ticketing, check-in, staffing, and managed event operations.",
   icons: {
     icon: "/icon.svg",
     shortcut: "/icon.svg",

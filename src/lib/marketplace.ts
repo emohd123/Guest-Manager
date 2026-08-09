@@ -4,7 +4,7 @@ export const marketplaceLocales = {
   en: {
     dir: "ltr",
     label: "English",
-    city: "Bahrain",
+    city: "Cairo",
   },
   ar: {
     dir: "rtl",
@@ -38,13 +38,13 @@ export function normalizeLocale(value: string | null | undefined): LocaleCode {
 
 export function formatMoney(
   amountInHundredths: number | null | undefined,
-  currency = "BHD",
+  currency = "EGP",
   locale: LocaleCode | string = "en"
 ) {
   if (amountInHundredths == null) return locale === "ar" ? "\u0642\u0631\u064a\u0628\u0627" : "Soon";
   if (amountInHundredths <= 0) return locale === "ar" ? "\u0645\u062c\u0627\u0646\u064a" : "Free";
 
-  const normalizedCurrency = currency || "BHD";
+  const normalizedCurrency = currency || "EGP";
   const formatterLocale = locale === "ar" ? "ar-BH" : "en-BH";
   const threeDecimalCurrencies = new Set(["BHD", "JOD", "KWD", "OMR", "TND"]);
   const fractionDigits = threeDecimalCurrencies.has(normalizedCurrency.toUpperCase()) ? 3 : 2;
@@ -61,7 +61,7 @@ export function formatMoney(
   }
 }
 
-export function toStripeUnitAmount(amountInHundredths: number, currency = "BHD") {
+export function toStripeUnitAmount(amountInHundredths: number, currency = "EGP") {
   const normalizedCurrency = currency.toUpperCase();
   const threeDecimalCurrencies = new Set(["BHD", "JOD", "KWD", "OMR", "TND"]);
   const zeroDecimalCurrencies = new Set([
@@ -94,7 +94,7 @@ export function toStripeUnitAmount(amountInHundredths: number, currency = "BHD")
   return Math.round(amountInHundredths);
 }
 
-export function fromStripeUnitAmount(stripeAmount: number, currency = "BHD") {
+export function fromStripeUnitAmount(stripeAmount: number, currency = "EGP") {
   const normalizedCurrency = currency.toUpperCase();
   const threeDecimalCurrencies = new Set(["BHD", "JOD", "KWD", "OMR", "TND"]);
   const zeroDecimalCurrencies = new Set([
