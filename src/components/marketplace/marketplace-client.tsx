@@ -1095,37 +1095,6 @@ function CompactEventCard({
   );
 }
 
-function ThingsToDo({ copy, locale }: { copy: typeof enCopy; locale: LocaleCode }) {
-  const items = locale === "ar" ? arThingsToDo : enThingsToDo;
-
-  return (
-    <section className="mb-16 rounded-[2rem] border border-slate-200 bg-white p-6 text-slate-950 sm:p-8">
-      <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <p className="text-xs font-black uppercase tracking-[0.28em] text-pink-700">{copy.thingsEyebrow}</p>
-          <h2 className="mt-2 text-2xl font-black tracking-tight sm:text-4xl">{copy.thingsTitle}</h2>
-        </div>
-        <Link href="/" className="inline-flex items-center gap-2 text-sm font-black text-blue-600">
-          {copy.explore}
-          <ChevronRight className="h-4 w-4" />
-        </Link>
-      </div>
-      <div className="grid gap-3 md:grid-cols-3">
-        {items.map((item) => (
-          <Link
-            key={item.href}
-            href={item.href}
-            className="rounded-2xl border border-slate-200 bg-slate-50 p-5 transition hover:border-pink-300 hover:bg-white hover:shadow-md"
-          >
-            <p className="text-lg font-black text-slate-950">{item.title}</p>
-            <p className="mt-2 text-sm leading-6 text-slate-700">{item.body}</p>
-          </Link>
-        ))}
-      </div>
-    </section>
-  );
-}
-
 const enCopy = {
   eyebrow: "iTicket Bahrain",
   liveInBahrain: "Live in Bahrain",
@@ -1152,12 +1121,6 @@ const enCopy = {
   managedService: "Managed planning, ticketing, and event operations by the iTicket team.",
   popularEyebrow: "Top events",
   popularTitle: "Most popular events",
-  weekendEyebrow: "This weekend",
-  weekendTitle: "Weekend plans in Bahrain",
-  attractionsEyebrow: "Attractions and experiences",
-  attractionsTitle: "Experiences to try",
-  thingsEyebrow: "Things to do",
-  thingsTitle: "Things to do in Bahrain",
 };
 
 const arCopy = {
@@ -1251,38 +1214,3 @@ const arPromptCards = [
   },
 ];
 
-const enThingsToDo = [
-  {
-    title: "Concerts and shows",
-    body: "Live music, theatre, comedy, and cultural nights across Bahrain.",
-    href: "/events?category=concerts",
-  },
-  {
-    title: "Attractions and experiences",
-    body: "Family days, outdoor activities, dining experiences, and places to visit.",
-    href: "/events?category=attractions",
-  },
-  {
-    title: "Corporate and private events",
-    body: "Ticketing, registrations, staffing, guest lists, check-in, and reports.",
-    href: "/contact?service=corporate",
-  },
-];
-
-const arThingsToDo = [
-  {
-    title: "\u062d\u0641\u0644\u0627\u062a \u0648\u0639\u0631\u0648\u0636",
-    body: "\u0645\u0648\u0633\u064a\u0642\u0649 \u062d\u064a\u0629 \u0648\u0645\u0633\u0631\u062d \u0648\u0643\u0648\u0645\u064a\u062f\u064a\u0627 \u0648\u0644\u064a\u0627\u0644\u064a \u062b\u0642\u0627\u0641\u064a\u0629.",
-    href: "/events?category=concerts&locale=ar",
-  },
-  {
-    title: "\u0648\u062c\u0647\u0627\u062a \u0648\u062a\u062c\u0627\u0631\u0628",
-    body: "\u0623\u0646\u0634\u0637\u0629 \u0639\u0627\u0626\u0644\u064a\u0629 \u0648\u062e\u0627\u0631\u062c\u064a\u0629 \u0648\u062a\u062c\u0627\u0631\u0628 \u0645\u0637\u0627\u0639\u0645 \u0648\u0623\u0645\u0627\u0643\u0646 \u0644\u0644\u0632\u064a\u0627\u0631\u0629.",
-    href: "/events?category=attractions&locale=ar",
-  },
-  {
-    title: "\u0641\u0639\u0627\u0644\u064a\u0627\u062a \u0627\u0644\u0634\u0631\u0643\u0627\u062a",
-    body: "\u062a\u0630\u0627\u0643\u0631 \u0648\u062a\u0633\u062c\u064a\u0644 \u0648\u0637\u0627\u0642\u0645 \u0648\u0642\u0648\u0627\u0626\u0645 \u0636\u064a\u0648\u0641 \u0648\u062a\u0642\u0627\u0631\u064a\u0631.",
-    href: "/contact?service=corporate",
-  },
-];
