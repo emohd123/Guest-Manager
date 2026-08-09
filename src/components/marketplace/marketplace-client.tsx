@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { format } from "date-fns";
-import { BadgeCheck, CalendarDays, ChevronLeft, ChevronRight, Headphones, Heart, Home, MapPin, Search, ShieldCheck, Sparkles, Ticket, User, UsersRound, X, Zap } from "lucide-react";
+import { BadgeCheck, CalendarDays, ChevronRight, Headphones, Heart, Home, MapPin, Search, ShieldCheck, Sparkles, Ticket, User, UsersRound, X, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Dock from "@/components/ui/dock";
 import { AiConcierge } from "@/components/marketplace/ai-concierge";
@@ -339,26 +339,6 @@ export function MarketplaceClient({
                 }}
               >
                 <HeroFeature event={featured} locale={locale} onQuickView={setQuickViewEvent} />
-                {events.length > 1 ? (
-                  <div className="flex items-center justify-end gap-2 border-b border-slate-200 bg-white px-3 py-2 dark:border-slate-800 dark:bg-slate-950 sm:absolute sm:inset-x-0 sm:top-1/2 sm:z-10 sm:-translate-y-1/2 sm:justify-between sm:border-0 sm:bg-transparent sm:p-0">
-                    <button
-                      type="button"
-                      aria-label="Previous featured event"
-                      onClick={() => setHeroIndex((index) => (index - 1 + events.length) % events.length)}
-                      className="flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-900 shadow-sm transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-white sm:ml-4 sm:h-11 sm:w-11 sm:border-0 sm:bg-white/90 sm:text-slate-900 sm:shadow-lg sm:hover:bg-white"
-                    >
-                      <ChevronLeft className="h-4 w-4 sm:h-5 sm:w-5" />
-                    </button>
-                    <button
-                      type="button"
-                      aria-label="Next featured event"
-                      onClick={() => setHeroIndex((index) => (index + 1) % events.length)}
-                      className="flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-900 shadow-sm transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-white sm:mr-4 sm:h-11 sm:w-11 sm:border-0 sm:bg-white/90 sm:text-slate-900 sm:shadow-lg sm:hover:bg-white"
-                    >
-                      <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5" />
-                    </button>
-                  </div>
-                ) : null}
               </div>
             ) : null}
           </div>
