@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { format } from "date-fns";
+import QRCode from "qrcode";
 import { Bell, CalendarDays, Heart, LayoutDashboard, LogOut, MessageSquare, QrCode, ReceiptText, Ticket, UserRound } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
@@ -279,29 +280,57 @@ function TicketRow({ ticket }: { ticket: Record<string, any> }) {
   const event = ticket.events;
   const ticketType = ticket.ticket_types;
   const url = event?.companies?.slug && event?.slug ? `/e/${event.companies.slug}/${event.slug}` : "/events";
+  const publicPage = event?.settings?.publicPage ?? {};
+  const venueName = publicPage.venueName || publicPage.locationText || "Venue TBA";
+  const location = publicPage.locationText || "Cairo, Egypt";
+  const checkedIn = ticket.checked_in || ticket.status === "checked_in";
   return (
-    <div className="rounded-[1.5rem] border border-slate-200 bg-white p-5">
-      <div className="flex items-start justify-between gap-4">
+    <div className="overflow-hidden rounded-[1.5rem] border border-slate-200 bg-white shadow-sm">
+      <div className="border-b border-slate-200 bg-slate-950 px-5 py-4 text-white">
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-xs font-black uppercase tracking-[0.24em] text-cyan-300">{checkedIn ? "Checked in" : "Valid ticket"}</p>
+          <span className="font-mono text-xs text-slate-300">{ticket.barcode}</span>
+        </div>
+        <h3 className="mt-2 text-xl font-black">{event?.title ?? "Event"}</h3>
+        <p className="mt-1 text-sm text-slate-300">{venueName}</p>
+        <p className="mt-1 text-xs text-slate-400">{location}</p>
+      </div>
+      <div className="grid gap-5 p-5 sm:grid-cols-[1fr_auto] sm:items-center">
+        <div>
         <div>
           <p className="text-xs font-black uppercase tracking-[0.24em] text-blue-600">{ticketType?.name ?? "Ticket"}</p>
-          <h3 className="mt-2 text-xl font-black">{event?.title ?? "Event"}</h3>
           {event?.starts_at ? (
             <p className="mt-2 flex items-center gap-2 text-sm text-slate-600">
               <CalendarDays className="h-4 w-4" />
               {format(new Date(event.starts_at), "EEE, MMM d - h:mm a")}
             </p>
           ) : null}
+          <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
+            <div><p className="text-slate-500">Ticket type</p><p className="font-black">{ticketType?.name ?? "General Admission"}</p></div>
+            <div><p className="text-slate-500">Status</p><p className="font-black">{checkedIn ? "Checked in" : ticket.status ?? "Valid"}</p></div>
+            <div><p className="text-slate-500">Price</p><p className="font-black">{formatMoney(ticketType?.price ?? 0, ticketType?.currency ?? "EGP")}</p></div>
+            <div><p className="text-slate-500">Ticket number</p><p className="truncate font-mono text-xs font-black">{ticket.barcode}</p></div>
+          </div>
         </div>
-        <div className="rounded-2xl bg-white p-3 text-black">
-          <QrCode className="h-8 w-8" />
         </div>
+        <TicketQr value={ticket.barcode} />
       </div>
-      <p className="mt-5 rounded-2xl bg-slate-100 p-3 font-mono text-xs text-slate-600">{ticket.barcode}</p>
-      <Button asChild className="mt-4 w-full rounded-full bg-white font-black text-black hover:bg-white/90">
+      <div className="border-t border-slate-200 px-5 py-4">
+      <Button asChild className="w-full rounded-full bg-slate-950 font-black text-white hover:bg-slate-800">
         <Link href={url}>Open event</Link>
       </Button>
+      </div>
     </div>
   );
+}
+
+function TicketQr({ value }: { value: string }) {
+  const [src, setSrc] = useState("");
+  useEffect(() => {
+    if (!value) return;
+    QRCode.toDataURL(value, { width: 180, margin: 1, errorCorrectionLevel: "M" }).then(setSrc).catch(() => setSrc(""));
+  }, [value]);
+  return src ? <img src={src} alt="Ticket QR code" className="h-36 w-36 rounded-xl bg-white p-2" /> : <div className="flex h-36 w-36 items-center justify-center rounded-xl bg-slate-100"><QrCode className="h-12 w-12 text-slate-700" /></div>;
 }
 
 function OrderRow({ order }: { order: Record<string, any> }) {
