@@ -1037,7 +1037,7 @@ export default function PublicEventPage({
                   onChange={(e) => setAttendeeName(e.target.value)}
                   placeholder={t.fullName}
                   autoComplete="name"
-                  className="h-12 rounded-xl bg-zinc-50"
+                  className="h-12 rounded-xl bg-zinc-50 text-zinc-950 placeholder:text-zinc-500 dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:placeholder:text-slate-400"
                 />
                 <Input
                   type="email"
@@ -1045,7 +1045,7 @@ export default function PublicEventPage({
                   onChange={(e) => setAttendeeEmail(e.target.value)}
                   placeholder={t.email}
                   autoComplete="email"
-                  className="h-12 rounded-xl bg-zinc-50"
+                  className="h-12 rounded-xl bg-zinc-50 text-zinc-950 placeholder:text-zinc-500 dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:placeholder:text-slate-400"
                 />
               </div>
 
@@ -1087,7 +1087,7 @@ export default function PublicEventPage({
                 />
               )}
 
-              <p className="mt-5 border-t border-zinc-100 pt-4 text-xs leading-5 text-zinc-500">
+              <p className="mt-5 border-t border-zinc-100 pt-4 text-xs leading-5 text-zinc-500 dark:border-slate-700 dark:text-slate-300">
                 {t.terms}
               </p>
             </section>
