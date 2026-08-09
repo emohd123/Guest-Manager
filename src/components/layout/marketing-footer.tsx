@@ -49,7 +49,7 @@ export function MarketingFooter() {
               A OneStone Platform
             </a>
             <p className="mt-6 text-sm leading-relaxed text-slate-600 dark:text-slate-300">
-              Bahrain event discovery, ticketing, check-in, and managed event operations.
+              Egypt event discovery, ticketing, check-in, and managed event operations.
               Built by the iTicket team for public and corporate experiences.
             </p>
           </div>
