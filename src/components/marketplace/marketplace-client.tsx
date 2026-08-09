@@ -107,13 +107,6 @@ export function MarketplaceClient({
   const publicCategories = data.categories.filter((item) => item.kind !== "service");
   const serviceCategories = eventCategories.filter((item) => item.kind === "service");
   const popularEvents = events.slice(0, 12);
-  const weekendEvents = events
-    .filter((event) => {
-      const day = new Date(event.startsAt).getDay();
-      return day === 5 || day === 6;
-    })
-    .slice(0, 8);
-  const attractionEvents = events.filter((event) => event.categorySlug === "attractions").slice(0, 8);
   const featured = events[heroIndex % Math.max(events.length, 1)];
   // "Happening soon" — events starting within 10 hours float to the top for
   // fast purchase, then the rest by soonest start date.
@@ -496,9 +489,6 @@ export function MarketplaceClient({
         {mode === "home" ? (
           <>
             <RailSection title={copy.popularTitle} eyebrow={copy.popularEyebrow} events={popularEvents} locale={locale} onQuickView={setQuickViewEvent} />
-            <RailSection title={copy.weekendTitle} eyebrow={copy.weekendEyebrow} events={weekendEvents} locale={locale} onQuickView={setQuickViewEvent} />
-            <RailSection title={copy.attractionsTitle} eyebrow={copy.attractionsEyebrow} events={attractionEvents} locale={locale} onQuickView={setQuickViewEvent} />
-            <ThingsToDo copy={copy} locale={locale} />
           </>
         ) : null}
 
