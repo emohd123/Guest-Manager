@@ -410,11 +410,11 @@ export function MarketplaceClient({
           live here for the old dark theme — it covered the whole content area.) */}
       <main className="relative z-10 mx-auto max-w-6xl bg-white px-4 py-7 dark:bg-slate-950 sm:px-8 sm:py-14 lg:px-12">
         <section className="mb-7 sm:mb-12">
-          <div className="grid grid-cols-4 gap-2 sm:flex sm:flex-wrap sm:gap-3">
+          <div className="grid grid-cols-3 gap-2 sm:grid-cols-6 sm:gap-3">
             <button
               type="button"
               onClick={() => setCategory("")}
-              className={cn(chipBase, "col-span-2 w-full justify-center sm:col-auto sm:w-auto", !category ? "border-cyan-500 bg-cyan-500 text-white shadow-sm" : "border-slate-200 bg-white text-slate-700 hover:border-cyan-300 hover:bg-cyan-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800")}
+              className={cn(chipBase, "col-span-2 w-full justify-center", !category ? "border-cyan-500 bg-cyan-500 text-white shadow-sm" : "border-slate-200 bg-white text-slate-700 hover:border-cyan-300 hover:bg-cyan-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800")}
             >
               {!category ? <BadgeCheck className="chip-check h-4 w-4" /> : null}
               {copy.allCategories}
