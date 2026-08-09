@@ -49,11 +49,10 @@ export default function DesignSetupPage({
   const [mapUrl, setMapUrl] = useState("");
   const [pageCtaLabel, setPageCtaLabel] = useState("");
   const [highlightsCsv, setHighlightsCsv] = useState("");
+  const [termsCsv, setTermsCsv] = useState("");
   const [galleryUrls, setGalleryUrls] = useState("");
   const [videoUrl, setVideoUrl] = useState("");
   const [showAgenda, setShowAgenda] = useState(true);
-  const [showSponsors, setShowSponsors] = useState(true);
-  const [showAppDownload, setShowAppDownload] = useState(true);
 
   // ---------- Ticket design tab state ----------
   const [ticketDesign, setTicketDesign] = useState<TicketDesignSettings>({
@@ -107,11 +106,10 @@ export default function DesignSetupPage({
         setMapUrl((settings.publicPage as any)?.mapUrl || "");
         setPageCtaLabel(settings.publicPage?.ctaLabel || "");
         setHighlightsCsv((settings.publicPage?.highlights ?? []).join("\n"));
+        setTermsCsv(((settings.publicPage as any)?.terms ?? []).join("\n"));
         setGalleryUrls((settings.publicPage?.galleryImages ?? []).join("\n"));
         setVideoUrl(settings.publicPage?.videoUrl || "");
         setShowAgenda(settings.publicPage?.showAgenda !== false);
-        setShowSponsors(settings.publicPage?.showSponsors !== false);
-        setShowAppDownload(settings.publicPage?.showAppDownload !== false);
         if (settings.ticketDesign) setTicketDesign(settings.ticketDesign);
         if (settings.emailDesigns) setEmailDesigns(settings.emailDesigns);
         if (settings.agenda) setAgendaSettings(settings.agenda);
@@ -174,14 +172,13 @@ export default function DesignSetupPage({
             .split("\n")
             .map((line) => line.trim())
             .filter(Boolean),
+          terms: termsCsv.split("\n").map((line) => line.trim()).filter(Boolean),
           galleryImages: galleryUrls
             .split("\n")
             .map((line) => line.trim())
             .filter(Boolean),
           videoUrl: videoUrl.trim(),
           showAgenda,
-          showSponsors,
-          showAppDownload,
         },
         ticketDesign,
         emailDesigns,
@@ -384,6 +381,12 @@ export default function DesignSetupPage({
                     <Textarea value={highlightsCsv} onChange={(e) => setHighlightsCsv(e.target.value)} className="theme-textarea min-h-[160px]" placeholder={"One highlight per line\nKeynote speakers\nPremium networking\nLive sessions"} />
                   </div>
 
+                  <div className="space-y-3">
+                    <Label className="text-[9px] font-black uppercase tracking-[0.3em] text-muted-foreground dark:text-white/40 italic">TERMS &amp; CONDITIONS</Label>
+                    <Textarea value={termsCsv} onChange={(e) => setTermsCsv(e.target.value)} className="theme-textarea min-h-[140px]" placeholder="One term per line" />
+                    <p className="text-xs text-muted-foreground">These terms appear in the public event page before checkout.</p>
+                  </div>
+
                   <div className="space-y-3 rounded-2xl border border-cyan-200/60 bg-cyan-50/50 p-4 dark:border-cyan-300/20 dark:bg-cyan-300/5">
                     <Label className="text-[9px] font-black uppercase tracking-[0.3em] text-muted-foreground dark:text-white/40 italic">GOOGLE MAP LOCATION</Label>
                     <Input value={mapUrl} onChange={(e) => setMapUrl(e.target.value)} className="theme-input" placeholder="Paste a Google Maps pin/share link" />
@@ -405,8 +408,6 @@ export default function DesignSetupPage({
                   <div className="grid gap-4 md:grid-cols-3">
                     {[
                       { label: "Show Agenda", value: showAgenda, setValue: setShowAgenda },
-                      { label: "Show Sponsors", value: showSponsors, setValue: setShowSponsors },
-                      { label: "Show App Download", value: showAppDownload, setValue: setShowAppDownload },
                     ].map((item) => (
                       <Button
                         key={item.label}
