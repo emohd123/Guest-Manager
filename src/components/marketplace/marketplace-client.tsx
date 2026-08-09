@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { format } from "date-fns";
-import { BadgeCheck, CalendarDays, ChevronRight, Headphones, Heart, Home, MapPin, Search, ShieldCheck, Sparkles, Ticket, User, UsersRound, X, Zap } from "lucide-react";
+import { BadgeCheck, CalendarDays, ChevronLeft, ChevronRight, Headphones, Heart, Home, MapPin, Search, ShieldCheck, Sparkles, Ticket, User, UsersRound, X, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Dock from "@/components/ui/dock";
 import { AiConcierge } from "@/components/marketplace/ai-concierge";
@@ -339,6 +339,16 @@ export function MarketplaceClient({
                 }}
               >
                 <HeroFeature event={featured} locale={locale} onQuickView={setQuickViewEvent} />
+                {events.length > 1 ? (
+                  <div className="pointer-events-none absolute inset-x-0 top-1/2 z-10 hidden -translate-y-1/2 items-center justify-between px-4 sm:flex">
+                    <button type="button" aria-label="Previous featured event" onClick={() => setHeroIndex((index) => (index - 1 + events.length) % events.length)} className="pointer-events-auto flex h-11 w-11 items-center justify-center rounded-full bg-white/90 text-slate-900 shadow-lg transition hover:bg-white">
+                      <ChevronLeft className="h-5 w-5" />
+                    </button>
+                    <button type="button" aria-label="Next featured event" onClick={() => setHeroIndex((index) => (index + 1) % events.length)} className="pointer-events-auto flex h-11 w-11 items-center justify-center rounded-full bg-white/90 text-slate-900 shadow-lg transition hover:bg-white">
+                      <ChevronRight className="h-5 w-5" />
+                    </button>
+                  </div>
+                ) : null}
               </div>
             ) : null}
           </div>
