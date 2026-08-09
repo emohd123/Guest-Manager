@@ -359,7 +359,7 @@ export function MarketplaceClient({
               </button>
             ))}
           </nav>
-          <nav aria-label="Filter events by date" className="flex min-h-14 items-center justify-start gap-2 overflow-x-auto border-y border-slate-200 bg-white px-3 text-xs font-black text-slate-700 shadow-sm dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100 sm:min-h-16 sm:justify-center sm:gap-3 sm:px-5 sm:text-sm">
+          <nav aria-label="Filter events by date" className="flex min-h-14 items-center justify-center gap-2 overflow-x-auto border-y border-slate-200 bg-white px-3 text-xs font-black text-slate-700 shadow-sm dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100 sm:min-h-16 sm:gap-3 sm:px-5 sm:text-sm">
             <button
               type="button"
               onClick={() => setDateFilter("today")}
