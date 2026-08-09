@@ -80,6 +80,7 @@ export function MarketplaceClient({
   const [loading, setLoading] = useState(false);
   const [currentTime] = useState(() => Date.now());
   const [heroIndex, setHeroIndex] = useState(0);
+  const heroTouchStart = useRef<number | null>(null);
   const datePickerRef = useRef<HTMLInputElement>(null);
   const dir = locale === "ar" ? "rtl" : "ltr";
   const events = useMemo(() => {
@@ -108,6 +109,14 @@ export function MarketplaceClient({
   const serviceCategories = eventCategories.filter((item) => item.kind === "service");
   const popularEvents = events.slice(0, 12);
   const featured = events[heroIndex % Math.max(events.length, 1)];
+
+  useEffect(() => {
+    if (events.length < 2) return;
+    const timer = window.setInterval(() => {
+      setHeroIndex((index) => (index + 1) % events.length);
+    }, 3000);
+    return () => window.clearInterval(timer);
+  }, [events.length]);
   // "Happening soon" — events starting within 10 hours float to the top for
   // fast purchase, then the rest by soonest start date.
   const soonEvents = useMemo(() => {
@@ -318,7 +327,17 @@ export function MarketplaceClient({
             </div>
 
             {featured ? (
-              <div className="relative order-first mx-auto w-full max-w-[1280px]">
+              <div
+                className="relative order-first mx-auto w-full max-w-[1280px]"
+                onTouchStart={(event) => { heroTouchStart.current = event.touches[0]?.clientX ?? null; }}
+                onTouchEnd={(event) => {
+                  const start = heroTouchStart.current;
+                  const end = event.changedTouches[0]?.clientX;
+                  heroTouchStart.current = null;
+                  if (start == null || end == null || Math.abs(end - start) < 40 || events.length < 2) return;
+                  setHeroIndex((index) => (index + (end < start ? 1 : -1) + events.length) % events.length);
+                }}
+              >
                 <HeroFeature event={featured} locale={locale} onQuickView={setQuickViewEvent} />
                 {events.length > 1 ? (
                   <div className="flex items-center justify-end gap-2 border-b border-slate-200 bg-white px-3 py-2 dark:border-slate-800 dark:bg-slate-950 sm:absolute sm:inset-x-0 sm:top-1/2 sm:z-10 sm:-translate-y-1/2 sm:justify-between sm:border-0 sm:bg-transparent sm:p-0">
