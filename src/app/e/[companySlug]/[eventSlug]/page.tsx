@@ -278,9 +278,9 @@ export default function PublicEventPage({
     .filter(Boolean)
     .join(" ")
     .trim();
-  const mapHref = mapQuery
+  const mapHref = (publicPage as any).mapUrl || (mapQuery
     ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapQuery)}`
-    : null;
+    : null);
   const appleMapsHref = mapQuery
     ? `https://maps.apple.com/?q=${encodeURIComponent(mapQuery)}`
     : null;

@@ -46,6 +46,7 @@ export default function DesignSetupPage({
   const [pageSubheadline, setPageSubheadline] = useState("");
   const [venueName, setVenueName] = useState("");
   const [locationText, setLocationText] = useState("");
+  const [mapUrl, setMapUrl] = useState("");
   const [pageCtaLabel, setPageCtaLabel] = useState("");
   const [highlightsCsv, setHighlightsCsv] = useState("");
   const [galleryUrls, setGalleryUrls] = useState("");
@@ -103,6 +104,7 @@ export default function DesignSetupPage({
         setPageSubheadline(settings.publicPage?.subheadline || "");
         setVenueName(settings.publicPage?.venueName || "");
         setLocationText(settings.publicPage?.locationText || "");
+        setMapUrl((settings.publicPage as any)?.mapUrl || "");
         setPageCtaLabel(settings.publicPage?.ctaLabel || "");
         setHighlightsCsv((settings.publicPage?.highlights ?? []).join("\n"));
         setGalleryUrls((settings.publicPage?.galleryImages ?? []).join("\n"));
@@ -166,6 +168,7 @@ export default function DesignSetupPage({
           subheadline: pageSubheadline,
           venueName,
           locationText,
+          mapUrl: mapUrl.trim(),
           ctaLabel: pageCtaLabel,
           highlights: highlightsCsv
             .split("\n")
@@ -379,6 +382,13 @@ export default function DesignSetupPage({
                   <div className="space-y-3">
                     <Label className="text-[9px] font-black uppercase tracking-[0.3em] text-muted-foreground dark:text-white/40 italic">HIGHLIGHTS</Label>
                     <Textarea value={highlightsCsv} onChange={(e) => setHighlightsCsv(e.target.value)} className="theme-textarea min-h-[160px]" placeholder={"One highlight per line\nKeynote speakers\nPremium networking\nLive sessions"} />
+                  </div>
+
+                  <div className="space-y-3 rounded-2xl border border-cyan-200/60 bg-cyan-50/50 p-4 dark:border-cyan-300/20 dark:bg-cyan-300/5">
+                    <Label className="text-[9px] font-black uppercase tracking-[0.3em] text-muted-foreground dark:text-white/40 italic">GOOGLE MAP LOCATION</Label>
+                    <Input value={mapUrl} onChange={(e) => setMapUrl(e.target.value)} className="theme-input" placeholder="Paste a Google Maps pin/share link" />
+                    <p className="text-xs text-muted-foreground">In Google Maps, drop a pin, choose Share, copy the link, and paste it here. This exact location is used for the public map and directions buttons.</p>
+                    <Button type="button" variant="outline" className="rounded-xl" onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent([venueName, locationText].filter(Boolean).join(", "))}`, "_blank", "noopener,noreferrer")}>Choose location in Google Maps</Button>
                   </div>
 
                   <div className="space-y-3">
