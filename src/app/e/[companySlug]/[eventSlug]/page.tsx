@@ -675,7 +675,9 @@ export default function PublicEventPage({
                 {t.location}
               </h2>
               <a href={mapHref ?? undefined} target={mapHref ? "_blank" : undefined} rel={mapHref ? "noreferrer" : undefined} className={`block overflow-hidden rounded-2xl border border-zinc-200 bg-white transition ${mapHref ? "cursor-pointer hover:border-cyan-400 hover:shadow-lg" : ""}`}>
-                <div className="flex items-start gap-4 border-b border-zinc-100 p-5">
+                <div className="grid gap-6 p-5 md:grid-cols-[1fr_340px] md:items-start">
+                  <div>
+                    <div className="flex items-start gap-4">
                   <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-zinc-950 text-white">
                     <MapPin className="h-5 w-5" />
                   </span>
@@ -686,9 +688,11 @@ export default function PublicEventPage({
                     <p className="mt-1 text-sm text-zinc-600">
                       {publicPage.locationText || (publicPage.venueName ? mapLabel : "Pinned Google Maps location")}
                     </p>
+                    </div>
+                    </div>
+                    {mapHref ? <div className="mt-8 border-t border-zinc-100 pt-5"><p className="font-black">How do you want to get there?</p><div className="mt-3 space-y-2 text-sm font-bold text-blue-700"><span className="block">🚗 Driving</span><span className="block">🚌 Public transport</span><span className="block">🚲 Biking</span><span className="block">🚶 Walking</span></div></div> : null}
                   </div>
-                </div>
-                <div className="relative h-56 bg-[linear-gradient(90deg,#e5e7eb_1px,transparent_1px),linear-gradient(#e5e7eb_1px,transparent_1px)] bg-[size:32px_32px]">
+                <div className="relative h-56 overflow-hidden rounded-xl bg-[linear-gradient(90deg,#e5e7eb_1px,transparent_1px),linear-gradient(#e5e7eb_1px,transparent_1px)] bg-[size:32px_32px]">
                   <div className="absolute inset-0 bg-gradient-to-br from-cyan-100/80 via-transparent to-violet-100/90" />
                   <div className="absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-2">
                     <span className="flex h-12 w-12 items-center justify-center rounded-full bg-violet-600 text-white shadow-lg">
@@ -696,7 +700,7 @@ export default function PublicEventPage({
                     </span>
                     {mapHref ? <span className="rounded-full bg-white px-4 py-2 text-xs font-black text-zinc-950 shadow">Open in Google Maps</span> : null}
                   </div>
-                </div>
+                </div></div>
               </a>
             </section>
 
