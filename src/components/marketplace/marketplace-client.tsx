@@ -16,7 +16,7 @@ import { cn } from "@/lib/utils";
 // chip becomes active (keyframes in globals.css); the active chips also render an
 // inline check icon via `chip-check` so the selection is unmistakable.
 const chipBase =
-  "group inline-flex shrink-0 items-center gap-1.5 rounded-full px-4 py-2 text-xs font-black transition-all duration-200 cursor-pointer select-none active:scale-95 [-webkit-tap-highlight-color:transparent] touch-manipulation focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 sm:gap-2 sm:px-5 sm:py-3 sm:text-sm";
+  "group inline-flex shrink-0 items-center gap-1.5 rounded-full px-2 py-2 text-[10px] font-black transition-all duration-200 cursor-pointer select-none active:scale-95 [-webkit-tap-highlight-color:transparent] touch-manipulation focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 sm:gap-2 sm:px-5 sm:py-3 sm:text-sm";
 
 // Subject-relevant, curated category imagery (stable Unsplash photos).
 const CATEGORY_IMAGE_IDS: Record<string, string> = {
@@ -328,12 +328,12 @@ export function MarketplaceClient({
               <div className="relative order-first mx-auto w-full max-w-[1280px]">
                 <HeroFeature event={featured} locale={locale} onQuickView={setQuickViewEvent} />
                 {events.length > 1 ? (
-                  <>
+                  <div className="flex items-center justify-end gap-2 border-b border-slate-200 bg-white px-3 py-2 dark:border-slate-800 dark:bg-slate-950 sm:absolute sm:inset-x-0 sm:top-1/2 sm:z-10 sm:-translate-y-1/2 sm:justify-between sm:border-0 sm:bg-transparent sm:p-0">
                     <button
                       type="button"
                       aria-label="Previous featured event"
                       onClick={() => setHeroIndex((index) => (index - 1 + events.length) % events.length)}
-                      className="absolute left-2 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-slate-900 shadow-lg transition hover:bg-white sm:left-4 sm:h-11 sm:w-11"
+                      className="flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-900 shadow-sm transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-white sm:ml-4 sm:h-11 sm:w-11 sm:border-0 sm:bg-white/90 sm:text-slate-900 sm:shadow-lg sm:hover:bg-white"
                     >
                       <ChevronLeft className="h-4 w-4 sm:h-5 sm:w-5" />
                     </button>
@@ -341,11 +341,11 @@ export function MarketplaceClient({
                       type="button"
                       aria-label="Next featured event"
                       onClick={() => setHeroIndex((index) => (index + 1) % events.length)}
-                      className="absolute right-2 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-slate-900 shadow-lg transition hover:bg-white sm:right-4 sm:h-11 sm:w-11"
+                      className="flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-900 shadow-sm transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-white sm:mr-4 sm:h-11 sm:w-11 sm:border-0 sm:bg-white/90 sm:text-slate-900 sm:shadow-lg sm:hover:bg-white"
                     >
                       <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5" />
                     </button>
-                  </>
+                  </div>
                 ) : null}
               </div>
             ) : null}
@@ -408,11 +408,11 @@ export function MarketplaceClient({
           live here for the old dark theme — it covered the whole content area.) */}
       <main className="relative z-10 mx-auto max-w-6xl bg-white px-4 py-7 dark:bg-slate-950 sm:px-8 sm:py-14 lg:px-12">
         <section className="mb-7 sm:mb-12">
-          <div className="flex flex-wrap gap-2 sm:gap-3">
+          <div className="grid grid-cols-4 gap-2 sm:flex sm:flex-wrap sm:gap-3">
             <button
               type="button"
               onClick={() => setCategory("")}
-              className={cn(chipBase, !category ? "border-cyan-500 bg-cyan-500 text-white shadow-sm" : "border-slate-200 bg-white text-slate-700 hover:border-cyan-300 hover:bg-cyan-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800")}
+              className={cn(chipBase, "col-span-2 w-full justify-center sm:col-auto sm:w-auto", !category ? "border-cyan-500 bg-cyan-500 text-white shadow-sm" : "border-slate-200 bg-white text-slate-700 hover:border-cyan-300 hover:bg-cyan-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800")}
             >
               {!category ? <BadgeCheck className="chip-check h-4 w-4" /> : null}
               {copy.allCategories}
@@ -422,7 +422,7 @@ export function MarketplaceClient({
                 key={item.slug}
                 type="button"
                 onClick={() => setCategory(item.slug)}
-                className={cn(chipBase, category === item.slug ? "border-cyan-500 bg-cyan-500 text-white shadow-sm" : "border-slate-200 bg-white text-slate-700 hover:border-cyan-300 hover:bg-cyan-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800")}
+                className={cn(chipBase, "w-full justify-center whitespace-nowrap sm:w-auto", category === item.slug ? "border-cyan-500 bg-cyan-500 text-white shadow-sm" : "border-slate-200 bg-white text-slate-700 hover:border-cyan-300 hover:bg-cyan-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800")}
               >
                 {category === item.slug ? <BadgeCheck className="chip-check h-4 w-4" /> : null}
                 {locale === "ar" ? item.labelAr : item.label}

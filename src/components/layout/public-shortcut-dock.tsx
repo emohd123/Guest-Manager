@@ -1,13 +1,17 @@
 "use client";
 
+import { useEffect, useState, type ReactNode } from "react";
 import { CalendarDays, Heart, Home, Search, User } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+
+type ShortcutId = "home" | "search" | "favourite" | "private" | "profile";
 
 export function PublicShortcutDock() {
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
   const isArabic = searchParams.get("locale") === "ar";
+  const [activeShortcut, setActiveShortcut] = useState<ShortcutId>("home");
 
   function localeHref(path: string) {
     const [base, query = ""] = path.split("?");
@@ -16,7 +20,15 @@ export function PublicShortcutDock() {
     return `${base}?${params.toString()}`;
   }
 
+  useEffect(() => {
+    if (pathname.startsWith("/account/favorites")) setActiveShortcut("favourite");
+    else if (pathname.startsWith("/private-event")) setActiveShortcut("private");
+    else if (pathname.startsWith("/account")) setActiveShortcut("profile");
+    else if (pathname === "/") setActiveShortcut("home");
+  }, [pathname]);
+
   function focusSearch() {
+    setActiveShortcut("search");
     const search = document.querySelector<HTMLInputElement>('input[name="q"]');
     if (search) {
       search.focus();
@@ -26,6 +38,7 @@ export function PublicShortcutDock() {
   }
 
   function goHome() {
+    setActiveShortcut("home");
     const homeHref = localeHref("/");
     if (pathname === "/") {
       window.dispatchEvent(new Event("iticket:home-reset"));
@@ -36,32 +49,32 @@ export function PublicShortcutDock() {
     router.push(homeHref);
   }
 
-  const shortcuts = [
-    {
-      icon: <Home className="h-5 w-5" />,
-      label: isArabic ? "الرئيسية" : "Home",
-      onClick: goHome,
-    },
-    { icon: <Search className="h-5 w-5" />, label: isArabic ? "بحث" : "Search", onClick: focusSearch },
-    { icon: <Heart className="h-5 w-5" />, label: isArabic ? "المفضلة" : "Favourite", onClick: () => router.push(localeHref("/account/favorites")) },
-    { icon: <CalendarDays className="h-5 w-5" />, label: isArabic ? "فعالية خاصة" : "Private Event", onClick: () => router.push(localeHref("/private-event")) },
-    { icon: <User className="h-5 w-5" />, label: isArabic ? "الملف الشخصي" : "Profile", onClick: () => router.push(localeHref("/account")) },
+  const shortcuts: Array<{ id: ShortcutId; icon: ReactNode; label: string; onClick: () => void }> = [
+    { id: "home", icon: <Home className="h-5 w-5" />, label: isArabic ? "الرئيسية" : "Home", onClick: goHome },
+    { id: "search", icon: <Search className="h-5 w-5" />, label: isArabic ? "بحث" : "Search", onClick: focusSearch },
+    { id: "favourite", icon: <Heart className="h-5 w-5" />, label: isArabic ? "المفضلة" : "Favourite", onClick: () => { setActiveShortcut("favourite"); router.push(localeHref("/account/favorites")); } },
+    { id: "private", icon: <CalendarDays className="h-5 w-5" />, label: isArabic ? "فعالية خاصة" : "Private Event", onClick: () => { setActiveShortcut("private"); router.push(localeHref("/private-event")); } },
+    { id: "profile", icon: <User className="h-5 w-5" />, label: isArabic ? "الملف الشخصي" : "Profile", onClick: () => { setActiveShortcut("profile"); router.push(localeHref("/account")); } },
   ];
 
   return (
     <div className="pointer-events-none fixed inset-x-0 bottom-2 z-50 flex justify-center px-2 sm:bottom-3">
-      <nav dir="ltr" aria-label="Application shortcuts" className="pointer-events-auto flex items-stretch rounded-2xl border border-slate-200 bg-white/95 p-1 shadow-[0_10px_28px_rgba(15,23,42,0.18)] backdrop-blur dark:border-slate-700 dark:bg-slate-900/95 sm:shadow-[0_12px_40px_rgba(15,23,42,0.2)]">
-        {shortcuts.map((shortcut) => (
-          <button
-            key={shortcut.label}
-            type="button"
-            onClick={shortcut.onClick}
-            className="flex min-w-[54px] flex-col items-center gap-0.5 rounded-xl px-1.5 py-1.5 text-[9px] font-black leading-tight text-slate-700 transition hover:bg-slate-100 hover:text-blue-600 dark:text-slate-200 dark:hover:bg-slate-800 dark:hover:text-cyan-300 sm:min-w-[74px] sm:gap-1 sm:px-2 sm:py-2 sm:text-[10px]"
-          >
-            <span className={shortcut.label === "Home" ? "text-blue-600 dark:text-cyan-300" : "text-slate-800 dark:text-slate-200"}>{shortcut.icon}</span>
-            <span className="text-center">{shortcut.label}</span>
-          </button>
-        ))}
+      <nav dir={isArabic ? "rtl" : "ltr"} aria-label="Application shortcuts" className="pointer-events-auto flex items-stretch rounded-2xl border border-slate-200 bg-white/95 p-1 shadow-[0_10px_28px_rgba(15,23,42,0.18)] backdrop-blur dark:border-slate-700 dark:bg-slate-900/95 sm:shadow-[0_12px_40px_rgba(15,23,42,0.2)]">
+        {shortcuts.map((shortcut) => {
+          const active = activeShortcut === shortcut.id;
+          return (
+            <button
+              key={shortcut.id}
+              type="button"
+              onClick={shortcut.onClick}
+              aria-current={active ? "page" : undefined}
+              className={`flex min-w-[54px] flex-col items-center gap-0.5 rounded-xl px-1.5 py-1.5 text-[9px] font-black leading-tight transition sm:min-w-[74px] sm:gap-1 sm:px-2 sm:py-2 sm:text-[10px] ${active ? "bg-cyan-50 text-blue-600 dark:bg-cyan-300/10 dark:text-cyan-300" : "text-slate-700 hover:bg-slate-100 hover:text-blue-600 dark:text-slate-200 dark:hover:bg-slate-800 dark:hover:text-cyan-300"}`}
+            >
+              <span className={active ? "text-blue-600 dark:text-cyan-300" : "text-slate-800 dark:text-slate-200"}>{shortcut.icon}</span>
+              <span className="text-center">{shortcut.label}</span>
+            </button>
+          );
+        })}
       </nav>
     </div>
   );
