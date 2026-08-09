@@ -290,6 +290,7 @@ export default function PublicEventPage({
       return t.location;
     }
   })();
+  const displayVenueName = publicPage.venueName && publicPage.venueName !== t.location ? publicPage.venueName : mapLabel;
   const appleMapsHref = mapQuery
     ? `https://maps.apple.com/?q=${encodeURIComponent(mapQuery)}`
     : null;
@@ -682,8 +683,8 @@ export default function PublicEventPage({
                     <MapPin className="h-5 w-5" />
                   </span>
                   <div>
-                    <p className="font-black">
-                      {publicPage.venueName || mapLabel || t.location}
+                    <p className="break-words font-black">
+                      {displayVenueName || t.location}
                     </p>
                     <p className="mt-1 text-sm text-zinc-600">
                       {publicPage.locationText || (publicPage.venueName ? mapLabel : "Pinned Google Maps location")}
