@@ -21,6 +21,7 @@ import { AgendaEditor } from "@/components/agenda/AgendaEditor";
 import type { AgendaSettings } from "@/components/agenda/AgendaEditor";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { createClient } from "@/lib/supabase/client";
 
 export default function DesignSetupPage({
   params,
@@ -52,6 +53,8 @@ export default function DesignSetupPage({
   const [termsCsv, setTermsCsv] = useState("");
   const [galleryUrls, setGalleryUrls] = useState("");
   const [videoUrl, setVideoUrl] = useState("");
+  const [uploadingVideo, setUploadingVideo] = useState(false);
+  const supabase = createClient();
   const [showAgenda, setShowAgenda] = useState(true);
 
   // ---------- Ticket design tab state ----------
@@ -185,6 +188,19 @@ export default function DesignSetupPage({
         agenda: agendaSettings,
       },
     });
+  };
+
+  const uploadVideo = async (file: File) => {
+    setUploadingVideo(true);
+    try {
+      const path = `event-videos/${crypto.randomUUID()}-${file.name.replace(/[^a-zA-Z0-9._-]/g, "-")}`;
+      const { error } = await supabase.storage.from("events").upload(path, file, { contentType: file.type, cacheControl: "3600" });
+      if (error) throw error;
+      setVideoUrl(supabase.storage.from("events").getPublicUrl(path).data.publicUrl);
+      toast.success("Video uploaded");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Video upload failed");
+    } finally { setUploadingVideo(false); }
   };
 
   if (isLoading) {
@@ -396,12 +412,15 @@ export default function DesignSetupPage({
 
                   <div className="space-y-3">
                     <Label className="text-[9px] font-black uppercase tracking-[0.3em] text-muted-foreground dark:text-white/40 italic">GALLERY IMAGE URLS</Label>
+                    <ImageUpload label="UPLOAD GALLERY IMAGE" description="Upload an image to add it to the gallery." value="" onChange={(url) => setGalleryUrls((current) => [current, url].filter(Boolean).join("\n"))} onRemove={() => {}} aspectRatio="video" />
                     <Textarea value={galleryUrls} onChange={(e) => setGalleryUrls(e.target.value)} className="theme-textarea min-h-[120px]" placeholder={"One image URL per line\nhttps://..."} />
                     <p className="text-xs text-muted-foreground">These images appear in the public event gallery after the cover image.</p>
                   </div>
 
                   <div className="space-y-3">
                     <Label className="text-[9px] font-black uppercase tracking-[0.3em] text-muted-foreground dark:text-white/40 italic">EVENT VIDEO URL</Label>
+                    <Input type="file" accept="video/mp4,video/webm,video/quicktime" disabled={uploadingVideo} onChange={(e) => { const file = e.target.files?.[0]; if (file) void uploadVideo(file); }} className="theme-input" />
+                    {uploadingVideo ? <p className="text-xs text-muted-foreground">Uploading video…</p> : null}
                     <Input value={videoUrl} onChange={(e) => setVideoUrl(e.target.value)} className="theme-input" placeholder="https://.../event-video.mp4" />
                   </div>
 
