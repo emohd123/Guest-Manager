@@ -167,6 +167,7 @@ function getPublicPageSettings(
     mapUrl: typeof (publicPage as any).mapUrl === "string" ? (publicPage as any).mapUrl : "",
     ctaLabel: localizedValue(publicPage.ctaLabel, locale),
     highlights: publicPage.highlights ?? [],
+    terms: (Array.isArray((publicPage as any).terms) && (publicPage as any).terms.length ? (publicPage as any).terms : CUSTOMER_TERMS) as string[],
     showAgenda: publicPage.showAgenda !== false,
     showSponsors: publicPage.showSponsors !== false,
     showAppDownload: publicPage.showAppDownload !== false,
@@ -622,7 +623,7 @@ export default function PublicEventPage({
               </ul>
             </section>
 
-            {false && galleryImages.length ? (
+            {galleryImages.length ? (
               <section className="border-t border-zinc-200 pt-7">
                 <div className="mb-4 flex items-center justify-between">
                   <h2 className="text-xl font-black tracking-tight sm:text-2xl">
@@ -707,7 +708,7 @@ export default function PublicEventPage({
             <section id="terms" className="scroll-mt-24 border-t border-zinc-200 pt-7">
               <details className="group overflow-hidden rounded-2xl border border-cyan-300/30 bg-[#0b151d] text-white">
                 <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-5 py-4 font-black marker:content-none"><span className="flex items-center gap-2"><ShieldCheck className="h-5 w-5 text-cyan-300" />Terms &amp; Conditions</span><ChevronRight className="h-4 w-4 text-cyan-300 transition-transform group-open:rotate-90" /></summary>
-                <ul className="space-y-2 border-t border-white/10 px-5 py-4 text-sm leading-6 text-slate-300">{CUSTOMER_TERMS.map((term) => <li key={term} className="flex gap-2"><span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-cyan-300" />{term}</li>)}</ul>
+                <ul className="space-y-2 border-t border-white/10 px-5 py-4 text-sm leading-6 text-slate-300">{publicPage.terms.map((term) => <li key={term} className="flex gap-2"><span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-cyan-300" />{term}</li>)}</ul>
               </details>
             </section>
 
@@ -1057,7 +1058,7 @@ export default function PublicEventPage({
                   <ChevronRight className="h-4 w-4 text-cyan-300 transition-transform group-open:rotate-90" />
                 </summary>
                 <ul className="space-y-2 border-t border-white/10 px-5 py-4 text-xs leading-5 text-slate-300">
-                  {CUSTOMER_TERMS.map((term) => (
+                  {publicPage.terms.map((term) => (
                     <li key={term} className="flex gap-2">
                       <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-cyan-300" />
                       <span>{term}</span>
