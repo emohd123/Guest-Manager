@@ -282,6 +282,14 @@ export default function PublicEventPage({
   const mapHref = (publicPage as any).mapUrl || (mapQuery
     ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapQuery)}`
     : null);
+  const mapLabel = publicPage.venueName || publicPage.locationText || (() => {
+    if (!mapHref) return t.location;
+    try {
+      return new URL(mapHref).searchParams.get("query") || t.location;
+    } catch {
+      return t.location;
+    }
+  })();
   const appleMapsHref = mapQuery
     ? `https://maps.apple.com/?q=${encodeURIComponent(mapQuery)}`
     : null;
@@ -673,10 +681,10 @@ export default function PublicEventPage({
                   </span>
                   <div>
                     <p className="font-black">
-                      {publicPage.venueName || t.location}
+                      {publicPage.venueName || mapLabel || t.location}
                     </p>
                     <p className="mt-1 text-sm text-zinc-600">
-                      {publicPage.locationText || venueLabel}
+                      {publicPage.locationText || (publicPage.venueName ? mapLabel : "Pinned Google Maps location")}
                     </p>
                   </div>
                 </div>
