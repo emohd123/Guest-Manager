@@ -357,8 +357,10 @@ export default function SeatingBuilderPage({ params }: { params: Promise<{ event
       const path = `floor-plans/${eventId}/${uid()}-${safeName}`;
       const { error } = await supabase.storage.from("events").upload(path, file, { contentType: file.type, upsert: false });
       if (error) throw error;
-      setFloorPlanUrl(supabase.storage.from("events").getPublicUrl(path).data.publicUrl);
-      toast.success("Background reference uploaded.");
+      const publicUrl = supabase.storage.from("events").getPublicUrl(path).data.publicUrl;
+      setFloorPlanUrl(publicUrl);
+      toast.success("Floor plan uploaded. Starting analysis…");
+      await analyseFloorPlan(publicUrl);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Upload failed");
     } finally {
@@ -366,14 +368,15 @@ export default function SeatingBuilderPage({ params }: { params: Promise<{ event
     }
   }
 
-  async function analyseFloorPlan() {
-    if (!floorPlanUrl) return toast.error("Upload an image floor plan before analysing it.");
+  async function analyseFloorPlan(sourceUrl: unknown = floorPlanUrl) {
+    const analysisUrl = typeof sourceUrl === "string" ? sourceUrl : floorPlanUrl;
+    if (!analysisUrl) return toast.error("Upload an image floor plan before analysing it.");
     setAnalysing(true);
     try {
       const response = await fetch(`/api/dashboard/events/${eventId}/seating/analyse`, {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ floorPlanUrl, kind: "image", rows: rowCount, seatsPerRow }),
+        body: JSON.stringify({ floorPlanUrl: analysisUrl, kind: "image", rows: rowCount, seatsPerRow }),
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error ?? "Analysis failed");
