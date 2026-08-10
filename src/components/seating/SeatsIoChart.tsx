@@ -1,9 +1,10 @@
 "use client";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 type Props = { eventId: string; workspaceKey: string; onSelection?: (ids: string[]) => void };
 export function SeatsIoChart({ eventId, workspaceKey, onSelection }: Props) {
   const ref = useRef<HTMLDivElement>(null);
+  const [fullScreen, setFullScreen] = useState(false);
   useEffect(() => {
     let chart: any;
     let cancelled = false;
@@ -27,5 +28,16 @@ export function SeatsIoChart({ eventId, workspaceKey, onSelection }: Props) {
     void load();
     return () => { cancelled = true; chart?.destroy?.(); };
   }, [eventId, workspaceKey, onSelection]);
-  return <div id={`seatsio-${eventId}`} ref={ref} className="min-h-[520px] w-full rounded-2xl bg-white" aria-label="Interactive seating chart" />;
+  return <>
+    <button type="button" onClick={() => setFullScreen(true)} className="mb-3 inline-flex items-center rounded-full bg-cyan-600 px-5 py-3 text-sm font-black text-white shadow-sm hover:bg-cyan-700">
+      Choose seats
+    </button>
+    <div className={fullScreen ? "fixed inset-0 z-[100] flex flex-col bg-white" : "w-full"} role={fullScreen ? "dialog" : undefined} aria-modal={fullScreen ? true : undefined} aria-label={fullScreen ? "Choose seats" : "Interactive seating chart"}>
+      {fullScreen ? <div className="flex items-center justify-between border-b border-zinc-200 px-4 py-3">
+        <p className="font-black text-zinc-900">Choose your seats</p>
+        <button type="button" onClick={() => setFullScreen(false)} className="rounded-full border border-zinc-300 px-4 py-2 text-sm font-bold text-zinc-900">Exit map</button>
+      </div> : null}
+      <div id={`seatsio-${eventId}`} ref={ref} className={fullScreen ? "min-h-0 flex-1 w-full bg-white" : "min-h-[520px] w-full rounded-2xl bg-white"} />
+    </div>
+  </>;
 }
