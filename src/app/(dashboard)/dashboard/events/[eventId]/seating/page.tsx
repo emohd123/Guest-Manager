@@ -11,6 +11,7 @@ import {
   MousePointer2,
   Redo2,
   Save,
+  Sparkles,
   Square,
   Trash2,
   Undo2,
@@ -179,6 +180,8 @@ export default function SeatingBuilderPage({ params }: { params: Promise<{ event
   const [batchColor, setBatchColor] = useState(COLORS[0]);
   const [preview, setPreview] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [analysing, setAnalysing] = useState(false);
+  const [proposal, setProposal] = useState<any>(null);
   const [undoStack, setUndoStack] = useState<Snapshot[]>([]);
   const [redoStack, setRedoStack] = useState<Snapshot[]>([]);
   const canvasRef = useRef<HTMLDivElement>(null);
@@ -363,6 +366,44 @@ export default function SeatingBuilderPage({ params }: { params: Promise<{ event
     }
   }
 
+  async function analyseFloorPlan() {
+    if (!floorPlanUrl) return toast.error("Upload an image floor plan before analysing it.");
+    setAnalysing(true);
+    try {
+      const response = await fetch(`/api/dashboard/events/${eventId}/seating/analyse`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ floorPlanUrl, kind: "image", rows: rowCount, seatsPerRow }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error ?? "Analysis failed");
+      setProposal(data);
+      toast.success(data.mode === "ai" ? "AI proposal is ready for review." : "Editable assisted proposal is ready.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Analysis failed");
+    } finally {
+      setAnalysing(false);
+    }
+  }
+
+  function applyProposal() {
+    if (!proposal?.proposal) return;
+    if (lockedInventory) return toast.error("Held or sold inventory protects this plan from rebuilding.");
+    checkpoint();
+    const nextSections: Section[] = proposal.proposal.blocks.map((block: any, index: number) => ({
+      id: uid(), name: block.name || `Section ${index + 1}`, price: Math.round(Number(block.price ?? 0) * 100),
+      x: block.x, y: block.y, width: block.width, height: block.height, rotation: block.rotation ?? 0,
+      color: block.color || COLORS[index % COLORS.length], seatSpacing: 100, rowSpacing: 100,
+      rows: makeRows(block.rowCount, block.seatsPerRow),
+    }));
+    const stage = proposal.proposal.stage;
+    setSections(nextSections);
+    setStages(stage ? [{ id: uid(), text: stage.text || "STAGE", x: stage.x, y: stage.y, width: stage.width, height: 10, color: "#64748b" }] : []);
+    setSelection(EMPTY_SELECTION);
+    setProposal(null);
+    toast.success("Proposal applied. Review the sections, chairs and prices, then save & publish.");
+  }
+
   function save() {
     if (!sections.length || !seatCount) return toast.error("Add at least one section with chairs before saving.");
     savePlan.mutate({
@@ -418,6 +459,11 @@ export default function SeatingBuilderPage({ params }: { params: Promise<{ event
 
       <main className="mx-auto max-w-[1800px] p-4 lg:p-6">
         {lockedInventory ? <div className="mb-4 rounded-2xl border border-amber-300/40 bg-amber-300/10 p-4 text-sm text-amber-100"><strong>Protected live inventory:</strong> this plan contains held or sold seats. Destructive rebuild, deletion and save are disabled so ticket assignments remain safe.</div> : null}
+
+        {!preview ? <section className="mb-4 rounded-2xl border border-cyan-300/30 bg-cyan-300/[0.07] p-4">
+          <div className="flex flex-col justify-between gap-3 md:flex-row md:items-center"><div><p className="flex items-center gap-2 text-sm font-black text-cyan-200"><Sparkles className="h-4 w-4" />Start with your floor plan</p><p className="mt-1 text-xs leading-5 text-white/65">Upload a PNG, JPG or WebP, then create an editable seating proposal. With OPENAI_API_KEY configured, iTicket uses vision analysis; otherwise it creates a clearly labelled assisted grid proposal for you to review.</p></div><Button onClick={analyseFloorPlan} disabled={!floorPlanUrl || analysing || lockedInventory} className="shrink-0 bg-cyan-400 font-black text-slate-950 hover:bg-cyan-300">{analysing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}{analysing ? "Analysing…" : "Analyse floor plan"}</Button></div>
+          {proposal ? <div className="mt-4 rounded-xl border border-white/10 bg-slate-950/60 p-4"><p className="font-black">{proposal.proposal.summary}</p><p className="mt-1 text-xs text-white/60">{proposal.reason}</p><div className="mt-3 flex flex-wrap gap-2">{proposal.proposal.blocks.map((block: any) => <span key={`${block.name}-${block.x}`} className="rounded-full border border-white/10 px-3 py-1 text-xs" style={{ color: block.color }}>{block.name}: {block.rowCount} rows × {block.seatsPerRow} seats</span>)}</div><div className="mt-4 flex gap-2"><Button onClick={applyProposal} className="bg-cyan-400 font-black text-slate-950 hover:bg-cyan-300">Apply editable proposal</Button><Button variant="outline" onClick={() => setProposal(null)}>Discard</Button></div></div> : null}
+        </section> : null}
 
         {preview ? (
           <CustomerHallMap plan={previewPlan} selectedSeatIds={[]} onChange={() => {}} currency="BHD" locale="en" eventContext={{ title: "Dashboard customer preview", date: "Event date", time: "Event time", location: "Venue" }} />
