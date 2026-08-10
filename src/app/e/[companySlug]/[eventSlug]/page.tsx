@@ -35,6 +35,7 @@ import {
   normalizeLocale,
 } from "@/lib/marketplace";
 import { CustomerHallMap } from "@/components/seating/CustomerHallMap";
+import { SeatsIoChart } from "@/components/seating/SeatsIoChart";
 
 const CUSTOMER_TERMS = [
   "QR tickets are valid once for the stated event and date.",
@@ -944,7 +945,9 @@ export default function PublicEventPage({
                       {selectedSeatIds.length} selected
                     </span>
                   </div>
-                  {!seatingPlan.floor_plan_url ||
+                  {eventSlug === "cairo-comedy-night" && process.env.NEXT_PUBLIC_SEATSIO_WORKSPACE_KEY ? (
+                    <SeatsIoChart eventId={event.id} workspaceKey={process.env.NEXT_PUBLIC_SEATSIO_WORKSPACE_KEY} />
+                  ) : !seatingPlan.floor_plan_url ||
                   !/\.pdf(?:$|[?#])/i.test(seatingPlan.floor_plan_url) ? (
                     <CustomerHallMap
                       plan={seatingPlan}
