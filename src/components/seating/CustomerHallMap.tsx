@@ -43,6 +43,9 @@ export function CustomerHallMap({
   const [hoveredSeat, setHoveredSeat] = useState<any>(null);
   const [fullScreen, setFullScreen] = useState(startFullScreen);
   const [compactViewport, setCompactViewport] = useState(false);
+  const hasImageFloorPlan = Boolean(
+    plan.floor_plan_url && !/\.pdf(?:$|[?#])/i.test(plan.floor_plan_url),
+  );
   const drag = useRef<{
     x: number;
     y: number;
@@ -189,7 +192,17 @@ export function CustomerHallMap({
                   transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
                 }}
               >
-                <div className="pointer-events-none absolute inset-0 bg-white" />
+                <div
+                  className="pointer-events-none absolute inset-0 bg-white bg-center bg-no-repeat"
+                  style={
+                    hasImageFloorPlan
+                      ? {
+                          backgroundImage: `url(${plan.floor_plan_url})`,
+                          backgroundSize: "contain",
+                        }
+                      : undefined
+                  }
+                />
                 {fittedLayout.labels.map((label: any) => (
                   <div
                     key={label.id}
@@ -212,7 +225,7 @@ export function CustomerHallMap({
                   return (
                     <div
                       key={section.id}
-                      className={fullScreen ? "pointer-events-none absolute -translate-x-1/2 -translate-y-1/2 rounded-sm border border-slate-200/70 bg-white" : "pointer-events-none absolute -translate-x-1/2 -translate-y-1/2"}
+                      className={fullScreen ? `pointer-events-none absolute -translate-x-1/2 -translate-y-1/2 rounded-sm border border-slate-200/70 ${hasImageFloorPlan ? "bg-white/10" : "bg-white"}` : "pointer-events-none absolute -translate-x-1/2 -translate-y-1/2"}
                       style={{
                         left: `${section.x}%`,
                         top: `${section.y}%`,
