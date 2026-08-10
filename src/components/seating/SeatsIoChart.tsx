@@ -3,11 +3,11 @@ import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 
-type Props = { eventId: string; workspaceKey: string; basePrice?: number; currency?: string; onSelection?: (ids: string[]) => void };
-export function SeatsIoChart({ eventId, workspaceKey, basePrice = 0, currency = "EGP", onSelection }: Props) {
+type Props = { eventId: string; workspaceKey: string; basePrice?: number; currency?: string; autoOpen?: boolean; onSelection?: (ids: string[]) => void };
+export function SeatsIoChart({ eventId, workspaceKey, basePrice = 0, currency = "EGP", autoOpen = false, onSelection }: Props) {
   const ref = useRef<HTMLDivElement>(null);
   const router = useRouter();
-  const [fullScreen, setFullScreen] = useState(false);
+  const [fullScreen, setFullScreen] = useState(autoOpen);
   const [selected, setSelected] = useState<string[]>([]);
   const [secondsLeft, setSecondsLeft] = useState(900);
   useEffect(() => {
