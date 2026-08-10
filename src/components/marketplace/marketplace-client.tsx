@@ -606,9 +606,9 @@ export function MarketplaceClient({
                   onClick: () => { window.location.href = "/contact?service=private-events"; },
                 },
                 {
-                  icon: <User className="h-5 w-5 text-slate-800" />,
-                  label: locale === "ar" ? "الملف الشخصي" : "Profile",
-                  onClick: () => { window.location.href = "/account"; },
+                  icon: <Ticket className="h-5 w-5 text-slate-800" />,
+                  label: locale === "ar" ? "My Tickets" : "My Tickets",
+                  onClick: () => { window.location.href = "/account/tickets"; },
                 },
               ]}
             />
