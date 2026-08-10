@@ -276,7 +276,7 @@ function AccountTool({
   );
 }
 
-function TicketRow({ ticket }: { ticket: Record<string, any> }) {
+export function TicketRow({ ticket }: { ticket: Record<string, any> }) {
   const event = ticket.events;
   const ticketType = ticket.ticket_types;
   const url = event?.companies?.slug && event?.slug ? `/e/${event.companies.slug}/${event.slug}` : "/events";
