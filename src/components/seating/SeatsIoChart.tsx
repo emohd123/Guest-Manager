@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 
 type Props = { eventId: string; workspaceKey: string; onSelection?: (ids: string[]) => void };
 export function SeatsIoChart({ eventId, workspaceKey, onSelection }: Props) {
@@ -42,16 +43,16 @@ export function SeatsIoChart({ eventId, workspaceKey, onSelection }: Props) {
       Choose seats
     </button>
     <div className={fullScreen ? "fixed inset-0 z-[200] flex flex-col bg-white" : "w-full"} role={fullScreen ? "dialog" : undefined} aria-modal={fullScreen ? true : undefined} aria-label={fullScreen ? "Choose seats" : "Choose seats"}>
-      {fullScreen ? <div className="relative z-[2147483647] flex items-center justify-between border-b border-zinc-200 bg-white px-4 py-3 shadow-sm">
+      {fullScreen && typeof document !== "undefined" ? createPortal(<div className="fixed inset-x-0 top-0 z-[2147483647] flex items-center justify-between border-b border-zinc-200 bg-white px-4 py-3 shadow-sm">
         <div className="flex items-center gap-3"><button type="button" onClick={() => setFullScreen(false)} aria-label="Back to event" className="rounded-full border border-zinc-300 px-3 py-2 text-lg font-black text-zinc-900">←</button><p className="font-black text-zinc-900">Choose your seats</p></div>
         <button type="button" onClick={() => setFullScreen(false)} className="rounded-full border border-zinc-300 px-4 py-2 text-sm font-bold text-zinc-900">Exit map</button>
-      </div> : null}
+      </div>, document.body) : null}
       {fullScreen ? <div id={`seatsio-${eventId}`} ref={ref} className="min-h-0 flex-1 w-full bg-white" /> : null}
-      {fullScreen ? <div className="relative z-[2147483647] flex items-center justify-between gap-4 border-t border-zinc-200 bg-white px-5 py-4 pb-[calc(1rem+env(safe-area-inset-bottom))] text-sm shadow-[0_-4px_16px_rgba(0,0,0,.08)]">
+      {fullScreen && typeof document !== "undefined" ? createPortal(<div className="fixed inset-x-0 bottom-0 z-[2147483647] flex items-center justify-between gap-4 border-t border-zinc-200 bg-white px-5 py-4 pb-[calc(1rem+env(safe-area-inset-bottom))] text-sm shadow-[0_-4px_16px_rgba(0,0,0,.08)]">
         <span className="font-black text-zinc-900">🎟 {selected.length} selected</span>
         <span className="text-zinc-600">Time remaining <strong className="ml-1 rounded bg-emerald-100 px-2 py-1 text-emerald-700">{Math.floor(secondsLeft / 60)}:{String(secondsLeft % 60).padStart(2, "0")}</strong></span>
         <button type="button" disabled={!selected.length} className="rounded-lg bg-zinc-900 px-7 py-3 font-black text-white disabled:cursor-not-allowed disabled:opacity-40">Next</button>
-      </div> : null}
+      </div>, document.body) : null}
     </div>
   </>;
 }
