@@ -623,7 +623,7 @@ export default function PublicEventPage({
               </ul>
             </section>
 
-            {galleryImages.length ? (
+            {false && galleryImages.length ? (
               <section className="border-t border-zinc-200 pt-7">
                 <div className="mb-4 flex items-center justify-between">
                   <h2 className="text-xl font-black tracking-tight sm:text-2xl">
@@ -847,7 +847,7 @@ export default function PublicEventPage({
               </div>
             </section>}
 
-            <section className="rounded-2xl border border-zinc-200 bg-white p-5">
+            {false && <section className="rounded-2xl border border-zinc-200 bg-white p-5">
               <h3 className="mb-4 flex items-center gap-2 text-lg font-black">
                 <Clock className="h-5 w-5" />
                 Timing and Schedule
@@ -864,9 +864,9 @@ export default function PublicEventPage({
                   {eventTime}
                 </span>
               </div>
-            </section>
+            </section>}
 
-            <section className="rounded-2xl border border-zinc-200 bg-white p-5">
+            {false && <section className="rounded-2xl border border-zinc-200 bg-white p-5">
               <h3 className="mb-5 text-lg font-black">Why buy with iTicket?</h3>
               <div className="space-y-5">
                 {supportItems.map((item) => {
@@ -901,7 +901,7 @@ export default function PublicEventPage({
                   <CreditCard className="h-4 w-4 text-zinc-500" />
                 </div>
               </div>
-            </section>
+            </section>}
 
             <section
               id="tickets"
@@ -914,7 +914,7 @@ export default function PublicEventPage({
                     : t.freeRegistration}
                 </p>
                 <h3 className="mt-1 text-2xl font-black tracking-tight">
-                  {publicPage.isPaidEvent ? t.registration : t.reservePlace}
+                  {publicPage.isPaidEvent ? "Buy tickets" : t.reservePlace}
                 </h3>
                 <p className="mt-2 text-sm leading-6 text-zinc-600">
                   {publicPage.isPaidEvent ? t.paidIntro : t.freeIntro}
@@ -1013,23 +1013,9 @@ export default function PublicEventPage({
                     </div>
                   )}
                 </div>
-              ) : publicSeating.loaded ? (
-                <div className="mb-5 rounded-2xl border border-cyan-200 bg-cyan-50 p-5 text-sm text-slate-800">
-                  <p className="text-xs font-black uppercase tracking-[.18em] text-cyan-700">
-                    Choose seats on map
-                  </p>
-                  <p className="mt-2 font-black">
-                    A reserved seating map is not configured for this event.
-                  </p>
-                  <p className="mt-1 leading-6 text-slate-600">
-                    Continue with General Admission below. When the organiser
-                    activates a plan containing sections and seats, the
-                    interactive hall map will appear here automatically.
-                  </p>
-                </div>
-              ) : (
+              ) : !publicSeating.loaded ? (
                 <div className="mb-5 h-24 animate-pulse rounded-2xl bg-zinc-100" />
-              )}
+              ) : null}
 
               <div className="mb-5 grid gap-3">
                 <Input
@@ -1049,7 +1035,7 @@ export default function PublicEventPage({
                 />
               </div>
 
-              <details id="terms" className="group mb-5 scroll-mt-24 overflow-hidden rounded-xl border border-cyan-300/30 bg-[#0b151d] text-white">
+              {false && <details id="terms" className="group mb-5 scroll-mt-24 overflow-hidden rounded-xl border border-cyan-300/30 bg-[#0b151d] text-white">
                 <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-4 font-black marker:content-none">
                   <span className="flex items-center gap-2">
                     <ShieldCheck className="h-5 w-5 text-cyan-300" />
@@ -1065,7 +1051,7 @@ export default function PublicEventPage({
                     </li>
                   ))}
                 </ul>
-              </details>
+              </details>}
 
               {ticketsLoading ? (
                 <div className="space-y-3">
