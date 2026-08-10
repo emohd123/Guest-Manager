@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useState, type ReactNode } from "react";
-import { CalendarDays, Heart, Home, Search, User } from "lucide-react";
+import { CalendarDays, Heart, Home, Search, Ticket } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
-type ShortcutId = "home" | "search" | "favourite" | "private" | "profile";
+type ShortcutId = "home" | "search" | "favourite" | "private" | "tickets";
 
 export function PublicShortcutDock() {
   const pathname = usePathname();
@@ -23,7 +23,7 @@ export function PublicShortcutDock() {
   useEffect(() => {
     if (pathname.startsWith("/account/favorites")) setActiveShortcut("favourite");
     else if (pathname.startsWith("/private-event")) setActiveShortcut("private");
-    else if (pathname.startsWith("/account")) setActiveShortcut("profile");
+    else if (pathname.startsWith("/account")) setActiveShortcut("tickets");
     else if (pathname === "/") setActiveShortcut("home");
   }, [pathname]);
 
@@ -54,7 +54,7 @@ export function PublicShortcutDock() {
     { id: "search", icon: <Search className="h-5 w-5" />, label: isArabic ? "بحث" : "Search", onClick: focusSearch },
     { id: "favourite", icon: <Heart className="h-5 w-5" />, label: isArabic ? "المفضلة" : "Favourite", onClick: () => { setActiveShortcut("favourite"); router.push(localeHref("/account/favorites")); } },
     { id: "private", icon: <CalendarDays className="h-5 w-5" />, label: isArabic ? "فعالية خاصة" : "Private Event", onClick: () => { setActiveShortcut("private"); router.push(localeHref("/private-event")); } },
-    { id: "profile", icon: <User className="h-5 w-5" />, label: isArabic ? "الملف الشخصي" : "Profile", onClick: () => { setActiveShortcut("profile"); router.push(localeHref("/account")); } },
+    { id: "tickets", icon: <Ticket className="h-5 w-5" />, label: isArabic ? "My Tickets" : "My Tickets", onClick: () => { setActiveShortcut("tickets"); router.push(localeHref("/account/tickets")); } },
   ];
 
   return (
