@@ -947,7 +947,7 @@ export default function PublicEventPage({
                     </span>
                   </div>
                   {usesSeatsIo ? (
-                    <SeatsIoChart eventId={event.id} workspaceKey={process.env.NEXT_PUBLIC_SEATSIO_WORKSPACE_KEY} />
+                    <SeatsIoChart eventId={event.id} workspaceKey={process.env.NEXT_PUBLIC_SEATSIO_WORKSPACE_KEY!} />
                   ) : !seatingPlan.floor_plan_url ||
                   !/\.pdf(?:$|[?#])/i.test(seatingPlan.floor_plan_url) ? (
                     <CustomerHallMap
