@@ -945,7 +945,7 @@ export default function PublicEventPage({
                       {selectedSeatIds.length} selected
                     </span>
                   </div>
-                  {eventSlug === "cairo-comedy-night" && process.env.NEXT_PUBLIC_SEATSIO_WORKSPACE_KEY ? (
+                  {["cairo-comedy-night", "bahrain-comedy-night"].includes(eventSlug) && process.env.NEXT_PUBLIC_SEATSIO_WORKSPACE_KEY ? (
                     <SeatsIoChart eventId={event.id} workspaceKey={process.env.NEXT_PUBLIC_SEATSIO_WORKSPACE_KEY} />
                   ) : !seatingPlan.floor_plan_url ||
                   !/\.pdf(?:$|[?#])/i.test(seatingPlan.floor_plan_url) ? (
