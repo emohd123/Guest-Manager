@@ -42,6 +42,7 @@ export function CustomerHallMap({
   const aspect = 16 / 9;
   const [hoveredSeat, setHoveredSeat] = useState<any>(null);
   const [fullScreen, setFullScreen] = useState(startFullScreen);
+  const [compactViewport, setCompactViewport] = useState(false);
   const drag = useRef<{
     x: number;
     y: number;
@@ -94,6 +95,14 @@ export function CustomerHallMap({
     };
   }, [fullScreen]);
 
+  useEffect(() => {
+    const media = window.matchMedia("(max-width: 640px)");
+    const update = () => setCompactViewport(media.matches);
+    update();
+    media.addEventListener("change", update);
+    return () => media.removeEventListener("change", update);
+  }, []);
+
   return (
     <div className={fullScreen ? "fixed inset-0 z-[200] overflow-y-auto bg-white text-slate-900" : "overflow-hidden rounded-3xl border border-slate-200 bg-white text-slate-900 shadow-2xl"}>
       {fullScreen ? (
@@ -143,7 +152,7 @@ export function CustomerHallMap({
       <div className={fullScreen ? "mx-auto mt-8 max-w-[1500px] px-5 pb-8" : "grid lg:grid-cols-[minmax(0,1fr)_280px]"}>
         <div className="min-w-0">
           <div
-            className={fullScreen ? "relative h-[clamp(430px,62vh,720px)] cursor-grab overflow-hidden border border-slate-200 bg-white active:cursor-grabbing" : "relative min-h-[360px] cursor-grab overflow-hidden bg-white active:cursor-grabbing sm:min-h-[520px] lg:min-h-[640px]"}
+            className={fullScreen ? "relative h-[clamp(560px,72dvh,820px)] cursor-grab overflow-hidden rounded-[28px] border border-slate-200 bg-slate-50 active:cursor-grabbing sm:h-[clamp(430px,68vh,780px)]" : "relative min-h-[420px] cursor-grab overflow-hidden bg-slate-50 active:cursor-grabbing sm:min-h-[520px] lg:min-h-[640px]"}
             onPointerDown={(event) => {
               if ((event.target as HTMLElement).closest("button")) return;
               drag.current = {
@@ -170,13 +179,13 @@ export function CustomerHallMap({
               <button type="button" onClick={() => setZoom((value) => Math.max(1, value - 0.2))} className="grid h-12 w-12 place-items-center rounded-full border border-slate-200 bg-white text-2xl font-light text-slate-950 shadow-lg hover:bg-slate-50" aria-label="Zoom out seating map" title="Zoom out">−</button>
               <button type="button" onClick={() => { setZoom(1); setPan({ x: 0, y: 0 }); }} className="h-9 rounded-full border border-slate-200 bg-white px-3 text-[10px] font-black text-slate-950 shadow-lg hover:bg-slate-50" aria-label="Fit seating map to view" title="Fit map to view">Fit</button>
             </div>
-            <div className="absolute inset-0 grid place-items-center p-4">
+            <div className="absolute inset-0 grid place-items-center p-3 sm:p-5">
               <div
-                className="relative max-h-full max-w-full origin-center transition-transform duration-100"
+                className="relative max-h-full max-w-full origin-center overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-transform duration-100"
                 style={{
-                  aspectRatio: aspect,
-                  width: aspect >= 1 ? "100%" : "auto",
-                  height: aspect >= 1 ? "auto" : "100%",
+                  aspectRatio: compactViewport ? 0.78 : aspect,
+                  width: compactViewport ? "auto" : "100%",
+                  height: compactViewport ? "100%" : "auto",
                   transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
                 }}
               >
@@ -203,7 +212,7 @@ export function CustomerHallMap({
                   return (
                     <div
                       key={section.id}
-                      className={fullScreen ? "pointer-events-none absolute -translate-x-1/2 -translate-y-1/2 border border-slate-200 bg-white" : "pointer-events-none absolute -translate-x-1/2 -translate-y-1/2"}
+                      className={fullScreen ? "pointer-events-none absolute -translate-x-1/2 -translate-y-1/2 rounded-sm border border-slate-200/70 bg-white" : "pointer-events-none absolute -translate-x-1/2 -translate-y-1/2"}
                       style={{
                         left: `${section.x}%`,
                         top: `${section.y}%`,
@@ -256,7 +265,17 @@ export function CustomerHallMap({
                               })
                             }
                             onMouseLeave={() => setHoveredSeat(null)}
-                            onClick={() => toggle(seat.id)}
+                            onClick={() => {
+                              setHoveredSeat({
+                                tier: seat.category ?? row.label,
+                                section: section.name,
+                                row: row.label,
+                                seat: seat.label,
+                                price: seatPrice(seat, row, section),
+                                state: sold ? "Sold" : held ? "Held" : blocked ? "Unavailable" : "Available",
+                              });
+                              toggle(seat.id);
+                            }}
                             className={`pointer-events-auto absolute grid -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border transition hover:z-20 hover:scale-[1.8] ${sold ? "cursor-not-allowed border-slate-300 opacity-55" : held ? "cursor-not-allowed border-slate-300 opacity-70" : active ? "z-10 border-slate-900 ring-2 ring-cyan-400" : "border-black/10"}`}
                             style={{
                               width: density.dotSize,
