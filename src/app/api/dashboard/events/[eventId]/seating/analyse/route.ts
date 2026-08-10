@@ -198,7 +198,9 @@ export async function POST(
         fallbackProposal(
           input.rows,
           input.seatsPerRow,
-          `Vision analysis failed (${response.status}); generated a deterministic editable proposal.`,
+          response.status === 429
+            ? "OpenAI vision quota is unavailable (HTTP 429). Add billing/credits or use a key with available quota, then analyse again. Generated a deterministic editable proposal instead."
+            : `Vision analysis failed (${response.status}); generated a deterministic editable proposal.`,
         ),
       );
     const payload = (await response.json()) as any;
