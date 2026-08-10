@@ -45,14 +45,14 @@ export function SeatsIoChart({ eventId, workspaceKey, basePrice = 0, currency = 
       Choose seats
     </button>
     <div className={fullScreen ? "fixed inset-0 z-[200] flex flex-col bg-white" : "w-full"} role={fullScreen ? "dialog" : undefined} aria-modal={fullScreen ? true : undefined} aria-label={fullScreen ? "Choose seats" : "Choose seats"}>
-      {fullScreen && typeof document !== "undefined" ? createPortal(<div className="fixed inset-x-0 top-0 z-[2147483647] flex items-center justify-between border-b border-zinc-200 bg-white px-4 py-3 shadow-sm">
+      {fullScreen && typeof document !== "undefined" ? createPortal(<div className="fixed inset-x-0 top-0 z-[2147483647] flex h-14 items-center border-b border-zinc-200 bg-white px-3 shadow-sm sm:h-16 sm:px-4">
         <div className="flex items-center gap-3"><button type="button" onClick={() => setFullScreen(false)} aria-label="Back to event" className="rounded-full border border-zinc-300 px-3 py-2 text-lg font-black text-zinc-900">←</button><p className="font-black text-zinc-900">Choose your seats</p></div>
       </div>, document.body) : null}
-      {fullScreen ? <div id={`seatsio-${eventId}`} ref={ref} className="min-h-0 flex-1 w-full bg-white" /> : null}
-      {fullScreen && typeof document !== "undefined" ? createPortal(<div className="fixed inset-x-0 bottom-0 z-[2147483647] flex items-center justify-between gap-4 border-t border-zinc-200 bg-white px-5 py-4 pb-[calc(1rem+env(safe-area-inset-bottom))] text-sm shadow-[0_-4px_16px_rgba(0,0,0,.08)]">
+      {fullScreen ? <div id={`seatsio-${eventId}`} ref={ref} className="min-h-0 flex-1 w-full bg-white pb-16 pt-14 sm:pb-20 sm:pt-16" /> : null}
+      {fullScreen && typeof document !== "undefined" ? createPortal(<div className="fixed inset-x-0 bottom-0 z-[2147483647] grid h-16 grid-cols-[auto_1fr_auto] items-center gap-2 border-t border-zinc-200 bg-white px-3 pb-[env(safe-area-inset-bottom)] text-xs shadow-[0_-4px_16px_rgba(0,0,0,.12)] sm:h-20 sm:gap-4 sm:px-5 sm:text-sm">
         <span className="font-black text-zinc-900">🎟 {selected.length} selected</span>
         <span className="text-zinc-600">Time remaining <strong className="ml-1 rounded bg-emerald-100 px-2 py-1 text-emerald-700">{Math.floor(secondsLeft / 60)}:{String(secondsLeft % 60).padStart(2, "0")}</strong></span>
-        <button type="button" disabled={!selected.length} onClick={() => router.push(`/checkout/seats?event=${encodeURIComponent(eventId)}&seats=${encodeURIComponent(selected.join(","))}&subtotal=${(selected.length * basePrice).toFixed(2)}&currency=${encodeURIComponent(currency)}`)} className="rounded-lg bg-zinc-900 px-7 py-3 font-black text-white disabled:cursor-not-allowed disabled:opacity-40">Next</button>
+        <button type="button" disabled={!selected.length} onClick={() => router.push(`/checkout/seats?event=${encodeURIComponent(eventId)}&seats=${encodeURIComponent(selected.join(","))}&subtotal=${(selected.length * basePrice).toFixed(2)}&currency=${encodeURIComponent(currency)}`)} className="rounded-lg bg-zinc-900 px-4 py-2 font-black text-white disabled:cursor-not-allowed disabled:opacity-40 sm:px-7 sm:py-3">Next</button>
       </div>, document.body) : null}
     </div>
   </>;
