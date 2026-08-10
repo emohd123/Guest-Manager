@@ -438,7 +438,8 @@ export default function PublicEventPage({
         ),
       0,
     ) ?? 0;
-  const hasActiveSeatMap = Boolean(
+  const usesSeatsIo = ["cairo-comedy-night", "bahrain-comedy-night"].includes(eventSlug) && Boolean(process.env.NEXT_PUBLIC_SEATSIO_WORKSPACE_KEY);
+  const hasActiveSeatMap = usesSeatsIo || Boolean(
     seatingPlan?.enabled &&
       seatingPlan.sections?.length &&
       reservedSeatCount > 0,
@@ -945,7 +946,7 @@ export default function PublicEventPage({
                       {selectedSeatIds.length} selected
                     </span>
                   </div>
-                  {["cairo-comedy-night", "bahrain-comedy-night"].includes(eventSlug) && process.env.NEXT_PUBLIC_SEATSIO_WORKSPACE_KEY ? (
+                  {usesSeatsIo ? (
                     <SeatsIoChart eventId={event.id} workspaceKey={process.env.NEXT_PUBLIC_SEATSIO_WORKSPACE_KEY} />
                   ) : !seatingPlan.floor_plan_url ||
                   !/\.pdf(?:$|[?#])/i.test(seatingPlan.floor_plan_url) ? (
