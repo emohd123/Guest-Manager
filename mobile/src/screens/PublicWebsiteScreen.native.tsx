@@ -8,7 +8,10 @@ const deployedUrl = "https://events-hub-vert.vercel.app/";
 function getWebsiteUrl() {
   const configured = process.env.EXPO_PUBLIC_WEB_URL?.trim();
   if (configured) return configured.endsWith("/") ? configured : `${configured}/`;
-  return __DEV__ ? "http://10.0.2.2:3002/" : deployedUrl;
+  // The installed app always mirrors the published customer website. For local
+  // Android testing, set EXPO_PUBLIC_WEB_URL to a reachable LAN URL (or
+  // http://10.0.2.2:3002/ when using the Android emulator).
+  return deployedUrl;
 }
 
 type PublicWebsiteScreenProps = {
