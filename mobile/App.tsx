@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+﻿import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   BackHandler,
@@ -51,7 +51,7 @@ import { PremiumIntroScreen } from "./src/screens/PremiumIntroScreen";
 import { VisitorLoginScreen } from "./src/screens/VisitorLoginScreen";
 import { VisitorSignupScreen } from "./src/screens/VisitorSignupScreen";
 import { VisitorDashboardScreen } from "./src/screens/VisitorDashboardScreen";
-import { PublicHubScreen } from "./src/screens/PublicHubScreen";
+import { PublicWebsiteScreen } from "./src/screens/PublicWebsiteScreen";
 import { JoinEventScreen } from "./src/screens/JoinEventScreen";
 import { ComposeMessageScreen } from "./src/screens/ComposeMessageScreen";
 import { EventHomeScreen } from "./src/screens/EventHomeScreen";
@@ -81,7 +81,7 @@ import type {
   VisitorEvent,
 } from "./src/types";
 
-// ── Auth flow state ──────────────────────────────────────────────────────────
+// â”€â”€ Auth flow state â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 type AuthStep =
   | "role_choice"
   | "staff_choice"
@@ -95,7 +95,7 @@ type AuthStep =
 
 type Tab = "home" | "guests" | "scan" | "walkup" | "activity";
 
-// ── Storage keys ─────────────────────────────────────────────────────────────
+// â”€â”€ Storage keys â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const INSTALLATION_ID_KEY = "guest_manager_mobile_v2_installation_id";
 // Real build version from app.json/app.config (falls back to "0.0.0" if unset)
 // so device/fleet telemetry reflects the actual shipped version.
@@ -126,7 +126,7 @@ async function getInstallationId() {
   return created;
 }
 
-// ── Visitor session helpers ──────────────────────────────────────────────────
+// â”€â”€ Visitor session helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Tokens are kept in SecureStore (Keychain/Keystore) on native via the shared
 // secureStorage helper; AsyncStorage is only used for the non-sensitive
 // installation id below.
@@ -143,7 +143,7 @@ async function clearVisitorSession() {
   await secureDelete(VISITOR_SESSION_KEY);
 }
 
-// ── Main App ─────────────────────────────────────────────────────────────────
+// â”€â”€ Main App â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export default function App() {
   return (
     <SafeAreaProvider>
@@ -156,7 +156,7 @@ export default function App() {
 
 function AppShell() {
   const [booting, setBooting] = useState(true);
-  const [introComplete, setIntroComplete] = useState(false);
+  const [introComplete, setIntroComplete] = useState(true);
   const [authStep, setAuthStep] = useState<AuthStep>("role_choice");
 
   // Staff session
@@ -175,7 +175,7 @@ function AppShell() {
 
   const queueCount = listQueuedMutations().length;
 
-  // ── Boot: restore either session ──────────────────────────────────────────
+  // â”€â”€ Boot: restore either session â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   useEffect(() => {
     try {
       initOfflineQueue();
@@ -186,10 +186,11 @@ function AppShell() {
     Promise.all([
       loadSession(),
       loadVisitorSession(),
-      AsyncStorage.getItem(INTRO_COMPLETE_KEY),
     ])
-      .then(([staffSaved, visitorSaved, introSeen]) => {
-        setIntroComplete(introSeen === "1");
+      .then(([staffSaved, visitorSaved]) => {
+        // The public application now opens the same customer experience as
+        // the website, so the legacy Bahrain-only introduction is skipped.
+        setIntroComplete(true);
         if (staffSaved) {
           setSession(staffSaved);
           setGuests(getCachedGuests(staffSaved.eventId));
@@ -200,7 +201,7 @@ function AppShell() {
       .finally(() => setBooting(false));
   }, []);
 
-  // ── Auto-logout on expired/invalid token ──────────────────────────────────
+  // â”€â”€ Auto-logout on expired/invalid token â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   // Registered once. Any 401/403 from the API client (including the background
   // heartbeat/replay timers) tears down both sessions and returns to the auth
   // flow instead of silently showing stale cached data forever.
@@ -218,7 +219,7 @@ function AppShell() {
     return () => setUnauthorizedHandler(null);
   }, []);
 
-  // ── Hardware back: step back through the flow instead of exiting ──────────
+  // â”€â”€ Hardware back: step back through the flow instead of exiting â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   // Screens with their own internal navigation (RoleChoice, VisitorDashboard)
   // register their own handlers; this one covers the app-level steps and only
   // lets Android exit from a true "home" state.
@@ -260,7 +261,7 @@ function AppShell() {
     return () => sub.remove();
   }, [visitorSession, session, authStep, tab]);
 
-  // ── Staff heartbeat + queue replay ────────────────────────────────────────
+  // â”€â”€ Staff heartbeat + queue replay â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   useEffect(() => {
     if (!session) return;
     refreshDashboardData();
@@ -274,7 +275,7 @@ function AppShell() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session?.token]);
 
-  // ── Device info helper ────────────────────────────────────────────────────
+  // â”€â”€ Device info helper â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   async function buildDeviceInfo(nameHint?: string) {
     const installationId = await getInstallationId();
     return {
@@ -303,7 +304,7 @@ function AppShell() {
     setAuthStep("role_choice");
   }
 
-  // ── Staff dashboard data helpers ──────────────────────────────────────────
+  // â”€â”€ Staff dashboard data helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   async function refreshDashboardData() {
     if (!session) return;
     setRefreshing(true);
@@ -419,7 +420,7 @@ function AppShell() {
     setAuthStep("role_choice");
   }
 
-  // ── Visitor auth handlers ─────────────────────────────────────────────────
+  // â”€â”€ Visitor auth handlers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   async function handleVisitorLogin(email: string, password: string) {
     const data = await visitorLogin(email, password);
     const vs: VisitorSession = { token: data.token, userId: data.userId, email: data.email, name: data.name };
@@ -448,7 +449,7 @@ function AppShell() {
   }
 
 
-  // ── Visitor API wrappers ──────────────────────────────────────────────────
+  // â”€â”€ Visitor API wrappers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   async function loadVisitorTicket(token: string): Promise<VisitorTicket | null> {
     const res = await fetchVisitorTicket(token);
     return res.ticket;
@@ -513,7 +514,7 @@ function AppShell() {
     };
   }, [visitorSession]);
 
-  // ── Render ────────────────────────────────────────────────────────────────
+  // â”€â”€ Render â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   if (booting) {
     return (
       <SafeAreaView style={styles.centered}>
@@ -533,7 +534,7 @@ function AppShell() {
     );
   }
 
-  // ── Visitor is logged in ──────────────────────────────────────────────────
+  // â”€â”€ Visitor is logged in â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   if (visitorSession) {
     // Compose message screen
     if (authStep === "visitor_compose") {
@@ -560,7 +561,7 @@ function AppShell() {
     }
     return (
       <SafeAreaView style={styles.full}>
-        <PublicHubScreen
+        <PublicWebsiteScreen
           session={visitorSession}
           onSignIn={() => setAuthStep("visitor_login")}
           onSignOut={visitorSignOut}
@@ -570,7 +571,7 @@ function AppShell() {
     );
   }
 
-  // ── Staff is paired ───────────────────────────────────────────────────────
+  // â”€â”€ Staff is paired â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   if (session) {
     return (
       <SafeAreaView style={styles.full}>
@@ -614,7 +615,7 @@ function AppShell() {
     );
   }
 
-  // ── Not authenticated — show auth flow ────────────────────────────────────
+  // â”€â”€ Not authenticated â€” show auth flow â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   if (!introComplete) {
     return (
       <SafeAreaView style={styles.full}>
@@ -635,7 +636,7 @@ function AppShell() {
   return (
     <SafeAreaView style={styles.full}>
       {authStep === "role_choice" && (
-        <PublicHubScreen
+        <PublicWebsiteScreen
           session={null}
           onSignIn={() => setAuthStep("visitor_login")}
           onSignOut={() => undefined}
@@ -827,5 +828,3 @@ const styles = StyleSheet.create({
   tabText: { color: "#C3CCDD", fontSize: 12, fontWeight: "800", letterSpacing: 0.2 },
   tabTextActive: { color: "#FFFFFF" },
 });
-
-
