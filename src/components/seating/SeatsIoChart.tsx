@@ -15,6 +15,9 @@ export function SeatsIoChart({ eventId, workspaceKey, basePrice = 0, currency = 
     const previousOverflow = document.body.style.overflow;
     const previousOverscroll = document.body.style.overscrollBehavior;
     const previousHtmlOverflow = document.documentElement.style.overflow;
+    const viewportMeta = document.querySelector('meta[name="viewport"]');
+    const previousViewportContent = viewportMeta?.getAttribute("content") ?? null;
+    if (viewportMeta) viewportMeta.setAttribute("content", "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no");
     document.body.style.overflow = "hidden";
     document.body.style.overscrollBehavior = "none";
     document.documentElement.style.overflow = "hidden";
@@ -25,6 +28,7 @@ export function SeatsIoChart({ eventId, workspaceKey, basePrice = 0, currency = 
       document.body.style.overflow = previousOverflow;
       document.body.style.overscrollBehavior = previousOverscroll;
       document.documentElement.style.overflow = previousHtmlOverflow;
+      if (viewportMeta && previousViewportContent) viewportMeta.setAttribute("content", previousViewportContent);
     };
   }, [fullScreen]);
   useEffect(() => {
