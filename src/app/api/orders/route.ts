@@ -16,6 +16,7 @@ import {
   tickets,
 } from "@/server/db/schema";
 import { generateAndSendTicket } from "@/server/actions/generateAndSendTicket";
+import { createClient as createSupabaseServerClient } from "@/lib/supabase/server";
 
 function generateOrderNumber(): string {
   const timestamp = Date.now().toString(36).toUpperCase();
@@ -36,6 +37,27 @@ class CheckoutValidationError extends Error {}
 
 export async function POST(request: NextRequest) {
   try {
+    const supabase = await createSupabaseServerClient();
+    const { data: authData } = await supabase.auth.getUser();
+    const buyer = authData.user;
+    if (!buyer) {
+      return NextResponse.json(
+        { error: "Please sign in before purchasing tickets.", code: "AUTH_REQUIRED" },
+        { status: 401 },
+      );
+    }
+    if (!buyer.email_confirmed_at) {
+      return NextResponse.json(
+        { error: "Please verify your email before purchasing tickets.", code: "EMAIL_NOT_VERIFIED" },
+        { status: 403 },
+      );
+    }
+    if (!buyer.phone_confirmed_at) {
+      return NextResponse.json(
+        { error: "Please verify your mobile number by SMS before purchasing tickets.", code: "PHONE_NOT_VERIFIED" },
+        { status: 403 },
+      );
+    }
     const body = await request.json();
     const {
       companySlug,

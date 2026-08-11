@@ -36,6 +36,7 @@ import {
 } from "@/lib/marketplace";
 import { CustomerHallMap } from "@/components/seating/CustomerHallMap";
 import { SeatsIoChart } from "@/components/seating/SeatsIoChart";
+import { createClient } from "@/lib/supabase/client";
 
 const CUSTOMER_TERMS = [
   "QR tickets are valid once for the stated event and date.",
@@ -312,6 +313,18 @@ export default function PublicEventPage({
   }
 
   const handleCheckout = async (selection: Record<string, number>) => {
+    const supabase = createClient();
+    const { data: authData } = await supabase.auth.getUser();
+    if (!authData.user) {
+      toast.error("Please sign in and verify your email and mobile number before purchasing.");
+      window.location.assign(`/account/login?redirectTo=${encodeURIComponent(window.location.pathname + "#tickets")}`);
+      return;
+    }
+    if (!authData.user.email_confirmed_at || !authData.user.phone_confirmed_at) {
+      toast.error("Verify your email and mobile number before purchasing tickets.");
+      window.location.assign(`/account/login?redirectTo=${encodeURIComponent(window.location.pathname + "#tickets")}&verify=1`);
+      return;
+    }
     if (!attendeeName.trim()) {
       toast.error("Please enter your full name.");
       return;
