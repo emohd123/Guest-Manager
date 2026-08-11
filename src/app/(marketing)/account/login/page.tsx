@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { Eye, EyeOff } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { BrandWordmark } from "@/components/brand/brand-wordmark";
@@ -11,14 +11,62 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 export default function BuyerLoginPage() {
-  const router = useRouter();
+  const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [nationality, setNationality] = useState("");
   const [mode, setMode] = useState<"login" | "signup">("login");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
+  const [verificationPhone, setVerificationPhone] = useState("");
+  const [verificationCode, setVerificationCode] = useState("");
+  const [verificationSent, setVerificationSent] = useState(false);
+  const [verificationEmail, setVerificationEmail] = useState("");
+  const [emailCode, setEmailCode] = useState("");
+  const [emailVerificationSent, setEmailVerificationSent] = useState(false);
+
+  useEffect(() => {
+    if (searchParams.get("verify") !== "1") return;
+    createClient().auth.getUser().then(({ data }) => {
+      const user = data.user;
+      if (user) {
+        setEmail(user.email ?? "");
+        setVerificationEmail(user.email ?? "");
+        setVerificationPhone(user.phone ?? user.user_metadata?.phone ?? "");
+      }
+    });
+  }, [searchParams]);
+
+  async function sendPhoneOtp() {
+    const supabase = createClient();
+    const { error } = await supabase.auth.updateUser({ phone: verificationPhone.trim() });
+    setMessage(error ? error.message : "SMS code sent. Enter it below to verify your mobile.");
+    setVerificationSent(!error);
+  }
+
+  async function verifyPhoneOtp() {
+    const supabase = createClient();
+    const { error } = await supabase.auth.verifyOtp({ phone: verificationPhone.trim(), token: verificationCode.trim(), type: "phone_change" });
+    if (error) { setMessage(error.message); return; }
+    window.location.assign(searchParams.get("redirectTo") || "/account");
+  }
+
+  async function sendEmailOtp() {
+    const supabase = createClient();
+    const { error } = await supabase.auth.resend({ type: "signup", email: verificationEmail.trim() });
+    setMessage(error ? error.message : "Email verification code sent. Enter it below.");
+    setEmailVerificationSent(!error);
+  }
+
+  async function verifyEmailOtp() {
+    const supabase = createClient();
+    const { error } = await supabase.auth.verifyOtp({ email: verificationEmail.trim(), token: emailCode.trim(), type: "signup" });
+    if (error) { setMessage(error.message); return; }
+    setMessage("Email verified. Now verify your mobile number below.");
+  }
 
   async function handleEmailAuth(event: React.FormEvent) {
     event.preventDefault();
@@ -35,6 +83,8 @@ export default function BuyerLoginPage() {
             options: {
               data: {
                 name: name || email.split("@")[0],
+                phone,
+                nationality,
                 role: "visitor",
               },
               emailRedirectTo: `${window.location.origin}/auth/callback?redirectTo=/account`,
@@ -72,6 +122,22 @@ export default function BuyerLoginPage() {
     }
   }
 
+  async function handleFacebook() {
+    setLoading(true);
+    setMessage("");
+    const supabase = createClient();
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "facebook",
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback?redirectTo=/account`,
+      },
+    });
+    if (error) {
+      setMessage(error.message);
+      setLoading(false);
+    }
+  }
+
   return (
     <div className="min-h-screen bg-white px-4 py-28 text-slate-900">
       <div className="mx-auto max-w-md rounded-[2rem] border border-slate-200 bg-white p-7 shadow-2xl">
@@ -89,6 +155,17 @@ export default function BuyerLoginPage() {
           Use the same email you used at checkout to see your orders, QR tickets, favorites, and event updates.
         </p>
 
+        {searchParams.get("verify") === "1" ? (
+          <div className="mt-6 rounded-2xl border border-cyan-200 bg-cyan-50 p-4">
+            <p className="font-black text-slate-900">Verify your email and mobile</p>
+            <Input className="mt-3 h-11 rounded-xl bg-white" type="email" value={verificationEmail} onChange={(event) => setVerificationEmail(event.target.value)} placeholder="Email address" />
+            {!emailVerificationSent ? <Button type="button" onClick={sendEmailOtp} className="mt-3 w-full rounded-xl bg-slate-900 text-white">Send email code</Button> : <><Input className="mt-3 h-11 rounded-xl bg-white" inputMode="numeric" value={emailCode} onChange={(event) => setEmailCode(event.target.value)} placeholder="Email verification code" /><Button type="button" onClick={verifyEmailOtp} className="mt-3 w-full rounded-xl bg-slate-900 text-white">Verify email</Button></>}
+            <p className="mt-5 text-sm font-bold text-slate-900">Mobile number</p>
+            <Input className="mt-3 h-11 rounded-xl bg-white" type="tel" value={verificationPhone} onChange={(event) => setVerificationPhone(event.target.value)} placeholder="+20..." />
+            {!verificationSent ? <Button type="button" onClick={sendPhoneOtp} className="mt-3 w-full rounded-xl bg-cyan-600 text-white">Send SMS code</Button> : <><Input className="mt-3 h-11 rounded-xl bg-white" inputMode="numeric" value={verificationCode} onChange={(event) => setVerificationCode(event.target.value)} placeholder="6-digit code" /><Button type="button" onClick={verifyPhoneOtp} className="mt-3 w-full rounded-xl bg-cyan-600 text-white">Verify mobile</Button></>}
+          </div>
+        ) : null}
+
         <Button
           type="button"
           variant="outline"
@@ -97,6 +174,15 @@ export default function BuyerLoginPage() {
           disabled={loading}
         >
           Continue with Google
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          className="mt-3 h-12 w-full rounded-2xl border-slate-200 bg-[#1877F2] text-white hover:bg-[#166fe5]"
+          onClick={handleFacebook}
+          disabled={loading}
+        >
+          Continue with Facebook
         </Button>
 
         <div className="my-6 flex items-center gap-3 text-xs font-bold uppercase tracking-widest text-slate-500">
@@ -107,15 +193,20 @@ export default function BuyerLoginPage() {
 
         <form onSubmit={handleEmailAuth} className="space-y-4">
           {mode === "signup" ? (
-            <div className="space-y-2">
-              <Label htmlFor="name">Name</Label>
-              <Input
-                id="name"
-                value={name}
-                onChange={(event) => setName(event.target.value)}
-                className="h-12 rounded-2xl border-slate-200 bg-slate-50 text-slate-900"
-              />
-            </div>
+            <>
+              <div className="space-y-2">
+                <Label htmlFor="name">Full name</Label>
+                <Input id="name" value={name} onChange={(event) => setName(event.target.value)} required className="h-12 rounded-2xl border-slate-200 bg-slate-50 text-slate-900" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="phone">Mobile number</Label>
+                <Input id="phone" type="tel" value={phone} onChange={(event) => setPhone(event.target.value)} required placeholder="+20..." className="h-12 rounded-2xl border-slate-200 bg-slate-50 text-slate-900" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="nationality">Nationality</Label>
+                <Input id="nationality" value={nationality} onChange={(event) => setNationality(event.target.value)} required className="h-12 rounded-2xl border-slate-200 bg-slate-50 text-slate-900" />
+              </div>
+            </>
           ) : null}
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
