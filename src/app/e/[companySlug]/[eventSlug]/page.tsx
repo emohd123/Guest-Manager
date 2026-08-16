@@ -190,6 +190,7 @@ export default function PublicEventPage({
   const [attendeeEmail, setAttendeeEmail] = useState("");
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [selectedSeatIds, setSelectedSeatIds] = useState<string[]>([]);
+  const [activeMediaIndex, setActiveMediaIndex] = useState(0);
   const [publicSeating, setPublicSeating] = useState<{
     loaded: boolean;
     plan: any | null;
@@ -484,6 +485,13 @@ export default function PublicEventPage({
     typeof publicMedia?.videoUrl === "string" && publicMedia.videoUrl.trim()
       ? publicMedia.videoUrl
       : null;
+  const mediaItems = Array.from(new Set([
+    event.coverImageUrl,
+    ...extraGalleryImages,
+    ...(videoUrl ? [videoUrl] : []),
+  ].filter((item): item is string => Boolean(item))));
+  const activeMedia = mediaItems[activeMediaIndex] ?? event.coverImageUrl;
+  const isActiveVideo = Boolean(activeMedia && /\.(mp4|webm|mov)(?:[?#].*)?$/i.test(activeMedia));
   const importantItems = publicPage.highlights.length
     ? publicPage.highlights.slice(0, 5)
     : [
@@ -559,12 +567,12 @@ export default function PublicEventPage({
 
         <section className="relative overflow-hidden rounded-2xl bg-zinc-200 shadow-[0_18px_44px_rgba(15,23,42,0.14)] sm:rounded-[32px] sm:shadow-[0_24px_70px_rgba(15,23,42,0.16)]">
           <div className="aspect-[4/3] w-full sm:aspect-[16/7] sm:min-h-[300px]">
-            {event.coverImageUrl ? (
-              <img
-                src={event.coverImageUrl}
-                alt={event.title}
-                className="h-full w-full object-cover"
-              />
+            {activeMedia ? (
+              isActiveVideo ? (
+                <video src={activeMedia} controls className="h-full w-full object-cover" />
+              ) : (
+                <img src={activeMedia} alt={event.title} className="h-full w-full object-cover" />
+              )
             ) : (
               <div className="flex h-full w-full items-center justify-center bg-[radial-gradient(circle_at_30%_20%,#d946ef,transparent_32%),linear-gradient(135deg,#111827,#312e81_55%,#0f172a)]">
                 <div className="rounded-2xl border border-white/20 bg-white/10 px-6 py-4 text-center text-white backdrop-blur">
@@ -578,13 +586,17 @@ export default function PublicEventPage({
           </div>
           <button
             aria-label="Previous image"
-            className="absolute left-4 top-1/2 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white text-zinc-800 shadow-md md:flex"
+            onClick={() => setActiveMediaIndex((index) => mediaItems.length ? (index - 1 + mediaItems.length) % mediaItems.length : 0)}
+            className="absolute left-4 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white text-zinc-800 shadow-md disabled:opacity-40 md:flex"
+            disabled={mediaItems.length < 2}
           >
             <ArrowLeft className="h-4 w-4" />
           </button>
           <button
             aria-label="Next image"
-            className="absolute right-4 top-1/2 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white text-zinc-800 shadow-md md:flex"
+            onClick={() => setActiveMediaIndex((index) => mediaItems.length ? (index + 1) % mediaItems.length : 0)}
+            className="absolute right-4 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white text-zinc-800 shadow-md disabled:opacity-40 md:flex"
+            disabled={mediaItems.length < 2}
           >
             <ChevronRight className="h-4 w-4" />
           </button>

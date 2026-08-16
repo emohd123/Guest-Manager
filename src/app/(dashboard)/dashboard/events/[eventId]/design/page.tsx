@@ -54,6 +54,7 @@ export default function DesignSetupPage({
   const [galleryUrls, setGalleryUrls] = useState("");
   const [videoUrl, setVideoUrl] = useState("");
   const [uploadingVideo, setUploadingVideo] = useState(false);
+  const [uploadingGallery, setUploadingGallery] = useState(false);
   const supabase = createClient();
   const [showAgenda, setShowAgenda] = useState(true);
 
@@ -201,6 +202,37 @@ export default function DesignSetupPage({
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Video upload failed");
     } finally { setUploadingVideo(false); }
+  };
+
+  const uploadGalleryMedia = async (files: File[]) => {
+    if (!files.length) return;
+    setUploadingGallery(true);
+    try {
+      const uploaded: string[] = [];
+      for (const file of files) {
+        if (!file.type.startsWith("image/") && !file.type.startsWith("video/")) continue;
+        const path = `event-media/${crypto.randomUUID()}-${file.name.replace(/[^a-zA-Z0-9._-]/g, "-")}`;
+        const { error } = await supabase.storage.from("events").upload(path, file, {
+          contentType: file.type,
+          cacheControl: "3600",
+        });
+        if (error) throw error;
+        uploaded.push(supabase.storage.from("events").getPublicUrl(path).data.publicUrl);
+      }
+      if (uploaded.length) {
+        setGalleryUrls((current) => [...current.split("\n"), ...uploaded].filter(Boolean).join("\n"));
+        const firstVideo = files.find((file) => file.type.startsWith("video/"));
+        if (firstVideo && !videoUrl) {
+          const videoIndex = files.indexOf(firstVideo);
+          setVideoUrl(uploaded[videoIndex] ?? "");
+        }
+        toast.success(`${uploaded.length} media file${uploaded.length === 1 ? "" : "s"} uploaded`);
+      }
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Media upload failed");
+    } finally {
+      setUploadingGallery(false);
+    }
   };
 
   if (isLoading) {
@@ -411,10 +443,15 @@ export default function DesignSetupPage({
                   </div>
 
                   <div className="space-y-3">
-                    <Label className="text-[9px] font-black uppercase tracking-[0.3em] text-muted-foreground dark:text-white/40 italic">GALLERY IMAGE URLS</Label>
-                    <ImageUpload label="UPLOAD GALLERY IMAGE" description="Upload an image to add it to the gallery." value="" onChange={(url) => setGalleryUrls((current) => [current, url].filter(Boolean).join("\n"))} onRemove={() => {}} aspectRatio="video" />
-                    <Textarea value={galleryUrls} onChange={(e) => setGalleryUrls(e.target.value)} className="theme-textarea min-h-[120px]" placeholder={"One image URL per line\nhttps://..."} />
-                    <p className="text-xs text-muted-foreground">These images appear in the public event gallery after the cover image.</p>
+                    <Label className="text-[9px] font-black uppercase tracking-[0.3em] text-muted-foreground dark:text-white/40 italic">EVENT PHOTOS &amp; VIDEOS</Label>
+                    <label className={cn("flex min-h-32 cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-cyan-300/70 bg-cyan-50/40 p-6 text-center transition hover:bg-cyan-50 dark:border-cyan-300/30 dark:bg-cyan-300/5", uploadingGallery && "pointer-events-none opacity-60")}>
+                      <ImagePlus className="mb-2 h-8 w-8 text-cyan-600" />
+                      <span className="font-black text-foreground">{uploadingGallery ? "Uploading media…" : "Choose multiple photos and videos"}</span>
+                      <span className="mt-1 text-xs text-muted-foreground">JPG, PNG, WebP, MP4, WebM, or MOV. Select as many as you need.</span>
+                      <Input type="file" multiple accept="image/*,video/mp4,video/webm,video/quicktime" className="hidden" disabled={uploadingGallery} onChange={(e) => { void uploadGalleryMedia(Array.from(e.target.files ?? [])); e.currentTarget.value = ""; }} />
+                    </label>
+                    <Textarea value={galleryUrls} onChange={(e) => setGalleryUrls(e.target.value)} className="theme-textarea min-h-[120px]" placeholder={"One photo or video URL per line\nhttps://..."} />
+                    <p className="text-xs text-muted-foreground">All listed media is saved with the event and appears in the public hero slider. Existing URLs remain supported.</p>
                   </div>
 
                   <div className="space-y-3">
