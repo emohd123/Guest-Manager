@@ -284,11 +284,12 @@ export function TicketRow({ ticket }: { ticket: Record<string, any> }) {
   const venueName = publicPage.venueName || publicPage.locationText || "Venue TBA";
   const location = publicPage.locationText || "Cairo, Egypt";
   const checkedIn = ticket.checked_in || ticket.status === "checked_in";
+  const used = checkedIn || ticket.status === "used";
   return (
     <div className="overflow-hidden rounded-[1.5rem] border border-slate-200 bg-white shadow-sm">
       <div className="border-b border-slate-200 bg-slate-950 px-5 py-4 text-white">
         <div className="flex items-center justify-between gap-3">
-          <p className="text-xs font-black uppercase tracking-[0.24em] text-cyan-300">{checkedIn ? "Checked in" : "Valid ticket"}</p>
+          <p className={`text-xs font-black uppercase tracking-[0.24em] ${used ? "text-amber-300" : "text-emerald-300"}`}>{used ? "Used ticket" : "Available ticket"}</p>
           <span className="font-mono text-xs text-slate-300">{ticket.barcode}</span>
         </div>
         <h3 className="mt-2 text-xl font-black">{event?.title ?? "Event"}</h3>
@@ -307,7 +308,7 @@ export function TicketRow({ ticket }: { ticket: Record<string, any> }) {
           ) : null}
           <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
             <div><p className="text-slate-500">Ticket type</p><p className="font-black">{ticketType?.name ?? "General Admission"}</p></div>
-            <div><p className="text-slate-500">Status</p><p className="font-black">{checkedIn ? "Checked in" : ticket.status ?? "Valid"}</p></div>
+            <div><p className="text-slate-500">Status</p><p className="font-black">{used ? "Used" : "Available"}</p></div>
             <div><p className="text-slate-500">Price</p><p className="font-black">{formatMoney(ticketType?.price ?? 0, ticketType?.currency ?? "EGP")}</p></div>
             <div><p className="text-slate-500">Ticket number</p><p className="truncate font-mono text-xs font-black">{ticket.barcode}</p></div>
           </div>

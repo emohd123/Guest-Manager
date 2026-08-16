@@ -377,10 +377,28 @@ function AppShell() {
     try {
       const result = await scanTicket(session, payload);
       await refreshDashboardData();
-      return `${result.result.toUpperCase()}: ${result.status}`;
+      if (result.status === "success") {
+        return {
+          outcome: "success" as const,
+          attendeeName: result.attendeeName ?? undefined,
+          message: "Ticket scanned successfully. Entry approved.",
+        };
+      }
+      if (result.status === "revalidated") {
+        return {
+          outcome: "already_used" as const,
+          attendeeName: result.attendeeName ?? undefined,
+          message: "This ticket was already scanned.",
+        };
+      }
+      return {
+        outcome: "invalid" as const,
+        attendeeName: result.attendeeName ?? undefined,
+        message: result.result === "voided" ? "This ticket is voided." : "Ticket not found or unavailable.",
+      };
     } catch {
       await enqueueScanFallback(payload);
-      return "Queued offline for sync";
+      return { outcome: "offline" as const, message: "Scan saved offline and will sync when connected." };
     }
   }
 
@@ -567,7 +585,6 @@ function AppShell() {
           session={visitorSession}
           onSignIn={() => setAuthStep("visitor_login")}
           onSignOut={visitorSignOut}
-          onStaff={() => setAuthStep("staff_choice")}
         />
       </SafeAreaView>
     );
@@ -642,7 +659,6 @@ function AppShell() {
           session={null}
           onSignIn={() => setAuthStep("visitor_login")}
           onSignOut={() => undefined}
-          onStaff={() => setAuthStep("staff_access")}
         />
       )}
 
@@ -697,6 +713,7 @@ function AppShell() {
         <VisitorLoginScreen
           onBack={() => setAuthStep("role_choice")}
           onGoSignup={() => setAuthStep("visitor_signup")}
+          onStaff={() => setAuthStep("staff_access")}
           onSubmit={handleVisitorLogin}
         />
       )}

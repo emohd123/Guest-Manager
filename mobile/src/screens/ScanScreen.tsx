@@ -20,10 +20,16 @@ import {
 } from "../ui/primitives";
 import { palette, radii, spacing } from "../ui/theme";
 
+type ScanFeedback = {
+  outcome: "success" | "already_used" | "invalid" | "offline";
+  attendeeName?: string;
+  message: string;
+};
+
 export function ScanScreen({
   onSubmitBarcode,
 }: {
-  onSubmitBarcode: (barcode: string) => Promise<string>;
+  onSubmitBarcode: (barcode: string) => Promise<ScanFeedback>;
 }) {
   const { width } = useWindowDimensions();
   const [permission, requestPermission] = useCameraPermissions();
@@ -31,6 +37,7 @@ export function ScanScreen({
   const [facing, setFacing] = useState<"back" | "front">("back");
   const [barcodeInput, setBarcodeInput] = useState("");
   const [lastMessage, setLastMessage] = useState("");
+  const [lastFeedback, setLastFeedback] = useState<ScanFeedback | null>(null);
   const [locked, setLocked] = useState(false);
   const pulse = usePulseAnimation(cameraMode);
 
@@ -41,10 +48,13 @@ export function ScanScreen({
     if (!barcode || locked) return;
     setLocked(true);
     try {
-      const message = await onSubmitBarcode(barcode);
-      setLastMessage(message);
+      const feedback = await onSubmitBarcode(barcode);
+      setLastFeedback(feedback);
+      setLastMessage(feedback.message);
     } catch (error) {
-      setLastMessage(error instanceof Error ? error.message : "Scan failed");
+      const message = error instanceof Error ? error.message : "Scan failed";
+      setLastFeedback({ outcome: "invalid", message });
+      setLastMessage(message);
     } finally {
       setTimeout(() => setLocked(false), 900);
     }
@@ -71,6 +81,34 @@ export function ScanScreen({
       }
     }
     setCameraMode((value) => !value);
+  }
+
+  function feedbackCard() {
+    if (!lastFeedback) return null;
+    return (
+      <View
+        style={[
+          styles.resultCard,
+          lastFeedback.outcome === "success"
+            ? styles.resultSuccess
+            : lastFeedback.outcome === "already_used"
+              ? styles.resultWarning
+              : styles.resultError,
+        ]}
+      >
+        <Text style={styles.resultTitle}>
+          {lastFeedback.outcome === "success"
+            ? "ENTRY APPROVED"
+            : lastFeedback.outcome === "already_used"
+              ? "ALREADY SCANNED"
+              : lastFeedback.outcome === "offline"
+                ? "SAVED OFFLINE"
+                : "SCAN NOT VALID"}
+        </Text>
+        {lastFeedback.attendeeName ? <Text style={styles.resultName}>{lastFeedback.attendeeName}</Text> : null}
+        <Text style={styles.resultMessage}>{lastFeedback.message}</Text>
+      </View>
+    );
   }
 
   function toggleFacing() {
@@ -148,6 +186,8 @@ export function ScanScreen({
         </FadeSlideIn>
       ) : null}
 
+      {feedbackCard()}
+
       <FadeSlideIn delay={130}>
         <PremiumCard style={styles.manualCard}>
           <PremiumField
@@ -157,7 +197,7 @@ export function ScanScreen({
             placeholder="Enter barcode"
           />
           <PremiumButton label="Submit Barcode" icon="checkmark-circle-outline" onPress={() => submit(barcodeInput)} />
-          {lastMessage ? <PremiumNotice text={lastMessage} /> : null}
+          {!lastFeedback && lastMessage ? <PremiumNotice text={lastMessage} /> : null}
         </PremiumCard>
       </FadeSlideIn>
     </ScrollView>
@@ -223,5 +263,39 @@ const styles = StyleSheet.create({
   },
   manualCard: {
     gap: spacing.md,
+  },
+  resultCard: {
+    borderRadius: radii.lg,
+    borderWidth: 1,
+    padding: spacing.lg,
+    gap: spacing.xs,
+  },
+  resultSuccess: {
+    backgroundColor: "#0b6b46",
+    borderColor: "#35e49a",
+  },
+  resultWarning: {
+    backgroundColor: "#72500a",
+    borderColor: "#f4c542",
+  },
+  resultError: {
+    backgroundColor: "#7a1f2b",
+    borderColor: "#ff7180",
+  },
+  resultTitle: {
+    color: "#fff",
+    fontSize: 18,
+    fontWeight: "900",
+    letterSpacing: 1,
+  },
+  resultName: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "800",
+  },
+  resultMessage: {
+    color: "#fff",
+    fontSize: 14,
+    fontWeight: "600",
   },
 });
