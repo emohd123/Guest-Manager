@@ -474,13 +474,6 @@ export default function PublicEventPage({
           typeof item === "string" && item.trim().length > 0,
       )
     : [];
-  const galleryImages = [
-    ...new Set(
-      [event.coverImageUrl, ...extraGalleryImages].filter(
-        (item): item is string => Boolean(item),
-      ),
-    ),
-  ];
   const videoUrl =
     typeof publicMedia?.videoUrl === "string" && publicMedia.videoUrl.trim()
       ? publicMedia.videoUrl
@@ -491,7 +484,8 @@ export default function PublicEventPage({
     ...(videoUrl ? [videoUrl] : []),
   ].filter((item): item is string => Boolean(item))));
   const activeMedia = mediaItems[activeMediaIndex] ?? event.coverImageUrl;
-  const isActiveVideo = Boolean(activeMedia && /\.(mp4|webm|mov)(?:[?#].*)?$/i.test(activeMedia));
+  const isVideoMedia = (url: string) => /\.(mp4|webm|mov)(?:[?#].*)?$/i.test(url);
+  const isActiveVideo = Boolean(activeMedia && isVideoMedia(activeMedia));
   const importantItems = publicPage.highlights.length
     ? publicPage.highlights.slice(0, 5)
     : [
@@ -650,52 +644,26 @@ export default function PublicEventPage({
               </ul>
             </section>
 
-            {false && galleryImages.length ? (
+            {mediaItems.length > 1 ? (
               <section className="border-t border-zinc-200 pt-7">
                 <div className="mb-4 flex items-center justify-between">
                   <h2 className="text-xl font-black tracking-tight sm:text-2xl">
-                    Gallery
+                    Event media
                   </h2>
-                  <span className="text-sm font-bold text-violet-600">
-                    Show more
-                  </span>
+                  <span className="text-sm font-bold text-zinc-500">{mediaItems.length} items</span>
                 </div>
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
-                  {galleryImages.map((image) => (
-                    <img
-                      key={image}
-                      src={image}
-                      alt={`${event?.title ?? "Event"} gallery`}
-                      className="aspect-[4/3] rounded-xl object-cover"
-                    />
-                  ))}
-                  {Array.from({
-                    length: Math.max(0, 5 - galleryImages.length),
-                  }).map((_, index) => (
-                    <div
-                      key={index}
-                      className="flex aspect-[4/3] items-center justify-center rounded-xl border border-dashed border-zinc-300 bg-white text-xs font-bold text-zinc-400"
-                    >
-                      Coming soon
-                    </div>
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                  {mediaItems.map((media, index) => (
+                    <button key={`${media}-${index}`} type="button" onClick={() => setActiveMediaIndex(index)} className={`relative overflow-hidden rounded-xl border-2 text-left transition ${index === activeMediaIndex ? "border-cyan-500 ring-2 ring-cyan-100" : "border-zinc-200 hover:border-cyan-300"}`} aria-label={`Show media ${index + 1}`}>
+                      {isVideoMedia(media) ? (
+                        <video src={media} muted playsInline preload="metadata" className="aspect-[4/3] w-full object-cover" />
+                      ) : (
+                        <img src={media} alt={`${event?.title ?? "Event"} media ${index + 1}`} className="aspect-[4/3] w-full object-cover" />
+                      )}
+                      {isVideoMedia(media) ? <span className="absolute bottom-2 left-2 rounded-full bg-black/75 px-2 py-1 text-[10px] font-bold text-white">Video</span> : null}
+                    </button>
                   ))}
                 </div>
-              </section>
-            ) : null}
-
-            {videoUrl ? (
-              <section className="border-t border-zinc-200 pt-7">
-                <h2 className="mb-4 text-xl font-black tracking-tight sm:text-2xl">
-                  Event video
-                </h2>
-                <video
-                  controls
-                  preload="metadata"
-                  className="aspect-video w-full rounded-2xl bg-zinc-950"
-                  src={videoUrl}
-                >
-                  Your browser does not support event video playback.
-                </video>
               </section>
             ) : null}
 

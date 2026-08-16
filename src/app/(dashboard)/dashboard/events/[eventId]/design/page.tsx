@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ImagePlus, ExternalLink, Loader2, Ticket, Mail, CalendarDays, Activity, ShieldCheck, Globe, BadgeDollarSign } from "lucide-react";
+import { ImagePlus, ExternalLink, Loader2, Ticket, Mail, CalendarDays, Activity, ShieldCheck, Globe, BadgeDollarSign, ArrowUp, ArrowDown, Trash2, Film } from "lucide-react";
 import { trpc } from "@/lib/trpc/client";
 import { ImageUpload } from "@/components/shared/ImageUpload";
 import { toast } from "sonner";
@@ -235,6 +235,27 @@ export default function DesignSetupPage({
     }
   };
 
+  const galleryMediaItems = galleryUrls
+    .split("\n")
+    .map((url) => url.trim())
+    .filter(Boolean);
+
+  const updateGalleryItems = (items: string[]) => {
+    setGalleryUrls(items.join("\n"));
+  };
+
+  const moveGalleryItem = (index: number, direction: -1 | 1) => {
+    const nextIndex = index + direction;
+    if (nextIndex < 0 || nextIndex >= galleryMediaItems.length) return;
+    const next = [...galleryMediaItems];
+    [next[index], next[nextIndex]] = [next[nextIndex], next[index]];
+    updateGalleryItems(next);
+  };
+
+  const removeGalleryItem = (index: number) => {
+    updateGalleryItems(galleryMediaItems.filter((_, itemIndex) => itemIndex !== index));
+  };
+
   if (isLoading) {
     return (
       <div className="flex h-[50vh] items-center justify-center">
@@ -450,8 +471,39 @@ export default function DesignSetupPage({
                       <span className="mt-1 text-xs text-muted-foreground">JPG, PNG, WebP, MP4, WebM, or MOV. Select as many as you need.</span>
                       <Input type="file" multiple accept="image/*,video/mp4,video/webm,video/quicktime" className="hidden" disabled={uploadingGallery} onChange={(e) => { void uploadGalleryMedia(Array.from(e.target.files ?? [])); e.currentTarget.value = ""; }} />
                     </label>
+                    {galleryMediaItems.length ? (
+                      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3" aria-label="Uploaded event media">
+                        {galleryMediaItems.map((url, index) => {
+                          const isVideo = /\.(mp4|webm|mov)(?:$|[?#])/i.test(url);
+                          return (
+                            <div key={`${url}-${index}`} className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm dark:border-white/10 dark:bg-white/5">
+                              <div className="relative aspect-[4/3] bg-muted/40 dark:bg-black/20">
+                                {isVideo ? (
+                                  <video src={url} className="h-full w-full object-cover" muted playsInline preload="metadata" />
+                                ) : (
+                                  <img src={url} alt={`Event media ${index + 1}`} className="h-full w-full object-cover" />
+                                )}
+                                <span className="absolute left-2 top-2 inline-flex items-center gap-1 rounded-full bg-black/70 px-2 py-1 text-[10px] font-bold text-white">
+                                  {isVideo ? <Film className="h-3 w-3" /> : <ImagePlus className="h-3 w-3" />}
+                                  {isVideo ? "Video" : "Photo"}
+                                </span>
+                                <span className="absolute right-2 top-2 rounded-full bg-black/70 px-2 py-1 text-[10px] font-bold text-white">{index + 1}</span>
+                              </div>
+                              <div className="flex items-center justify-between gap-2 p-2">
+                                <p className="min-w-0 flex-1 truncate text-[11px] text-muted-foreground" title={url}>{url}</p>
+                                <div className="flex shrink-0 items-center gap-1">
+                                  <Button type="button" variant="outline" size="icon" className="h-7 w-7 rounded-lg" aria-label={`Move media ${index + 1} up`} disabled={index === 0} onClick={() => moveGalleryItem(index, -1)}><ArrowUp className="h-3.5 w-3.5" /></Button>
+                                  <Button type="button" variant="outline" size="icon" className="h-7 w-7 rounded-lg" aria-label={`Move media ${index + 1} down`} disabled={index === galleryMediaItems.length - 1} onClick={() => moveGalleryItem(index, 1)}><ArrowDown className="h-3.5 w-3.5" /></Button>
+                                  <Button type="button" variant="outline" size="icon" className="h-7 w-7 rounded-lg text-destructive hover:text-destructive" aria-label={`Remove media ${index + 1}`} onClick={() => removeGalleryItem(index)}><Trash2 className="h-3.5 w-3.5" /></Button>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : null}
                     <Textarea value={galleryUrls} onChange={(e) => setGalleryUrls(e.target.value)} className="theme-textarea min-h-[120px]" placeholder={"One photo or video URL per line\nhttps://..."} />
-                    <p className="text-xs text-muted-foreground">All listed media is saved with the event and appears in the public hero slider. Existing URLs remain supported.</p>
+                    <p className="text-xs text-muted-foreground">All listed media is saved with the event and appears in the public hero slider. Use the arrows to change the order or the trash button to remove an item. Existing URLs remain supported.</p>
                   </div>
 
                   <div className="space-y-3">
