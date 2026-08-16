@@ -85,6 +85,7 @@ import type {
 type AuthStep =
   | "role_choice"
   | "staff_choice"
+  | "staff_access"
   | "code_pin"
   | "qr"
   | "staff"
@@ -291,7 +292,7 @@ function AppShell() {
   async function storePairedSession(data: {
     token: string;
     device: { id: string; eventId: string; companyId: string; name: string };
-  }) {
+  }, nextTab: Tab = "home") {
     const nextSession: PairingSession = {
       token: data.token,
       eventId: data.device.eventId,
@@ -301,6 +302,7 @@ function AppShell() {
     };
     await saveSession(nextSession);
     setSession(nextSession);
+    setTab(nextTab);
     setAuthStep("role_choice");
   }
 
@@ -640,11 +642,20 @@ function AppShell() {
           session={null}
           onSignIn={() => setAuthStep("visitor_login")}
           onSignOut={() => undefined}
-          onStaff={() => setAuthStep("staff_choice")}
+          onStaff={() => setAuthStep("staff_access")}
         />
       )}
 
       {/* Staff pairing */}
+      {authStep === "staff_access" && (
+        <PairCodePinScreen
+          onBack={() => setAuthStep("role_choice")}
+          onSubmit={async ({ accessCode, pin }) => {
+            const paired = await pairByCodePin(accessCode, pin, await buildDeviceInfo("Staff check-in device"));
+            await storePairedSession(paired, "scan");
+          }}
+        />
+      )}
       {authStep === "staff_choice" && (
         <StaffChoiceScreen
           onBack={() => setAuthStep("role_choice")}

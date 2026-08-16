@@ -41,13 +41,13 @@ export function PairCodePinScreen({
     <AuthScreenLayout
       onBack={onBack}
       icon="link-outline"
-      eyebrow="Access Pairing"
-      title="Pair with access credentials"
-      subtitle="Enter the access code and PIN from your event dashboard to arm this device for check-in."
+      eyebrow="Staff Access / Check-in"
+      title="Open event scanner"
+      subtitle="Enter the event access code and PIN shared by the organiser. This device will be restricted to that event."
     >
       <FadeSlideIn delay={90}>
         <View style={styles.stack}>
-          <PremiumPill label="Front Desk Fast Pair" />
+          <PremiumPill label="Event-restricted scanner" tone="live" />
           <PremiumField
             label="Access Code"
             value={accessCode}
@@ -66,7 +66,7 @@ export function PairCodePinScreen({
           />
           {error ? <PremiumNotice tone="danger" text={error} /> : null}
           <PremiumButton
-            label="Pair Device"
+            label="Open check-in scanner"
             onPress={handleSubmit}
             loading={submitting}
             disabled={submitting}

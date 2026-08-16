@@ -169,7 +169,7 @@ export default function TicketsPage({ params }: { params: Promise<{ eventId: str
           title="No Ticket Types Yet"
           description="Create ticket tiers for this event so guests can register or staff can issue tickets manually."
           action={
-            <Button className="h-14 px-10 rounded-2xl bg-white/10 hover:bg-primary text-white font-black italic uppercase tracking-widest transition-all" onClick={() => { setSelectedTicket(null); setIsModalOpen(true); }}>
+            <Button className="h-14 px-10 rounded-2xl border border-cyan-500/30 bg-cyan-600 text-white font-black italic uppercase tracking-widest shadow-lg shadow-cyan-600/20 transition-all hover:bg-cyan-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 disabled:bg-slate-300 disabled:text-slate-500 dark:bg-cyan-400 dark:text-slate-950 dark:hover:bg-cyan-300 dark:focus-visible:ring-cyan-300 dark:disabled:bg-white/10 dark:disabled:text-white/40" onClick={() => { setSelectedTicket(null); setIsModalOpen(true); }}>
               Create First Ticket Type
             </Button>
           }

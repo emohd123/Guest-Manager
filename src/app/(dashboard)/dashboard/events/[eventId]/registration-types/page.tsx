@@ -54,7 +54,7 @@ export default function RegistrationTypesPage() {
           title="No Guest Types Yet"
           description="No guest types have been created yet. Add categories such as VIP, Staff, or Attendee."
           action={
-            <Button className="h-14 px-10 rounded-2xl bg-white/10 hover:bg-primary text-white font-black italic uppercase tracking-widest transition-all">
+            <Button className="h-14 px-10 rounded-2xl border border-cyan-500/30 bg-cyan-600 text-white font-black italic uppercase tracking-widest shadow-lg shadow-cyan-600/20 transition-all hover:bg-cyan-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 disabled:bg-slate-300 disabled:text-slate-500 dark:bg-cyan-400 dark:text-slate-950 dark:hover:bg-cyan-300 dark:focus-visible:ring-cyan-300 dark:disabled:bg-white/10 dark:disabled:text-white/40">
               Add First Guest Type
             </Button>
           }
