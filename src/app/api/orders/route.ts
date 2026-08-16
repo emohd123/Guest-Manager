@@ -46,18 +46,6 @@ export async function POST(request: NextRequest) {
         { status: 401 },
       );
     }
-    if (!buyer.email_confirmed_at) {
-      return NextResponse.json(
-        { error: "Please verify your email before purchasing tickets.", code: "EMAIL_NOT_VERIFIED" },
-        { status: 403 },
-      );
-    }
-    if (!buyer.phone_confirmed_at) {
-      return NextResponse.json(
-        { error: "Please verify your mobile number by SMS before purchasing tickets.", code: "PHONE_NOT_VERIFIED" },
-        { status: 403 },
-      );
-    }
     const body = await request.json();
     const {
       companySlug,

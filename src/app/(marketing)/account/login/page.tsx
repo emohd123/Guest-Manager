@@ -21,52 +21,21 @@ function BuyerLoginPageContent() {
   const [mode, setMode] = useState<"login" | "signup">("login");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
-  const [verificationPhone, setVerificationPhone] = useState("");
-  const [verificationCode, setVerificationCode] = useState("");
-  const [verificationSent, setVerificationSent] = useState(false);
-  const [verificationEmail, setVerificationEmail] = useState("");
-  const [emailCode, setEmailCode] = useState("");
-  const [emailVerificationSent, setEmailVerificationSent] = useState(false);
+  const postLoginRedirect = searchParams.get("redirectTo") || "/account";
 
   useEffect(() => {
-    if (searchParams.get("verify") !== "1") return;
     createClient().auth.getUser().then(({ data }) => {
       const user = data.user;
       if (user) {
+        const redirectTo = searchParams.get("redirectTo");
+        if (redirectTo) {
+          window.location.replace(redirectTo);
+          return;
+        }
         setEmail(user.email ?? "");
-        setVerificationEmail(user.email ?? "");
-        setVerificationPhone(user.phone ?? user.user_metadata?.phone ?? "");
       }
     });
   }, [searchParams]);
-
-  async function sendPhoneOtp() {
-    const supabase = createClient();
-    const { error } = await supabase.auth.updateUser({ phone: verificationPhone.trim() });
-    setMessage(error ? error.message : "SMS code sent. Enter it below to verify your mobile.");
-    setVerificationSent(!error);
-  }
-
-  async function verifyPhoneOtp() {
-    const supabase = createClient();
-    const { error } = await supabase.auth.verifyOtp({ phone: verificationPhone.trim(), token: verificationCode.trim(), type: "phone_change" });
-    if (error) { setMessage(error.message); return; }
-    window.location.assign(searchParams.get("redirectTo") || "/account");
-  }
-
-  async function sendEmailOtp() {
-    const supabase = createClient();
-    const { error } = await supabase.auth.resend({ type: "signup", email: verificationEmail.trim() });
-    setMessage(error ? error.message : "Email verification code sent. Enter it below.");
-    setEmailVerificationSent(!error);
-  }
-
-  async function verifyEmailOtp() {
-    const supabase = createClient();
-    const { error } = await supabase.auth.verifyOtp({ email: verificationEmail.trim(), token: emailCode.trim(), type: "signup" });
-    if (error) { setMessage(error.message); return; }
-    setMessage("Email verified. Now verify your mobile number below.");
-  }
 
   async function handleEmailAuth(event: React.FormEvent) {
     event.preventDefault();
@@ -103,7 +72,7 @@ function BuyerLoginPageContent() {
       return;
     }
 
-    window.location.assign("/account");
+    window.location.assign(postLoginRedirect);
   }
 
   async function handleGoogle() {
@@ -113,7 +82,7 @@ function BuyerLoginPageContent() {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${window.location.origin}/auth/callback?redirectTo=/account`,
+        redirectTo: `${window.location.origin}/auth/callback?redirectTo=${encodeURIComponent(postLoginRedirect)}`,
       },
     });
     if (error) {
@@ -129,7 +98,7 @@ function BuyerLoginPageContent() {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "facebook",
       options: {
-        redirectTo: `${window.location.origin}/auth/callback?redirectTo=/account`,
+        redirectTo: `${window.location.origin}/auth/callback?redirectTo=${encodeURIComponent(postLoginRedirect)}`,
       },
     });
     if (error) {
@@ -154,17 +123,6 @@ function BuyerLoginPageContent() {
         <p className="mt-3 text-center text-sm leading-6 text-slate-600">
           Use the same email you used at checkout to see your orders, QR tickets, favorites, and event updates.
         </p>
-
-        {searchParams.get("verify") === "1" ? (
-          <div className="mt-6 rounded-2xl border border-cyan-200 bg-cyan-50 p-4">
-            <p className="font-black text-slate-900">Verify your email and mobile</p>
-            <Input className="mt-3 h-11 rounded-xl bg-white" type="email" value={verificationEmail} onChange={(event) => setVerificationEmail(event.target.value)} placeholder="Email address" />
-            {!emailVerificationSent ? <Button type="button" onClick={sendEmailOtp} className="mt-3 w-full rounded-xl bg-slate-900 text-white">Send email code</Button> : <><Input className="mt-3 h-11 rounded-xl bg-white" inputMode="numeric" value={emailCode} onChange={(event) => setEmailCode(event.target.value)} placeholder="Email verification code" /><Button type="button" onClick={verifyEmailOtp} className="mt-3 w-full rounded-xl bg-slate-900 text-white">Verify email</Button></>}
-            <p className="mt-5 text-sm font-bold text-slate-900">Mobile number</p>
-            <Input className="mt-3 h-11 rounded-xl bg-white" type="tel" value={verificationPhone} onChange={(event) => setVerificationPhone(event.target.value)} placeholder="+20..." />
-            {!verificationSent ? <Button type="button" onClick={sendPhoneOtp} className="mt-3 w-full rounded-xl bg-cyan-600 text-white">Send SMS code</Button> : <><Input className="mt-3 h-11 rounded-xl bg-white" inputMode="numeric" value={verificationCode} onChange={(event) => setVerificationCode(event.target.value)} placeholder="6-digit code" /><Button type="button" onClick={verifyPhoneOtp} className="mt-3 w-full rounded-xl bg-cyan-600 text-white">Verify mobile</Button></>}
-          </div>
-        ) : null}
 
         <Button
           type="button"
