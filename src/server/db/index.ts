@@ -5,7 +5,12 @@ import * as schema from "./schema";
 let _db: ReturnType<typeof createDb> | null = null;
 
 function createDb() {
-  const connectionString = process.env.DATABASE_URL;
+  // Vercel's pooled Postgres URL is reachable from serverless functions;
+  // keep DATABASE_URL as a local/legacy fallback.
+  const connectionString =
+    process.env.POSTGRES_URL_NON_POOLING ??
+    process.env.POSTGRES_URL ??
+    process.env.DATABASE_URL;
   if (!connectionString) {
     throw new Error("DATABASE_URL environment variable is not set");
   }
