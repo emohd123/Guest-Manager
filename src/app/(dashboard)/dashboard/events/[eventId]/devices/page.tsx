@@ -45,6 +45,7 @@ export default function DevicesPage({ params }: { params: Promise<{ eventId: str
   const { eventId } = use(params);
   const utils = trpc.useUtils();
   const [latestQr, setLatestQr] = useState<{ token: string; expiresAt: string } | null>(null);
+  const [freshPairing, setFreshPairing] = useState<{ accessCode: string; pin: string } | null>(null);
 
   const { data: listData, isLoading } = trpc.devices.list.useQuery({
     eventId,
@@ -55,7 +56,8 @@ export default function DevicesPage({ params }: { params: Promise<{ eventId: str
   const { data: pairingAccess } = trpc.devices.getPairingAccess.useQuery({ eventId });
 
   const rotatePairing = trpc.devices.rotatePairingAccess.useMutation({
-    onSuccess: async () => {
+    onSuccess: async (data) => {
+      setFreshPairing({ accessCode: data.accessCode, pin: data.pin });
       toast.success("Pairing credentials rotated");
       await utils.devices.getPairingAccess.invalidate({ eventId });
     },
@@ -103,6 +105,8 @@ export default function DevicesPage({ params }: { params: Promise<{ eventId: str
   });
 
   const devices = useMemo(() => (listData?.devices ?? []) as DeviceRow[], [listData?.devices]);
+  const visibleAccessCode = freshPairing?.accessCode ?? pairingAccess?.accessCode;
+  const visiblePin = freshPairing?.pin ?? pairingAccess?.pin;
 
   if (!checkinV2Enabled) {
     return (
@@ -253,12 +257,12 @@ export default function DevicesPage({ params }: { params: Promise<{ eventId: str
             <div className="rounded border p-3">
               <div className="text-muted-foreground">Access Code</div>
               <div className="mt-1 flex items-center justify-between">
-                <span className="font-mono text-lg">{pairingAccess?.accessCode ?? "------"}</span>
+                <span className="font-mono text-lg">{visibleAccessCode ?? "------"}</span>
                 <Button
                   size="icon"
                   variant="ghost"
-                  disabled={!pairingAccess?.accessCode}
-                  onClick={() => pairingAccess?.accessCode && copyText(pairingAccess.accessCode, "Access code")}
+                  disabled={!visibleAccessCode}
+                  onClick={() => visibleAccessCode && copyText(visibleAccessCode, "Access code")}
                 >
                   <Copy className="h-4 w-4" />
                 </Button>
@@ -268,15 +272,15 @@ export default function DevicesPage({ params }: { params: Promise<{ eventId: str
               <div className="text-muted-foreground">PIN</div>
               <div className="mt-1 flex items-center justify-between">
                 <span className="font-mono text-lg">
-                  {pairingAccess?.pin === "HIDDEN"
+                  {visiblePin === "HIDDEN"
                     ? "****"
-                    : (pairingAccess?.pin ?? "Generate to reveal new PIN")}
+                    : (visiblePin ?? "Generate to reveal new PIN")}
                 </span>
-                {pairingAccess?.pin && pairingAccess.pin !== "HIDDEN" ? (
+                {visiblePin && visiblePin !== "HIDDEN" ? (
                   <Button
                     size="icon"
                     variant="ghost"
-                    onClick={() => pairingAccess?.pin && copyText(pairingAccess.pin, "PIN")}
+                    onClick={() => visiblePin && copyText(visiblePin, "PIN")}
                   >
                     <Copy className="h-4 w-4" />
                   </Button>

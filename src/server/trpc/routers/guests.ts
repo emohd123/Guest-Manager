@@ -4,6 +4,7 @@ import { sendTicketEmail } from "@/server/actions/email";
 import { format } from "date-fns";
 import crypto from "crypto";
 import { getAppUrl } from "@/lib/app-urls";
+import { scans } from "@/server/db/schema";
 
 type GuestStatus = "invited" | "confirmed" | "declined" | "waitlisted" | "checked_in" | "no_show";
 type TicketStatus = "valid" | "voided" | "expired" | "used";
@@ -136,7 +137,7 @@ function mapGuest(row: GuestRow, ticket?: TicketRow | null) {
   };
 }
 
-async function insertScan(ctx: { supabase: { from: (table: string) => any }; companyId: string; userId: string }, payload: {
+async function insertScan(ctx: { supabase: { from: (table: string) => any }; db?: any; companyId: string; userId: string }, payload: {
   eventId: string;
   ticketId?: string | null;
   barcode?: string | null;
@@ -164,7 +165,25 @@ async function insertScan(ctx: { supabase: { from: (table: string) => any }; com
   });
 
   if (error) {
-    console.error("[guests.insertScan]", error.message);
+    console.error("[guests.insertScan] Supabase insert failed; trying direct database fallback", error.message);
+    if (ctx.db) {
+      try {
+        await ctx.db.insert(scans).values({
+          companyId: ctx.companyId,
+          eventId: payload.eventId,
+          ticketId: payload.ticketId ?? undefined,
+          barcode: payload.barcode ?? undefined,
+          scanType: payload.scanType,
+          method: payload.method,
+          result: payload.result ?? (payload.scanType === "invalid" ? "invalid" : "success"),
+          notes: payload.notes ?? undefined,
+          deviceInfo: deviceInfo ?? {},
+          scannedBy: ctx.userId,
+        });
+      } catch (fallbackError) {
+        console.error("[guests.insertScan] direct database fallback failed", fallbackError);
+      }
+    }
   }
 }
 
