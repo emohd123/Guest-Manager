@@ -763,6 +763,23 @@ export const guestsRouter = router({
         throw new Error(`Failed to send email: ${detail}`);
       }
 
+      // Keep delivery state on the ticket so organizers can safely find guests
+      // who still need their ticket email. This is intentionally best-effort:
+      // a metadata write failure must not turn a successfully delivered email
+      // into a false send failure.
+      const currentMetadata = (ticketData.metadata as Record<string, unknown> | null) ?? {};
+      const { error: deliveryMetadataError } = await ctx.supabase
+        .from("tickets")
+        .update({
+          metadata: { ...currentMetadata, ticketEmailSentAt: new Date().toISOString() },
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", ticketData.id)
+        .eq("company_id", ctx.companyId);
+      if (deliveryMetadataError) {
+        console.warn("[sendTicketEmail] Could not persist ticket email delivery state:", deliveryMetadataError.message);
+      }
+
       return result;
     }),
 });
