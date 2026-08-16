@@ -5,7 +5,7 @@ import { BrowserMultiFormatReader } from "@zxing/browser";
 import { NotFoundException } from "@zxing/library";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { X, Camera, CameraOff, ZoomIn, CheckCircle2, XCircle, Loader2 } from "lucide-react";
+import { Camera, CameraOff, ZoomIn, CheckCircle2, XCircle, Loader2, LogOut, ScanLine } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export type ScanResult =
@@ -31,6 +31,7 @@ export function QRScannerModal({ open, onClose, onScan }: QRScannerModalProps) {
   const [selectedCamera, setSelectedCamera] = useState<string | undefined>(undefined);
   const lastBarcodeRef = useRef<string | null>(null);
   const cooldownRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const resultTouchStartRef = useRef<number | null>(null);
 
   const stopScanning = useCallback(() => {
     if (readerRef.current) {
@@ -92,6 +93,14 @@ export function QRScannerModal({ open, onClose, onScan }: QRScannerModalProps) {
     }
   }, [onScan, selectedCamera]);
 
+  const dismissResult = useCallback(() => {
+    setLastResult(null);
+    setIsProcessing(false);
+    // Allow the same ticket to be scanned again only after the staff member
+    // explicitly dismisses the result (the normal 3-second debounce remains).
+    lastBarcodeRef.current = null;
+  }, []);
+
   useEffect(() => {
     if (open) {
       startScanning();
@@ -120,12 +129,13 @@ export function QRScannerModal({ open, onClose, onScan }: QRScannerModalProps) {
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-black">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 bg-black/80 backdrop-blur-sm">
-        <div className="flex items-center gap-2">
-          <Camera className="h-5 w-5 text-white" />
-          <span className="text-white font-semibold">Scan QR Code</span>
+      <div className="flex items-center justify-between gap-2 px-3 py-2.5 bg-black/90 backdrop-blur-sm safe-area-inset-top">
+        <div className="flex min-w-0 items-center gap-2">
+          <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/10 text-white" aria-label="QR scanner">
+            <Camera className="h-5 w-5" aria-hidden="true" />
+          </span>
           {isScanning && (
-            <span className="flex items-center gap-1 text-xs text-green-400">
+            <span className="flex items-center gap-1 text-xs font-semibold text-green-400" aria-label="Scanner live">
               <span className="h-2 w-2 rounded-full bg-green-400 animate-pulse" />
               Live
             </span>
@@ -145,8 +155,8 @@ export function QRScannerModal({ open, onClose, onScan }: QRScannerModalProps) {
               ))}
             </select>
           )}
-          <Button variant="ghost" size="icon" className="text-white hover:bg-white/10" onClick={onClose}>
-            <X className="h-5 w-5" />
+          <Button variant="ghost" size="icon" className="h-10 w-10 shrink-0 rounded-full text-white hover:bg-white/10" onClick={onClose} aria-label="Log out of staff scanner" title="Log out">
+            <LogOut className="h-5 w-5" aria-hidden="true" />
           </Button>
         </div>
       </div>
@@ -212,14 +222,28 @@ export function QRScannerModal({ open, onClose, onScan }: QRScannerModalProps) {
       {/* Result Banner */}
       <div
         className={cn(
-          "min-h-[160px] px-4 pt-5 pb-6 flex flex-col items-center justify-center gap-3 transition-colors",
+          "relative min-h-[150px] px-4 pt-5 pb-6 flex flex-col items-center justify-center gap-3 transition-colors touch-pan-y",
           lastResult === null
             ? "bg-zinc-900"
             : lastResult.status === "success"
               ? "bg-emerald-700"
               : "bg-red-700"
         )}
+        onTouchStart={(event) => {
+          resultTouchStartRef.current = event.touches[0]?.clientX ?? null;
+        }}
+        onTouchEnd={(event) => {
+          const start = resultTouchStartRef.current;
+          const end = event.changedTouches[0]?.clientX;
+          resultTouchStartRef.current = null;
+          if (lastResult && start !== null && end !== undefined && Math.abs(end - start) > 64) dismissResult();
+        }}
       >
+        {lastResult ? (
+          <button type="button" onClick={dismissResult} aria-label="Dismiss scan result and scan next ticket" title="Scan next ticket" className="absolute right-3 top-3 inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/15 text-white hover:bg-white/25">
+            <ScanLine className="h-4 w-4" aria-hidden="true" />
+          </button>
+        ) : null}
         {lastResult === null ? (
           <div className="flex flex-col items-center gap-2 text-zinc-400 text-center">
             <ZoomIn className="h-8 w-8 opacity-40" />
@@ -230,25 +254,29 @@ export function QRScannerModal({ open, onClose, onScan }: QRScannerModalProps) {
             <CheckCircle2 className="h-10 w-10 text-green-400" />
             <p className="text-white font-bold text-lg">{lastResult.attendeeName}</p>
             <Badge className="bg-green-500 text-white border-0 px-3">{lastResult.ticketType}</Badge>
-            <p className="text-green-400 font-semibold">✓ Checked In Successfully</p>
+                  <p className="text-green-400 font-semibold">✓ Checked In Successfully</p>
+                  <p className="text-xs text-white/70">Swipe or tap the scan icon for the next ticket</p>
           </div>
         ) : lastResult.status === "already_checked_in" ? (
           <div className="flex flex-col items-center gap-2 text-center animate-in fade-in-0 duration-300">
             <XCircle className="h-10 w-10 text-red-100" />
             <p className="text-white font-bold text-lg">{lastResult.attendeeName}</p>
             <p className="text-red-100 font-semibold">Already Scanned — Entry Denied</p>
+            <p className="text-xs text-white/70">Swipe or tap the scan icon for the next ticket</p>
           </div>
         ) : lastResult.status === "voided" ? (
           <div className="flex flex-col items-center gap-2 text-center animate-in fade-in-0 duration-300">
             <XCircle className="h-10 w-10 text-red-100" />
             <p className="text-white font-bold text-lg">{lastResult.attendeeName}</p>
             <p className="text-red-100 font-semibold">Ticket is Voided — Entry Denied</p>
+            <p className="text-xs text-white/70">Swipe or tap the scan icon for the next ticket</p>
           </div>
         ) : (
           <div className="flex flex-col items-center gap-2 text-center animate-in fade-in-0 duration-300">
             <XCircle className="h-10 w-10 text-red-100" />
             <p className="text-white font-bold text-lg">Scan Rejected</p>
             <p className="text-red-100 font-semibold">Ticket Not Found — Entry Denied</p>
+            <p className="text-xs text-white/70">Swipe or tap the scan icon for the next ticket</p>
             <p className="text-red-100/80 text-xs font-mono">{lastResult.barcode}</p>
           </div>
         )}

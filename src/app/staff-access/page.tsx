@@ -114,9 +114,8 @@ export default function StaffAccessPage() {
             {loading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Opening scanner...</> : "Open check-in scanner"}
           </Button>
         </form>
-        <p className="mt-6 text-center text-xs leading-5 text-slate-500">This browser session is restricted to the paired event. Sign out by closing the scanner.</p>
+        <p className="mt-6 text-center text-xs leading-5 text-slate-500">This browser session is restricted to the paired event. Use the logout icon in the scanner header to sign out.</p>
       </section>
     </main>
   );
 }
-

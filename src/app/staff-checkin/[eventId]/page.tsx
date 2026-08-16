@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { QRScannerModal, type ScanResult } from "@/components/checkin/QRScannerModal";
 
 const STAFF_TOKEN_KEY = "iticket_staff_device_token";
@@ -22,9 +22,13 @@ export default function StaffCheckinPage({ params }: { params: Promise<{ eventId
   useEffect(() => {
     params.then(({ eventId: id }) => {
       setEventId(id);
-      setReady(Boolean(sessionStorage.getItem(STAFF_TOKEN_KEY)));
+      if (!sessionStorage.getItem(STAFF_TOKEN_KEY)) {
+        router.replace("/staff-access");
+        return;
+      }
+      setReady(true);
     });
-  }, [params]);
+  }, [params, router]);
 
   const scan = useCallback(async (barcode: string): Promise<ScanResult> => {
     const token = sessionStorage.getItem(STAFF_TOKEN_KEY);
@@ -59,11 +63,7 @@ export default function StaffCheckinPage({ params }: { params: Promise<{ eventId
 
   return (
     <main className="min-h-screen bg-black">
-      <button type="button" onClick={() => router.replace("/staff-access")} className="fixed left-4 top-4 z-[60] inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-2 text-sm font-bold text-white backdrop-blur hover:bg-white/20">
-        <ArrowLeft className="h-4 w-4" /> Staff access
-      </button>
       <QRScannerModal open onClose={() => router.replace("/staff-access")} onScan={scan} />
     </main>
   );
 }
-
