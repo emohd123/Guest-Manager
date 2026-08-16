@@ -143,6 +143,16 @@ function BuyerLoginPageContent() {
           Continue with Facebook
         </Button>
 
+        <Link
+          href="/staff-access"
+          className="mt-5 flex min-h-12 w-full items-center justify-center rounded-2xl border border-cyan-200 bg-cyan-50 px-4 text-sm font-black text-cyan-900 transition-colors hover:bg-cyan-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500 focus-visible:ring-offset-2"
+        >
+          Staff Access / Check-in
+        </Link>
+        <p className="mt-2 text-center text-xs text-slate-500">
+          For event staff. Use the access code and PIN shared by the organiser.
+        </p>
+
         <div className="my-6 flex items-center gap-3 text-xs font-bold uppercase tracking-widest text-slate-500">
           <span className="h-px flex-1 bg-slate-100" />
           or
