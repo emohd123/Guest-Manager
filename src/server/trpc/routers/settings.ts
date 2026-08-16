@@ -15,7 +15,7 @@ export const settingsRouter = router({
     return data;
   }),
 
-  updateCompany: protectedProcedure
+  updateCompany: dashboardAdminProcedure
     .input(
       z.object({
         name: z.string().min(1).max(255).optional(),
@@ -73,7 +73,7 @@ export const settingsRouter = router({
       return data;
     }),
 
-  getTeamMembers: protectedProcedure.query(async ({ ctx }) => {
+  getTeamMembers: dashboardAdminProcedure.query(async ({ ctx }) => {
     const { data, error } = await ctx.supabase
       .from("users")
       .select("*")
@@ -87,12 +87,12 @@ export const settingsRouter = router({
     const admin = createSupabaseAdminClient();
     const [{ data: authData, error: authError }, { data: profiles, error: profileError }] = await Promise.all([
       admin.auth.admin.listUsers({ page: 1, perPage: 1000 }),
-      admin.from("users").select("id, company_id, email, name, role, dashboard_access, dashboard_permissions, created_at"),
+      admin.from("users").select("id, company_id, email, name, role, dashboard_access, dashboard_permissions, created_at").eq("company_id", ctx.companyId),
     ]);
     if (authError) throw new Error(authError.message);
     if (profileError) throw new Error(profileError.message);
     const profileById = new Map((profiles ?? []).map((profile) => [profile.id, profile]));
-    return (authData.users ?? []).map((account) => {
+    return (authData.users ?? []).filter((account) => profileById.has(account.id)).map((account) => {
       const profile = profileById.get(account.id);
       const access = profile?.dashboard_access ?? "none";
       return {
@@ -133,6 +133,37 @@ export const settingsRouter = router({
       };
       const { error } = await admin.from("users").upsert(payload, { onConflict: "id" });
       if (error) throw new Error(error.message);
+      const { recordAudit } = await import("@/server/audit");
+      void recordAudit({ companyId: ctx.companyId, actorId: ctx.userId, action: "account.access_updated", entityType: "user", entityId: input.userId, metadata: { dashboardAccess: input.dashboardAccess, permissions: input.dashboardPermissions } });
       return { ok: true };
+    }),
+
+  listAuditLogs: dashboardAdminProcedure
+    .input(z.object({ actorId: z.string().uuid().optional(), eventId: z.string().uuid().optional(), action: z.string().max(100).optional(), limit: z.number().min(1).max(100).default(50), offset: z.number().min(0).default(0) }).optional())
+    .query(async ({ ctx, input }) => {
+      const admin = createSupabaseAdminClient();
+      let query = admin.from("audit_logs").select("id, company_id, actor_id, event_id, action, entity_type, entity_id, metadata, created_at", { count: "exact" }).eq("company_id", ctx.companyId).order("created_at", { ascending: false }).range(input?.offset ?? 0, (input?.offset ?? 0) + (input?.limit ?? 50) - 1);
+      if (input?.actorId) query = query.eq("actor_id", input.actorId);
+      if (input?.eventId) query = query.eq("event_id", input.eventId);
+      if (input?.action) query = query.ilike("action", `%${input.action}%`);
+      const { data, error, count } = await query;
+      if (error) throw new Error(error.message);
+      const logs = data ?? [];
+      const actorIds = [...new Set(logs.map((log) => log.actor_id).filter(Boolean))];
+      const eventIds = [...new Set(logs.map((log) => log.event_id).filter(Boolean))];
+      const [{ data: actors }, { data: events }] = await Promise.all([
+        actorIds.length ? admin.from("users").select("id,name,email").in("id", actorIds) : Promise.resolve({ data: [] }),
+        eventIds.length ? admin.from("events").select("id,title").in("id", eventIds) : Promise.resolve({ data: [] }),
+      ]);
+      const actorById = new Map((actors ?? []).map((actor) => [actor.id, actor]));
+      const eventById = new Map((events ?? []).map((event) => [event.id, event]));
+      return {
+        logs: logs.map((log) => ({
+          ...log,
+          actor_name: log.actor_id ? actorById.get(log.actor_id)?.name ?? actorById.get(log.actor_id)?.email ?? null : null,
+          event_title: log.event_id ? eventById.get(log.event_id)?.title ?? null : null,
+        })),
+        total: count ?? 0,
+      };
     }),
 });

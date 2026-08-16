@@ -17,6 +17,7 @@ import {
   Key,
   ExternalLink,
   UserCog,
+  ClipboardList,
 } from "lucide-react";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc/client";
@@ -75,6 +76,12 @@ export default function SettingsPage() {
               <span className="hidden sm:inline">Access</span>
             </TabsTrigger>
           ) : null}
+          {canManageAccess ? (
+            <TabsTrigger value="audit" className="rounded-xl px-8 py-3 font-black text-xs uppercase tracking-widest data-[state=active]:bg-primary data-[state=active]:text-white transition-all italic flex gap-2">
+              <ClipboardList className="h-4 w-4" />
+              <span className="hidden sm:inline">Activity log</span>
+            </TabsTrigger>
+          ) : null}
         </TabsList>
 
         <AnimatePresence mode="wait" initial={false}>
@@ -97,6 +104,11 @@ export default function SettingsPage() {
             {canManageAccess ? (
               <TabsContent value="access" className="mt-0 outline-none">
                 <AccountAccessSettings />
+              </TabsContent>
+            ) : null}
+            {canManageAccess ? (
+              <TabsContent value="audit" className="mt-0 outline-none">
+                <AuditLogSettings />
               </TabsContent>
             ) : null}
           </motion.div>
@@ -681,6 +693,36 @@ function TeamSettings() {
             ))
           )}
         </div>
+      </div>
+    </div>
+  );
+}
+
+function AuditLogSettings() {
+  const { data, isLoading } = trpc.settings.listAuditLogs.useQuery({ limit: 100 });
+  return (
+    <div className="theme-panel overflow-hidden p-8">
+      <div className="mb-8 flex items-start justify-between gap-4">
+        <div>
+          <h3 className="text-2xl font-black text-foreground dark:text-white italic">Staff activity</h3>
+          <p className="mt-2 text-sm text-muted-foreground dark:text-white/50">Every action made by limited-access staff is recorded here. Only full-access administrators can view this log.</p>
+        </div>
+        <Badge className="bg-primary/10 text-primary">{data?.total ?? 0} entries</Badge>
+      </div>
+      <div className="divide-y divide-border overflow-x-auto rounded-2xl border border-border dark:divide-white/10 dark:border-white/10">
+        {isLoading ? <div className="p-8 text-sm text-muted-foreground">Loading activity…</div> : null}
+        {!isLoading && !data?.logs.length ? <div className="p-8 text-sm text-muted-foreground">No limited-access activity recorded yet.</div> : null}
+        {data?.logs.map((log) => (
+          <div key={log.id} className="grid min-w-[900px] grid-cols-[180px_1fr_1.5fr_180px] gap-4 px-5 py-4 text-sm">
+            <div>
+              <div className="font-semibold text-foreground dark:text-white">{log.action}</div>
+              <div className="text-xs text-muted-foreground">{log.actor_name ?? "System"}</div>
+            </div>
+            <div className="text-muted-foreground">{log.event_title ?? (log.entity_type ? `${log.entity_type}${log.entity_id ? ` · ${log.entity_id}` : ""}` : "Dashboard action")}</div>
+            <div className="truncate text-xs text-muted-foreground" title={JSON.stringify(log.metadata)}>{JSON.stringify(log.metadata)}</div>
+            <time className="text-right text-xs text-muted-foreground">{new Date(log.created_at).toLocaleString()}</time>
+          </div>
+        ))}
       </div>
     </div>
   );

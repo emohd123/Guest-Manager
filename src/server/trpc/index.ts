@@ -3,6 +3,8 @@ import { createClient } from "@/lib/supabase/server";
 import { getDb } from "@/server/db";
 import { ensureAppUserForAuthUser } from "@/server/auth/app-user";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { recordAudit } from "@/server/audit";
+import { assertEventAccess } from "@/server/auth/event-access";
 
 type Db = ReturnType<typeof getDb>;
 
@@ -61,7 +63,7 @@ const t = initTRPC.context<Context>().create();
 export const router = t.router;
 export const publicProcedure = t.procedure;
 
-export const protectedProcedure = t.procedure.use(async ({ ctx, next }) => {
+export const protectedProcedure = t.procedure.use(async ({ ctx, next, path, input }) => {
   if (!ctx.userId || !ctx.companyId) {
     throw new TRPCError({
       code: "UNAUTHORIZED",
@@ -69,13 +71,49 @@ export const protectedProcedure = t.procedure.use(async ({ ctx, next }) => {
     });
   }
 
-  return next({
+  const result = await next({
     ctx: {
       ...ctx,
       userId: ctx.userId,
       companyId: ctx.companyId,
     },
   });
+  if (ctx.dashboardAccess === "limited") {
+    void recordAudit({
+      companyId: ctx.companyId,
+      actorId: ctx.userId,
+      action: result.ok ? "dashboard.procedure" : "dashboard.procedure_failed",
+      entityType: "trpc",
+      entityId: "protected",
+      metadata: { procedure: path, result: result.ok ? "ok" : "error" },
+    });
+  }
+
+  if (ctx.dashboardAccess === "limited" && input && typeof input === "object") {
+    const candidate = input as Record<string, unknown>;
+    const eventId = typeof candidate.eventId === "string"
+      ? candidate.eventId
+      : typeof candidate.event_id === "string"
+        ? candidate.event_id
+        : null;
+    if (eventId) {
+      try {
+        await assertEventAccess({ ...ctx, userId: ctx.userId, companyId: ctx.companyId }, eventId);
+      } catch (error) {
+        await recordAudit({
+          companyId: ctx.companyId,
+          actorId: ctx.userId,
+          eventId,
+          action: "dashboard.access_denied",
+          entityType: "event",
+          entityId: eventId,
+          metadata: { procedure: path, reason: "event_ownership" },
+        });
+        throw error;
+      }
+    }
+  }
+  return result;
 });
 
 export const dashboardProcedure = protectedProcedure.use(async ({ ctx, next }) => {

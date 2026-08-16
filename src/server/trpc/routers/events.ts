@@ -3,10 +3,13 @@ import { router, protectedProcedure, publicProcedure } from "../index";
 import { nanoid } from "nanoid";
 import { createSupabaseAdminClient } from "@/server/supabase/admin";
 import { handleEventPublished } from "@/server/services/discover-push";
+import { applyEventOwnership, isFullDashboardAccess } from "@/server/auth/event-access";
+import { recordAudit } from "@/server/audit";
 
 type EventRow = {
   id: string;
   company_id: string;
+  created_by: string | null;
   venue_id: string | null;
   category_id: string | null;
   title: string;
@@ -36,6 +39,7 @@ function mapEvent(row: EventRow, companySlug?: string | null) {
   return {
     id: row.id,
     companyId: row.company_id,
+    createdBy: row.created_by,
     venueId: row.venue_id,
     categoryId: row.category_id,
     title: row.title,
@@ -88,6 +92,7 @@ export const eventsRouter = router({
         .is("deleted_at", null)
         .order("starts_at", { ascending: false })
         .range(input?.offset ?? 0, (input?.offset ?? 0) + (input?.limit ?? 20) - 1);
+      query = applyEventOwnership(query, ctx);
 
       if (input?.status) {
         query = query.eq("status", input.status);
@@ -109,12 +114,14 @@ export const eventsRouter = router({
   get: protectedProcedure
     .input(z.object({ id: z.string().uuid() }))
     .query(async ({ ctx, input }) => {
-      const { data: event, error } = await ctx.supabase
+      let eventQuery = ctx.supabase
         .from("events")
         .select("*")
         .eq("id", input.id)
         .eq("company_id", ctx.companyId)
         .maybeSingle();
+      eventQuery = applyEventOwnership(eventQuery, ctx);
+      const { data: event, error } = await eventQuery;
 
       if (error) throw new Error(error.message);
       if (!event) {
@@ -153,6 +160,7 @@ export const eventsRouter = router({
         .from("events")
         .insert({
           company_id: ctx.companyId,
+          created_by: ctx.userId,
           title: input.title,
           slug: buildSlug(input.title),
           description: input.description ?? null,
@@ -170,6 +178,7 @@ export const eventsRouter = router({
         .single();
 
       if (error) throw new Error(error.message);
+      void recordAudit({ companyId: ctx.companyId, actorId: ctx.userId, action: "event.created", entityType: "event", entityId: data.id, eventId: data.id, metadata: { title: input.title } });
       return mapEvent(data as EventRow);
     }),
 
@@ -199,12 +208,14 @@ export const eventsRouter = router({
       // trigger a one-time "new event" push to Discover app users.
       let previousStatus: string | null = null;
       if (input.status === "published") {
-        const { data: before } = await ctx.supabase
+        let beforeQuery = ctx.supabase
           .from("events")
           .select("status")
           .eq("id", input.id)
           .eq("company_id", ctx.companyId)
           .maybeSingle();
+        beforeQuery = applyEventOwnership(beforeQuery, ctx);
+        const { data: before } = await beforeQuery;
         previousStatus = (before as { status?: string } | null)?.status ?? null;
       }
 
@@ -228,17 +239,20 @@ export const eventsRouter = router({
       if (input.visitorCode !== undefined) payload.visitor_code = input.visitorCode.toUpperCase();
       if (input.settings !== undefined) payload.settings = input.settings;
 
-      const { data, error } = await ctx.supabase
+      let updateQuery = ctx.supabase
         .from("events")
         .update(payload)
         .eq("id", input.id)
         .eq("company_id", ctx.companyId)
         .select("*")
         .single();
+      updateQuery = applyEventOwnership(updateQuery, ctx);
+      const { data, error } = await updateQuery;
 
       if (error) throw new Error(error.message);
 
       const updated = data as EventRow;
+      void recordAudit({ companyId: ctx.companyId, actorId: ctx.userId, action: "event.updated", entityType: "event", entityId: updated.id, eventId: updated.id, metadata: { fields: Object.keys(input).filter((key) => key !== "id") } });
       if (input.status === "published" && previousStatus !== "published") {
         // Fire-and-forget: never delay or fail the mutation over a push.
         void handleEventPublished({
@@ -255,7 +269,7 @@ export const eventsRouter = router({
   delete: protectedProcedure
     .input(z.object({ id: z.string().uuid() }))
     .mutation(async ({ ctx, input }) => {
-      const { error } = await ctx.supabase
+      let deleteQuery = ctx.supabase
         .from("events")
         .update({
           deleted_at: new Date().toISOString(),
@@ -263,20 +277,25 @@ export const eventsRouter = router({
         })
         .eq("id", input.id)
         .eq("company_id", ctx.companyId);
+      deleteQuery = applyEventOwnership(deleteQuery, ctx);
+      const { error } = await deleteQuery;
 
       if (error) throw new Error(error.message);
+      void recordAudit({ companyId: ctx.companyId, actorId: ctx.userId, action: "event.deleted", entityType: "event", entityId: input.id, eventId: input.id });
       return { success: true };
     }),
 
   duplicate: protectedProcedure
     .input(z.object({ id: z.string().uuid() }))
     .mutation(async ({ ctx, input }) => {
-      const { data: original, error: originalError } = await ctx.supabase
+      let originalQuery = ctx.supabase
         .from("events")
         .select("*")
         .eq("id", input.id)
         .eq("company_id", ctx.companyId)
         .maybeSingle();
+      originalQuery = applyEventOwnership(originalQuery, ctx);
+      const { data: original, error: originalError } = await originalQuery;
 
       if (originalError) throw new Error(originalError.message);
       if (!original) throw new Error("Event not found");
@@ -286,6 +305,7 @@ export const eventsRouter = router({
         .from("events")
         .insert({
           company_id: ctx.companyId,
+          created_by: ctx.userId,
           venue_id: original.venue_id,
           category_id: original.category_id,
           title: duplicateTitle,
@@ -310,13 +330,14 @@ export const eventsRouter = router({
         .single();
 
       if (error) throw new Error(error.message);
+      void recordAudit({ companyId: ctx.companyId, actorId: ctx.userId, action: "event.duplicated", entityType: "event", entityId: data.id, eventId: data.id, metadata: { sourceEventId: input.id } });
       return mapEvent(data as EventRow);
     }),
 
   archive: protectedProcedure
     .input(z.object({ id: z.string().uuid() }))
     .mutation(async ({ ctx, input }) => {
-      const { data, error } = await ctx.supabase
+      let archiveQuery = ctx.supabase
         .from("events")
         .update({
           status: "completed",
@@ -326,6 +347,8 @@ export const eventsRouter = router({
         .eq("company_id", ctx.companyId)
         .select("*")
         .single();
+      archiveQuery = applyEventOwnership(archiveQuery, ctx);
+      const { data, error } = await archiveQuery;
 
       if (error) throw new Error(error.message);
       return mapEvent(data as EventRow);
@@ -421,6 +444,24 @@ export const eventsRouter = router({
     }),
 
   stats: protectedProcedure.query(async ({ ctx }) => {
+    if (!isFullDashboardAccess(ctx)) {
+      const { data: ownedEvents, error: ownedEventsError } = await ctx.supabase
+        .from("events")
+        .select("id")
+        .eq("company_id", ctx.companyId)
+        .eq("created_by", ctx.userId)
+        .is("deleted_at", null);
+      if (ownedEventsError) throw new Error(ownedEventsError.message);
+      const eventIds = (ownedEvents ?? []).map((event) => event.id);
+      if (!eventIds.length) return { total: 0, totalGuests: 0, totalCheckIns: 0 };
+      const [{ count: guestsCount, error: guestsError }, { count: checkInsCount, error: checkInsError }] = await Promise.all([
+        ctx.supabase.from("guests").select("id", { count: "exact", head: true }).eq("company_id", ctx.companyId).in("event_id", eventIds),
+        ctx.supabase.from("guests").select("id", { count: "exact", head: true }).eq("company_id", ctx.companyId).in("event_id", eventIds).eq("status", "checked_in"),
+      ]);
+      if (guestsError) throw new Error(guestsError.message);
+      if (checkInsError) throw new Error(checkInsError.message);
+      return { total: eventIds.length, totalGuests: guestsCount ?? 0, totalCheckIns: checkInsCount ?? 0 };
+    }
     const [{ count: eventsCount, error: eventsError }, { count: guestsCount, error: guestsError }, { count: checkInsCount, error: checkInsError }] = await Promise.all([
       ctx.supabase.from("events").select("id", { count: "exact", head: true }).eq("company_id", ctx.companyId).is("deleted_at", null),
       ctx.supabase.from("guests").select("id", { count: "exact", head: true }).eq("company_id", ctx.companyId),

@@ -26,3 +26,4 @@ export * from "./sent-emails";
 export * from "./visitor-messages";
 export * from "./visitor-notifications";
 export * from "./reserved-seating";
+export * from "./audit-logs";

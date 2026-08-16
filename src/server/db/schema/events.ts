@@ -2,6 +2,7 @@ import { pgTable, uuid, varchar, text, integer, boolean, timestamp, jsonb, pgEnu
 import { companies } from "./companies";
 import { venues } from "./venues";
 import { categories } from "./categories";
+import { users } from "./users";
 
 export const eventTypeEnum = pgEnum("event_type", [
   "single",
@@ -23,6 +24,7 @@ export const events = pgTable(
   {
     id: uuid("id").primaryKey().defaultRandom(),
     companyId: uuid("company_id").references(() => companies.id).notNull(),
+    createdBy: uuid("created_by").references(() => users.id),
     venueId: uuid("venue_id").references(() => venues.id),
     categoryId: uuid("category_id").references(() => categories.id),
     title: varchar("title", { length: 255 }).notNull(),
