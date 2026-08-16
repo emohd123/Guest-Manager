@@ -1022,23 +1022,9 @@ export default function PublicEventPage({
                 <div className="mb-5 h-24 animate-pulse rounded-2xl bg-zinc-100" />
               ) : null}
 
-              <div className="mb-5 grid gap-3">
-                <Input
-                  value={attendeeName}
-                  onChange={(e) => setAttendeeName(e.target.value)}
-                  placeholder={t.fullName}
-                  autoComplete="name"
-                  className="h-12 rounded-xl bg-zinc-50 text-zinc-950 placeholder:text-zinc-500 dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:placeholder:text-slate-400"
-                />
-                <Input
-                  type="email"
-                  value={attendeeEmail}
-                  onChange={(e) => setAttendeeEmail(e.target.value)}
-                  placeholder={t.email}
-                  autoComplete="email"
-                  className="h-12 rounded-xl bg-zinc-50 text-zinc-950 placeholder:text-zinc-500 dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:placeholder:text-slate-400"
-                />
-              </div>
+              <p className="mb-5 rounded-xl border border-cyan-200 bg-cyan-50 px-4 py-3 text-sm text-cyan-900">
+                Your signed-in account details will be used for this order.
+              </p>
 
               {false && <details id="terms" className="group mb-5 scroll-mt-24 overflow-hidden rounded-xl border border-cyan-300/30 bg-[#0b151d] text-white">
                 <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-4 font-black marker:content-none">
