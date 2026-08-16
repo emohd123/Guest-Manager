@@ -109,7 +109,10 @@ export async function POST(request: NextRequest) {
     }
 
     const checkoutCurrency = (session.currency ?? cartItems[0]?.currency ?? "BHD").toUpperCase();
-    const subtotal = fromStripeUnitAmount(session.amount_subtotal ?? session.amount_total ?? 0, checkoutCurrency);
+    const metadataTicketSubtotal = Number(metadata.ticketSubtotal);
+    const subtotal = Number.isFinite(metadataTicketSubtotal)
+      ? metadataTicketSubtotal
+      : fromStripeUnitAmount(session.amount_subtotal ?? session.amount_total ?? 0, checkoutCurrency);
     const total = fromStripeUnitAmount(session.amount_total ?? session.amount_subtotal ?? 0, checkoutCurrency);
     const db = getDb();
 

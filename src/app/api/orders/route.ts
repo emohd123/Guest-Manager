@@ -299,6 +299,7 @@ export async function POST(request: NextRequest) {
     if (subtotal > 0) {
       const stripe = getStripeClient();
       const origin = request.nextUrl.origin;
+      const serviceFee = subtotal * 0.1;
       const lineItems = selectedSeats.length
         ? selectedSeats.map((seat) => ({
             price_data: {
@@ -323,7 +324,17 @@ export async function POST(request: NextRequest) {
 
       const session = await stripe.checkout.sessions.create({
         payment_method_types: ["card"],
-        line_items: lineItems,
+        line_items: [
+          ...lineItems,
+          {
+            price_data: {
+              currency: currencies[0].toLowerCase(),
+              product_data: { name: "iTicket service fee (10%)" },
+              unit_amount: toStripeUnitAmount(serviceFee, currencies[0]),
+            },
+            quantity: 1,
+          },
+        ],
         mode: "payment",
         customer_email: resolvedAttendeeEmail,
         metadata: {
@@ -333,6 +344,8 @@ export async function POST(request: NextRequest) {
           attendeeEmail: resolvedAttendeeEmail,
           cartItems: JSON.stringify(normalizedCartItems),
           seatHoldToken: seatHoldToken ?? "",
+          ticketSubtotal: String(subtotal),
+          serviceFee: String(serviceFee),
         },
         success_url: `${origin}/e/${companySlug}/${eventSlug}?success=1&session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${origin}/e/${companySlug}/${eventSlug}?cancelled=1`,

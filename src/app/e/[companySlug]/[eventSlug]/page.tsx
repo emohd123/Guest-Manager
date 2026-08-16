@@ -186,8 +186,6 @@ export default function PublicEventPage({
   const locale = normalizeLocale(searchParams.get("locale"));
   const t = labels[locale];
   const dir = marketplaceLocales[locale].dir;
-  const [attendeeName, setAttendeeName] = useState("");
-  const [attendeeEmail, setAttendeeEmail] = useState("");
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [selectedSeatIds, setSelectedSeatIds] = useState<string[]>([]);
   const [activeMediaIndex, setActiveMediaIndex] = useState(0);
@@ -321,15 +319,7 @@ export default function PublicEventPage({
       window.location.assign(`/account/login?redirectTo=${encodeURIComponent(window.location.pathname + "#tickets")}`);
       return;
     }
-    const resolvedAttendeeName =
-      attendeeName.trim() ||
-      (typeof authData.user.user_metadata?.full_name === "string"
-        ? authData.user.user_metadata.full_name
-        : typeof authData.user.user_metadata?.name === "string"
-          ? authData.user.user_metadata.name
-          : "Guest");
-    const resolvedAttendeeEmail = attendeeEmail.trim() || authData.user.email || "";
-    if (!resolvedAttendeeEmail) {
+    if (!authData.user.email) {
       toast.error("Your account does not have an email address.");
       return;
     }
@@ -344,7 +334,7 @@ export default function PublicEventPage({
         return {
           ticketTypeId,
           name: ticketType.name,
-          price: ticketType.price ?? 0,
+          price: publicPage.isPaidEvent ? (ticketType.price ?? 0) : 0,
           currency: ticketType.currency ?? "BHD",
           quantity,
         };
@@ -381,48 +371,15 @@ export default function PublicEventPage({
       seatHoldToken = hold.holdToken;
     }
 
-    try {
-      setCheckoutLoading(true);
-      const response = await fetch("/api/orders", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          companySlug,
-          eventSlug,
-          attendeeName: resolvedAttendeeName,
-          attendeeEmail: resolvedAttendeeEmail,
-          cartItems,
-          selectedSeatIds,
-          seatHoldToken,
-        }),
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || "Checkout failed");
-      }
-
-      if (result.checkoutUrl) {
-        window.location.href = result.checkoutUrl;
-        return;
-      }
-
-      if (result.success) {
-        toast.success(
-          "Registration complete. Your tickets are being sent by email.",
-        );
-        return;
-      }
-
-      throw new Error("Unexpected checkout response");
-    } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "Checkout failed";
-      toast.error(message);
-    } finally {
-      setCheckoutLoading(false);
-    }
+    setCheckoutLoading(true);
+    const checkoutParams = new URLSearchParams({
+      company: companySlug,
+      event: eventSlug,
+      items: JSON.stringify(cartItems),
+    });
+    if (selectedSeatIds.length) checkoutParams.set("seats", selectedSeatIds.join(","));
+    if (seatHoldToken) checkoutParams.set("hold", seatHoldToken);
+    window.location.assign(`/checkout/tickets?${checkoutParams.toString()}`);
   };
 
   const handleCopyLink = async () => {
