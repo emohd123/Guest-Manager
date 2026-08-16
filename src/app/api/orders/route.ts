@@ -382,14 +382,16 @@ export async function POST(request: NextRequest) {
         const updatedTicketType = await tx
           .update(ticketTypes)
           .set({
-            quantitySold: sql`${ticketTypes.quantitySold} + ${item.quantity}`,
+            // Older ticket rows may have a null quantity_sold despite the
+            // column default. Treat those as zero for free reservations too.
+            quantitySold: sql`coalesce(${ticketTypes.quantitySold}, 0) + ${item.quantity}`,
             updatedAt: new Date(),
           })
           .where(
             and(
               eq(ticketTypes.id, item.ticketTypeId),
               eq(ticketTypes.status, "active"),
-              sql`(${ticketTypes.quantityTotal} IS NULL OR ${ticketTypes.quantitySold} + ${item.quantity} <= ${ticketTypes.quantityTotal})`,
+              sql`(${ticketTypes.quantityTotal} IS NULL OR coalesce(${ticketTypes.quantitySold}, 0) + ${item.quantity} <= ${ticketTypes.quantityTotal})`,
             ),
           )
           .returning({ id: ticketTypes.id });
