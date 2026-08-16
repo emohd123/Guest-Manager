@@ -24,6 +24,9 @@ export type Context = {
   supabase: SupabaseClient;
   userId: string | null;
   companyId: string | null;
+  dashboardAccess: "none" | "limited" | "full";
+  dashboardPermissions: string[];
+  role: string | null;
 };
 
 export const createTRPCContext = async (): Promise<Context> => {
@@ -37,7 +40,7 @@ export const createTRPCContext = async (): Promise<Context> => {
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) {
-    return { db, supabase, userId: null, companyId: null };
+    return { db, supabase, userId: null, companyId: null, dashboardAccess: "none", dashboardPermissions: [], role: null };
   }
 
   const dbUser = await ensureAppUserForAuthUser(supabase, user);
@@ -47,6 +50,9 @@ export const createTRPCContext = async (): Promise<Context> => {
     supabase,
     userId: user.id,
     companyId: dbUser?.companyId ?? null,
+    dashboardAccess: dbUser?.dashboardAccess ?? "none",
+    dashboardPermissions: dbUser?.dashboardPermissions ?? [],
+    role: dbUser?.role ?? null,
   };
 };
 
@@ -70,4 +76,18 @@ export const protectedProcedure = t.procedure.use(async ({ ctx, next }) => {
       companyId: ctx.companyId,
     },
   });
+});
+
+export const dashboardProcedure = protectedProcedure.use(async ({ ctx, next }) => {
+  if (!ctx.companyId || ctx.dashboardAccess === "none") {
+    throw new TRPCError({ code: "FORBIDDEN", message: "Dashboard access is not enabled for this account" });
+  }
+  return next({ ctx });
+});
+
+export const dashboardAdminProcedure = dashboardProcedure.use(async ({ ctx, next }) => {
+  if (ctx.dashboardAccess !== "full" && ctx.role !== "owner" && ctx.role !== "admin") {
+    throw new TRPCError({ code: "FORBIDDEN", message: "Only full-access administrators can manage accounts" });
+  }
+  return next({ ctx });
 });

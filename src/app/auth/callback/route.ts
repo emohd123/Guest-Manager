@@ -31,11 +31,16 @@ async function userHasDashboardAccess(
   supabase: Awaited<ReturnType<typeof createClient>>,
   userId: string
 ) {
-  const { data } = await supabase
+  let { data, error } = await supabase
     .from("users")
-    .select("id, company_id")
+    .select("id, company_id, role, dashboard_access")
     .eq("id", userId)
     .maybeSingle();
 
-  return Boolean(data?.company_id);
+  if (error && /dashboard_access/i.test(error.message)) {
+    const fallback = await supabase.from("users").select("id, company_id, role").eq("id", userId).maybeSingle();
+    data = fallback.data as typeof data;
+  }
+  const access = data?.dashboard_access ?? (data?.company_id && ["owner", "admin"].includes(data?.role) ? "full" : "none");
+  return Boolean(data?.company_id && access !== "none");
 }

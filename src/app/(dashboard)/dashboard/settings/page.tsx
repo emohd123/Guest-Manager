@@ -15,7 +15,8 @@ import {
   ChevronRight,
   Globe,
   Key,
-  ExternalLink
+  ExternalLink,
+  UserCog,
 } from "lucide-react";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc/client";
@@ -38,6 +39,8 @@ import {
 
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState("account");
+  const { data: currentUser } = trpc.settings.getUser.useQuery();
+  const canManageAccess = currentUser?.dashboard_access === "full" || currentUser?.role === "owner" || currentUser?.role === "admin";
 
   return (
     <motion.div 
@@ -66,6 +69,12 @@ export default function SettingsPage() {
             <Users className="h-4 w-4" />
             <span className="hidden sm:inline">Team</span>
           </TabsTrigger>
+          {canManageAccess ? (
+            <TabsTrigger value="access" className="rounded-xl px-8 py-3 font-black text-xs uppercase tracking-widest data-[state=active]:bg-primary data-[state=active]:text-white transition-all italic flex gap-2">
+              <UserCog className="h-4 w-4" />
+              <span className="hidden sm:inline">Access</span>
+            </TabsTrigger>
+          ) : null}
         </TabsList>
 
         <AnimatePresence mode="wait" initial={false}>
@@ -85,6 +94,11 @@ export default function SettingsPage() {
             <TabsContent value="team" className="mt-0 outline-none">
               <TeamSettings />
             </TabsContent>
+            {canManageAccess ? (
+              <TabsContent value="access" className="mt-0 outline-none">
+                <AccountAccessSettings />
+              </TabsContent>
+            ) : null}
           </motion.div>
         </AnimatePresence>
       </Tabs>
@@ -667,6 +681,65 @@ function TeamSettings() {
             ))
           )}
         </div>
+      </div>
+    </div>
+  );
+}
+
+const ACCESS_PERMISSIONS = [
+  ["events", "Events"],
+  ["tickets", "Tickets & orders"],
+  ["guests", "Guests & invitations"],
+  ["reports", "Reports"],
+  ["scans", "Check-in & scanners"],
+] as const;
+
+function AccountAccessSettings() {
+  const utils = trpc.useUtils();
+  const { data: accounts, isLoading, error } = trpc.settings.listAccounts.useQuery();
+  const update = trpc.settings.updateAccountAccess.useMutation({
+    onSuccess: () => { toast.success("Account access updated"); utils.settings.listAccounts.invalidate(); },
+    onError: (err) => toast.error(err.message),
+  });
+  const [drafts, setDrafts] = useState<Record<string, { access: "none" | "limited" | "full"; permissions: string[] }>>({});
+
+  useEffect(() => {
+    if (!accounts) return;
+    setDrafts(Object.fromEntries(accounts.map((account) => [account.id, {
+      access: account.dashboardAccess as "none" | "limited" | "full",
+      permissions: account.dashboardPermissions,
+    }])));
+  }, [accounts]);
+
+  return (
+    <div className="space-y-8">
+      <div className="theme-panel p-8">
+        <div className="flex items-start gap-4">
+          <div className="rounded-2xl bg-primary/10 p-3 text-primary"><UserCog className="h-6 w-6" /></div>
+          <div>
+            <h3 className="text-2xl font-black text-foreground dark:text-white italic">Customer accounts & access</h3>
+            <p className="mt-2 text-sm text-muted-foreground dark:text-white/50">New signups are customers only. Grant workspace access explicitly, then choose exactly which areas a limited user can open.</p>
+          </div>
+        </div>
+      </div>
+      {error ? <div className="rounded-2xl border border-destructive/30 bg-destructive/10 p-5 text-sm text-destructive">{error.message}</div> : null}
+      <div className="space-y-3">
+        {isLoading ? <Skeleton className="h-32 w-full" /> : (accounts ?? []).map((account) => {
+          const draft = drafts[account.id] ?? { access: "none" as const, permissions: [] };
+          return (
+            <div key={account.id} className="theme-panel flex flex-col gap-5 p-6 lg:flex-row lg:items-center lg:justify-between">
+              <div className="min-w-0"><p className="truncate font-black text-foreground dark:text-white">{account.name ?? "Customer"}</p><p className="truncate text-xs text-muted-foreground">{account.email}</p></div>
+              <div className="flex flex-wrap items-center gap-3">
+                <Select value={draft.access} onValueChange={(value: "none" | "limited" | "full") => setDrafts((all) => ({ ...all, [account.id]: { ...draft, access: value } }))}>
+                  <SelectTrigger className="w-36"><SelectValue /></SelectTrigger>
+                  <SelectContent><SelectItem value="none">Customer only</SelectItem><SelectItem value="limited">Limited access</SelectItem><SelectItem value="full">Full access</SelectItem></SelectContent>
+                </Select>
+                {draft.access === "limited" ? <div className="flex max-w-md flex-wrap gap-2">{ACCESS_PERMISSIONS.map(([key, label]) => <label key={key} className="flex items-center gap-1.5 text-xs"><input type="checkbox" checked={draft.permissions.includes(key)} onChange={(event) => setDrafts((all) => ({ ...all, [account.id]: { ...draft, permissions: event.target.checked ? [...draft.permissions, key] : draft.permissions.filter((item) => item !== key) } }))} />{label}</label>)}</div> : null}
+                <Button disabled={update.isPending} onClick={() => update.mutate({ userId: account.id, dashboardAccess: draft.access, dashboardPermissions: draft.permissions })}>Save access</Button>
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
