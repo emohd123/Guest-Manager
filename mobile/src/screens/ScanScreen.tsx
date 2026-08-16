@@ -5,6 +5,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  Vibration,
   useWindowDimensions,
   View,
 } from "react-native";
@@ -52,10 +53,12 @@ export function ScanScreen({
       const feedback = await onSubmitBarcode(barcode);
       setLastFeedback(feedback);
       setLastMessage(feedback.message);
+      Vibration.vibrate(feedback.outcome === "success" ? 120 : [0, 140, 90, 140]);
     } catch (error) {
       const message = error instanceof Error ? error.message : "Scan failed";
       setLastFeedback({ outcome: "invalid", message });
       setLastMessage(message);
+      Vibration.vibrate([0, 140, 90, 140]);
     } finally {
       setTimeout(() => setLocked(false), 900);
     }

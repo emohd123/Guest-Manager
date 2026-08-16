@@ -109,6 +109,8 @@ export default function CheckinPage({
     },
   });
 
+  const processScanMutation = trpc.scans.process.useMutation();
+
   const guests = useMemo(() => guestsQuery.data?.guests ?? [], [guestsQuery.data?.guests]);
   const filteredGuests = useMemo(() => {
     return guests.filter((guest) => {
@@ -150,59 +152,27 @@ export default function CheckinPage({
 
   async function handleBarcodeScan(barcode: string): Promise<ScanResult> {
     const ticket = await utils.client.tickets.getByBarcode.query({ eventId, barcode });
+    const result = await processScanMutation.mutateAsync({
+      eventId,
+      barcode,
+      action: actionMode,
+      deviceId: device.id,
+      deviceName: device.name,
+    });
 
-    if (!ticket) {
+    if (result.status === "revalidated") {
+      return { status: "already_checked_in", attendeeName: result.attendeeName ?? "Guest", barcode };
+    }
+    if (result.status === "invalid") {
+      if (result.result === "voided") {
+        return { status: "voided", attendeeName: result.attendeeName ?? "Guest", barcode };
+      }
       return { status: "not_found", barcode };
     }
-    if (ticket.status === "voided") {
-      return {
-        status: "voided",
-        attendeeName: ticket.attendeeName ?? "Guest",
-        barcode,
-      };
-    }
-    if (!ticket.guestId) {
-      return {
-        status: "success",
-        attendeeName: ticket.attendeeName ?? "Guest",
-        ticketType: actionMode === "check_in" ? "Checked In" : "Checked Out",
-        barcode,
-      };
-    }
-
-    if (actionMode === "check_in") {
-      const result = await checkInMutation.mutateAsync({
-        eventId,
-        guestId: ticket.guestId,
-        barcode,
-        deviceInfo: {
-          deviceId: device.id,
-          deviceName: device.name,
-        },
-      });
-      if (result.alreadyCheckedIn) {
-        return {
-          status: "already_checked_in",
-          attendeeName: ticket.attendeeName ?? "Guest",
-          barcode,
-        };
-      }
-      return {
-        status: "success",
-        attendeeName: ticket.attendeeName ?? "Guest",
-        ticketType: ticket.ticketTypeName ?? "Ticket",
-        barcode,
-      };
-    }
-
-    await checkoutMutation.mutateAsync({
-      eventId,
-      guestId: ticket.guestId,
-    });
     return {
       status: "success",
-      attendeeName: ticket.attendeeName ?? "Guest",
-      ticketType: "Checked Out",
+      attendeeName: result.attendeeName ?? ticket?.attendeeName ?? "Guest",
+      ticketType: actionMode === "check_in" ? ticket?.ticketTypeName ?? "Ticket" : "Checked Out",
       barcode,
     };
   }

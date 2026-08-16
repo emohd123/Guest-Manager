@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { router, protectedProcedure } from "../index";
+import { processScanWorkflow } from "@/server/services/checkin";
 
 type ScanRow = {
   id: string;
@@ -144,6 +145,31 @@ async function loadScans(
 }
 
 export const scansRouter = router({
+  process: protectedProcedure
+    .input(
+      z.object({
+        eventId: z.string().uuid(),
+        barcode: z.string().min(1),
+        action: z.enum(["check_in", "checkout"]).default("check_in"),
+        deviceId: z.string().optional(),
+        deviceName: z.string().optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      return processScanWorkflow(ctx.db, {
+        eventId: input.eventId,
+        barcode: input.barcode,
+        action: input.action,
+        method: "scan",
+        actor: {
+          companyId: ctx.companyId,
+          userId: ctx.userId,
+          deviceId: input.deviceId ?? null,
+          deviceName: input.deviceName ?? null,
+        },
+      });
+    }),
+
   list: protectedProcedure
     .input(
       z.object({
