@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useState } from "react";
+import { use, useMemo, useState } from "react";
 import Link from "next/link";
 import { ColumnDef } from "@tanstack/react-table";
 import { trpc } from "@/lib/trpc/client";
@@ -86,6 +86,7 @@ export default function EventGuestsPage({
 
   type GuestStatus = "invited" | "confirmed" | "declined" | "waitlisted" | "checked_in" | "no_show";
   const [statusFilter, setStatusFilter] = useState<GuestStatus | "all">("all");
+  const [deliveryFilter, setDeliveryFilter] = useState<"all" | "sent" | "not_sent">("all");
 
   const { data, isLoading, refetch } = trpc.guests.list.useQuery({
     eventId,
@@ -152,6 +153,34 @@ export default function EventGuestsPage({
       toast.error(err.message || "Send failed");
     }
   });
+
+  const guests = useMemo(() => {
+    const rows = (data?.guests ?? []) as Guest[];
+    if (deliveryFilter === "all") return rows;
+    return rows.filter((guest) => {
+      const metadata = (guest as any).ticket?.metadata as Record<string, unknown> | null | undefined;
+      const sent = Boolean(metadata?.ticketEmailSentAt);
+      return deliveryFilter === "sent" ? sent : !sent;
+    });
+  }, [data?.guests, deliveryFilter]);
+
+  const selectAllVisible = () => {
+    const next: Record<string, boolean> = {};
+    guests.forEach((guest) => { next[guest.id] = true; });
+    setRowSelection(next);
+  };
+
+  const sendSelectedEmails = async () => {
+    const selectedIds = Object.keys(rowSelection).filter((id) => rowSelection[id]);
+    const selectedGuests = guests.filter((guest) => selectedIds.includes(guest.id));
+    if (!selectedGuests.length) return;
+    const results = await Promise.allSettled(selectedGuests.map((guest) => sendEmail.mutateAsync({ guestId: guest.id })));
+    const failed = results.filter((result) => result.status === "rejected").length;
+    if (failed) toast.error(`${failed} ticket email${failed === 1 ? "" : "s"} failed to send`);
+    else toast.success(`Sent ${selectedGuests.length} ticket email${selectedGuests.length === 1 ? "" : "s"}`);
+    setRowSelection({});
+    await refetch();
+  };
 
   const handleExportCSV = () => {
     const guests = (data?.guests ?? []) as Guest[];
@@ -405,7 +434,7 @@ export default function EventGuestsPage({
       <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.2 }}>
         <DataTable
           columns={columns}
-          data={(data?.guests ?? []) as Guest[]}
+          data={guests}
           searchKey="firstName"
           searchPlaceholder="Search guest list..."
           isLoading={isLoading}
@@ -439,20 +468,40 @@ export default function EventGuestsPage({
                     >
                       <Undo2 className="h-3.5 w-3.5 text-orange-500" /> Mark as Confirmed
                     </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => void sendSelectedEmails()}
+                      className="rounded-xl font-black italic uppercase tracking-widest text-[9px] focus:bg-white/10 focus:text-white py-3 gap-3"
+                    >
+                      <Mail className="h-3.5 w-3.5 text-cyan-400" /> Send tickets by email
+                    </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               )}
+              <Button type="button" variant="outline" onClick={selectAllVisible} className="h-12 rounded-2xl border-white/10 bg-white/5 px-4 text-[10px] font-black uppercase tracking-widest text-white hover:bg-white/10">
+                Select all visible
+              </Button>
+              {Object.keys(rowSelection).length > 0 ? <Button type="button" variant="ghost" onClick={() => setRowSelection({})} className="h-12 text-[10px] font-black uppercase tracking-widest text-white/60 hover:text-white">Clear</Button> : null}
               <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as GuestStatus | "all")}>
-                <SelectTrigger className="w-[180px] h-12 rounded-2xl bg-white/3 border-white/5 text-white/60 font-black italic uppercase tracking-widest text-[10px] focus:ring-primary focus:border-primary">
+                <SelectTrigger className="w-[180px] h-12 rounded-2xl bg-slate-950 border-white/20 text-white font-black italic uppercase tracking-widest text-[10px] focus:ring-primary focus:border-primary">
                   <SelectValue placeholder="All Statuses" />
                 </SelectTrigger>
-                <SelectContent className="bg-slate-950 border-white/10 rounded-2xl shadow-2xl">
-                  <SelectItem value="all" className="rounded-xl font-black italic uppercase tracking-widest text-[9px]">All Guests</SelectItem>
-                  <SelectItem value="invited" className="rounded-xl font-black italic uppercase tracking-widest text-[9px]">Invited Only</SelectItem>
-                  <SelectItem value="confirmed" className="rounded-xl font-black italic uppercase tracking-widest text-[9px]">Confirmed Only</SelectItem>
-                  <SelectItem value="checked_in" className="rounded-xl font-black italic uppercase tracking-widest text-[9px]">Checked In</SelectItem>
-                  <SelectItem value="declined" className="rounded-xl font-black italic uppercase tracking-widest text-[9px]">Declined Only</SelectItem>
-                  <SelectItem value="waitlisted" className="rounded-xl font-black italic uppercase tracking-widest text-[9px]">Waitlisted</SelectItem>
+                <SelectContent className="bg-slate-950 border-white/20 rounded-2xl shadow-2xl text-white">
+                  <SelectItem value="all" className="rounded-xl font-black italic uppercase tracking-widest text-[9px] text-white focus:bg-cyan-500 focus:text-white">All Guests</SelectItem>
+                  <SelectItem value="invited" className="rounded-xl font-black italic uppercase tracking-widest text-[9px] text-white focus:bg-cyan-500 focus:text-white">Invited Only</SelectItem>
+                  <SelectItem value="confirmed" className="rounded-xl font-black italic uppercase tracking-widest text-[9px] text-white focus:bg-cyan-500 focus:text-white">Confirmed Only</SelectItem>
+                  <SelectItem value="checked_in" className="rounded-xl font-black italic uppercase tracking-widest text-[9px] text-white focus:bg-cyan-500 focus:text-white">Checked In</SelectItem>
+                  <SelectItem value="declined" className="rounded-xl font-black italic uppercase tracking-widest text-[9px] text-white focus:bg-cyan-500 focus:text-white">Declined Only</SelectItem>
+                  <SelectItem value="waitlisted" className="rounded-xl font-black italic uppercase tracking-widest text-[9px] text-white focus:bg-cyan-500 focus:text-white">Waitlisted</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={deliveryFilter} onValueChange={(v) => setDeliveryFilter(v as typeof deliveryFilter)}>
+                <SelectTrigger className="w-[180px] h-12 rounded-2xl bg-slate-950 border-white/20 text-white font-black italic uppercase tracking-widest text-[10px] focus:ring-primary focus:border-primary">
+                  <SelectValue placeholder="Ticket delivery" />
+                </SelectTrigger>
+                <SelectContent className="bg-slate-950 border-white/20 rounded-2xl shadow-2xl text-white">
+                  <SelectItem value="all" className="text-white focus:bg-cyan-500 focus:text-white">All ticket delivery</SelectItem>
+                  <SelectItem value="not_sent" className="text-white focus:bg-cyan-500 focus:text-white">Ticket email not sent</SelectItem>
+                  <SelectItem value="sent" className="text-white focus:bg-cyan-500 focus:text-white">Ticket email sent</SelectItem>
                 </SelectContent>
               </Select>
             </div>
