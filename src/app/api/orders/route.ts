@@ -71,13 +71,16 @@ export async function POST(request: NextRequest) {
       seatHoldToken?: string;
     };
 
-    if (
-      !companySlug ||
-      !eventSlug ||
-      !attendeeName ||
-      !attendeeEmail ||
-      !cartItems?.length
-    ) {
+    const buyerName =
+      typeof buyer.user_metadata?.full_name === "string"
+        ? buyer.user_metadata.full_name
+        : typeof buyer.user_metadata?.name === "string"
+          ? buyer.user_metadata.name
+          : "Guest";
+    const resolvedAttendeeName = attendeeName?.trim() || buyerName;
+    const resolvedAttendeeEmail = attendeeEmail?.trim() || buyer.email || "";
+
+    if (!companySlug || !eventSlug || !resolvedAttendeeEmail || !cartItems?.length) {
       return NextResponse.json(
         { error: "Missing required fields" },
         { status: 400 },
@@ -321,12 +324,12 @@ export async function POST(request: NextRequest) {
         payment_method_types: ["card"],
         line_items: lineItems,
         mode: "payment",
-        customer_email: attendeeEmail,
+        customer_email: resolvedAttendeeEmail,
         metadata: {
           companyId: company[0].id,
           eventId: event[0].id,
-          attendeeName,
-          attendeeEmail,
+          attendeeName: resolvedAttendeeName,
+          attendeeEmail: resolvedAttendeeEmail,
           cartItems: JSON.stringify(normalizedCartItems),
           seatHoldToken: seatHoldToken ?? "",
         },
@@ -354,8 +357,8 @@ export async function POST(request: NextRequest) {
           eventId: event[0].id,
           orderNumber,
           status: "completed",
-          email: attendeeEmail,
-          name: attendeeName,
+          email: resolvedAttendeeEmail,
+          name: resolvedAttendeeName,
           subtotal: 0,
           total: 0,
           currency: normalizedCartItems[0]?.currency ?? "BHD",
@@ -399,7 +402,7 @@ export async function POST(request: NextRequest) {
         const ticketType = validTicketTypes.find(
           (record) => record.id === item.ticketTypeId,
         );
-        const [firstName, ...lastNameParts] = attendeeName
+        const [firstName, ...lastNameParts] = resolvedAttendeeName
           .trim()
           .split(/\s+/)
           .filter(Boolean);
@@ -413,7 +416,7 @@ export async function POST(request: NextRequest) {
               eventId: event[0].id,
               firstName: firstName || "Guest",
               lastName: lastNameParts.join(" "),
-              email: attendeeEmail,
+              email: resolvedAttendeeEmail,
               status: "confirmed",
               guestType: ticketType?.name ?? item.name,
               source: "registration",
@@ -429,8 +432,8 @@ export async function POST(request: NextRequest) {
               orderId: order.id,
               guestId: newGuest.id,
               barcode,
-              attendeeName,
-              attendeeEmail,
+              attendeeName: resolvedAttendeeName,
+              attendeeEmail: resolvedAttendeeEmail,
               status: "valid",
             })
             .returning();
@@ -452,8 +455,8 @@ export async function POST(request: NextRequest) {
     for (const task of ticketTasks) {
       generateAndSendTicket({
         ticketId: task.ticketId,
-        toEmail: attendeeEmail,
-        attendeeName,
+        toEmail: resolvedAttendeeEmail,
+        attendeeName: resolvedAttendeeName,
         ticketTypeName: task.ticketTypeName,
         orderNumber,
         barcode: task.barcode,

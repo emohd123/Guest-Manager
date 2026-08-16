@@ -321,12 +321,16 @@ export default function PublicEventPage({
       window.location.assign(`/account/login?redirectTo=${encodeURIComponent(window.location.pathname + "#tickets")}`);
       return;
     }
-    if (!attendeeName.trim()) {
-      toast.error("Please enter your full name.");
-      return;
-    }
-    if (!attendeeEmail.trim()) {
-      toast.error("Please enter your email address.");
+    const resolvedAttendeeName =
+      attendeeName.trim() ||
+      (typeof authData.user.user_metadata?.full_name === "string"
+        ? authData.user.user_metadata.full_name
+        : typeof authData.user.user_metadata?.name === "string"
+          ? authData.user.user_metadata.name
+          : "Guest");
+    const resolvedAttendeeEmail = attendeeEmail.trim() || authData.user.email || "";
+    if (!resolvedAttendeeEmail) {
+      toast.error("Your account does not have an email address.");
       return;
     }
 
@@ -385,8 +389,8 @@ export default function PublicEventPage({
         body: JSON.stringify({
           companySlug,
           eventSlug,
-          attendeeName: attendeeName.trim(),
-          attendeeEmail: attendeeEmail.trim(),
+          attendeeName: resolvedAttendeeName,
+          attendeeEmail: resolvedAttendeeEmail,
           cartItems,
           selectedSeatIds,
           seatHoldToken,
