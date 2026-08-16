@@ -27,8 +27,6 @@ export function QRScannerModal({ open, onClose, onScan }: QRScannerModalProps) {
   const [isScanning, setIsScanning] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [lastResult, setLastResult] = useState<ScanResult | null>(null);
-  const [cameras, setCameras] = useState<MediaDeviceInfo[]>([]);
-  const [selectedCamera, setSelectedCamera] = useState<string | undefined>(undefined);
   const lastBarcodeRef = useRef<string | null>(null);
   const cooldownRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const resultTouchStartRef = useRef<number | null>(null);
@@ -48,17 +46,14 @@ export function QRScannerModal({ open, onClose, onScan }: QRScannerModalProps) {
       const reader = new BrowserMultiFormatReader();
       readerRef.current = reader;
       
-      const devices = await BrowserMultiFormatReader.listVideoInputDevices();
-      setCameras(devices);
-      
-      const deviceId = selectedCamera ?? devices.at(-1)?.deviceId; // prefer back camera (usually last)
-      
       setIsScanning(true);
       setLastResult(null);
       lastBarcodeRef.current = null;
       
-      await reader.decodeFromVideoDevice(
-        deviceId,
+      // Request the device's normal rear camera on phones. There is no camera
+      // picker: browsers choose the best available environment-facing camera.
+      await reader.decodeFromConstraints(
+        { video: { facingMode: { ideal: "environment" } } },
         videoRef.current,
         async (result, error) => {
           if (result) {
@@ -91,7 +86,7 @@ export function QRScannerModal({ open, onClose, onScan }: QRScannerModalProps) {
       setHasCamera(false);
       setIsScanning(false);
     }
-  }, [onScan, selectedCamera]);
+  }, [onScan]);
 
   const dismissResult = useCallback(() => {
     setLastResult(null);
@@ -115,15 +110,6 @@ export function QRScannerModal({ open, onClose, onScan }: QRScannerModalProps) {
     };
   }, [open, startScanning, stopScanning]);
 
-  // Restart when camera changes
-  useEffect(() => {
-    if (isScanning) {
-      stopScanning();
-      setTimeout(() => startScanning(), 200);
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedCamera]);
-
   if (!open) return null;
 
   return (
@@ -142,19 +128,6 @@ export function QRScannerModal({ open, onClose, onScan }: QRScannerModalProps) {
           )}
         </div>
         <div className="flex items-center gap-2">
-          {cameras.length > 1 && (
-            <select
-              className="text-xs bg-zinc-800 text-white rounded px-2 py-1 border border-zinc-600"
-              value={selectedCamera}
-              onChange={(e) => setSelectedCamera(e.target.value)}
-            >
-              {cameras.map((cam, i) => (
-                <option key={cam.deviceId} value={cam.deviceId}>
-                  {cam.label || `Camera ${i + 1}`}
-                </option>
-              ))}
-            </select>
-          )}
           <Button variant="ghost" size="icon" className="h-10 w-10 shrink-0 rounded-full text-white hover:bg-white/10" onClick={onClose} aria-label="Log out of staff scanner" title="Log out">
             <LogOut className="h-5 w-5" aria-hidden="true" />
           </Button>
