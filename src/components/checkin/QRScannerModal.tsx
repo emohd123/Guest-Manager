@@ -210,7 +210,16 @@ export function QRScannerModal({ open, onClose, onScan }: QRScannerModalProps) {
       </div>
 
       {/* Result Banner */}
-      <div className="min-h-[120px] bg-zinc-900 px-4 pt-4 pb-6 flex flex-col items-center justify-center gap-3">
+      <div
+        className={cn(
+          "min-h-[160px] px-4 pt-5 pb-6 flex flex-col items-center justify-center gap-3 transition-colors",
+          lastResult === null
+            ? "bg-zinc-900"
+            : lastResult.status === "success"
+              ? "bg-emerald-700"
+              : "bg-red-700"
+        )}
+      >
         {lastResult === null ? (
           <div className="flex flex-col items-center gap-2 text-zinc-400 text-center">
             <ZoomIn className="h-8 w-8 opacity-40" />
@@ -225,21 +234,22 @@ export function QRScannerModal({ open, onClose, onScan }: QRScannerModalProps) {
           </div>
         ) : lastResult.status === "already_checked_in" ? (
           <div className="flex flex-col items-center gap-2 text-center animate-in fade-in-0 duration-300">
-            <CheckCircle2 className="h-10 w-10 text-amber-400" />
+            <XCircle className="h-10 w-10 text-red-100" />
             <p className="text-white font-bold text-lg">{lastResult.attendeeName}</p>
-            <p className="text-amber-400 font-medium">Already Checked In</p>
+            <p className="text-red-100 font-semibold">Already Scanned — Entry Denied</p>
           </div>
         ) : lastResult.status === "voided" ? (
           <div className="flex flex-col items-center gap-2 text-center animate-in fade-in-0 duration-300">
-            <XCircle className="h-10 w-10 text-red-400" />
+            <XCircle className="h-10 w-10 text-red-100" />
             <p className="text-white font-bold text-lg">{lastResult.attendeeName}</p>
-            <p className="text-red-400 font-medium">Ticket is Voided</p>
+            <p className="text-red-100 font-semibold">Ticket is Voided — Entry Denied</p>
           </div>
         ) : (
           <div className="flex flex-col items-center gap-2 text-center animate-in fade-in-0 duration-300">
-            <XCircle className="h-10 w-10 text-red-400" />
-            <p className="text-red-400 font-medium">Ticket Not Found</p>
-            <p className="text-zinc-500 text-xs font-mono">{lastResult.barcode}</p>
+            <XCircle className="h-10 w-10 text-red-100" />
+            <p className="text-white font-bold text-lg">Scan Rejected</p>
+            <p className="text-red-100 font-semibold">Ticket Not Found — Entry Denied</p>
+            <p className="text-red-100/80 text-xs font-mono">{lastResult.barcode}</p>
           </div>
         )}
       </div>

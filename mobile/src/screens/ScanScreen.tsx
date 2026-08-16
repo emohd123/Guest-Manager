@@ -9,6 +9,7 @@ import {
   View,
 } from "react-native";
 import { CameraView, useCameraPermissions } from "expo-camera";
+import { Ionicons } from "@expo/vector-icons";
 import { FadeSlideIn, usePulseAnimation } from "../ui/motion";
 import {
   PremiumButton,
@@ -45,7 +46,7 @@ export function ScanScreen({
   const cameraHeight = Math.max(360, Math.min(560, width * (Platform.OS === "web" ? 0.48 : 0.9)));
 
   async function submit(barcode: string) {
-    if (!barcode || locked) return;
+    if (!barcode || locked || lastFeedback) return;
     setLocked(true);
     try {
       const feedback = await onSubmitBarcode(barcode);
@@ -181,6 +182,34 @@ export function ScanScreen({
                 }}
                 onBarcodeScanned={({ data }) => submit(data)}
               />
+              {lastFeedback ? (
+                <View
+                  style={[
+                    styles.resultOverlay,
+                    lastFeedback.outcome === "success" ? styles.resultOverlaySuccess : styles.resultOverlayError,
+                  ]}
+                >
+                  <Ionicons
+                    name={lastFeedback.outcome === "success" ? "checkmark-circle" : "alert-circle"}
+                    size={72}
+                    color="#fff"
+                  />
+                  <Text style={styles.overlayTitle}>
+                    {lastFeedback.outcome === "success" ? "TICKET VALID" : lastFeedback.outcome === "already_used" ? "ALREADY SCANNED" : "SCAN REJECTED"}
+                  </Text>
+                  {lastFeedback.attendeeName ? <Text style={styles.overlayName}>{lastFeedback.attendeeName}</Text> : null}
+                  <Text style={styles.overlayMessage}>{lastFeedback.message}</Text>
+                  <PremiumButton
+                    label="Scan next ticket"
+                    icon="scan-outline"
+                    tone="secondary"
+                    onPress={() => {
+                      setLastFeedback(null);
+                      setLastMessage("");
+                    }}
+                  />
+                </View>
+              ) : null}
             </View>
           </PremiumCard>
         </FadeSlideIn>
@@ -297,5 +326,38 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 14,
     fontWeight: "600",
+  },
+  resultOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: "center",
+    justifyContent: "center",
+    padding: spacing.xl,
+    gap: spacing.sm,
+  },
+  resultOverlaySuccess: {
+    backgroundColor: "rgba(5, 137, 82, 0.97)",
+  },
+  resultOverlayError: {
+    backgroundColor: "rgba(170, 24, 43, 0.98)",
+  },
+  overlayTitle: {
+    color: "#fff",
+    fontSize: 25,
+    fontWeight: "900",
+    textAlign: "center",
+    letterSpacing: 1,
+  },
+  overlayName: {
+    color: "#fff",
+    fontSize: 18,
+    fontWeight: "800",
+    textAlign: "center",
+  },
+  overlayMessage: {
+    color: "#fff",
+    fontSize: 15,
+    fontWeight: "600",
+    textAlign: "center",
+    marginBottom: spacing.sm,
   },
 });
