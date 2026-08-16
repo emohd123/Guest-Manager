@@ -114,18 +114,19 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Event not found" }, { status: 404 });
     }
 
-    if (!event[0].registrationEnabled) {
-      return NextResponse.json(
-        { error: "Registration is not open" },
-        { status: 400 },
-      );
-    }
-
     const eventSettings =
       event[0].settings && typeof event[0].settings === "object"
         ? (event[0].settings as Record<string, any>)
         : {};
     const isPaidEvent = eventSettings.publicPage?.isPaidEvent !== false;
+    // Free public events are reservations, so they remain claimable even when
+    // the paid-registration switch is off. Paid events still require it.
+    if (!event[0].registrationEnabled && isPaidEvent) {
+      return NextResponse.json(
+        { error: "Registration is not open" },
+        { status: 400 },
+      );
+    }
     if (cartItems.some((item) => normalizeQuantity(item.quantity) == null)) {
       return NextResponse.json(
         { error: "Please choose a valid ticket quantity." },
@@ -478,7 +479,11 @@ export async function POST(request: NextRequest) {
     }
     console.error("Order creation error:", error);
     return NextResponse.json(
-      { error: "Failed to create order" },
+      {
+        error: "Failed to create order",
+        // Keep the client message safe while preserving a support reference in server logs.
+        code: "ORDER_CREATION_FAILED",
+      },
       { status: 500 },
     );
   }
