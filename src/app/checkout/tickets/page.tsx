@@ -64,9 +64,10 @@ function TicketCheckout() {
     }
     setSubmitting(true);
     try {
+      const { data: sessionData } = await supabase.auth.getSession();
       const response = await fetch("/api/orders", {
         method: "POST",
-        headers: { "content-type": "application/json" },
+        headers: { "content-type": "application/json", ...(sessionData.session?.access_token ? { authorization: `Bearer ${sessionData.session.access_token}` } : {}) },
         body: JSON.stringify({ companySlug, eventSlug, cartItems, selectedSeatIds, seatHoldToken }),
       });
       const result = await response.json().catch(() => ({}));
