@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from "react";
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 import { WebView } from "react-native-webview";
 import Constants from "expo-constants";
 import type { VisitorSession } from "../types";
@@ -24,10 +24,9 @@ type PublicWebsiteScreenProps = {
   session: VisitorSession | null;
   onSignIn: () => void;
   onSignOut: () => void;
-  onStaff: () => void;
 };
 
-export function PublicWebsiteScreen({ onStaff }: PublicWebsiteScreenProps) {
+export function PublicWebsiteScreen({}: PublicWebsiteScreenProps) {
   const source = useMemo(() => ({ uri: getWebsiteUrl() }), []);
   const [loading, setLoading] = useState(true);
 
@@ -45,14 +44,6 @@ export function PublicWebsiteScreen({ onStaff }: PublicWebsiteScreenProps) {
         allowsBackForwardNavigationGestures
         onLoadEnd={() => setLoading(false)}
       />
-      <Pressable
-        onPress={onStaff}
-        style={({ pressed }) => [styles.staffAccess, pressed && styles.staffAccessPressed]}
-        accessibilityRole="button"
-        accessibilityLabel="Staff Access / Check-in"
-      >
-        <Text style={styles.staffAccessText}>Staff Access / Check-in</Text>
-      </Pressable>
       {loading ? (
         <View style={styles.loading}>
           <ActivityIndicator color="#06B6D4" size="large" />
@@ -74,24 +65,4 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   loadingText: { color: "#0E172F", fontWeight: "800" },
-  staffAccess: {
-    position: "absolute",
-    right: 14,
-    top: 72,
-    minHeight: 38,
-    paddingHorizontal: 14,
-    borderRadius: 20,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#0E172F",
-    borderWidth: 1,
-    borderColor: "#22D3EE",
-    shadowColor: "#000",
-    shadowOpacity: 0.18,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 3 },
-    elevation: 4,
-  },
-  staffAccessPressed: { opacity: 0.78, transform: [{ scale: 0.98 }] },
-  staffAccessText: { color: "#FFFFFF", fontSize: 12, fontWeight: "900" },
 });

@@ -14,10 +14,12 @@ export function VisitorLoginScreen({
   onSubmit,
   onBack,
   onGoSignup,
+  onStaff,
 }: {
   onSubmit: (email: string, password: string) => Promise<void>;
   onBack: () => void;
   onGoSignup: () => void;
+  onStaff: () => void;
 }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -85,6 +87,11 @@ export function VisitorLoginScreen({
             onPress={handleSubmit}
             loading={loading}
             disabled={loading}
+          />
+          <PremiumButton
+            label="Staff Access / Check-in"
+            onPress={onStaff}
+            tone="secondary"
           />
         </View>
       </FadeSlideIn>
