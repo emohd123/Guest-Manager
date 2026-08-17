@@ -3,8 +3,8 @@ import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 
-type Props = { eventId: string; workspaceKey: string; chartKey?: string; basePrice?: number; currency?: string; autoOpen?: boolean; onSelection?: (ids: string[]) => void };
-export function SeatsIoChart({ eventId, workspaceKey, chartKey, basePrice = 0, currency = "EGP", autoOpen = false, onSelection }: Props) {
+type Props = { eventId: string; eventKey?: string; workspaceKey: string; chartKey?: string; basePrice?: number; currency?: string; autoOpen?: boolean; onSelection?: (ids: string[]) => void };
+export function SeatsIoChart({ eventId, eventKey, workspaceKey, chartKey, basePrice = 0, currency = "EGP", autoOpen = false, onSelection }: Props) {
   const ref = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const [fullScreen, setFullScreen] = useState(autoOpen);
@@ -36,14 +36,13 @@ export function SeatsIoChart({ eventId, workspaceKey, chartKey, basePrice = 0, c
     let cancelled = false;
     const load = async () => {
       if (!fullScreen) return;
-      await fetch(`/api/seatsio/events/${eventId}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ chartKey }) });
       if (cancelled || !ref.current) return;
       const render = () => {
         if (!ref.current || !(window as any).seatsio) return;
         chart = new (window as any).seatsio.SeatingChart({
           divId: ref.current.id,
           workspaceKey,
-          event: eventId,
+          event: eventKey ?? eventId,
           session: "continue",
           selectionMode: "multi",
           showTooltip: false,
@@ -56,7 +55,7 @@ export function SeatsIoChart({ eventId, workspaceKey, chartKey, basePrice = 0, c
     };
     void load();
     return () => { cancelled = true; chart?.destroy?.(); };
-  }, [eventId, workspaceKey, chartKey, onSelection, fullScreen]);
+  }, [eventId, eventKey, workspaceKey, chartKey, onSelection, fullScreen]);
   return <>
     <button type="button" onClick={() => setFullScreen(true)} className="mb-3 inline-flex items-center rounded-full bg-cyan-600 px-5 py-3 text-sm font-black text-white shadow-sm hover:bg-cyan-700">
       Choose seats
