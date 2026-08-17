@@ -60,6 +60,7 @@ export async function POST(request: NextRequest) {
       cartItems: requestedCartItems,
       selectedSeatIds,
       seatHoldToken,
+      seatsIo,
     } = body as {
       companySlug?: string;
       eventSlug?: string;
@@ -75,6 +76,7 @@ export async function POST(request: NextRequest) {
       }>;
       selectedSeatIds?: string[];
       seatHoldToken?: string;
+      seatsIo?: boolean;
     };
 
     const buyerName =
@@ -86,9 +88,9 @@ export async function POST(request: NextRequest) {
     const resolvedAttendeeName = attendeeName?.trim() || buyerName;
     const resolvedAttendeeEmail = attendeeEmail?.trim() || buyer.email || "";
 
-    // Seats.io selections arrive as seat object IDs and do not carry a
-    // ticket-type payload. Resolve the event and its first active ticket type
-    // on the server instead of trusting client-supplied pricing.
+    // Seats.io selections are external object IDs and must use the event's
+    // active ticket type. The browser price/ID is only a display hint; resolve
+    // the real catalog row below after the event has been located.
     let cartItems = requestedCartItems ?? [];
     if (!cartItems.length && requestedEventId && selectedSeatIds?.length) {
       const fallbackTicketType = await getDb()
@@ -123,6 +125,19 @@ export async function POST(request: NextRequest) {
       ? company[0]
       : (await db.select({ id: companies.id, name: companies.name }).from(companies).where(eq(companies.id, event[0].companyId)).limit(1))[0];
     if (!resolvedCompany) return NextResponse.json({ error: "Company not found" }, { status: 404 });
+
+    if (seatsIo && selectedSeatIds?.length) {
+      const fallbackTicketType = await db
+        .select()
+        .from(ticketTypes)
+        .where(and(eq(ticketTypes.eventId, event[0].id), eq(ticketTypes.status, "active")))
+        .limit(1);
+      const type = fallbackTicketType[0];
+      if (!type) {
+        return NextResponse.json({ error: "No active ticket type is configured for this event." }, { status: 400 });
+      }
+      cartItems = [{ ticketTypeId: type.id, name: type.name, price: type.price ?? 0, currency: type.currency ?? "EGP", quantity: selectedSeatIds.length }];
+    }
 
     const eventSettings =
       event[0].settings && typeof event[0].settings === "object"

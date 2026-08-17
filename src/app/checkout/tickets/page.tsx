@@ -39,6 +39,7 @@ function TicketCheckout() {
   const eventSlug = searchParams.get("event") ?? "";
   const cartItems = useMemo(() => parseCart(searchParams.get("items")), [searchParams]);
   const selectedSeatIds = (searchParams.get("seats") ?? "").split(",").filter(Boolean);
+  const seatsIo = searchParams.get("seatsIo") === "1";
   const seatHoldToken = searchParams.get("hold") ?? undefined;
   const subtotal = cartItems.reduce((total, item) => total + Number(item.price || 0) * item.quantity, 0);
   const currency = cartItems[0]?.currency ?? "EGP";
@@ -68,7 +69,7 @@ function TicketCheckout() {
       const response = await fetch("/api/orders", {
         method: "POST",
         headers: { "content-type": "application/json", ...(sessionData.session?.access_token ? { authorization: `Bearer ${sessionData.session.access_token}` } : {}) },
-        body: JSON.stringify({ companySlug, eventSlug, cartItems, selectedSeatIds, seatHoldToken }),
+        body: JSON.stringify({ companySlug, eventSlug, cartItems, selectedSeatIds, seatHoldToken, seatsIo }),
       });
       const result = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(result.error ?? "Checkout failed");
