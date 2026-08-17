@@ -1,5 +1,6 @@
 import { pgTable, uuid, varchar, text, integer, boolean, timestamp, jsonb, pgEnum, uniqueIndex } from "drizzle-orm/pg-core";
 import { companies } from "./companies";
+import { customerCompanies } from "./customer-companies";
 import { venues } from "./venues";
 import { categories } from "./categories";
 import { users } from "./users";
@@ -23,7 +24,8 @@ export const events = pgTable(
   "events",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    companyId: uuid("company_id").references(() => companies.id).notNull(),
+  companyId: uuid("company_id").references(() => companies.id).notNull(),
+  customerCompanyId: uuid("customer_company_id").references(() => customerCompanies.id, { onDelete: "set null" }),
     createdBy: uuid("created_by").references(() => users.id),
     venueId: uuid("venue_id").references(() => venues.id),
     categoryId: uuid("category_id").references(() => categories.id),

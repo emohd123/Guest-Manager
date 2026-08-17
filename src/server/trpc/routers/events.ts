@@ -10,6 +10,7 @@ type EventRow = {
   id: string;
   company_id: string;
   created_by: string | null;
+  customer_company_id: string | null;
   venue_id: string | null;
   category_id: string | null;
   title: string;
@@ -40,6 +41,7 @@ function mapEvent(row: EventRow, companySlug?: string | null) {
     id: row.id,
     companyId: row.company_id,
     createdBy: row.created_by,
+    customerCompanyId: row.customer_company_id,
     venueId: row.venue_id,
     categoryId: row.category_id,
     title: row.title,
@@ -153,14 +155,21 @@ export const eventsRouter = router({
         categoryId: z.string().uuid().optional(),
         maxCapacity: z.number().int().positive().optional(),
         registrationEnabled: z.boolean().default(false),
+        customerCompanyId: z.string().uuid().nullable().optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
+      if (input.customerCompanyId) {
+        const { data: customer, error: customerError } = await ctx.supabase.from("customer_companies").select("id").eq("id", input.customerCompanyId).eq("owner_company_id", ctx.companyId).is("deleted_at", null).maybeSingle();
+        if (customerError) throw new Error(customerError.message);
+        if (!customer) throw new Error("Customer company not found");
+      }
       const { data, error } = await ctx.supabase
         .from("events")
         .insert({
           company_id: ctx.companyId,
           created_by: ctx.userId,
+          customer_company_id: input.customerCompanyId ?? null,
           title: input.title,
           slug: buildSlug(input.title),
           description: input.description ?? null,
@@ -198,6 +207,7 @@ export const eventsRouter = router({
         categoryId: z.string().uuid().optional(),
         maxCapacity: z.number().int().positive().optional(),
         registrationEnabled: z.boolean().optional(),
+        customerCompanyId: z.string().uuid().nullable().optional(),
         coverImageUrl: z.string().url().optional(),
         visitorCode: z.string().trim().regex(/^[A-Za-z0-9-]{4,10}$/).optional(),
         settings: z.any().optional(),
@@ -235,6 +245,14 @@ export const eventsRouter = router({
       if (input.categoryId !== undefined) payload.category_id = input.categoryId;
       if (input.maxCapacity !== undefined) payload.max_capacity = input.maxCapacity;
       if (input.registrationEnabled !== undefined) payload.registration_enabled = input.registrationEnabled;
+      if (input.customerCompanyId !== undefined) {
+        if (input.customerCompanyId) {
+          const { data: customer, error: customerError } = await ctx.supabase.from("customer_companies").select("id").eq("id", input.customerCompanyId).eq("owner_company_id", ctx.companyId).is("deleted_at", null).maybeSingle();
+          if (customerError) throw new Error(customerError.message);
+          if (!customer) throw new Error("Customer company not found");
+        }
+        payload.customer_company_id = input.customerCompanyId;
+      }
       if (input.coverImageUrl !== undefined) payload.cover_image_url = input.coverImageUrl;
       if (input.visitorCode !== undefined) payload.visitor_code = input.visitorCode.toUpperCase();
       if (input.settings !== undefined) payload.settings = input.settings;
@@ -306,6 +324,7 @@ export const eventsRouter = router({
         .insert({
           company_id: ctx.companyId,
           created_by: ctx.userId,
+          customer_company_id: original.customer_company_id ?? null,
           venue_id: original.venue_id,
           category_id: original.category_id,
           title: duplicateTitle,
@@ -445,12 +464,13 @@ export const eventsRouter = router({
 
   stats: protectedProcedure.query(async ({ ctx }) => {
     if (!isFullDashboardAccess(ctx)) {
-      const { data: ownedEvents, error: ownedEventsError } = await ctx.supabase
+      let ownedEventsQuery = ctx.supabase
         .from("events")
         .select("id")
         .eq("company_id", ctx.companyId)
-        .eq("created_by", ctx.userId)
         .is("deleted_at", null);
+      ownedEventsQuery = applyEventOwnership(ownedEventsQuery, ctx);
+      const { data: ownedEvents, error: ownedEventsError } = await ownedEventsQuery;
       if (ownedEventsError) throw new Error(ownedEventsError.message);
       const eventIds = (ownedEvents ?? []).map((event) => event.id);
       if (!eventIds.length) return { total: 0, totalGuests: 0, totalCheckIns: 0 };

@@ -29,6 +29,7 @@ export type Context = {
   dashboardAccess: "none" | "limited" | "full";
   dashboardPermissions: string[];
   role: string | null;
+  customerCompanyId: string | null;
 };
 
 export const createTRPCContext = async (): Promise<Context> => {
@@ -42,7 +43,7 @@ export const createTRPCContext = async (): Promise<Context> => {
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) {
-    return { db, supabase, userId: null, companyId: null, dashboardAccess: "none", dashboardPermissions: [], role: null };
+    return { db, supabase, userId: null, companyId: null, dashboardAccess: "none", dashboardPermissions: [], role: null, customerCompanyId: null };
   }
 
   const dbUser = await ensureAppUserForAuthUser(supabase, user);
@@ -55,6 +56,7 @@ export const createTRPCContext = async (): Promise<Context> => {
     dashboardAccess: dbUser?.dashboardAccess ?? "none",
     dashboardPermissions: dbUser?.dashboardPermissions ?? [],
     role: dbUser?.role ?? null,
+    customerCompanyId: dbUser?.customerCompanyId ?? null,
   };
 };
 
@@ -68,24 +70,6 @@ export const protectedProcedure = t.procedure.use(async ({ ctx, next, path, inpu
     throw new TRPCError({
       code: "UNAUTHORIZED",
       message: "You must be logged in to perform this action",
-    });
-  }
-
-  const result = await next({
-    ctx: {
-      ...ctx,
-      userId: ctx.userId,
-      companyId: ctx.companyId,
-    },
-  });
-  if (ctx.dashboardAccess === "limited") {
-    void recordAudit({
-      companyId: ctx.companyId,
-      actorId: ctx.userId,
-      action: result.ok ? "dashboard.procedure" : "dashboard.procedure_failed",
-      entityType: "trpc",
-      entityId: "protected",
-      metadata: { procedure: path, result: result.ok ? "ok" : "error" },
     });
   }
 
@@ -113,6 +97,25 @@ export const protectedProcedure = t.procedure.use(async ({ ctx, next, path, inpu
       }
     }
   }
+
+  const result = await next({
+    ctx: {
+      ...ctx,
+      userId: ctx.userId,
+      companyId: ctx.companyId,
+    },
+  });
+  if (ctx.dashboardAccess === "limited") {
+    void recordAudit({
+      companyId: ctx.companyId,
+      actorId: ctx.userId,
+      action: result.ok ? "dashboard.procedure" : "dashboard.procedure_failed",
+      entityType: "trpc",
+      entityId: "protected",
+      metadata: { procedure: path, result: result.ok ? "ok" : "error" },
+    });
+  }
+
   return result;
 });
 

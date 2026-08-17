@@ -44,6 +44,7 @@ import {
   Smartphone,
   Radio,
   Sparkles,
+  Building2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { TIMEZONE_OPTIONS } from "@/lib/timezones";
@@ -62,6 +63,7 @@ export default function EventSettingsPage({
   const { eventId } = use(params);
   const router = useRouter();
   const { data: event, isLoading, refetch } = trpc.events.get.useQuery({ id: eventId });
+  const { data: customerCompanies } = trpc.customerCompanies.list.useQuery();
   const { data: experience, refetch: refetchExperience } = trpc.eventExperience.get.useQuery({ eventId });
 
   // Form state
@@ -75,6 +77,7 @@ export default function EventSettingsPage({
   const [maxCapacity, setMaxCapacity] = useState("");
   const [registrationEnabled, setRegistrationEnabled] = useState(false);
   const [visitorCode, setVisitorCode] = useState("");
+  const [customerCompanyId, setCustomerCompanyId] = useState<string | null>(null);
   const [welcomeMessage, setWelcomeMessage] = useState("");
   const [homeHeadline, setHomeHeadline] = useState("");
   const [liveStreamUrl, setLiveStreamUrl] = useState("");
@@ -113,6 +116,7 @@ export default function EventSettingsPage({
     setMaxCapacity(event.maxCapacity?.toString() ?? "");
     setRegistrationEnabled(event.registrationEnabled ?? false);
     setVisitorCode(event.visitorCode ?? "");
+    setCustomerCompanyId(event.customerCompanyId ?? null);
   }, [event]);
 
   useEffect(() => {
@@ -226,6 +230,7 @@ export default function EventSettingsPage({
       maxCapacity: maxCapacity ? parseInt(maxCapacity) : undefined,
       registrationEnabled,
       visitorCode: eventType === "conference" && visitorCode.trim() ? visitorCode.trim().toUpperCase() : undefined,
+      customerCompanyId: customerCompanyId || null,
     });
   };
 
@@ -382,6 +387,36 @@ export default function EventSettingsPage({
             {event.status === "published" && "This event is live and visible on your event page."}
             {event.status === "cancelled" && "This event has been cancelled."}
             {event.status === "completed" && "This event has been completed and archived."}
+          </p>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Building2 className="h-5 w-5" />
+            Related customer company
+          </CardTitle>
+          <CardDescription>
+            Assign this event to a customer company. Their verified account email can receive limited, event-only dashboard access.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <Select value={customerCompanyId ?? "none"} onValueChange={(value) => setCustomerCompanyId(value === "none" ? null : value)}>
+            <SelectTrigger>
+              <SelectValue placeholder="Choose a customer company" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">No customer company linked</SelectItem>
+              {(customerCompanies ?? []).map((customer) => (
+                <SelectItem key={customer.id} value={customer.id}>
+                  {customer.displayName || customer.legalName} · {customer.email}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <p className="text-xs text-muted-foreground">
+            Save event changes after selecting a company. Customer accounts never receive access to other companies or unassigned events.
           </p>
         </CardContent>
       </Card>

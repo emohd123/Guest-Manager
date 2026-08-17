@@ -1,11 +1,13 @@
 import { pgTable, uuid, varchar, text, boolean, timestamp, pgEnum, jsonb } from "drizzle-orm/pg-core";
 import { companies } from "./companies";
+import { customerCompanies } from "./customer-companies";
 
 export const userRoleEnum = pgEnum("user_role", ["owner", "admin", "manager", "staff"]);
 
 export const users = pgTable("users", {
   id: uuid("id").primaryKey(), // matches Supabase auth.users.id
   companyId: uuid("company_id").references(() => companies.id),
+  customerCompanyId: uuid("customer_company_id").references(() => customerCompanies.id, { onDelete: "set null" }),
   email: varchar("email", { length: 255 }).unique().notNull(),
   name: varchar("name", { length: 255 }),
   avatarUrl: text("avatar_url"),
