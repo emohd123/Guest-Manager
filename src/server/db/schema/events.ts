@@ -25,6 +25,8 @@ export const events = pgTable(
     id: uuid("id").primaryKey().defaultRandom(),
     companyId: uuid("company_id").references(() => companies.id).notNull(),
     createdBy: uuid("created_by").references(() => users.id),
+    /** Optional reviewer recorded when an event is verified for publication. */
+    verifiedBy: uuid("verified_by").references(() => users.id),
     venueId: uuid("venue_id").references(() => venues.id),
     categoryId: uuid("category_id").references(() => categories.id),
     title: varchar("title", { length: 255 }).notNull(),

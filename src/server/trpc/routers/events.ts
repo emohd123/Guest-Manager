@@ -35,6 +35,16 @@ type EventRow = {
   deleted_at: string | null;
 };
 
+// Keep event reads independent of optional verification columns and stale
+// PostgREST schema caches. The event workflow only needs these stable fields.
+const EVENT_SELECT = [
+  "id", "company_id", "created_by", "venue_id", "category_id", "title", "slug",
+  "description", "short_description", "cover_image_url", "event_type", "status",
+  "starts_at", "ends_at", "timezone", "registration_enabled", "registration_opens_at",
+  "registration_closes_at", "max_capacity", "settings", "custom_fields", "metadata",
+  "visitor_code", "created_at", "updated_at", "deleted_at",
+].join(",");
+
 function mapEvent(row: EventRow, companySlug?: string | null) {
   return {
     id: row.id,
@@ -87,7 +97,7 @@ export const eventsRouter = router({
     .query(async ({ ctx, input }) => {
       let query = ctx.supabase
         .from("events")
-        .select("*", { count: "exact" })
+        .select(EVENT_SELECT, { count: "exact" })
         .eq("company_id", ctx.companyId)
         .is("deleted_at", null)
         .order("starts_at", { ascending: false })
@@ -116,7 +126,7 @@ export const eventsRouter = router({
     .query(async ({ ctx, input }) => {
       let eventQuery = ctx.supabase
         .from("events")
-        .select("*")
+        .select(EVENT_SELECT)
         .eq("id", input.id)
         .eq("company_id", ctx.companyId)
         .maybeSingle();
@@ -174,7 +184,7 @@ export const eventsRouter = router({
           max_capacity: input.maxCapacity ?? null,
           registration_enabled: input.registrationEnabled,
         })
-        .select("*")
+        .select(EVENT_SELECT)
         .single();
 
       if (error) throw new Error(error.message);
@@ -244,7 +254,7 @@ export const eventsRouter = router({
         .update(payload)
         .eq("id", input.id)
         .eq("company_id", ctx.companyId)
-        .select("*")
+        .select(EVENT_SELECT)
         .single();
       updateQuery = applyEventOwnership(updateQuery, ctx);
       const { data, error } = await updateQuery;
@@ -290,7 +300,7 @@ export const eventsRouter = router({
     .mutation(async ({ ctx, input }) => {
       let originalQuery = ctx.supabase
         .from("events")
-        .select("*")
+        .select(EVENT_SELECT)
         .eq("id", input.id)
         .eq("company_id", ctx.companyId)
         .maybeSingle();
@@ -326,7 +336,7 @@ export const eventsRouter = router({
           custom_fields: original.custom_fields,
           metadata: original.metadata,
         })
-        .select("*")
+        .select(EVENT_SELECT)
         .single();
 
       if (error) throw new Error(error.message);
@@ -345,7 +355,7 @@ export const eventsRouter = router({
         })
         .eq("id", input.id)
         .eq("company_id", ctx.companyId)
-        .select("*")
+        .select(EVENT_SELECT)
         .single();
       archiveQuery = applyEventOwnership(archiveQuery, ctx);
       const { data, error } = await archiveQuery;
@@ -369,7 +379,7 @@ export const eventsRouter = router({
 
       let query = supabase
         .from("events")
-        .select("*")
+        .select(EVENT_SELECT)
         .eq("company_id", company.id)
         .eq("slug", input.eventSlug)
         .is("deleted_at", null);
@@ -409,7 +419,7 @@ export const eventsRouter = router({
 
       const { data, error } = await supabase
         .from("events")
-        .select("*")
+        .select(EVENT_SELECT)
         .eq("company_id", company.id)
         .eq("status", "published")
         .neq("id", input.excludeEventId)
@@ -426,7 +436,7 @@ export const eventsRouter = router({
       const supabase = createSupabaseAdminClient();
       const { data, error } = await supabase
         .from("events")
-        .select("*")
+        .select(EVENT_SELECT)
         .eq("category_id", input.categoryId)
         .eq("status", "published")
         .neq("id", input.excludeEventId)
