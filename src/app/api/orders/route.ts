@@ -50,17 +50,19 @@ export async function POST(request: NextRequest) {
     const {
       companySlug,
       eventSlug,
+      eventId: requestedEventId,
       attendeeName,
       attendeeEmail,
-      cartItems,
+      cartItems: requestedCartItems,
       selectedSeatIds,
       seatHoldToken,
     } = body as {
-      companySlug: string;
-      eventSlug: string;
+      companySlug?: string;
+      eventSlug?: string;
+      eventId?: string;
       attendeeName: string;
       attendeeEmail: string;
-      cartItems: Array<{
+      cartItems?: Array<{
         ticketTypeId: string;
         name: string;
         price: number;
@@ -80,7 +82,22 @@ export async function POST(request: NextRequest) {
     const resolvedAttendeeName = attendeeName?.trim() || buyerName;
     const resolvedAttendeeEmail = attendeeEmail?.trim() || buyer.email || "";
 
-    if (!companySlug || !eventSlug || !resolvedAttendeeEmail || !cartItems?.length) {
+    // Seats.io selections arrive as seat object IDs and do not carry a
+    // ticket-type payload. Resolve the event and its first active ticket type
+    // on the server instead of trusting client-supplied pricing.
+    let cartItems = requestedCartItems ?? [];
+    if (!cartItems.length && requestedEventId && selectedSeatIds?.length) {
+      const fallbackTicketType = await getDb()
+        .select()
+        .from(ticketTypes)
+        .where(and(eq(ticketTypes.eventId, requestedEventId), eq(ticketTypes.status, "active")))
+        .limit(1);
+      const type = fallbackTicketType[0];
+      if (!type) return NextResponse.json({ error: "No active ticket type is configured for this event." }, { status: 400 });
+      cartItems = [{ ticketTypeId: type.id, name: type.name, price: type.price ?? 0, currency: type.currency ?? "EGP", quantity: selectedSeatIds.length }];
+    }
+
+    if ((!companySlug || !eventSlug) && !requestedEventId) {
       return NextResponse.json(
         { error: "Missing required fields" },
         { status: 400 },
@@ -88,45 +105,26 @@ export async function POST(request: NextRequest) {
     }
 
     const db = getDb();
-    const company = await db
-      .select({ id: companies.id, name: companies.name })
-      .from(companies)
-      .where(eq(companies.slug, companySlug))
-      .limit(1);
+    const company = companySlug
+      ? await db.select({ id: companies.id, name: companies.name }).from(companies).where(eq(companies.slug, companySlug)).limit(1)
+      : [];
+    const event = requestedEventId
+      ? await db.select().from(events).where(and(eq(events.id, requestedEventId), eq(events.status, "published"))).limit(1)
+      : company[0]
+        ? await db.select().from(events).where(and(eq(events.companyId, company[0].id), eq(events.slug, eventSlug!), eq(events.status, "published"))).limit(1)
+        : [];
 
-    if (!company[0]) {
-      return NextResponse.json({ error: "Company not found" }, { status: 404 });
-    }
-
-    const event = await db
-      .select()
-      .from(events)
-      .where(
-        and(
-          eq(events.companyId, company[0].id),
-          eq(events.slug, eventSlug),
-          eq(events.status, "published"),
-        ),
-      )
-      .limit(1);
-
-    if (!event[0]) {
-      return NextResponse.json({ error: "Event not found" }, { status: 404 });
-    }
+    if (!event[0]) return NextResponse.json({ error: "Event not found" }, { status: 404 });
+    const resolvedCompany = company[0]
+      ? company[0]
+      : (await db.select({ id: companies.id, name: companies.name }).from(companies).where(eq(companies.id, event[0].companyId)).limit(1))[0];
+    if (!resolvedCompany) return NextResponse.json({ error: "Company not found" }, { status: 404 });
 
     const eventSettings =
       event[0].settings && typeof event[0].settings === "object"
         ? (event[0].settings as Record<string, any>)
         : {};
     const isPaidEvent = eventSettings.publicPage?.isPaidEvent !== false;
-    // Free public events are reservations, so they remain claimable even when
-    // the paid-registration switch is off. Paid events still require it.
-    if (!event[0].registrationEnabled && isPaidEvent) {
-      return NextResponse.json(
-        { error: "Registration is not open" },
-        { status: 400 },
-      );
-    }
     if (cartItems.some((item) => normalizeQuantity(item.quantity) == null)) {
       return NextResponse.json(
         { error: "Please choose a valid ticket quantity." },
@@ -171,6 +169,20 @@ export async function POST(request: NextRequest) {
           { status: 400 },
         );
       }
+    }
+
+    // Free ticket types are reservations and must remain claimable even when
+    // the paid registration switch is disabled. Decide this from the server's
+    // catalog prices rather than trusting the client subtotal.
+    const catalogSubtotal = aggregatedCart.reduce((sum, item) => {
+      const ticketType = validTicketTypes.find((record) => record.id === item.ticketTypeId);
+      return sum + (ticketType?.price ?? 0) * item.quantity;
+    }, 0);
+    if (!event[0].registrationEnabled && isPaidEvent && catalogSubtotal > 0) {
+      return NextResponse.json(
+        { error: "Registration is not open" },
+        { status: 400 },
+      );
     }
 
     const now = new Date();
@@ -246,7 +258,7 @@ export async function POST(request: NextRequest) {
       section_name: string;
       price: number;
     }> = [];
-    if (selectedSeatIds?.length || seatHoldToken) {
+    if (seatHoldToken) {
       if (!seatHoldToken || selectedSeatIds?.length !== requestedQuantity) {
         return NextResponse.json(
           { error: "Choose one available seat for every ticket." },
@@ -338,7 +350,7 @@ export async function POST(request: NextRequest) {
         mode: "payment",
         customer_email: resolvedAttendeeEmail,
         metadata: {
-          companyId: company[0].id,
+          companyId: resolvedCompany.id,
           eventId: event[0].id,
           attendeeName: resolvedAttendeeName,
           attendeeEmail: resolvedAttendeeEmail,
@@ -367,7 +379,7 @@ export async function POST(request: NextRequest) {
       const [order] = await tx
         .insert(orders)
         .values({
-          companyId: company[0].id,
+          companyId: resolvedCompany.id,
           eventId: event[0].id,
           orderNumber,
           status: "completed",
@@ -428,7 +440,7 @@ export async function POST(request: NextRequest) {
           const [newGuest] = await tx
             .insert(guests)
             .values({
-              companyId: company[0].id,
+              companyId: resolvedCompany.id,
               eventId: event[0].id,
               firstName: firstName || "Guest",
               lastName: lastNameParts.join(" "),
@@ -442,7 +454,7 @@ export async function POST(request: NextRequest) {
           const [newTicket] = await tx
             .insert(tickets)
             .values({
-              companyId: company[0].id,
+              companyId: resolvedCompany.id,
               eventId: event[0].id,
               ticketTypeId: item.ticketTypeId,
               orderId: order.id,
