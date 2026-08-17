@@ -127,12 +127,14 @@ export async function POST(request: NextRequest) {
     if (!resolvedCompany) return NextResponse.json({ error: "Company not found" }, { status: 404 });
 
     if (seatsIo && selectedSeatIds?.length) {
-      const fallbackTicketType = await db
+      const activeTicketTypes = await db
         .select()
         .from(ticketTypes)
         .where(and(eq(ticketTypes.eventId, event[0].id), eq(ticketTypes.status, "active")))
-        .limit(1);
-      const type = fallbackTicketType[0];
+      const requestedTypeId = requestedCartItems?.[0]?.ticketTypeId;
+      const type = activeTicketTypes.find((record) => record.id === requestedTypeId)
+        ?? activeTicketTypes.find((record) => Number(record.price ?? 0) === 0)
+        ?? activeTicketTypes[0];
       if (!type) {
         return NextResponse.json({ error: "No active ticket type is configured for this event." }, { status: 400 });
       }
