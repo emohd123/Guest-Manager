@@ -38,7 +38,11 @@ class CheckoutValidationError extends Error {}
 export async function POST(request: NextRequest) {
   try {
     const supabase = await createSupabaseServerClient();
-    const { data: authData } = await supabase.auth.getUser();
+    const authorization = request.headers.get("authorization");
+    const bearerToken = authorization?.match(/^Bearer\s+(.+)$/i)?.[1];
+    const { data: authData } = bearerToken
+      ? await supabase.auth.getUser(bearerToken)
+      : await supabase.auth.getUser();
     const buyer = authData.user;
     if (!buyer) {
       return NextResponse.json(
