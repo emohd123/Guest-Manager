@@ -39,3 +39,38 @@ export function mergeSeatsIoConfig(settings: unknown, chartKey: string | null, e
 export function mergeSeatsIoChartKey(settings: unknown, chartKey: string | null) {
   return mergeSeatsIoConfig(settings, chartKey, readSeatsIoEventKey(settings));
 }
+
+const SEATSIO_API_BASE = "https://api-eu.seatsio.net";
+
+function seatsIoAuthHeaders() {
+  const secret = process.env.SEATSIO_SECRET_KEY;
+  if (!secret) throw new Error("SEATSIO_SECRET_KEY is not configured");
+  return {
+    Authorization: `Basic ${Buffer.from(`${secret}:`).toString("base64")}`,
+    "Content-Type": "application/json",
+  };
+}
+
+export async function bookSeatsIoObjects(eventKey: string, objects: string[], orderId: string) {
+  if (!objects.length) return;
+  const response = await fetch(`${SEATSIO_API_BASE}/events/${encodeURIComponent(eventKey)}/actions/book`, {
+    method: "POST",
+    headers: seatsIoAuthHeaders(),
+    body: JSON.stringify({ objects, orderId }),
+    cache: "no-store",
+  });
+  if (!response.ok) {
+    const detail = await response.text().catch(() => "");
+    throw new Error(`Seats.io booking failed (${response.status})${detail ? `: ${detail.slice(0, 300)}` : ""}`);
+  }
+}
+
+export async function releaseSeatsIoObjects(eventKey: string, objects: string[]) {
+  if (!objects.length) return;
+  await fetch(`${SEATSIO_API_BASE}/events/${encodeURIComponent(eventKey)}/actions/release`, {
+    method: "POST",
+    headers: seatsIoAuthHeaders(),
+    body: JSON.stringify({ objects }),
+    cache: "no-store",
+  }).catch(() => undefined);
+}

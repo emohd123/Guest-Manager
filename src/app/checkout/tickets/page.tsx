@@ -37,8 +37,21 @@ function TicketCheckout() {
   const [submitting, setSubmitting] = useState(false);
   const companySlug = searchParams.get("company") ?? "";
   const eventSlug = searchParams.get("event") ?? "";
-  const cartItems = useMemo(() => parseCart(searchParams.get("items")), [searchParams]);
   const selectedSeatIds = (searchParams.get("seats") ?? "").split(",").filter(Boolean);
+  const parsedCartItems = useMemo(() => parseCart(searchParams.get("items")), [searchParams]);
+  // Seats.io can return only seat IDs after a browser restore or an older
+  // chart redirect. Keep checkout usable by synthesising a catalog hint; the
+  // server resolves the real active ticket type for the event whenever seats
+  // are selected.
+  const cartItems = parsedCartItems.length || !selectedSeatIds.length
+    ? parsedCartItems
+    : [{
+        ticketTypeId: "",
+        name: "Reserved seating",
+        price: 0,
+        currency: "EGP",
+        quantity: selectedSeatIds.length,
+      }];
   const seatsIo = searchParams.get("seatsIo") === "1";
   const seatHoldToken = searchParams.get("hold") ?? undefined;
   const subtotal = cartItems.reduce((total, item) => total + Number(item.price || 0) * item.quantity, 0);

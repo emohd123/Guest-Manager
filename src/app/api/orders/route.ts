@@ -17,6 +17,7 @@ import {
 } from "@/server/db/schema";
 import { generateAndSendTicket } from "@/server/actions/generateAndSendTicket";
 import { createClient as createSupabaseServerClient } from "@/lib/supabase/server";
+import { bookSeatsIoObjects, readSeatsIoEventKey, releaseSeatsIoObjects } from "@/lib/seatsio";
 
 function generateOrderNumber(): string {
   const timestamp = Date.now().toString(36).toUpperCase();
@@ -126,7 +127,12 @@ export async function POST(request: NextRequest) {
       : (await db.select({ id: companies.id, name: companies.name }).from(companies).where(eq(companies.id, event[0].companyId)).limit(1))[0];
     if (!resolvedCompany) return NextResponse.json({ error: "Company not found" }, { status: 404 });
 
-    if (seatsIo && selectedSeatIds?.length) {
+    // A selected seat is authoritative evidence that this is a seating
+    // checkout. Do not rely solely on the client-side `seatsIo` marker: older
+    // links, browser restores, and third-party chart redirects can drop that
+    // flag. Always resolve the ticket type from the same published event so a
+    // seat can never be booked against a different event's ticket type.
+    if (selectedSeatIds?.length) {
       const activeTicketTypes = await db
         .select()
         .from(ticketTypes)
@@ -389,6 +395,29 @@ export async function POST(request: NextRequest) {
 
     const orderNumber = generateOrderNumber();
     const origin = request.nextUrl.origin;
+    const externalSeatIds = selectedSeatIds?.length && !seatHoldToken ? selectedSeatIds : [];
+    const seatsIoEventKey = externalSeatIds.length
+      // The public renderer falls back to the database event id when an
+      // explicit Seats.io event key has not been saved yet. Keep checkout on
+      // that exact same key so a newly connected chart can be booked too.
+      ? (readSeatsIoEventKey(eventSettings) ?? event[0].id)
+      : "";
+    let seatsIoBooked = false;
+    if (externalSeatIds.length) {
+      if (!process.env.SEATSIO_SECRET_KEY) {
+        return NextResponse.json({ error: "Reserved seating is not configured yet. Please try again later.", code: "SEATSIO_NOT_CONFIGURED" }, { status: 503 });
+      }
+      try {
+        // Seats.io's booking endpoint is atomic and prevents two buyers from
+        // claiming the same table/seat. The chart is rendered without a
+        // client session so this server-side booking is authoritative.
+        await bookSeatsIoObjects(seatsIoEventKey, externalSeatIds, orderNumber);
+        seatsIoBooked = true;
+      } catch (error) {
+        console.error("[orders] Seats.io booking failed:", error);
+        return NextResponse.json({ error: "One or more selected seats are no longer available. Please choose again.", code: "SEATS_UNAVAILABLE" }, { status: 409 });
+      }
+    }
     const ticketTasks: Array<{
       ticketId: string;
       barcode: string;
@@ -396,7 +425,8 @@ export async function POST(request: NextRequest) {
     }> = [];
     let orderId = "";
 
-    await db.transaction(async (tx) => {
+    try {
+      await db.transaction(async (tx) => {
       const [order] = await tx
         .insert(orders)
         .values({
@@ -483,6 +513,14 @@ export async function POST(request: NextRequest) {
               barcode,
               attendeeName: resolvedAttendeeName,
               attendeeEmail: resolvedAttendeeEmail,
+              ...(selectedSeatIds?.length
+                ? {
+                    metadata: {
+                      seatingProvider: seatHoldToken ? "iticket" : "seats.io",
+                      selectedSeatId: selectedSeatIds[ticketTasks.length] ?? null,
+                    },
+                  }
+                : {}),
               status: "valid",
             })
             .returning();
@@ -499,7 +537,11 @@ export async function POST(request: NextRequest) {
           sql`SELECT finalize_seat_hold(${seatHoldToken}::uuid, ${order.id}::uuid, ${ticketTasks.map((task) => task.ticketId)}::uuid[])`,
         );
       }
-    });
+      });
+    } catch (error) {
+      if (seatsIoBooked) await releaseSeatsIoObjects(seatsIoEventKey, externalSeatIds);
+      throw error;
+    }
 
     for (const task of ticketTasks) {
       generateAndSendTicket({

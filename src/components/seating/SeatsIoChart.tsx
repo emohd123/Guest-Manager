@@ -43,7 +43,6 @@ export function SeatsIoChart({ eventId, eventKey, workspaceKey, chartKey, basePr
           divId: ref.current.id,
           workspaceKey,
           event: eventKey ?? eventId,
-          session: "continue",
           selectionMode: "multi",
           showTooltip: false,
           onObjectSelected: (obj: any) => setSelected((current) => { const next = current.includes(obj.id || obj.label) ? current : [...current, obj.id || obj.label]; onSelection?.(next); return next; }),
