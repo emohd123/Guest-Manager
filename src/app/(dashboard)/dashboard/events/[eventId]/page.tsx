@@ -60,7 +60,7 @@ export default function EventOverviewPage({
 
   const ordersData = [
     { name: "Completed", value: orderStats?.totalOrders ?? 0, count: orderStats?.totalOrders ?? 0 },
-    { name: "No orders", value: orderStats?.totalOrders ? 0 : 1, count: orderStats?.totalOrders ? 0 : 0 },
+    { name: "No orders", value: 0, count: 0 },
   ];
 
   const attendanceData = [
@@ -86,8 +86,8 @@ export default function EventOverviewPage({
           initial={{ x: -20, opacity: 0 }}
           animate={{ x: 0, opacity: 1 }}
         >
-          <h1 className="text-4xl font-black text-foreground dark:text-white italic tracking-tighter uppercase">{event.title}</h1>
-          <p className="text-muted-foreground dark:text-white/40 font-bold uppercase tracking-[0.2em] text-[10px] mt-2 italic flex items-center gap-2">
+          <h1 className="text-4xl font-black text-foreground dark:text-white tracking-tight uppercase">{event.title}</h1>
+          <p className="text-muted-foreground dark:text-white/40 font-bold uppercase tracking-[0.2em] text-[10px] mt-2 flex items-center gap-2">
             <Activity className="h-3 w-3 text-primary animate-pulse" />
             Live Event Overview
           </p>
@@ -97,7 +97,7 @@ export default function EventOverviewPage({
             <Button
               asChild
               variant="outline"
-              className="theme-ghost-surface h-14 px-6 rounded-2xl font-black italic uppercase tracking-widest text-[10px] transition-all flex gap-3"
+              className="theme-ghost-surface h-14 px-6 rounded-2xl font-black uppercase tracking-widest text-[10px] transition-all flex gap-3"
             >
               <Link href={`/e/${event.companySlug}/${event.slug}`} target="_blank" rel="noreferrer">
                 Preview Public Page <ExternalLink className="h-4 w-4" />
@@ -119,7 +119,7 @@ export default function EventOverviewPage({
           {!readOnly && (
           <Button
             asChild
-            className="h-14 px-8 rounded-2xl bg-primary text-white font-black text-base shadow-2xl shadow-primary/20 transition-all hover:scale-[1.05] active:scale-95 italic flex gap-3"
+            className="h-14 px-8 rounded-2xl bg-primary text-white font-black text-base shadow-2xl shadow-primary/20 transition-all hover:scale-[1.05] active:scale-95 flex gap-3"
           >
             <Link href={`/dashboard/events/${event.id}/guests`}>
               <Plus className="h-6 w-6" />
@@ -147,7 +147,7 @@ export default function EventOverviewPage({
             className={analyticsCardClass}
           >
             <div className="border-b border-border/70 bg-muted/20 p-8 dark:border-white/5 dark:bg-white/2">
-              <h3 className="mb-1 text-lg font-black text-foreground dark:text-white italic leading-none uppercase tracking-tighter">{block.title}</h3>
+              <h3 className="mb-1 text-lg font-black text-foreground dark:text-white leading-tight uppercase tracking-tight">{block.title}</h3>
               <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground/70 dark:text-white/20">{block.sub}</p>
             </div>
             
@@ -184,7 +184,7 @@ export default function EventOverviewPage({
                       </ResponsiveContainer>
                       <div className="absolute inset-0 flex items-center justify-center flex-col pointer-events-none">
                          <TrendingUp className="h-6 w-6 text-primary mb-1" />
-                         <span className="text-[10px] font-black text-foreground dark:text-white italic">{(block.percent ?? 0).toFixed(0)}%</span>
+                         <span className="text-[10px] font-black text-foreground dark:text-white">{(block.percent ?? 0).toFixed(0)}%</span>
                       </div>
                    </div>
                    
@@ -210,7 +210,7 @@ export default function EventOverviewPage({
                    <div className="space-y-6">
                       <div className="flex justify-between items-end">
                          <p className="text-[10px] font-black text-muted-foreground dark:text-white/40 uppercase tracking-widest">Tickets Sold</p>
-                         <p className="text-4xl font-black text-foreground dark:text-white italic leading-none">{ticketsSold} <span className="text-sm text-muted-foreground dark:text-white/20">/ {ticketCapacity || "—"}</span></p>
+                         <p className="text-4xl font-black text-foreground dark:text-white leading-none">{ticketsSold} <span className="text-sm text-muted-foreground dark:text-white/20">/ {ticketCapacity || "—"}</span></p>
                       </div>
                       <div className="h-4 overflow-hidden rounded-full border border-border bg-muted dark:border-white/5">
                          <motion.div 
@@ -225,11 +225,11 @@ export default function EventOverviewPage({
                    <div className="grid grid-cols-2 gap-4">
                       <div className="rounded-3xl border border-border bg-muted/40 p-4 dark:border-white/5 dark:bg-white/3">
                          <p className="text-[8px] font-black text-muted-foreground/70 dark:text-white/20 uppercase tracking-widest mb-1">Net Revenue</p>
-                         <p className="text-xl font-black text-primary italic">BHD {(orderStats?.revenue ?? 0).toFixed(3)}</p>
+                         <p className="text-xl font-black text-primary">EGP {(orderStats?.revenue ?? 0).toFixed(2)}</p>
                       </div>
                       <div className="rounded-3xl border border-border bg-muted/40 p-4 dark:border-white/5 dark:bg-white/3">
                          <p className="text-[8px] font-black text-muted-foreground/70 dark:text-white/20 uppercase tracking-widest mb-1">Check-in Rate</p>
-                         <p className="text-xl font-black text-green-400 italic">{attendanceRate.toFixed(1)}%</p>
+                         <p className="text-xl font-black text-green-400">{attendanceRate.toFixed(1)}%</p>
                       </div>
                    </div>
                  </div>
@@ -257,11 +257,11 @@ export default function EventOverviewPage({
               <div className="h-14 w-14 rounded-2xl bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform mb-6">
                  <hub.icon className="h-7 w-7" />
               </div>
-              <h4 className="mb-4 text-2xl font-black text-foreground dark:text-white italic tracking-tighter uppercase">{hub.title}</h4>
+              <h4 className="mb-4 text-2xl font-black text-foreground dark:text-white tracking-tight uppercase">{hub.title}</h4>
               <p className="mb-8 text-[10px] font-bold text-muted-foreground dark:text-white/30 uppercase tracking-widest leading-relaxed">
                 {hub.desc}
               </p>
-              <Button className="h-14 w-full rounded-2xl border border-border bg-muted/40 text-foreground transition-all font-black italic uppercase tracking-widest text-xs group-hover:bg-primary group-hover:text-white dark:border-white/10 dark:bg-white/5 dark:text-white">
+              <Button className="h-14 w-full rounded-2xl border border-border bg-muted/40 text-foreground transition-all font-black uppercase tracking-widest text-xs group-hover:bg-primary group-hover:text-white dark:border-white/10 dark:bg-white/5 dark:text-white">
                  {hub.action}
               </Button>
             </div>
@@ -274,7 +274,7 @@ export default function EventOverviewPage({
 
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="grid gap-6 md:grid-cols-3">
         <div className={cn(panelClass, "p-8")}>
-          <h3 className="text-xl font-black text-foreground dark:text-white italic uppercase tracking-tighter">Attendee App</h3>
+          <h3 className="text-xl font-black text-foreground dark:text-white uppercase tracking-tight">Attendee App</h3>
           <p className="mt-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground dark:text-white/30">
             {experience?.settings.homeHeadline ?? "Your live event companion"}
           </p>
@@ -286,7 +286,7 @@ export default function EventOverviewPage({
         </div>
         <div className={cn(panelClass, "p-8")}>
           <h3 className="text-xl font-black text-foreground dark:text-white italic uppercase tracking-tighter">Sessions</h3>
-          <p className="mt-6 text-4xl font-black italic text-foreground dark:text-white">{experience?.sessions.length ?? 0}</p>
+          <p className="mt-6 text-4xl font-black text-foreground dark:text-white">{experience?.sessions.length ?? 0}</p>
           <p className="mt-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground dark:text-white/30">
             {experience?.sessions.filter((session) => session.liveNow).length ?? 0} live right now
           </p>
