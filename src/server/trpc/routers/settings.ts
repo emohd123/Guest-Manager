@@ -73,6 +73,13 @@ export const settingsRouter = router({
       return data;
     }),
 
+  getAccess: protectedProcedure.query(({ ctx }) => ({
+    dashboardAccess: ctx.dashboardAccess,
+    dashboardPermissions: ctx.dashboardPermissions,
+    customerCompanyId: ctx.customerCompanyId,
+    readOnly: ctx.dashboardAccess === "limited",
+  })),
+
   getTeamMembers: dashboardAdminProcedure.query(async ({ ctx }) => {
     const { data, error } = await ctx.supabase
       .from("users")
