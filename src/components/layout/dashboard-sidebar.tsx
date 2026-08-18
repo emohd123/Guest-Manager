@@ -68,7 +68,9 @@ export function DashboardSidebar({ collapsed, onToggle }: DashboardSidebarProps)
   const pathname = usePathname();
   const router = useRouter();
   const { data: access } = trpc.settings.getAccess.useQuery();
-  const visibleNavigation = access?.readOnly
+  // Fail closed while access is loading so restricted customers never see admin links flash.
+  const isReadOnly = access?.readOnly ?? true;
+  const visibleNavigation = isReadOnly
     ? navigation.filter((item) => item.href === "/dashboard/events")
     : navigation;
 
@@ -159,7 +161,7 @@ export function DashboardSidebar({ collapsed, onToggle }: DashboardSidebarProps)
       </div>
 
       {/* Bottom navigation */}
-      {!access?.readOnly && (
+      {access && !access.readOnly && (
       <div className="space-y-1.5 px-3 py-4">
         {bottomNavigation.map((item) => {
           const isActive =
