@@ -158,15 +158,15 @@ export default function EventOverviewPage({
                       <ResponsiveContainer width="100%" height="100%">
                         <PieChart>
                           <Pie
-                            data={block.data}
+                            data={block.data.some((entry) => entry.value > 0) ? block.data : [{ name: "No data", value: 1, count: 0 }]}
                             innerRadius={65}
                             outerRadius={85}
-                            paddingAngle={5}
+                            paddingAngle={block.data.filter((entry) => entry.value > 0).length > 1 ? 5 : 0}
                             dataKey="value"
                             stroke="none"
                           >
-                            {block.data.map((entry, index) => (
-                              <Cell key={`cell-${index}`} fill={MODY_COLORS[(index + (block.colorOffset || 0)) % MODY_COLORS.length]} />
+                            {(block.data.some((entry) => entry.value > 0) ? block.data : [{ name: "No data", value: 1, count: 0 }]).map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={block.data.some((item) => item.value > 0) ? MODY_COLORS[(index + (block.colorOffset || 0)) % MODY_COLORS.length] : "#cbd5e1"} />
                             ))}
                           </Pie>
                           <Tooltip 
