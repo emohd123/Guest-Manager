@@ -100,7 +100,7 @@ export const protectedProcedure = t.procedure.use(async ({ ctx, next, path, inpu
     }
   }
 
-  if (ctx.dashboardAccess === "limited" && /\\.(create|update|delete|duplicate|archive|remove|send|publish|cancel|upsert|add|revoke|assign|generate|import|export|checkin|scan|pair|invite)$/i.test(path)) {
+  if (ctx.dashboardAccess === "limited" && /\.(create|update|delete|duplicate|archive|remove|send|publish|cancel|upsert|add|revoke|assign|generate|import|export|checkin|scan|pair|invite)$/i.test(path)) {
     throw new TRPCError({
       code: "FORBIDDEN",
       message: "This customer account has read-only access",
