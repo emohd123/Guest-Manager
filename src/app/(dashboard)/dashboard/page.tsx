@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { trpc } from "@/lib/trpc/client";
 import {
@@ -30,6 +32,13 @@ import { CountUp } from "@/components/visual/reactbits";
 
 
 export default function DashboardPage() {
+  const router = useRouter();
+  const { data: access } = trpc.settings.getAccess.useQuery();
+  useEffect(() => {
+    if (access?.readOnly) router.replace("/dashboard/events");
+  }, [access?.readOnly, router]);
+  if (access?.readOnly) return null;
+
   const { data: eventStats, isLoading: eventsLoading } = trpc.events.stats.useQuery();
   const { data: upcomingEvents, isLoading: upcomingLoading } = trpc.events.list.useQuery({
     status: "published",
