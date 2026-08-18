@@ -14,6 +14,7 @@ import {
   orders,
   ticketTypes,
   tickets,
+  promotions,
 } from "@/server/db/schema";
 import { generateAndSendTicket } from "@/server/actions/generateAndSendTicket";
 import { createClient as createSupabaseServerClient } from "@/lib/supabase/server";
@@ -62,6 +63,7 @@ export async function POST(request: NextRequest) {
       selectedSeatIds,
       seatHoldToken,
       seatsIo,
+      promoCode,
     } = body as {
       companySlug?: string;
       eventSlug?: string;
@@ -78,6 +80,7 @@ export async function POST(request: NextRequest) {
       selectedSeatIds?: string[];
       seatHoldToken?: string;
       seatsIo?: boolean;
+      promoCode?: string;
     };
 
     const buyerName =
@@ -317,12 +320,23 @@ export async function POST(request: NextRequest) {
       }));
     }
 
-    const subtotal = selectedSeats.length
+    const grossSubtotal = selectedSeats.length
       ? selectedSeats.reduce((sum, seat) => sum + seat.price, 0)
       : normalizedCartItems.reduce(
           (sum, item) => sum + item.price * item.quantity,
           0,
         );
+    let appliedPromo: typeof promotions.$inferSelect | null = null;
+    if (promoCode?.trim()) {
+      const promoRows = await db.select().from(promotions).where(and(eq(promotions.companyId, resolvedCompany.id), eq(promotions.eventId, event[0].id), ilike(promotions.code, promoCode.trim()), eq(promotions.isActive, true))).limit(1);
+      const promo = promoRows[0];
+      if (!promo || (promo.startsAt && promo.startsAt > now) || (promo.endsAt && promo.endsAt < now)) throw new CheckoutValidationError("This promo code is not active.");
+      if (promo.maxUses != null && requestedQuantity > promo.maxUses) throw new CheckoutValidationError(`This promo code is limited to ${promo.maxUses} tickets.`);
+      appliedPromo = promo;
+    }
+    const discountPercentage = appliedPromo?.discountType === "percentage" ? Math.min(100, Math.max(0, Number(appliedPromo.value))) : 0;
+    const discountFactor = 1 - discountPercentage / 100;
+    const subtotal = grossSubtotal * discountFactor;
     const currencies = [
       ...new Set(
         normalizedCartItems.map((item) => item.currency.toUpperCase()),
@@ -356,7 +370,7 @@ export async function POST(request: NextRequest) {
               product_data: {
                 name: `${item.name} - ${event[0].title}`,
               },
-              unit_amount: toStripeUnitAmount(item.price, item.currency),
+              unit_amount: toStripeUnitAmount(item.price * discountFactor, item.currency),
             },
             quantity: item.quantity,
           }));
@@ -436,8 +450,8 @@ export async function POST(request: NextRequest) {
           status: "completed",
           email: resolvedAttendeeEmail,
           name: resolvedAttendeeName,
-          subtotal: 0,
-          total: 0,
+          subtotal: subtotal,
+          total: subtotal,
           currency: normalizedCartItems[0]?.currency ?? "BHD",
           completedAt: new Date(),
         })
@@ -449,8 +463,8 @@ export async function POST(request: NextRequest) {
           orderId: order.id,
           ticketTypeId: item.ticketTypeId,
           quantity: item.quantity,
-          unitPrice: item.price,
-          total: item.price * item.quantity,
+          unitPrice: item.price * discountFactor,
+          total: item.price * discountFactor * item.quantity,
         })),
       );
 
