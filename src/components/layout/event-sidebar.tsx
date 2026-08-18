@@ -20,7 +20,8 @@ import {
   Megaphone,
   Paintbrush,
   ArrowLeft,
-  Armchair
+  Armchair,
+  Tag
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -42,6 +43,7 @@ const getNavigation = (eventId: string) => [
     items: [
       { label: "Orders", href: `/dashboard/events/${eventId}/orders`, icon: ShoppingCart },
       { label: "Ticket types", href: `/dashboard/events/${eventId}/tickets`, icon: Ticket },
+      { label: "Promo codes", href: `/dashboard/events/${eventId}/promotions`, icon: Tag },
     ],
   },
   {
