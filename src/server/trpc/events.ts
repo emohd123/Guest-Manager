@@ -187,9 +187,11 @@ export const eventsRouter = router({
         .select("*")
         .single();
 
-      // Retry without the optional customer-company field for older schemas.
-      if (error?.message.includes("customer_company_id") && error.message.includes("schema cache")) {
-        const { customer_company_id: _customerCompanyId, ...legacyPayload } = insertPayload;
+      // The production schema may not contain legacy ownership columns.
+      // Retry with only columns that exist so assigning a customer never
+      // prevents an event from being created.
+      if (error?.message.includes("schema cache")) {
+        const { customer_company_id: _customerCompanyId, created_by: _createdBy, ...legacyPayload } = insertPayload;
         ({ data, error } = await ctx.supabase
           .from("events")
           .insert(legacyPayload)
@@ -330,9 +332,7 @@ export const eventsRouter = router({
       if (!original) throw new Error("Event not found");
 
       const duplicateTitle = `${original.title} (Copy)`;
-      const { data, error } = await ctx.supabase
-        .from("events")
-        .insert({
+      const duplicatePayload = {
           company_id: ctx.companyId,
           created_by: ctx.userId,
           customer_company_id: original.customer_company_id ?? null,
@@ -355,9 +355,16 @@ export const eventsRouter = router({
           settings: original.settings,
           custom_fields: original.custom_fields,
           metadata: original.metadata,
-        })
+        };
+      let { data, error } = await ctx.supabase
+        .from("events")
+        .insert(duplicatePayload)
         .select("*")
         .single();
+      if (error?.message.includes("schema cache")) {
+        const { customer_company_id: _customerCompanyId, created_by: _createdBy, ...legacyPayload } = duplicatePayload;
+        ({ data, error } = await ctx.supabase.from("events").insert(legacyPayload).select("*").single());
+      }
 
       if (error) throw new Error(error.message);
       void recordAudit({ companyId: ctx.companyId, actorId: ctx.userId, action: "event.duplicated", entityType: "event", entityId: data.id, eventId: data.id, metadata: { sourceEventId: input.id } });
