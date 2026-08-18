@@ -336,7 +336,7 @@ export default function PublicEventPage({
           ticketTypeId,
           name: ticketType.name,
           price: publicPage.isPaidEvent ? (ticketType.price ?? 0) : 0,
-          currency: ticketType.currency ?? "BHD",
+          currency: ticketType.currency ?? "EGP",
           quantity,
         };
       })
@@ -352,7 +352,7 @@ export default function PublicEventPage({
       0,
     );
     let seatHoldToken: string | undefined;
-    if (hasActiveSeatMap) {
+    if (hasNativeSeatMap) {
       if (selectedSeatIds.length !== requestedQuantity) {
         toast.error(
           `Select ${requestedQuantity} seat${requestedQuantity === 1 ? "" : "s"} before checkout.`,
@@ -397,7 +397,7 @@ export default function PublicEventPage({
   const lowestPrice =
     pricedTickets.map((ticket) => ticket.price ?? 0).sort((a, b) => a - b)[0] ??
     0;
-  const currency = tickets[0]?.currency ?? "BHD";
+  const currency = tickets[0]?.currency ?? "EGP";
   const seatingPlan = publicSeating.plan;
   const reservedSeatCount =
     seatingPlan?.sections?.reduce(
@@ -412,11 +412,12 @@ export default function PublicEventPage({
   const seatsIoChartKey = readSeatsIoChartKey(event.settings);
   const seatsIoEventKey = readSeatsIoEventKey(event.settings);
   const usesSeatsIo = Boolean(seatsIoChartKey && process.env.NEXT_PUBLIC_SEATSIO_WORKSPACE_KEY);
-  const hasActiveSeatMap = usesSeatsIo || Boolean(
+  const hasNativeSeatMap = Boolean(
     seatingPlan?.enabled &&
       seatingPlan.sections?.length &&
       reservedSeatCount > 0,
   );
+  const hasActiveSeatMap = usesSeatsIo || hasNativeSeatMap;
   const priceFrom = publicPage.isPaidEvent
     ? formatMoney(lowestPrice, currency, locale)
     : t.freeEvent;
@@ -682,7 +683,7 @@ export default function PublicEventPage({
                       </span>
                       <span className="font-semibold text-zinc-600">
                         {publicPage.isPaidEvent
-                          ? `from ${formatMoney(ticket.price ?? 0, ticket.currency ?? "BHD", locale)}`
+                          ? `from ${formatMoney(ticket.price ?? 0, ticket.currency ?? "EGP", locale)}`
                           : t.freeEvent}
                       </span>
                     </div>
