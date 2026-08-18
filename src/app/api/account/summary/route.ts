@@ -18,7 +18,7 @@ export async function GET() {
   const email = user.email.toLowerCase();
   const { data: adminProfile, error: adminProfileError } = await admin
     .from("users")
-    .select("id,role,company_id,companies(id,name,slug)")
+    .select("id,role,company_id,dashboard_access,customer_company_id,companies(id,name,slug)")
     .eq("id", user.id)
     .maybeSingle();
 
@@ -95,13 +95,20 @@ export async function GET() {
       email: user.email,
       name: user.user_metadata?.name ?? user.email.split("@")[0],
     },
-    adminAccess: adminProfile?.company_id
-      ? {
-          role: adminProfile.role,
-          companyId: adminProfile.company_id,
-          company: adminProfile.companies,
-        }
-      : null,
+    adminAccess:
+      adminProfile?.company_id &&
+      (adminProfile.dashboard_access === "limited" ||
+        adminProfile.dashboard_access === "full" ||
+        adminProfile.role === "owner" ||
+        adminProfile.role === "admin")
+        ? {
+            role: adminProfile.role,
+            companyId: adminProfile.company_id,
+            customerCompanyId: adminProfile.customer_company_id ?? null,
+            readOnly: adminProfile.dashboard_access === "limited" || Boolean(adminProfile.customer_company_id),
+            company: adminProfile.companies,
+          }
+        : null,
     orders: orders ?? [],
     tickets: tickets ?? [],
     notifications,
