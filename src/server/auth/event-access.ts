@@ -18,14 +18,17 @@ export function applyEventOwnership<T>(
   ctx: { dashboardAccess: string; role: string | null; userId: string; customerCompanyId?: string | null },
 ) {
   if (isFullDashboardAccess(ctx)) return query;
+  // The live events schema is customer-company scoped and does not include
+  // created_by. Filter by the assigned customer company directly so limited
+  // accounts can see their events without querying a legacy column.
   if (ctx.customerCompanyId) {
-    return (query as any).or(`created_by.eq.${ctx.userId},customer_company_id.eq.${ctx.customerCompanyId}`);
+    return (query as any).eq("customer_company_id", ctx.customerCompanyId);
   }
-  return (query as any).eq("created_by", ctx.userId);
+  return (query as any).eq("id", "__no_access__");
 }
 
 export function assertOwnedEvent(row: { created_by?: string | null; customer_company_id?: string | null } | null, ctx: { dashboardAccess: string; role: string | null; userId: string; customerCompanyId?: string | null }) {
-  if (!row || (!isFullDashboardAccess(ctx) && row.created_by !== ctx.userId && row.customer_company_id !== ctx.customerCompanyId)) {
+  if (!row || (!isFullDashboardAccess(ctx) && row.customer_company_id !== ctx.customerCompanyId)) {
     throw new TRPCError({ code: "FORBIDDEN", message: "You can only access events assigned to your account" });
   }
 }
@@ -35,11 +38,11 @@ export async function assertEventAccess(ctx: EventAccessContext, eventId: string
   if (isFullDashboardAccess(ctx)) return;
   const { data, error } = await ctx.supabase
     .from("events")
-    .select("id,created_by,customer_company_id")
+.select("id,customer_company_id")
     .eq("id", eventId)
     .eq("company_id", ctx.companyId)
     .maybeSingle();
-  const allowed = data && (data.created_by === ctx.userId || (ctx.customerCompanyId && data.customer_company_id === ctx.customerCompanyId));
+  const allowed = data && ctx.customerCompanyId && data.customer_company_id === ctx.customerCompanyId;
   if (error || !allowed) {
     throw new TRPCError({ code: "FORBIDDEN", message: "You can only access events created by your account" });
   }
