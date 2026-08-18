@@ -2,7 +2,7 @@ export const dynamic = "force-dynamic";
 
 import crypto from "crypto";
 import { NextRequest, NextResponse } from "next/server";
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq, ilike, sql } from "drizzle-orm";
 import { getStripeClient } from "@/lib/stripe";
 import { toStripeUnitAmount } from "@/lib/marketplace";
 import { getDb } from "@/server/db";
