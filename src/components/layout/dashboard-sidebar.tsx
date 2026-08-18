@@ -127,7 +127,13 @@ export function DashboardSidebar({ collapsed, onToggle }: DashboardSidebarProps)
       {/* Navigation */}
       <ScrollArea className="flex-1 px-3 py-2">
         <nav className="space-y-1.5">
-          {visibleNavigation.map((item) => {
+          {access === undefined ? (
+            <div className="space-y-3 px-1" aria-label="Loading navigation">
+              {[1, 2, 3, 4, 5].map((item) => (
+                <div key={item} className="h-11 rounded-2xl bg-muted/60 animate-pulse" />
+              ))}
+            </div>
+          ) : visibleNavigation.map((item) => {
             const isActive = (item as { exact?: boolean }).exact
               ? pathname === item.href
               : pathname === item.href || pathname.startsWith(item.href + "/");
