@@ -10,7 +10,7 @@ import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 
-const MODY_COLORS = ["#ff5f52", "#f97316", "#10b981", "#3b82f6", "#8b5cf6"];
+const MODY_COLORS = ["#22c55e", "#f97316", "#3b82f6", "#ef4444", "#eab308", "#14b8a6"];
 
 export default function EventOverviewPage({
   params,
