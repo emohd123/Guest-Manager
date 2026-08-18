@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { router, protectedProcedure, publicProcedure } from "../index";
+import { router, protectedProcedure, publicProcedure } from "./index";
 import { nanoid } from "nanoid";
 import { createSupabaseAdminClient } from "@/server/supabase/admin";
 import { handleEventPublished } from "@/server/services/discover-push";
