@@ -360,7 +360,7 @@ export async function POST(request: NextRequest) {
               product_data: {
                 name: `${event[0].title} — ${seat.section_name}, Row ${seat.row_label}, Seat ${seat.label}`,
               },
-              unit_amount: toStripeUnitAmount(seat.price, currencies[0]),
+              unit_amount: toStripeUnitAmount(seat.price * discountFactor, currencies[0]),
             },
             quantity: 1,
           }))
@@ -399,6 +399,8 @@ export async function POST(request: NextRequest) {
           seatHoldToken: seatHoldToken ?? "",
           ticketSubtotal: String(subtotal),
           serviceFee: String(serviceFee),
+          promoCode: appliedPromo?.code ?? "",
+          discountPercentage: String(discountPercentage),
         },
         success_url: `${origin}/e/${companySlug}/${eventSlug}?success=1&session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${origin}/e/${companySlug}/${eventSlug}?cancelled=1`,
