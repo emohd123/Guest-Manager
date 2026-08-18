@@ -68,7 +68,9 @@ const getNavigation = (eventId: string) => [
 export function EventSidebar({ eventId }: { eventId: string }) {
   const pathname = usePathname();
   const { data: access } = trpc.settings.getAccess.useQuery();
-  const navigation = access?.readOnly
+  // Fail closed while access is loading so restricted customers never see admin links flash.
+  const isReadOnly = access?.readOnly ?? true;
+  const navigation = isReadOnly
     ? getNavigation(eventId)
         .map((group) => ({ ...group, items: group.items.filter((item) =>
           [
