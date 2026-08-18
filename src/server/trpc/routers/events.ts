@@ -164,9 +164,7 @@ export const eventsRouter = router({
         if (customerError) throw new Error(customerError.message);
         if (!customer) throw new Error("Customer company not found");
       }
-      const { data, error } = await ctx.supabase
-        .from("events")
-        .insert({
+      const insertPayload = {
           company_id: ctx.companyId,
           created_by: ctx.userId,
           customer_company_id: input.customerCompanyId ?? null,
@@ -182,9 +180,26 @@ export const eventsRouter = router({
           category_id: input.categoryId ?? null,
           max_capacity: input.maxCapacity ?? null,
           registration_enabled: input.registrationEnabled,
-        })
+      };
+      let { data, error } = await ctx.supabase
+        .from("events")
+        .insert(insertPayload)
         .select("*")
         .single();
+
+      // Retry against older schemas by removing columns that PostgREST reports as missing.
+      // This keeps event creation working while the production schema cache catches up.
+      const legacyPayload = { ...insertPayload };
+      for (let attempt = 0; error?.message.includes("schema cache") && attempt < 8; attempt += 1) {
+        const missingColumn = error.message.match(/Could not find the '([^']+)' column/i)?.[1];
+        if (!missingColumn || !(missingColumn in legacyPayload)) break;
+        delete legacyPayload[missingColumn as keyof typeof legacyPayload];
+        ({ data, error } = await ctx.supabase
+          .from("events")
+          .insert(legacyPayload)
+          .select("*")
+          .single());
+      }
 
       if (error) throw new Error(error.message);
       void recordAudit({ companyId: ctx.companyId, actorId: ctx.userId, action: "event.created", entityType: "event", entityId: data.id, eventId: data.id, metadata: { title: input.title } });
