@@ -23,6 +23,7 @@ export default function EventOverviewPage({
   const readOnly = access?.readOnly === true;
   const { data: guestStats } = trpc.guests.stats.useQuery({ eventId });
   const { data: ticketTypeStats } = trpc.ticketTypes.stats.useQuery({ eventId });
+  const { data: orderStats } = trpc.orders.stats.useQuery({ eventId });
   const { data: experience } = trpc.eventExperience.get.useQuery({ eventId });
 
   if (isLoading) {
@@ -45,25 +46,27 @@ export default function EventOverviewPage({
     return <div className="p-20 text-center text-muted-foreground dark:text-white/40 font-black italic uppercase tracking-widest">Event Not Found</div>;
   }
 
-  const emailData = [
-    { name: "Delivered", value: 75, count: 0 },
-    { name: "Failed", value: 5, count: 0 },
-    { name: "Deferred", value: 20, count: 0 },
+  const ticketsSold = orderStats?.ticketsSold ?? ticketTypeStats?.totalSold ?? 0;
+  const ticketCapacity = ticketTypeStats?.totalCapacity ?? event.maxCapacity ?? 0;
+  const ticketsRemaining = Math.max(ticketCapacity - ticketsSold, 0);
+  const checkedIn = guestStats?.checkedIn ?? 0;
+  const sellThroughRate = ticketCapacity > 0 ? Math.min((ticketsSold / ticketCapacity) * 100, 100) : 0;
+  const attendanceRate = ticketsSold > 0 ? Math.min((checkedIn / ticketsSold) * 100, 100) : 0;
+
+  const salesData = [
+    { name: "Sold", value: ticketsSold, count: ticketsSold },
+    { name: "Remaining", value: ticketsRemaining, count: ticketsRemaining },
   ];
 
-  const sourceData = [
-    { name: "Imported", value: guestStats?.total ?? 0, count: guestStats?.total ?? 0 },
-    { name: "Manual", value: 0, count: 0 },
+  const ordersData = [
+    { name: "Completed", value: orderStats?.totalOrders ?? 0, count: orderStats?.totalOrders ?? 0 },
+    { name: "No orders", value: orderStats?.totalOrders ? 0 : 1, count: orderStats?.totalOrders ? 0 : 0 },
   ];
 
-  const deliveryData = [
-    { name: "Sent", value: ticketTypeStats?.totalSold ?? 0, count: ticketTypeStats?.totalSold ?? 0 },
-    { name: "Unsent", value: 0, count: 0 },
+  const attendanceData = [
+    { name: "Checked in", value: checkedIn, count: checkedIn },
+    { name: "Not checked in", value: Math.max(ticketsSold - checkedIn, 0), count: Math.max(ticketsSold - checkedIn, 0) },
   ];
-
-  const totalGuests = guestStats?.total ?? 0;
-  const capacity = event.maxCapacity ?? 1000;
-  const occupancyRate = totalGuests > 0 ? (totalGuests / capacity) * 100 : 0;
   const analyticsCardClass =
     "flex flex-col rounded-[40px] bg-card/90 dark:bg-white/5 border border-border dark:border-white/10 overflow-hidden group hover:bg-muted/60 dark:hover:bg-white/8 transition-all h-[480px]";
   const panelClass =
@@ -131,10 +134,10 @@ export default function EventOverviewPage({
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         {/* Analytics Card Template */}
         {[
-          { title: "Email Activity", sub: "Campaign delivery", data: emailData, type: "pie" },
-          { title: "Guest Sources", sub: "How guests were added", data: sourceData, type: "pie", colorOffset: 1 },
-          { title: "Ticket Delivery", sub: "Sent vs pending tickets", data: deliveryData, type: "pie", colorOffset: 2 },
-          { title: "Capacity", sub: "Current event occupancy", data: [], type: "load" }
+          { title: "Ticket Sales", sub: "Sold vs remaining", data: salesData, type: "pie", percent: sellThroughRate },
+          { title: "Orders & Revenue", sub: "Completed ticket orders", data: ordersData, type: "pie", colorOffset: 1, percent: orderStats?.totalOrders ? 100 : 0 },
+          { title: "Attendance", sub: "Checked in vs not checked in", data: attendanceData, type: "pie", colorOffset: 2, percent: attendanceRate },
+          { title: "Ticket Inventory", sub: "Sell-through and revenue", data: [], type: "load" }
         ].map((block, i) => (
           <motion.div
             key={block.title}
@@ -181,7 +184,7 @@ export default function EventOverviewPage({
                       </ResponsiveContainer>
                       <div className="absolute inset-0 flex items-center justify-center flex-col pointer-events-none">
                          <TrendingUp className="h-6 w-6 text-primary mb-1" />
-                         <span className="text-[10px] font-black text-foreground dark:text-white italic">73%</span>
+                         <span className="text-[10px] font-black text-foreground dark:text-white italic">{(block.percent ?? 0).toFixed(0)}%</span>
                       </div>
                    </div>
                    
@@ -206,27 +209,27 @@ export default function EventOverviewPage({
                  <div className="h-full flex flex-col justify-center space-y-12">
                    <div className="space-y-6">
                       <div className="flex justify-between items-end">
-                         <p className="text-[10px] font-black text-muted-foreground dark:text-white/40 uppercase tracking-widest">Real-time Load</p>
-                         <p className="text-4xl font-black text-foreground dark:text-white italic leading-none">{totalGuests} <span className="text-sm text-muted-foreground dark:text-white/20">/ {capacity}</span></p>
+                         <p className="text-[10px] font-black text-muted-foreground dark:text-white/40 uppercase tracking-widest">Tickets Sold</p>
+                         <p className="text-4xl font-black text-foreground dark:text-white italic leading-none">{ticketsSold} <span className="text-sm text-muted-foreground dark:text-white/20">/ {ticketCapacity || "—"}</span></p>
                       </div>
                       <div className="h-4 overflow-hidden rounded-full border border-border bg-muted dark:border-white/5">
                          <motion.div 
                            initial={{ width: 0 }}
-                           animate={{ width: `${occupancyRate}%` }}
+                           animate={{ width: `${sellThroughRate}%` }}
                            className="h-full bg-linear-to-r from-primary to-primary/40 rounded-full shadow-[0_0_20px_rgba(255,95,82,0.3)]"
                          />
                       </div>
-                      <p className="text-[9px] font-bold text-muted-foreground/60 dark:text-white/10 uppercase tracking-widest text-center">Occupancy rate: {occupancyRate.toFixed(1)}%</p>
+                      <p className="text-[9px] font-bold text-muted-foreground/60 dark:text-white/10 uppercase tracking-widest text-center">Sell-through rate: {sellThroughRate.toFixed(1)}%</p>
                    </div>
                    
                    <div className="grid grid-cols-2 gap-4">
                       <div className="rounded-3xl border border-border bg-muted/40 p-4 dark:border-white/5 dark:bg-white/3">
-                         <p className="text-[8px] font-black text-muted-foreground/70 dark:text-white/20 uppercase tracking-widest mb-1">Revenue</p>
-                         <p className="text-xl font-black text-primary italic">$0.00</p>
+                         <p className="text-[8px] font-black text-muted-foreground/70 dark:text-white/20 uppercase tracking-widest mb-1">Net Revenue</p>
+                         <p className="text-xl font-black text-primary italic">BHD {(orderStats?.revenue ?? 0).toFixed(3)}</p>
                       </div>
                       <div className="rounded-3xl border border-border bg-muted/40 p-4 dark:border-white/5 dark:bg-white/3">
-                         <p className="text-[8px] font-black text-muted-foreground/70 dark:text-white/20 uppercase tracking-widest mb-1">Growth</p>
-                         <p className="text-xl font-black text-green-400 italic">+12%</p>
+                         <p className="text-[8px] font-black text-muted-foreground/70 dark:text-white/20 uppercase tracking-widest mb-1">Check-in Rate</p>
+                         <p className="text-xl font-black text-green-400 italic">{attendanceRate.toFixed(1)}%</p>
                       </div>
                    </div>
                  </div>
