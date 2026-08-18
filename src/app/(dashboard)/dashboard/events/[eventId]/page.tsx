@@ -237,7 +237,8 @@ export default function EventOverviewPage({
       </div>
 
       {!readOnly && (
-      {/* Action Hub */}
+        <>
+          {/* Action Hub */}
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -265,7 +266,7 @@ export default function EventOverviewPage({
           </div>
         ))}
       </motion.div>
-
+        </>
       )}
 
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="grid gap-6 md:grid-cols-3">
