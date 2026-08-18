@@ -20,6 +20,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { BrandMark } from "@/components/brand/brand-mark";
 import { BrandWordmark } from "@/components/brand/brand-wordmark";
+import { trpc } from "@/lib/trpc/client";
 
 const navigation = [
   {
@@ -66,6 +67,11 @@ interface DashboardSidebarProps {
 export function DashboardSidebar({ collapsed, onToggle }: DashboardSidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
+  const { data: access } = trpc.settings.getAccess.useQuery();
+  const visibleNavigation = access?.readOnly
+    ? navigation.filter((item) => item.href === "/dashboard/events")
+    : navigation;
+
   const handleSignOut = async () => {
     const supabase = createClient();
     await supabase.auth.signOut();
@@ -117,7 +123,7 @@ export function DashboardSidebar({ collapsed, onToggle }: DashboardSidebarProps)
       {/* Navigation */}
       <ScrollArea className="flex-1 px-3 py-2">
         <nav className="space-y-1.5">
-          {navigation.map((item) => {
+          {visibleNavigation.map((item) => {
             const isActive = (item as { exact?: boolean }).exact
               ? pathname === item.href
               : pathname === item.href || pathname.startsWith(item.href + "/");
@@ -153,6 +159,7 @@ export function DashboardSidebar({ collapsed, onToggle }: DashboardSidebarProps)
       </div>
 
       {/* Bottom navigation */}
+      {!access?.readOnly && (
       <div className="space-y-1.5 px-3 py-4">
         {bottomNavigation.map((item) => {
           const isActive =
@@ -184,6 +191,7 @@ export function DashboardSidebar({ collapsed, onToggle }: DashboardSidebarProps)
           {!collapsed && <span>Sign Out</span>}
         </button>
       </div>
+      )}
     </aside>
   );
 }
