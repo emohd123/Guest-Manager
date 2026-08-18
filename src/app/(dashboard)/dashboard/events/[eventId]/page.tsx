@@ -19,6 +19,8 @@ export default function EventOverviewPage({
 }) {
   const { eventId } = use(params);
   const { data: event, isLoading } = trpc.events.get.useQuery({ id: eventId });
+  const { data: access } = trpc.settings.getAccess.useQuery();
+  const readOnly = access?.readOnly === true;
   const { data: guestStats } = trpc.guests.stats.useQuery({ eventId });
   const { data: ticketTypeStats } = trpc.ticketTypes.stats.useQuery({ eventId });
   const { data: experience } = trpc.eventExperience.get.useQuery({ eventId });
@@ -111,6 +113,7 @@ export default function EventOverviewPage({
                   : "Public Page Disabled"} <ExternalLink className="h-4 w-4" />
             </Button>
           )}
+          {!readOnly && (
           <Button
             asChild
             className="h-14 px-8 rounded-2xl bg-primary text-white font-black text-base shadow-2xl shadow-primary/20 transition-all hover:scale-[1.05] active:scale-95 italic flex gap-3"
@@ -120,6 +123,7 @@ export default function EventOverviewPage({
               Add Guest
             </Link>
           </Button>
+          )}
         </div>
       </div>
 
@@ -232,6 +236,7 @@ export default function EventOverviewPage({
         ))}
       </div>
 
+      {!readOnly && (
       {/* Action Hub */}
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
@@ -260,6 +265,8 @@ export default function EventOverviewPage({
           </div>
         ))}
       </motion.div>
+
+      )}
 
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="grid gap-6 md:grid-cols-3">
         <div className={cn(panelClass, "p-8")}>
