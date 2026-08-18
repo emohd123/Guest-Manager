@@ -104,7 +104,7 @@ export function DashboardTopbar({
           <>
 
 
-              {!access?.readOnly && (
+              {access && !access.readOnly && (
                 <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button className="h-11 px-6 rounded-2xl bg-primary hover:bg-primary/90 text-white font-bold shadow-lg shadow-primary/20 gap-2">
