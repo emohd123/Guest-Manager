@@ -191,12 +191,12 @@ export const eventsRouter = router({
       // Retry with only columns that exist so assigning a customer never
       // prevents an event from being created.
       if (error?.message.includes("schema cache")) {
-        const { customer_company_id: _customerCompanyId, created_by: _createdBy, ...legacyPayload } = insertPayload;
-        ({ data, error } = await ctx.supabase
-          .from("events")
-          .insert(legacyPayload)
-          .select("*")
-          .single());
+        const { created_by: _createdBy, ...withoutCreatedBy } = insertPayload;
+        ({ data, error } = await ctx.supabase.from("events").insert(withoutCreatedBy).select("*").single());
+        if (error?.message.includes("schema cache")) {
+          const { customer_company_id: _customerCompanyId, ...legacyPayload } = withoutCreatedBy;
+          ({ data, error } = await ctx.supabase.from("events").insert(legacyPayload).select("*").single());
+        }
       }
 
       if (error) throw new Error(error.message);
@@ -362,8 +362,12 @@ export const eventsRouter = router({
         .select("*")
         .single();
       if (error?.message.includes("schema cache")) {
-        const { customer_company_id: _customerCompanyId, created_by: _createdBy, ...legacyPayload } = duplicatePayload;
-        ({ data, error } = await ctx.supabase.from("events").insert(legacyPayload).select("*").single());
+        const { created_by: _createdBy, ...withoutCreatedBy } = duplicatePayload;
+        ({ data, error } = await ctx.supabase.from("events").insert(withoutCreatedBy).select("*").single());
+        if (error?.message.includes("schema cache")) {
+          const { customer_company_id: _customerCompanyId, ...legacyPayload } = withoutCreatedBy;
+          ({ data, error } = await ctx.supabase.from("events").insert(legacyPayload).select("*").single());
+        }
       }
 
       if (error) throw new Error(error.message);
