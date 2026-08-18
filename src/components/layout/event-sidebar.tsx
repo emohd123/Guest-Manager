@@ -25,6 +25,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
+import { trpc } from "@/lib/trpc/client";
 
 const getNavigation = (eventId: string) => [
   {
@@ -66,7 +67,19 @@ const getNavigation = (eventId: string) => [
 
 export function EventSidebar({ eventId }: { eventId: string }) {
   const pathname = usePathname();
-  const navigation = getNavigation(eventId);
+  const { data: access } = trpc.settings.getAccess.useQuery();
+  const navigation = access?.readOnly
+    ? getNavigation(eventId)
+        .map((group) => ({ ...group, items: group.items.filter((item) =>
+          [
+            `/dashboard/events/${eventId}`,
+            `/dashboard/events/${eventId}/guests`,
+            `/dashboard/events/${eventId}/check-in`,
+            `/dashboard/events/${eventId}/reports`,
+          ].includes(item.href)
+        ) }))
+        .filter((group) => group.items.length > 0)
+    : getNavigation(eventId);
 
   return (
     <div className="flex h-full w-64 flex-col border-r border-border glass-panel">
