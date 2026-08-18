@@ -20,6 +20,8 @@ type AccountSummary = {
   adminAccess: null | {
     role: string;
     companyId: string;
+    customerCompanyId: string | null;
+    readOnly: boolean;
     company: { id: string; name: string; slug: string } | Array<{ id: string; name: string; slug: string }> | null;
   };
 };
@@ -92,7 +94,7 @@ export default function AccountPage() {
               <Button asChild className="rounded-full bg-cyan-200 px-6 font-black text-black hover:bg-cyan-100">
                 <Link href="/dashboard">
                   <LayoutDashboard className="mr-2 h-4 w-4" />
-                  Open admin dashboard
+                  {summary.adminAccess.readOnly ? "Open company dashboard" : "Open admin dashboard"}
                 </Link>
               </Button>
             ) : null}
@@ -124,14 +126,20 @@ export default function AccountPage() {
           <section className="mt-10 rounded-[1.5rem] border border-cyan-200/25 bg-cyan-200/[0.08] p-6">
             <div className="flex flex-col justify-between gap-5 md:flex-row md:items-center">
               <div>
-                <p className="text-xs font-black uppercase tracking-[0.24em] text-blue-600">Internal access</p>
-                <h2 className="mt-2 text-2xl font-black">iTicket admin dashboard is enabled</h2>
+                <p className="text-xs font-black uppercase tracking-[0.24em] text-blue-600">
+                  {summary.adminAccess.readOnly ? "Company access" : "Internal access"}
+                </p>
+                <h2 className="mt-2 text-2xl font-black">
+                  {summary.adminAccess.readOnly ? "Your company dashboard is enabled" : "iTicket admin dashboard is enabled"}
+                </h2>
                 <p className="mt-2 text-sm text-slate-600">
-                  Manage company-created events, tickets, guests, orders, scans, reports, and messages.
+                  {summary.adminAccess.readOnly
+                    ? "View the events assigned to your company. Editing and management actions are disabled."
+                    : "Manage company-created events, tickets, guests, orders, scans, reports, and messages."}
                 </p>
               </div>
               <Button asChild className="rounded-full bg-cyan-200 px-7 font-black text-black hover:bg-cyan-100">
-                <Link href="/dashboard">Open dashboard</Link>
+                <Link href="/dashboard">{summary.adminAccess.readOnly ? "Open company dashboard" : "Open dashboard"}</Link>
               </Button>
             </div>
           </section>
