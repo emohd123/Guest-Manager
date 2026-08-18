@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic";
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createSupabaseAdminClient } from "@/server/supabase/admin";
+import { ensureAppUserForAuthUser } from "@/server/auth/app-user";
 
 export async function GET() {
   const supabase = await createClient();
@@ -16,6 +17,16 @@ export async function GET() {
 
   const admin = createSupabaseAdminClient();
   const email = user.email.toLowerCase();
+
+  // Provision/link a customer contact before checking dashboard access. This
+  // makes the account button work on the very first visit, not only after the
+  // customer has already opened the dashboard.
+  try {
+    await ensureAppUserForAuthUser(supabase, user);
+  } catch {
+    // Buyer accounts remain usable even when optional dashboard provisioning
+    // cannot run in a partially configured local environment.
+  }
   const { data: adminProfile, error: adminProfileError } = await admin
     .from("users")
     .select("id,role,company_id,dashboard_access,customer_company_id,companies(id,name,slug)")
