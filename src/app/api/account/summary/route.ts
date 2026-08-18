@@ -26,6 +26,20 @@ export async function GET() {
     return NextResponse.json({ error: adminProfileError.message }, { status: 500 });
   }
 
+  // A customer contact may be a buyer before their first dashboard session.
+  // Resolve the company link directly by verified email so the buyer account
+  // can still offer the read-only company dashboard immediately.
+  let linkedCustomerCompany: { id: string; owner_company_id: string } | null = null;
+  if (!adminProfile?.customer_company_id) {
+    const { data: customerCompany } = await admin
+      .from("customer_companies")
+      .select("id,owner_company_id")
+      .ilike("email", email)
+      .is("deleted_at", null)
+      .maybeSingle();
+    linkedCustomerCompany = customerCompany ?? null;
+  }
+
   const [
     { data: orders, error: ordersError },
     { data: tickets, error: ticketsError },
@@ -96,17 +110,18 @@ export async function GET() {
       name: user.user_metadata?.name ?? user.email.split("@")[0],
     },
     adminAccess:
-      adminProfile?.company_id &&
-      (adminProfile.dashboard_access === "limited" ||
-        adminProfile.dashboard_access === "full" ||
-        adminProfile.role === "owner" ||
-        adminProfile.role === "admin")
+      (adminProfile?.company_id &&
+        (adminProfile.dashboard_access === "limited" ||
+          adminProfile.dashboard_access === "full" ||
+          adminProfile.role === "owner" ||
+          adminProfile.role === "admin")) ||
+      Boolean(linkedCustomerCompany)
         ? {
-            role: adminProfile.role,
-            companyId: adminProfile.company_id,
-            customerCompanyId: adminProfile.customer_company_id ?? null,
-            readOnly: adminProfile.dashboard_access === "limited" || Boolean(adminProfile.customer_company_id),
-            company: adminProfile.companies,
+            role: adminProfile?.role ?? "staff",
+            companyId: adminProfile?.company_id ?? linkedCustomerCompany?.owner_company_id,
+            customerCompanyId: adminProfile?.customer_company_id ?? linkedCustomerCompany?.id ?? null,
+            readOnly: !adminProfile?.dashboard_access || adminProfile.dashboard_access === "limited" || Boolean(adminProfile?.customer_company_id ?? linkedCustomerCompany),
+            company: adminProfile?.companies ?? null,
           }
         : null,
     orders: orders ?? [],
