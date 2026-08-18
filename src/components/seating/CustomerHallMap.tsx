@@ -115,7 +115,7 @@ export function CustomerHallMap({
               <span className="grid h-9 w-9 place-items-center rounded-lg bg-[#071017] text-cyan-300"><Ticket className="h-5 w-5" /></span>
               iTicket
             </div>
-            <div className="text-xs font-bold text-slate-500">EN / BHD</div>
+            <div className="text-xs font-bold text-slate-500">{locale.toUpperCase()} / {currency}</div>
           </div>
         </div>
       ) : null}
