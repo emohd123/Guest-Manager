@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useState } from "react";
+import { use, useState, type FormEvent } from "react";
 import { trpc } from "@/lib/trpc/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,7 +30,7 @@ export default function EventPromotionsPage({ params }: { params: Promise<{ even
     onError: (error) => toast.error(error.message),
   });
 
-  const submit = (eventForm: React.FormEvent) => {
+  const submit = (eventForm: FormEvent) => {
     eventForm.preventDefault();
     createPromotion.mutate({
       eventId,
