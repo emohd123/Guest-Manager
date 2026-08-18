@@ -102,7 +102,13 @@ export function EventSidebar({ eventId }: { eventId: string }) {
       
       <ScrollArea className="flex-1 px-3 py-4">
         <div className="space-y-6">
-          {navigation.map((group) => (
+          {access === undefined ? (
+            <div className="space-y-3 px-2" aria-label="Loading event navigation">
+              {[1, 2, 3, 4].map((item) => (
+                <div key={item} className="h-9 rounded-xl bg-muted/60 animate-pulse" />
+              ))}
+            </div>
+          ) : navigation.map((group) => (
             <div key={group.group}>
               <h4 className="mb-2 px-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">
                 {group.group}
