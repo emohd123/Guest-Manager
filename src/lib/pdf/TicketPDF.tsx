@@ -58,7 +58,7 @@ export interface TicketPDFData {
 // A4 portrait ticket: a visual upper half and a practical detail/QR lower half.
 const W = 595;
 const H = 842;
-const HERO_H = 320;
+const HERO_H = 380;
 const HERO_MARGIN = 28;
 
 export function TicketPDFDocument({ data }: { data: TicketPDFData }) {
