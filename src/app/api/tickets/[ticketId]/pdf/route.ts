@@ -22,6 +22,8 @@ type TicketRow = {
   pdf_url: string | null;
   attendee_name: string | null;
   metadata: Record<string, any> | null;
+  status: string | null;
+  checked_in: boolean | null;
 };
 
 type TicketTypeRow = {
@@ -57,7 +59,7 @@ export async function GET(
 
     const { data: ticketData, error: ticketError } = await supabase
       .from("tickets")
-      .select("id,event_id,ticket_type_id,order_id,barcode,pdf_url,attendee_name,metadata")
+      .select("id,event_id,ticket_type_id,order_id,barcode,pdf_url,attendee_name,metadata,status,checked_in")
       .eq("id", ticketId)
       .maybeSingle();
 
@@ -109,6 +111,18 @@ export async function GET(
     const ticketType = ticketTypeResult.data as TicketTypeRow | null;
     const order = orderResult.data as OrderRow | null;
     const expiresAt = event?.ends_at ?? event?.starts_at ?? null;
+    const ticketUsed = ticket.status === "used" || ticket.status === "checked_in" || ticket.checked_in === true;
+
+    if (ticketUsed) {
+      return NextResponse.json(
+        {
+          error: "This ticket has already been used. PDF downloads are no longer available.",
+          code: "TICKET_USED",
+          expiresAt,
+        },
+        { status: 410 }
+      );
+    }
 
     if (isTicketExpired(expiresAt)) {
       return NextResponse.json(
