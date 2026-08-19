@@ -36,6 +36,7 @@ import {
 } from "@/lib/marketplace";
 import { CustomerHallMap } from "@/components/seating/CustomerHallMap";
 import { SeatsIoChart } from "@/components/seating/SeatsIoChart";
+import { readSeatsIoPricing } from "@/lib/seatsio";
 import { readSeatsIoChartKey, readSeatsIoEventKey } from "@/lib/seatsio";
 import { createClient } from "@/lib/supabase/client";
 
@@ -948,7 +949,8 @@ export default function PublicEventPage({
                     </span>
                   </div>
                   {usesSeatsIo ? (
-                    <SeatsIoChart eventId={event.id} eventKey={seatsIoEventKey ?? undefined} workspaceKey={process.env.NEXT_PUBLIC_SEATSIO_WORKSPACE_KEY!} chartKey={seatsIoChartKey ?? undefined} basePrice={lowestPrice} currency={currency} ticketTypeId={tickets[0]?.id} ticketTypeName={tickets[0]?.name} autoOpen={searchParams.get("openSeats") === "1"} companySlug={companySlug} eventSlug={eventSlug} returnTo={`/e/${companySlug}/${eventSlug}?openSeats=1#tickets`} />
+                    <SeatsIoChart eventId={event.id} eventKey={seatsIoEventKey ?? undefined} workspaceKey={process.env.NEXT_PUBLIC_SEATSIO_WORKSPACE_KEY!} chartKey={seatsIoChartKey ?? undefined}
+              pricing={seatsIoPricing} basePrice={lowestPrice} currency={currency} ticketTypeId={tickets[0]?.id} ticketTypeName={tickets[0]?.name} autoOpen={searchParams.get("openSeats") === "1"} companySlug={companySlug} eventSlug={eventSlug} returnTo={`/e/${companySlug}/${eventSlug}?openSeats=1#tickets`} />
                   ) : !seatingPlan.floor_plan_url ||
                   !/\.pdf(?:$|[?#])/i.test(seatingPlan.floor_plan_url) ? (
                     <CustomerHallMap
