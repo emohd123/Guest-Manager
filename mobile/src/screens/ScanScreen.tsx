@@ -23,7 +23,7 @@ import {
 import { palette, radii, spacing } from "../ui/theme";
 
 type ScanFeedback = {
-  outcome: "success" | "already_used" | "invalid" | "offline";
+  outcome: "success" | "already_used" | "expired" | "invalid" | "offline";
   attendeeName?: string;
   message: string;
 };
@@ -95,7 +95,7 @@ export function ScanScreen({
           styles.resultCard,
           lastFeedback.outcome === "success"
             ? styles.resultSuccess
-            : lastFeedback.outcome === "already_used"
+            : lastFeedback.outcome === "already_used" || lastFeedback.outcome === "expired"
               ? styles.resultWarning
               : styles.resultError,
         ]}
@@ -105,9 +105,11 @@ export function ScanScreen({
             ? "ENTRY APPROVED"
             : lastFeedback.outcome === "already_used"
               ? "ALREADY SCANNED"
-              : lastFeedback.outcome === "offline"
-                ? "SAVED OFFLINE"
-                : "SCAN NOT VALID"}
+              : lastFeedback.outcome === "expired"
+                ? "TICKET EXPIRED"
+                : lastFeedback.outcome === "offline"
+                  ? "SAVED OFFLINE"
+                  : "SCAN NOT VALID"}
         </Text>
         {lastFeedback.attendeeName ? <Text style={styles.resultName}>{lastFeedback.attendeeName}</Text> : null}
         <Text style={styles.resultMessage}>{lastFeedback.message}</Text>
