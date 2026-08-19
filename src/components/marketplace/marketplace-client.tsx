@@ -114,7 +114,8 @@ export function MarketplaceClient({
   function changeHero(delta: number) {
     if (events.length < 2) return;
     setHeroIndex((index) => (index + delta + events.length) % events.length);
-    // Restart autoplay after manual navigation so the selected event remains visible.
+    // Restart the autoplay countdown after a manual arrow or swipe so the
+    // selected event remains visible for the full interval.
     setHeroResetToken((token) => token + 1);
   }
 
@@ -1230,4 +1231,5 @@ const arPromptCards = [
     href: "/account",
   },
 ];
+
 
