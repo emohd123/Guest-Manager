@@ -74,14 +74,15 @@ export async function generateAndSendTicket(payload: TicketEmailPayload): Promis
   const formattedDateTime = format(eventStartsAt, "MMM d, yyyy • h:mm a");
 
   const ticketExpiresAt = (eventEndsAt ?? eventStartsAt).toISOString();
+  const ticketQrValue = JSON.stringify({ v: 1, ticket: barcode, expiresAt: ticketExpiresAt });
 
   // App download URL for QR code (shown next to visitor code on ticket)
   const appDownloadUrl = process.env.NEXT_PUBLIC_APP_DOWNLOAD_URL || "http://localhost:8081";
 
   // 1. Generate QR codes — ticket barcode + app download link
   const [qrCodePublicUrl, qrCodeDataUri, appDownloadQrUri] = await Promise.all([
-    generateAndUploadQRCode(JSON.stringify({ v: 1, ticket: barcode, expiresAt: ticketExpiresAt })),
-    generateQRCodeDataUri(JSON.stringify({ v: 1, ticket: barcode, expiresAt: ticketExpiresAt })),
+    generateAndUploadQRCode(barcode, ticketQrValue),
+    generateQRCodeDataUri(ticketQrValue),
     ticketDesign.showVisitorCode !== false && visitorCode
       ? generateQRCodeDataUri(appDownloadUrl)
       : Promise.resolve(undefined),
