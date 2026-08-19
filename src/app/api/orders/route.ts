@@ -292,7 +292,11 @@ export async function POST(request: NextRequest) {
           ...item,
           name: ticketType.name ?? item.name,
           currency: ticketType.currency ?? item.currency,
-          price: isPaidEvent\n            ? selectedSeatIds?.length\n              ? item.price\n              : (ticketType.price ?? item.price)\n            : 0,
+          price: isPaidEvent
+            ? selectedSeatIds?.length
+              ? item.price
+              : (ticketType.price ?? item.price)
+            : 0,
         };
       })
       .filter(Boolean) as Array<
