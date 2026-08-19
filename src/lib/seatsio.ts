@@ -21,6 +21,22 @@ export function readSeatsIoEventKey(settings: unknown): string | null {
   return typeof value === "string" && SEATSIO_KEY_PATTERN.test(value) ? value : null;
 }
 
+export type SeatsIoCategoryPrice = { category: string | number; price: number };
+
+export function readSeatsIoPricing(settings: unknown): SeatsIoCategoryPrice[] {
+  if (!settings || typeof settings !== "object" || Array.isArray(settings)) return [];
+  const root = settings as Record<string, unknown>;
+  const seatsIo = root.seatsIo && typeof root.seatsIo === "object" && !Array.isArray(root.seatsIo)
+    ? (root.seatsIo as Record<string, unknown>) : null;
+  const value = seatsIo?.pricing;
+  if (!Array.isArray(value)) return [];
+  return value.filter((item): item is SeatsIoCategoryPrice => {
+    if (!item || typeof item !== "object") return false;
+    const row = item as Record<string, unknown>;
+    return (typeof row.category === "string" || typeof row.category === "number") && typeof row.price === "number" && Number.isFinite(row.price) && row.price >= 0;
+  });
+}
+
 export function seatsIoEventKeyFor(eventId: string, chartKey: string) {
   return `iticket-${eventId}-${chartKey}`.slice(0, 128);
 }
@@ -65,6 +81,16 @@ export async function bookSeatsIoObjects(eventKey: string, objects: string[], or
   }
 }
 
+export function mergeSeatsIoPricing(settings: unknown, pricing: SeatsIoCategoryPrice[]) {
+  const current = settings && typeof settings === "object" && !Array.isArray(settings)
+    ? { ...(settings as Record<string, unknown>) } : {};
+  const seatsIo = current.seatsIo && typeof current.seatsIo === "object" && !Array.isArray(current.seatsIo)
+    ? { ...(current.seatsIo as Record<string, unknown>) } : {};
+  seatsIo.pricing = pricing;
+  current.seatsIo = seatsIo;
+  return current;
+}
+
 export async function releaseSeatsIoObjects(eventKey: string, objects: string[]) {
   if (!objects.length) return;
   await fetch(`${SEATSIO_API_BASE}/events/${encodeURIComponent(eventKey)}/actions/release`, {
@@ -73,4 +99,19 @@ export async function releaseSeatsIoObjects(eventKey: string, objects: string[])
     body: JSON.stringify({ objects }),
     cache: "no-store",
   }).catch(() => undefined);
+}
+
+/** Fetch authoritative category information for selected Seats.io objects. */
+export async function readSeatsIoObjectInfos(eventKey: string, labels: string[]) {
+  if (!labels.length) return {} as Record<string, Record<string, unknown>>;
+  const url = new URL(`${SEATSIO_API_BASE}/events/${encodeURIComponent(eventKey)}/objects`);
+  labels.forEach((label) => url.searchParams.append("label", label));
+  const response = await fetch(url, { headers: seatsIoAuthHeaders(), cache: "no-store" });
+  if (!response.ok) {
+    const detail = await response.text().catch(() => "");
+    throw new Error(`Seats.io object lookup failed (${response.status})${detail ? `: ${detail.slice(0, 300)}` : ""}`);
+  }
+  const payload = (await response.json()) as unknown;
+  if (!payload || typeof payload !== "object" || Array.isArray(payload)) return {};
+  return payload as Record<string, Record<string, unknown>>;
 }
