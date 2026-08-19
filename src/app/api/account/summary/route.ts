@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createSupabaseAdminClient } from "@/server/supabase/admin";
 import { ensureAppUserForAuthUser } from "@/server/auth/app-user";
+import { readSeatsIoChartKey, readSeatsIoEventKey, readSeatsIoObjectInfos, readSeatsIoPricing, seatsIoEventKeyFor } from "@/lib/seatsio";
 
 export async function GET() {
   const supabase = await createClient();
@@ -115,6 +116,36 @@ export async function GET() {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
+  // Backfill the display label and price for older Seats.io tickets that were
+  // created before category metadata was persisted on each ticket.
+  const enrichedTickets = await Promise.all((tickets ?? []).map(async (ticket: any) => {
+    const metadata = ticket.metadata && typeof ticket.metadata === "object" ? ticket.metadata : {};
+    if (metadata.seatingProvider !== "seats.io" || typeof metadata.selectedSeatId !== "string") return ticket;
+    const eventRecord = Array.isArray(ticket.events) ? ticket.events[0] : ticket.events;
+    const settings = eventRecord?.settings ?? {};
+    const chartKey = readSeatsIoChartKey(settings);
+    const eventKey = readSeatsIoEventKey(settings) ?? (chartKey && eventRecord?.id ? seatsIoEventKeyFor(eventRecord.id, chartKey) : null);
+    if (!eventKey) return ticket;
+    try {
+      const infos = await readSeatsIoObjectInfos(eventKey, [metadata.selectedSeatId]);
+      const info = infos[metadata.selectedSeatId] ?? {};
+      const nestedCategory = info.category && typeof info.category === "object" ? info.category as Record<string, unknown> : null;
+      const categoryKey = info.categoryKey ?? nestedCategory?.key;
+      const categoryLabel = info.categoryLabel ?? nestedCategory?.label ?? (typeof categoryKey === "string" ? categoryKey : null);
+      const configured = readSeatsIoPricing(settings).find((entry) => String(entry.category) === String(categoryKey));
+      return {
+        ...ticket,
+        metadata: {
+          ...metadata,
+          ...(typeof categoryLabel === "string" && categoryLabel.trim() ? { ticketTypeName: categoryLabel.trim() } : {}),
+          ...(configured ? { price: configured.price } : {}),
+        },
+      };
+    } catch {
+      return ticket;
+    }
+  }));
+
   return NextResponse.json({
     profile: {
       email: user.email,
@@ -136,7 +167,7 @@ export async function GET() {
           }
         : null,
     orders: orders ?? [],
-    tickets: tickets ?? [],
+    tickets: enrichedTickets,
     notifications,
     messages: messages ?? [],
     unreadCount: (notifications ?? []).filter((notification: any) => !notification.is_read).length,
