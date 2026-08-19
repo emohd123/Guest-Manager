@@ -59,6 +59,7 @@ export interface TicketPDFData {
 const W = 595;
 const H = 842;
 const HERO_H = 320;
+const HERO_MARGIN = 28;
 
 export function TicketPDFDocument({ data }: { data: TicketPDFData }) {
   const accentColor = data.design.labelColor ?? "#2563EB";
@@ -85,39 +86,38 @@ export function TicketPDFDocument({ data }: { data: TicketPDFData }) {
     },
     bgImage: {
       position: "absolute",
-      top: -(HERO_H * (posY / 100) * (imgScale - 1)),
-      left: -(W * (posX / 100) * (imgScale - 1)),
-      width: W * imgScale,
-      height: HERO_H * imgScale,
+      top: HERO_MARGIN - (HERO_H * (posY / 100) * (imgScale - 1)),
+      left: HERO_MARGIN - ((W - HERO_MARGIN * 2) * (posX / 100) * (imgScale - 1)),
+      width: (W - HERO_MARGIN * 2) * imgScale,
+      height: (HERO_H - HERO_MARGIN * 2) * imgScale,
+      borderRadius: 10,
     },
     logoHeader: {
       position: "absolute",
-      top: 18,
-      left: 24,
-      height: 42,
-      padding: "6 10 6 6",
+      top: 4,
+      left: HERO_MARGIN,
+      height: 20,
       flexDirection: "row",
       alignItems: "center",
-      gap: 7,
-      backgroundColor: "rgba(255,255,255,0.96)",
-      borderRadius: 8,
+      gap: 4,
     },
     logoMark: {
-      width: 28,
-      height: 28,
+      width: 20,
+      height: 20,
       objectFit: "contain",
     },
     logoText: {
-      fontSize: 17,
+      fontSize: 13,
       fontFamily: "Helvetica-Bold",
       color: "#111827",
     },
     overlay: {
       position: "absolute",
-      top: 0,
-      left: 0,
-      width: W,
-      height: HERO_H,
+      top: HERO_MARGIN,
+      left: HERO_MARGIN,
+      width: W - HERO_MARGIN * 2,
+      height: HERO_H - HERO_MARGIN * 2,
+      borderRadius: 10,
       backgroundColor: "rgba(0,0,0,0.15)",
     },
     bottomStrip: {
