@@ -103,7 +103,7 @@ export function FallingSparkles({
     let width = 0;
     let height = 0;
     let dpr = 1;
-    let sparkles: Sparkle[] = [];
+    const sparkles: Sparkle[] = [];
     let raf = 0;
     let running = true;
 
@@ -218,3 +218,4 @@ export function FallingSparkles({
 
   return <canvas ref={canvasRef} aria-hidden="true" className={className} />;
 }
+
