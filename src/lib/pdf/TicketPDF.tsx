@@ -42,6 +42,8 @@ export interface TicketPDFData {
   attendeeName: string;
   price?: string;
   orderNumber: string;
+  /** Unique ticket barcode/number printed on the ticket. */
+  ticketNumber?: string;
   qrCodeDataUri: string;
   design: TicketPDFDesign;
   /** Unique event code shown at the bottom of the ticket (when enabled in design settings) */
@@ -152,9 +154,9 @@ export function TicketPDFDocument({ data }: { data: TicketPDFData }) {
       textAlign: "center",
     },
     extraDetails: {
-      borderTopWidth: 1,
-      borderTopColor: "#e5e7eb",
-      paddingTop: 7,
+      backgroundColor: "#f8fafc",
+      borderRadius: 8,
+      padding: 8,
       gap: 4,
     },
     extraLabel: {
@@ -167,6 +169,19 @@ export function TicketPDFDocument({ data }: { data: TicketPDFData }) {
     extraText: {
       fontSize: 8,
       color: textColor,
+      lineHeight: 1.35,
+    },
+    termsList: {
+      gap: 3,
+    },
+    termRow: {
+      flexDirection: "row",
+      alignItems: "flex-start",
+      gap: 4,
+    },
+    termBullet: {
+      fontSize: 8,
+      color: accentColor,
       lineHeight: 1.35,
     },
   });
@@ -204,6 +219,7 @@ export function TicketPDFDocument({ data }: { data: TicketPDFData }) {
             {visible.attendeeName && renderField("ATTENDEE", data.attendeeName)}
             {visible.price && data.price && renderField("PRICE", data.price)}
             {visible.orderNumber && renderField("ORDER #", data.orderNumber)}
+            {data.ticketNumber && renderField("TICKET NUMBER", data.ticketNumber)}
             {/* Visitor Portal Code + App Download QR — side by side */}
             {data.design.showVisitorCode !== false && data.visitorCode ? (
               <View style={[
@@ -259,7 +275,14 @@ export function TicketPDFDocument({ data }: { data: TicketPDFData }) {
           {data.terms?.length ? (
             <View style={styles.extraDetails}>
               <Text style={styles.extraLabel}>TERMS &amp; CONDITIONS</Text>
-              <Text style={styles.extraText}>{data.terms.join(" • ")}</Text>
+              <View style={styles.termsList}>
+                {data.terms.map((term, index) => (
+                  <View key={`${term}-${index}`} style={styles.termRow}>
+                    <Text style={styles.termBullet}>•</Text>
+                    <Text style={styles.extraText}>{term}</Text>
+                  </View>
+                ))}
+              </View>
             </View>
           ) : null}
         </View>
