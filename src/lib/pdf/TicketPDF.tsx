@@ -62,7 +62,7 @@ const HERO_H = 320;
 const HERO_MARGIN = 28;
 
 export function TicketPDFDocument({ data }: { data: TicketPDFData }) {
-  const accentColor = data.design.labelColor ?? "#2563EB";
+  const accentColor = data.design.labelColor ?? "#4F46E5";
   const textColor = data.design.textColor ?? "#111111";
   const posX = data.design.imagePositionX ?? 50;
   const posY = data.design.imagePositionY ?? 50;
@@ -91,6 +91,7 @@ export function TicketPDFDocument({ data }: { data: TicketPDFData }) {
       width: (W - HERO_MARGIN * 2) * imgScale,
       height: (HERO_H - HERO_MARGIN * 2) * imgScale,
       borderRadius: 10,
+      objectFit: "cover",
     },
     logoHeader: {
       position: "absolute",
