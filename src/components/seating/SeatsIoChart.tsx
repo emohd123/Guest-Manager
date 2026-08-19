@@ -43,6 +43,8 @@ export function SeatsIoChart({
     {},
   );
   const [secondsLeft, setSecondsLeft] = useState(900);
+  const resolvedEventKey =
+    eventKey || (chartKey ? `iticket-${eventId}-${chartKey}`.slice(0, 128) : eventId);
   useEffect(() => {
     if (!fullScreen) return;
     const previousOverflow = document.body.style.overflow;
@@ -79,11 +81,11 @@ export function SeatsIoChart({
     const load = async () => {
       if (!fullScreen) return;
       if (cancelled || !ref.current) return;
-      if (eventKey && chartKey) {
+      if (chartKey) {
         const ensureResponse = await fetch(`/api/seatsio/events/${encodeURIComponent(eventId)}`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ eventKey, chartKey }),
+          body: JSON.stringify({ eventKey: resolvedEventKey, chartKey }),
         });
         if (!ensureResponse.ok) {
           const payload = await ensureResponse.json().catch(() => ({}));
@@ -96,7 +98,7 @@ export function SeatsIoChart({
         chart = new (window as any).seatsio.SeatingChart({
           divId: ref.current.id,
           workspaceKey,
-          event: eventKey ?? eventId,
+          event: resolvedEventKey,
           session: "continue",
           selectionMode: "multi",
           showTooltip: false,
