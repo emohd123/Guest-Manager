@@ -231,7 +231,8 @@ export async function POST(request: NextRequest) {
     // catalog prices rather than trusting the client subtotal.
     const catalogSubtotal = aggregatedCart.reduce((sum, item) => {
       const ticketType = validTicketTypes.find((record) => record.id === item.ticketTypeId);
-      const unitPrice = selectedSeatIds?.length ? item.price : (ticketType?.price ?? 0);\n      return sum + unitPrice * item.quantity;
+      const unitPrice = selectedSeatIds?.length ? item.price : (ticketType?.price ?? 0);
+      return sum + unitPrice * item.quantity;
     }, 0);
     if (!event[0].registrationEnabled && isPaidEvent && catalogSubtotal > 0) {
       return NextResponse.json(
