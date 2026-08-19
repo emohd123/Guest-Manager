@@ -12,7 +12,8 @@ export type ScanResult =
   | { status: "success"; attendeeName: string; ticketType: string; barcode: string }
   | { status: "already_checked_in"; attendeeName: string; barcode: string }
   | { status: "not_found"; barcode: string }
-  | { status: "voided"; attendeeName: string; barcode: string };
+  | { status: "voided"; attendeeName: string; barcode: string }
+  | { status: "expired"; attendeeName: string; barcode: string; expiresAt?: string };
 
 interface QRScannerModalProps {
   open: boolean;
@@ -235,6 +236,14 @@ export function QRScannerModal({ open, onClose, onScan }: QRScannerModalProps) {
             <XCircle className="h-10 w-10 text-red-100" />
             <p className="text-white font-bold text-lg">{lastResult.attendeeName}</p>
             <p className="text-red-100 font-semibold">Already Scanned — Entry Denied</p>
+            <p className="text-xs text-white/70">Swipe or tap the scan icon for the next ticket</p>
+          </div>
+        ) : lastResult.status === "expired" ? (
+          <div className="flex flex-col items-center gap-2 text-center animate-in fade-in-0 duration-300">
+            <XCircle className="h-10 w-10 text-amber-200" />
+            <p className="text-white font-bold text-lg">{lastResult.attendeeName}</p>
+            <p className="text-amber-100 font-semibold">Ticket Expired — Entry Denied</p>
+            {lastResult.expiresAt ? <p className="text-xs text-white/80">Expired {new Date(lastResult.expiresAt).toLocaleString()}</p> : null}
             <p className="text-xs text-white/70">Swipe or tap the scan icon for the next ticket</p>
           </div>
         ) : lastResult.status === "voided" ? (
