@@ -10,6 +10,7 @@ import { TicketPDFDocument } from "@/lib/pdf/TicketPDF";
 import { formatMoney } from "@/lib/marketplace";
 import { generateQRCodeDataUri } from "@/server/utils/qrcode";
 import { createSupabaseAdminClient } from "@/server/supabase/admin";
+import { readSeatsIoChartKey, readSeatsIoEventKey, readSeatsIoObjectInfos, readSeatsIoPricing, seatsIoEventKeyFor } from "@/lib/seatsio";
 
 type TicketRow = {
   id: string;
@@ -124,13 +125,35 @@ export async function GET(
       .filter((value): value is string => typeof value === "string" && value.trim().length > 0)
       .join(" · ");
     const metadata = ticket.metadata ?? {};
-    const seatCategory = metadata.seat?.categoryName ?? metadata.seat?.category ?? metadata.categoryName ?? metadata.ticketTypeName;
+    let resolvedMetadata = metadata;
+    if (metadata.seatingProvider === "seats.io" && typeof metadata.selectedSeatId === "string" && event) {
+      try {
+        const chartKey = readSeatsIoChartKey(event.settings);
+        const eventKey = readSeatsIoEventKey(event.settings) ?? (chartKey ? seatsIoEventKeyFor(event.id, chartKey) : null);
+        if (eventKey) {
+          const infos = await readSeatsIoObjectInfos(eventKey, [metadata.selectedSeatId]);
+          const info = infos[metadata.selectedSeatId] ?? {};
+          const nestedCategory = info.category && typeof info.category === "object" ? info.category as Record<string, unknown> : null;
+          const categoryKey = info.categoryKey ?? nestedCategory?.key;
+          const categoryLabel = info.categoryLabel ?? nestedCategory?.label ?? (typeof categoryKey === "string" ? categoryKey : null);
+          const configured = readSeatsIoPricing(event.settings).find((entry) => String(entry.category) === String(categoryKey));
+          resolvedMetadata = {
+            ...metadata,
+            ...(typeof categoryLabel === "string" && categoryLabel.trim() ? { ticketTypeName: categoryLabel.trim() } : {}),
+            ...(configured ? { price: configured.price } : {}),
+          };
+        }
+      } catch {
+        // Keep the persisted ticket/type fallback when Seats.io lookup is unavailable.
+      }
+    }
+    const seatCategory = resolvedMetadata.seat?.categoryName ?? resolvedMetadata.seat?.category ?? resolvedMetadata.categoryName ?? resolvedMetadata.ticketTypeName;
     const ticketTypeLabel = typeof metadata.ticketTypeName === "string" && metadata.ticketTypeName.trim()
       ? metadata.ticketTypeName.trim()
       : ticketType?.name ?? (typeof seatCategory === "string" ? seatCategory : "General Admission");
-    const rawTicketPrice = metadata.seat?.price ?? metadata.price ?? ticketType?.price;
-    const ticketCurrency = typeof metadata.currency === "string" && metadata.currency.trim()
-      ? metadata.currency.trim().toUpperCase()
+    const rawTicketPrice = resolvedMetadata.seat?.price ?? resolvedMetadata.price ?? ticketType?.price;
+    const ticketCurrency = typeof resolvedMetadata.currency === "string" && metadata.currency.trim()
+      ? resolvedMetadata.currency.trim().toUpperCase()
       : ticketType?.currency ?? "EGP";
     const formattedTicketPrice = rawTicketPrice == null
       ? undefined
@@ -160,8 +183,8 @@ export async function GET(
           visibleFields: ticketDesign.visibleFields,
         },
         visitorCode: event?.visitor_code ?? undefined,
-        seat: ticket.metadata?.seat
-          ? `${ticket.metadata.seat.section} · Row ${ticket.metadata.seat.row} · Seat ${ticket.metadata.seat.seat}`
+        seat: resolvedMetadata.seat
+          ? `${resolvedMetadata.seat.section} · Row ${resolvedMetadata.seat.row} · Seat ${resolvedMetadata.seat.seat}`
           : undefined,
       },
     }) as ReactElement<DocumentProps, string | JSXElementConstructor<unknown>>;
