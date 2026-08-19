@@ -37,6 +37,8 @@ export interface TicketPDFData {
   ticketType: string;
   venue?: string;
   startDate?: string;
+  description?: string;
+  terms?: string[];
   attendeeName: string;
   price?: string;
   orderNumber: string;
@@ -99,9 +101,14 @@ export function TicketPDFDocument({ data }: { data: TicketPDFData }) {
       right: 0,
       bottom: 0,
       backgroundColor: "#ffffff",
-      padding: "28 32 28 32",
+      padding: "24 28 22 28",
+      flexDirection: "column",
+      gap: 10,
+    },
+    detailsRow: {
       flexDirection: "row",
       alignItems: "flex-start",
+      flex: 1,
       gap: 12,
     },
     fieldsGrid: {
@@ -144,6 +151,24 @@ export function TicketPDFDocument({ data }: { data: TicketPDFData }) {
       color: "#9ca3af",
       textAlign: "center",
     },
+    extraDetails: {
+      borderTopWidth: 1,
+      borderTopColor: "#e5e7eb",
+      paddingTop: 7,
+      gap: 4,
+    },
+    extraLabel: {
+      fontSize: 7,
+      fontFamily: "Helvetica-Bold",
+      textTransform: "uppercase",
+      letterSpacing: 1.1,
+      color: accentColor,
+    },
+    extraText: {
+      fontSize: 8,
+      color: textColor,
+      lineHeight: 1.35,
+    },
   });
 
   const renderField = (label: string, value: string | undefined) => {
@@ -169,7 +194,8 @@ export function TicketPDFDocument({ data }: { data: TicketPDFData }) {
 
         {/* Bottom info strip */}
         <View style={styles.bottomStrip}>
-          <View style={styles.fieldsGrid}>
+          <View style={styles.detailsRow}>
+            <View style={styles.fieldsGrid}>
             {visible.eventName && renderField("EVENT", data.eventName)}
             {visible.startDate && renderField("DATE", data.startDate)}
             {visible.ticketType && renderField("TICKET TYPE", data.ticketType)}
@@ -214,15 +240,28 @@ export function TicketPDFDocument({ data }: { data: TicketPDFData }) {
                 ) : null}
               </View>
             ) : null}
-          </View>
-
-          {/* QR Code */}
-          {visible.barcode && (
-            <View style={styles.qrSection}>
-              <Image src={data.qrCodeDataUri} style={styles.qrImage} />
-              <Text style={styles.barcodeText}>{data.orderNumber}</Text>
             </View>
-          )}
+
+            {/* QR Code */}
+            {visible.barcode && (
+              <View style={styles.qrSection}>
+                <Image src={data.qrCodeDataUri} style={styles.qrImage} />
+                <Text style={styles.barcodeText}>{data.orderNumber}</Text>
+              </View>
+            )}
+          </View>
+          {data.description ? (
+            <View style={styles.extraDetails}>
+              <Text style={styles.extraLabel}>EVENT DETAILS</Text>
+              <Text style={styles.extraText}>{data.description}</Text>
+            </View>
+          ) : null}
+          {data.terms?.length ? (
+            <View style={styles.extraDetails}>
+              <Text style={styles.extraLabel}>TERMS &amp; CONDITIONS</Text>
+              <Text style={styles.extraText}>{data.terms.join(" • ")}</Text>
+            </View>
+          ) : null}
         </View>
       </Page>
     </Document>
