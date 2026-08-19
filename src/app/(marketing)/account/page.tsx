@@ -320,15 +320,15 @@ export function TicketRow({ ticket }: { ticket: Record<string, any> }) {
               </div>
             )}
             <div className="min-w-0">
-              <p className={`text-xs font-black uppercase tracking-[0.24em] ${used ? "text-amber-300" : "text-emerald-300"}`}>{used ? "Used ticket" : "Available ticket"}</p>
+              <p className={`text-xs font-black uppercase tracking-[0.24em] ${used || expired ? "text-amber-300" : "text-emerald-300"}`}>{used ? "Used ticket" : expired ? "Expired ticket" : "Available ticket"}</p>
               <h3 className="mt-2 truncate text-xl font-black">{event?.title ?? "Event"}</h3>
               <p className="mt-1 truncate text-sm text-slate-300">{venueName}</p>
               <p className="mt-1 truncate text-xs text-slate-400">{location}</p>
             </div>
           </div>
-          {expired ? (
+          {used || expired ? (
             <span className="inline-flex shrink-0 items-center gap-2 rounded-full bg-white/15 px-3 py-2 text-xs font-black text-amber-200">
-              Expired
+              {used ? "Used" : "Expired"}
             </span>
           ) : (
             <a
@@ -360,7 +360,7 @@ export function TicketRow({ ticket }: { ticket: Record<string, any> }) {
           </div>
         </div>
         </div>
-        <TicketQr value={createTicketQrPayload(ticket.barcode, expiresAt)} />
+        <TicketQr value={createTicketQrPayload(ticket.barcode, expiresAt)} disabled={used || expired} label={used ? "Used" : "Expired"} />
       </div>
       <div className="border-t border-slate-200 px-5 py-4">
       <Button asChild className="w-full rounded-full bg-slate-950 font-black text-white hover:bg-slate-800">
@@ -371,13 +371,33 @@ export function TicketRow({ ticket }: { ticket: Record<string, any> }) {
   );
 }
 
-function TicketQr({ value }: { value: string }) {
+function TicketQr({ value, disabled = false, label = "Used" }: { value: string; disabled?: boolean; label?: string }) {
   const [src, setSrc] = useState("");
   useEffect(() => {
     if (!value) return;
     QRCode.toDataURL(value, { width: 180, margin: 1, errorCorrectionLevel: "M" }).then(setSrc).catch(() => setSrc(""));
   }, [value]);
-  return src ? <img src={src} alt="Ticket QR code" className="h-36 w-36 rounded-xl bg-white p-2" /> : <div className="flex h-36 w-36 items-center justify-center rounded-xl bg-slate-100"><QrCode className="h-12 w-12 text-slate-700" /></div>;
+
+  return (
+    <div className="relative h-36 w-36 overflow-hidden rounded-xl bg-white p-2">
+      {src ? (
+        <img
+          src={src}
+          alt={disabled ? `${label} ticket QR code` : "Ticket QR code"}
+          className={disabled ? "h-full w-full blur-[6px] opacity-30" : "h-full w-full"}
+        />
+      ) : (
+        <div className="flex h-full w-full items-center justify-center bg-slate-100">
+          <QrCode className="h-12 w-12 text-slate-700" />
+        </div>
+      )}
+      {disabled ? (
+        <div className="absolute inset-0 flex items-center justify-center bg-slate-950/45 text-center text-lg font-black text-white">
+          {label}
+        </div>
+      ) : null}
+    </div>
+  );
 }
 
 function OrderRow({ order }: { order: Record<string, any> }) {
