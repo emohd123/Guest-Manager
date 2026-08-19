@@ -7,6 +7,7 @@ import { renderToBuffer } from "@react-pdf/renderer";
 import type { DocumentProps } from "@react-pdf/renderer";
 import type { JSXElementConstructor, ReactElement } from "react";
 import { TicketPDFDocument } from "@/lib/pdf/TicketPDF";
+import { formatMoney } from "@/lib/marketplace";
 import { generateQRCodeDataUri } from "@/server/utils/qrcode";
 import { createSupabaseAdminClient } from "@/server/supabase/admin";
 
@@ -24,6 +25,8 @@ type TicketRow = {
 type TicketTypeRow = {
   id: string;
   name: string | null;
+  price: number | null;
+  currency: string | null;
 };
 
 type EventRow = {
@@ -78,7 +81,7 @@ export async function GET(
       ticket.ticket_type_id
         ? supabase
             .from("ticket_types")
-            .select("id,name")
+            .select("id,name,price,currency")
             .eq("id", ticket.ticket_type_id)
             .maybeSingle()
         : Promise.resolve({ data: null, error: null }),
@@ -122,6 +125,16 @@ export async function GET(
       .join(" · ");
     const metadata = ticket.metadata ?? {};
     const seatCategory = metadata.seat?.categoryName ?? metadata.seat?.category ?? metadata.categoryName ?? metadata.ticketTypeName;
+    const ticketTypeLabel = typeof metadata.ticketTypeName === "string" && metadata.ticketTypeName.trim()
+      ? metadata.ticketTypeName.trim()
+      : ticketType?.name ?? (typeof seatCategory === "string" ? seatCategory : "General Admission");
+    const rawTicketPrice = metadata.seat?.price ?? metadata.price ?? ticketType?.price;
+    const ticketCurrency = typeof metadata.currency === "string" && metadata.currency.trim()
+      ? metadata.currency.trim().toUpperCase()
+      : ticketType?.currency ?? "EGP";
+    const formattedTicketPrice = rawTicketPrice == null
+      ? undefined
+      : formatMoney(Number(rawTicketPrice), ticketCurrency);
     const formattedDate = event?.starts_at
       ? format(new Date(event.starts_at), "MMM d, yyyy • h:mm a")
       : undefined;
@@ -129,13 +142,15 @@ export async function GET(
     const pdfElement = React.createElement(TicketPDFDocument, {
       data: {
         eventName: event?.title ?? "Event",
-        ticketType: ticketType?.name ?? (typeof seatCategory === "string" ? seatCategory : "General Admission"),
+        ticketType: ticketTypeLabel,
         venue: venue || undefined,
         startDate: formattedDate,
         description: (typeof publicPage.description === "string" && publicPage.description.trim()) || event?.description || undefined,
         terms,
         attendeeName: ticket.attendee_name ?? "Attendee",
+        price: formattedTicketPrice,
         orderNumber: order?.order_number ?? ticket.barcode,
+        ticketNumber: ticket.barcode,
         qrCodeDataUri,
         design: {
           backgroundImageUrl: ticketDesign.backgroundImageUrl ?? event?.cover_image_url ?? publicPage.coverImage ?? publicPage.heroImage ?? undefined,
