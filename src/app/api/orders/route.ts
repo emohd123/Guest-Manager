@@ -18,7 +18,7 @@ import {
 } from "@/server/db/schema";
 import { generateAndSendTicket } from "@/server/actions/generateAndSendTicket";
 import { createClient as createSupabaseServerClient } from "@/lib/supabase/server";
-import { bookSeatsIoObjects, readSeatsIoEventKey, readSeatsIoObjectInfos, readSeatsIoPricing, releaseSeatsIoObjects } from "@/lib/seatsio";
+import { bookSeatsIoObjects, readSeatsIoChartKey, readSeatsIoEventKey, readSeatsIoObjectInfos, readSeatsIoPricing, releaseSeatsIoObjects, seatsIoEventKeyFor } from "@/lib/seatsio";
 
 function generateOrderNumber(): string {
   const timestamp = Date.now().toString(36).toUpperCase();
@@ -149,7 +149,8 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: "No active ticket type is configured for this event." }, { status: 400 });
       }
       const fallbackPrice = Number(type.price ?? 0);
-      const seatsIoEventKey = readSeatsIoEventKey(event[0].settings) ?? event[0].id;
+      const seatsIoChartKey = readSeatsIoChartKey(event[0].settings);
+      const seatsIoEventKey = readSeatsIoEventKey(event[0].settings) ?? (seatsIoChartKey ? seatsIoEventKeyFor(event[0].id, seatsIoChartKey) : event[0].id);
       const categoryPrices = readSeatsIoPricing(event[0].settings);
       const seatPrices = new Map<number, number>();
       if (categoryPrices.length) {
