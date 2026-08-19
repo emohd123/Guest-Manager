@@ -337,7 +337,7 @@ function AccountSettings() {
                   <div className="flex justify-between items-center pt-4 border-t border-white/5">
                     <div className="space-y-1">
                       <p className="text-[10px] font-black uppercase tracking-widest text-white/20">Email</p>
-                      <p className="text-sm font-bold text-white/60">{user?.email}</p>
+                      <p className="text-sm font-bold text-slate-600 dark:text-white/60">{user?.email}</p>
                     </div>
                     <Button variant="ghost" className="h-10 px-4 rounded-xl text-white/20 hover:text-white hover:bg-white/5 font-black text-[10px] uppercase tracking-widest">
                       Edit
@@ -673,7 +673,7 @@ function TeamSettings() {
                     <h4 className="text-lg font-black text-white italic tracking-tighter leading-none mb-1">
                       {member.name ?? "Unknown User"}
                     </h4>
-                    <p className="text-[10px] font-bold text-white/20 uppercase tracking-widest leading-none">
+                    <p className="text-[10px] font-bold text-slate-600 dark:text-white/50 uppercase tracking-widest leading-none">
                       {member.email}
                     </p>
                   </div>
@@ -770,7 +770,7 @@ function AccountAccessSettings() {
           const draft = drafts[account.id] ?? { access: "none" as const, permissions: [] };
           return (
             <div key={account.id} className="theme-panel flex flex-col gap-5 p-6 lg:flex-row lg:items-center lg:justify-between">
-              <div className="min-w-0"><p className="truncate font-black text-foreground dark:text-white">{account.name ?? "Customer"}</p><p className="truncate text-xs text-muted-foreground">{account.email}</p></div>
+              <div className="min-w-0"><p className="truncate font-black text-foreground dark:text-white">{account.name ?? "Customer"}</p><p className="truncate text-xs text-slate-600 dark:text-muted-foreground">{account.email}</p></div>
               <div className="flex flex-wrap items-center gap-3">
                 <Select value={draft.access} onValueChange={(value: "none" | "limited" | "full") => setDrafts((all) => ({ ...all, [account.id]: { ...draft, access: value } }))}>
                   <SelectTrigger className="w-36"><SelectValue /></SelectTrigger>
@@ -898,5 +898,6 @@ function _ApiSettings_UNUSED() {
     </div>
   );
 }
+
 
 
