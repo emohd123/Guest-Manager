@@ -102,7 +102,7 @@ export function SeatsIoChart({
           session: "continue",
           selectionMode: "multi",
           showTooltip: false,
-          pricing: { prices: pricing },
+          pricing,
           priceFormatter: (price: number) => `${currency} ${price}`,
           onObjectSelected: (obj: any) =>
             setSelected((current) => {
