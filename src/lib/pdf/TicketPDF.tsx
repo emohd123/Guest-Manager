@@ -58,7 +58,7 @@ export interface TicketPDFData {
 // A4 portrait ticket: a visual upper half and a practical detail/QR lower half.
 const W = 595;
 const H = 842;
-const HERO_H = 404;
+const HERO_H = 320;
 
 export function TicketPDFDocument({ data }: { data: TicketPDFData }) {
   const accentColor = data.design.labelColor ?? "#2563EB";
