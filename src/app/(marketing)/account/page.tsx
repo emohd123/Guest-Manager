@@ -289,6 +289,7 @@ export function TicketRow({ ticket }: { ticket: Record<string, any> }) {
   const ticketType = ticket.ticket_types;
   const url = event?.companies?.slug && event?.slug ? `/e/${event.companies.slug}/${event.slug}` : "/events";
   const publicPage = event?.settings?.publicPage ?? {};
+  const eventImage = event?.cover_image_url || publicPage.coverImage || publicPage.heroImage || "";
   const venueName = publicPage.venueName || publicPage.locationText || "Venue TBA";
   const location = publicPage.locationText || "Cairo, Egypt";
   const checkedIn = ticket.checked_in || ticket.status === "checked_in";
@@ -296,13 +297,28 @@ export function TicketRow({ ticket }: { ticket: Record<string, any> }) {
   return (
     <div className="overflow-hidden rounded-[1.5rem] border border-slate-200 bg-white shadow-sm">
       <div className="border-b border-slate-200 bg-slate-950 px-5 py-4 text-white">
-        <div className="flex items-center justify-between gap-3">
-          <p className={`text-xs font-black uppercase tracking-[0.24em] ${used ? "text-amber-300" : "text-emerald-300"}`}>{used ? "Used ticket" : "Available ticket"}</p>
-          <span className="font-mono text-xs text-slate-300">{ticket.barcode}</span>
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex min-w-0 items-start gap-4">
+            {eventImage ? (
+              <img
+                src={eventImage}
+                alt=""
+                className="h-16 w-16 shrink-0 rounded-xl object-cover ring-1 ring-white/15"
+              />
+            ) : (
+              <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-xl bg-white/10 text-xl font-black text-cyan-200">
+                {(event?.title ?? "E").slice(0, 1).toUpperCase()}
+              </div>
+            )}
+            <div className="min-w-0">
+              <p className={`text-xs font-black uppercase tracking-[0.24em] ${used ? "text-amber-300" : "text-emerald-300"}`}>{used ? "Used ticket" : "Available ticket"}</p>
+              <h3 className="mt-2 truncate text-xl font-black">{event?.title ?? "Event"}</h3>
+              <p className="mt-1 truncate text-sm text-slate-300">{venueName}</p>
+              <p className="mt-1 truncate text-xs text-slate-400">{location}</p>
+            </div>
+          </div>
+          <span className="shrink-0 font-mono text-xs text-slate-300">{ticket.barcode}</span>
         </div>
-        <h3 className="mt-2 text-xl font-black">{event?.title ?? "Event"}</h3>
-        <p className="mt-1 text-sm text-slate-300">{venueName}</p>
-        <p className="mt-1 text-xs text-slate-400">{location}</p>
       </div>
       <div className="grid gap-5 p-5 sm:grid-cols-[1fr_auto] sm:items-center">
         <div>
