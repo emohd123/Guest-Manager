@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { format } from "date-fns";
 import QRCode from "qrcode";
-import { Bell, CalendarDays, Heart, LayoutDashboard, LogOut, MessageSquare, QrCode, ReceiptText, Ticket, UserRound } from "lucide-react";
+import { Bell, CalendarDays, Download, Heart, LayoutDashboard, LogOut, MessageSquare, QrCode, ReceiptText, Ticket, UserRound } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -303,10 +303,10 @@ export function TicketRow({ ticket }: { ticket: Record<string, any> }) {
               <img
                 src={eventImage}
                 alt=""
-                className="h-16 w-16 shrink-0 rounded-xl object-cover ring-1 ring-white/15"
+                className="h-24 w-24 shrink-0 rounded-2xl object-cover ring-1 ring-white/15"
               />
             ) : (
-              <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-xl bg-white/10 text-xl font-black text-cyan-200">
+              <div className="flex h-24 w-24 shrink-0 items-center justify-center rounded-2xl bg-white/10 text-3xl font-black text-cyan-200">
                 {(event?.title ?? "E").slice(0, 1).toUpperCase()}
               </div>
             )}
@@ -317,7 +317,13 @@ export function TicketRow({ ticket }: { ticket: Record<string, any> }) {
               <p className="mt-1 truncate text-xs text-slate-400">{location}</p>
             </div>
           </div>
-          <span className="shrink-0 font-mono text-xs text-slate-300">{ticket.barcode}</span>
+          <a
+            href={`/api/tickets/${ticket.id}/pdf`}
+            className="inline-flex shrink-0 items-center gap-2 rounded-full bg-white px-3 py-2 text-xs font-black text-slate-950 transition hover:bg-cyan-100"
+          >
+            <Download className="h-4 w-4" />
+            <span className="hidden sm:inline">Download PDF</span>
+          </a>
         </div>
       </div>
       <div className="grid gap-5 p-5 sm:grid-cols-[1fr_auto] sm:items-center">
