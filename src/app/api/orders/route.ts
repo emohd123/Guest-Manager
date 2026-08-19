@@ -18,7 +18,7 @@ import {
 } from "@/server/db/schema";
 import { generateAndSendTicket } from "@/server/actions/generateAndSendTicket";
 import { createClient as createSupabaseServerClient } from "@/lib/supabase/server";
-import { bookSeatsIoObjects, readSeatsIoEventKey, releaseSeatsIoObjects } from "@/lib/seatsio";
+import { bookSeatsIoObjects, readSeatsIoEventKey, readSeatsIoObjectInfos, readSeatsIoPricing, releaseSeatsIoObjects } from "@/lib/seatsio";
 
 function generateOrderNumber(): string {
   const timestamp = Date.now().toString(36).toUpperCase();
@@ -139,15 +139,40 @@ export async function POST(request: NextRequest) {
       const activeTicketTypes = await db
         .select()
         .from(ticketTypes)
-        .where(and(eq(ticketTypes.eventId, event[0].id), eq(ticketTypes.status, "active")))
+        .where(and(eq(ticketTypes.eventId, event[0].id), eq(ticketTypes.status, "active")));
       const requestedTypeId = requestedCartItems?.[0]?.ticketTypeId;
-      const type = activeTicketTypes.find((record) => record.id === requestedTypeId)
-        ?? activeTicketTypes.find((record) => Number(record.price ?? 0) === 0)
-        ?? activeTicketTypes[0];
+      const type =
+        activeTicketTypes.find((record) => record.id === requestedTypeId) ??
+        activeTicketTypes.find((record) => Number(record.price ?? 0) === 0) ??
+        activeTicketTypes[0];
       if (!type) {
         return NextResponse.json({ error: "No active ticket type is configured for this event." }, { status: 400 });
       }
-      cartItems = [{ ticketTypeId: type.id, name: type.name, price: type.price ?? 0, currency: type.currency ?? "EGP", quantity: selectedSeatIds.length }];
+      const fallbackPrice = Number(type.price ?? 0);
+      const seatsIoEventKey = readSeatsIoEventKey(event[0].settings) ?? event[0].id;
+      const categoryPrices = readSeatsIoPricing(event[0].settings);
+      const seatPrices = new Map<number, number>();
+      if (categoryPrices.length) {
+        const objectInfos = await readSeatsIoObjectInfos(seatsIoEventKey, selectedSeatIds);
+        selectedSeatIds.forEach((seatId) => {
+          const info = objectInfos[seatId] ?? {};
+          const nestedCategory = info.category && typeof info.category === "object"
+            ? (info.category as Record<string, unknown>) : null;
+          const category = info.categoryKey ?? info.categoryLabel ?? nestedCategory?.key ?? nestedCategory?.label;
+          const configured = categoryPrices.find((entry) => String(entry.category) === String(category));
+          const price = configured?.price ?? fallbackPrice;
+          seatPrices.set(price, (seatPrices.get(price) ?? 0) + 1);
+        });
+      } else {
+        seatPrices.set(fallbackPrice, selectedSeatIds.length);
+      }
+      cartItems = Array.from(seatPrices, ([price, quantity]) => ({
+        ticketTypeId: type.id,
+        name: type.name,
+        price,
+        currency: type.currency ?? "EGP",
+        quantity,
+      }));
     }
 
     const eventSettings =
@@ -206,7 +231,7 @@ export async function POST(request: NextRequest) {
     // catalog prices rather than trusting the client subtotal.
     const catalogSubtotal = aggregatedCart.reduce((sum, item) => {
       const ticketType = validTicketTypes.find((record) => record.id === item.ticketTypeId);
-      return sum + (ticketType?.price ?? 0) * item.quantity;
+      const unitPrice = selectedSeatIds?.length ? item.price : (ticketType?.price ?? 0);\n      return sum + unitPrice * item.quantity;
     }, 0);
     if (!event[0].registrationEnabled && isPaidEvent && catalogSubtotal > 0) {
       return NextResponse.json(
@@ -266,7 +291,7 @@ export async function POST(request: NextRequest) {
           ...item,
           name: ticketType.name ?? item.name,
           currency: ticketType.currency ?? item.currency,
-          price: isPaidEvent ? (ticketType.price ?? item.price) : 0,
+          price: isPaidEvent\n            ? selectedSeatIds?.length\n              ? item.price\n              : (ticketType.price ?? item.price)\n            : 0,
         };
       })
       .filter(Boolean) as Array<
