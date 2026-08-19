@@ -137,8 +137,10 @@ export async function GET() {
         ...ticket,
         metadata: {
           ...metadata,
-          ...(typeof categoryLabel === "string" && categoryLabel.trim() ? { ticketTypeName: categoryLabel.trim() } : {}),
-          ...(configured ? { price: configured.price } : {}),
+          ...(typeof metadata.ticketTypeName !== "string" && typeof categoryLabel === "string" && categoryLabel.trim()
+            ? { ticketTypeName: categoryLabel.trim() }
+            : {}),
+          ...(metadata.price == null && configured ? { price: configured.price } : {}),
         },
       };
     } catch {
