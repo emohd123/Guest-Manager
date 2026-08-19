@@ -12,7 +12,15 @@ export const settingsRouter = router({
 
     if (error) throw new Error(error.message);
     if (!data) throw new Error("Company not found");
-    return data;
+    // Fill missing legacy profile names from Supabase Auth metadata.
+    if (typeof data.name === "string" && data.name.trim()) return data;
+    const { data: authData } = await ctx.supabase.auth.getUser();
+    const metadata = authData.user?.user_metadata ?? {};
+    const fallbackName = [metadata.full_name, metadata.name]
+      .find((value) => typeof value === "string" && value.trim())
+      ?? authData.user?.email?.split("@")[0]
+      ?? "";
+    return { ...data, name: fallbackName };
   }),
 
   updateCompany: dashboardAdminProcedure
