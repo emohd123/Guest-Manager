@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   BackHandler,
@@ -51,7 +51,7 @@ import { PremiumIntroScreen } from "./src/screens/PremiumIntroScreen";
 import { VisitorLoginScreen } from "./src/screens/VisitorLoginScreen";
 import { VisitorSignupScreen } from "./src/screens/VisitorSignupScreen";
 import { VisitorDashboardScreen } from "./src/screens/VisitorDashboardScreen";
-import { PublicWebsiteScreen } from "./src/screens/PublicWebsiteScreen";
+import { PublicHubScreen } from "./src/screens/PublicHubScreen";
 import { JoinEventScreen } from "./src/screens/JoinEventScreen";
 import { ComposeMessageScreen } from "./src/screens/ComposeMessageScreen";
 import { EventHomeScreen } from "./src/screens/EventHomeScreen";
@@ -581,10 +581,11 @@ function AppShell() {
     }
     return (
       <SafeAreaView style={styles.full}>
-        <PublicWebsiteScreen
+        <PublicHubScreen
           session={visitorSession}
           onSignIn={() => setAuthStep("visitor_login")}
           onSignOut={visitorSignOut}
+          onStaff={() => setAuthStep("staff_access")}
         />
       </SafeAreaView>
     );
@@ -655,10 +656,11 @@ function AppShell() {
   return (
     <SafeAreaView style={styles.full}>
       {authStep === "role_choice" && (
-        <PublicWebsiteScreen
+        <PublicHubScreen
           session={null}
           onSignIn={() => setAuthStep("visitor_login")}
           onSignOut={() => undefined}
+          onStaff={() => setAuthStep("staff_access")}
         />
       )}
 
@@ -856,3 +858,4 @@ const styles = StyleSheet.create({
   tabText: { color: "#C3CCDD", fontSize: 12, fontWeight: "800", letterSpacing: 0.2 },
   tabTextActive: { color: "#FFFFFF" },
 });
+
