@@ -225,8 +225,6 @@ export function TicketPDFDocument({ data }: { data: TicketPDFData }) {
               <View style={[
                 styles.fieldItem,
                 {
-                  borderTopWidth: 1,
-                  borderTopColor: accentColor,
                   paddingTop: 4,
                   marginTop: 2,
                   minWidth: 160,
