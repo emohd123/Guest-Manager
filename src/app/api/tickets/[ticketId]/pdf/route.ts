@@ -66,10 +66,7 @@ export async function GET(
 
     const ticket = ticketData as TicketRow;
 
-    if (ticket.pdf_url) {
-      return NextResponse.redirect(ticket.pdf_url);
-    }
-
+    // Regenerate on demand so ticket design, event artwork, venue, and terms stay current.
     const qrCodeDataUri = await generateQRCodeDataUri(ticket.barcode);
 
     const [eventResult, ticketTypeResult, orderResult] = await Promise.all([
