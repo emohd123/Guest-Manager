@@ -27,9 +27,13 @@ export async function POST(request: Request, { params }: { params: Promise<{ eve
     method: "POST", headers: { "Content-Type": "application/json", Authorization: `Basic ${Buffer.from(`${secret}:`).toString("base64")}` },
     body: JSON.stringify({ chartKey, eventKey }),
   });
-  if (!response.ok && response.status !== 409) {
+  if (!response.ok) {
     const detail = await response.text().catch(() => "");
-    return NextResponse.json({ error: detail || "Unable to create Seats.io event" }, { status: 502 });
+    // Seats.io may return 400 (or 409) when this event key already exists.
+    // That is safe and idempotent: the existing event can be reused.
+    if (!detail.includes("EVENT_KEY_ALREADY_EXISTS") && !detail.includes("event key already exists")) {
+      return NextResponse.json({ error: detail || "Unable to create Seats.io event" }, { status: 502 });
+    }
   }
   return NextResponse.json({ ok: true, eventKey, chartKey });
 }
