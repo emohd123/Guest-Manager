@@ -112,10 +112,14 @@ export function SeatsIoChart({
                 obj.category && typeof obj.category === "object"
                   ? (obj.category.key ?? obj.category.label)
                   : obj.category;
-              const categoryPrice =
-                pricing.find(
-                  (item) => String(item.category) === String(rawCategory),
-                )?.price ?? basePrice;
+              const configuredPrice = pricing.find(
+                (item) => String(item.category) === String(rawCategory),
+              )?.price;
+              // Category prices are entered in major currency units (e.g. EGP 100),
+              // while checkout and orders use hundredths (10000).
+              const categoryPrice = configuredPrice == null
+                ? basePrice
+                : configuredPrice * 100;
               setSelectedPrices((prices) => ({
                 ...prices,
                 [id]: categoryPrice,
