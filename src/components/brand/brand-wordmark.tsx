@@ -7,14 +7,12 @@ interface BrandWordmarkProps {
   className?: string;
   markClassName?: string;
   textClassName?: string;
-  showSubtitle?: boolean;
 }
 
 export function BrandWordmark({
   className,
   markClassName,
   textClassName,
-  showSubtitle = false,
 }: BrandWordmarkProps) {
   return (
     <div className={cn("inline-grid grid-cols-[auto_1fr] items-center gap-x-4", className)}>
@@ -34,13 +32,6 @@ export function BrandWordmark({
           <span className="text-current">Ticket</span>
         </span>
       </div>
-      {showSubtitle && (
-        <div className="col-start-2 row-start-2 mt-2">
-          <span className="text-[10px] font-black uppercase tracking-[0.24em] text-slate-600 leading-none block">
-            A OneStone Platform
-          </span>
-        </div>
-      )}
     </div>
   );
 }
