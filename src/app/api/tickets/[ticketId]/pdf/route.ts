@@ -50,7 +50,7 @@ type OrderRow = {
 };
 
 export async function GET(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ ticketId: string }> }
 ) {
   try {
@@ -205,6 +205,7 @@ export async function GET(
         orderNumber: order?.order_number ?? ticket.barcode,
         ticketNumber: ticket.barcode,
         qrCodeDataUri,
+        logoUrl: new URL("/iticket-mark.png", req.url).toString(),
         design: {
           backgroundImageUrl: ticketDesign.backgroundImageUrl ?? event?.cover_image_url ?? publicPage.coverImage ?? publicPage.heroImage ?? undefined,
           labelColor: ticketDesign.labelColor ?? "#2563EB",
