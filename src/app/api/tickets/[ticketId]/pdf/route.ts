@@ -9,6 +9,7 @@ import type { JSXElementConstructor, ReactElement } from "react";
 import { TicketPDFDocument } from "@/lib/pdf/TicketPDF";
 import { formatMoney } from "@/lib/marketplace";
 import { generateQRCodeDataUri } from "@/server/utils/qrcode";
+import { createTicketQrPayload, isTicketExpired } from "@/lib/ticket-qr";
 import { createSupabaseAdminClient } from "@/server/supabase/admin";
 import { readSeatsIoChartKey, readSeatsIoEventKey, readSeatsIoObjectInfos, readSeatsIoPricing, seatsIoEventKeyFor } from "@/lib/seatsio";
 
@@ -70,9 +71,6 @@ export async function GET(
 
     const ticket = ticketData as TicketRow;
 
-    // Regenerate on demand so ticket design, event artwork, venue, and terms stay current.
-    const qrCodeDataUri = await generateQRCodeDataUri(ticket.barcode);
-
     const [eventResult, ticketTypeResult, orderResult] = await Promise.all([
       supabase
         .from("events")
@@ -110,6 +108,21 @@ export async function GET(
     const event = eventResult.data as EventRow | null;
     const ticketType = ticketTypeResult.data as TicketTypeRow | null;
     const order = orderResult.data as OrderRow | null;
+    const expiresAt = event?.ends_at ?? event?.starts_at ?? null;
+
+    if (isTicketExpired(expiresAt)) {
+      return NextResponse.json(
+        {
+          error: "This ticket has expired. PDF downloads are no longer available.",
+          code: "TICKET_EXPIRED",
+          expiresAt,
+        },
+        { status: 410 }
+      );
+    }
+
+    // Regenerate on demand so ticket design, event artwork, venue, and terms stay current.
+    const qrCodeDataUri = await generateQRCodeDataUri(createTicketQrPayload(ticket.barcode, expiresAt));
 
     const settings = (event?.settings ?? {}) as Record<string, any>;
     const publicPage = (settings.publicPage ?? {}) as Record<string, any>;
