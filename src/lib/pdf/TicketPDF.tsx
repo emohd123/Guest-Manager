@@ -86,7 +86,7 @@ export function TicketPDFDocument({ data }: { data: TicketPDFData }) {
     },
     bgImage: {
       position: "absolute",
-      top: HERO_MARGIN - (HERO_H * (posY / 100) * (imgScale - 1)),
+      top: HERO_MARGIN + 8 - (HERO_H * (posY / 100) * (imgScale - 1)),
       left: HERO_MARGIN - ((W - HERO_MARGIN * 2) * (posX / 100) * (imgScale - 1)),
       width: (W - HERO_MARGIN * 2) * imgScale,
       height: (HERO_H - HERO_MARGIN * 2) * imgScale,
