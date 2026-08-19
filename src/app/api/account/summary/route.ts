@@ -64,7 +64,7 @@ export async function GET() {
       .limit(50),
     admin
       .from("tickets")
-      .select("id,barcode,status,attendee_name,attendee_email,checked_in,created_at,events(id,title,slug,starts_at,ends_at,cover_image_url,settings,companies(slug,name)),ticket_types(name,currency,price)")
+      .select("id,barcode,status,attendee_name,attendee_email,checked_in,metadata,created_at,events(id,title,slug,starts_at,ends_at,cover_image_url,settings,companies(slug,name)),ticket_types(name,currency,price)")
       .ilike("attendee_email", email)
       .order("created_at", { ascending: false })
       .limit(100),
