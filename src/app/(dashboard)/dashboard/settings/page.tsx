@@ -323,7 +323,7 @@ function AccountSettings() {
                   <Input
                     value={userForm.name}
                     onChange={(e) => setUserForm(f => ({ ...f, name: e.target.value }))}
-                    className="h-14 rounded-2xl bg-white/5 border-white/10 text-white font-bold px-6 focus:border-primary transition-all"
+                    className="h-14 rounded-2xl bg-white/5 border-white/10 text-slate-900 placeholder:text-slate-500 dark:text-white dark:placeholder:text-white/30 font-bold px-6 focus:border-primary transition-all"
                     placeholder="FULL NAME"
                   />
                 </div>
@@ -607,7 +607,7 @@ function TeamSettings() {
               <Input
                 type="email"
                 placeholder="team@example.com"
-                className="h-14 rounded-2xl bg-white/5 border-white/10 text-white font-bold px-6 focus:border-primary transition-all"
+                className="h-14 rounded-2xl bg-white/5 border-white/10 text-slate-900 placeholder:text-slate-500 dark:text-white dark:placeholder:text-white/30 font-bold px-6 focus:border-primary transition-all"
                 value={inviteEmail}
                 onChange={(e) => setInviteEmail(e.target.value)}
               />
