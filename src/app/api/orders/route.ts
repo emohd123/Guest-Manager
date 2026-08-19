@@ -242,6 +242,7 @@ export async function POST(request: NextRequest) {
     }
 
     const now = new Date();
+    const isReservedSeating = Boolean(selectedSeatIds?.length);
     const normalizedCartItems = aggregatedCart
       .map((item) => {
         const ticketType = validTicketTypes.find(
@@ -277,12 +278,12 @@ export async function POST(request: NextRequest) {
             `${ticketType.name} sales have ended.`,
           );
         }
-        if (item.quantity < minPerOrder || item.quantity > maxPerOrder) {
+        if (!isReservedSeating && (item.quantity < minPerOrder || item.quantity > maxPerOrder)) {
           throw new CheckoutValidationError(
             `${ticketType.name} allows ${minPerOrder}-${maxPerOrder} tickets per order.`,
           );
         }
-        if (item.quantity > remaining) {
+        if (!isReservedSeating && item.quantity > remaining) {
           throw new CheckoutValidationError(
             `${ticketType.name} is sold out or has limited availability.`,
           );
@@ -501,6 +502,8 @@ export async function POST(request: NextRequest) {
       );
 
       for (const item of normalizedCartItems) {
+        // Seats.io owns reserved-seat inventory; do not consume the fallback ticket type quantity.
+        if (!isReservedSeating) {
         const updatedTicketType = await tx
           .update(ticketTypes)
           .set({
@@ -523,6 +526,8 @@ export async function POST(request: NextRequest) {
             `${item.name} is no longer available.`,
           );
         }
+        }
+
 
         const ticketType = validTicketTypes.find(
           (record) => record.id === item.ticketTypeId,
