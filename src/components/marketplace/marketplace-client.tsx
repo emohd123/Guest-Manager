@@ -80,6 +80,7 @@ export function MarketplaceClient({
   const [loading, setLoading] = useState(false);
   const [currentTime] = useState(() => Date.now());
   const [heroIndex, setHeroIndex] = useState(0);
+  const [heroResetToken, setHeroResetToken] = useState(0);
   const heroTouchStart = useRef<number | null>(null);
   const datePickerRef = useRef<HTMLInputElement>(null);
   const dir = locale === "ar" ? "rtl" : "ltr";
@@ -110,13 +111,20 @@ export function MarketplaceClient({
   const popularEvents = events.slice(0, 12);
   const featured = events[heroIndex % Math.max(events.length, 1)];
 
+  function changeHero(delta: number) {
+    if (events.length < 2) return;
+    setHeroIndex((index) => (index + delta + events.length) % events.length);
+    // Restart autoplay after manual navigation so the selected event remains visible.
+    setHeroResetToken((token) => token + 1);
+  }
+
   useEffect(() => {
     if (events.length < 2) return;
     const timer = window.setInterval(() => {
       setHeroIndex((index) => (index + 1) % events.length);
-    }, 3000);
+    }, 5000);
     return () => window.clearInterval(timer);
-  }, [events.length]);
+  }, [events.length, heroResetToken]);
   // "Happening soon" — events starting within 10 hours float to the top for
   // fast purchase, then the rest by soonest start date.
   const soonEvents = useMemo(() => {
@@ -335,16 +343,16 @@ export function MarketplaceClient({
                   const end = event.changedTouches[0]?.clientX;
                   heroTouchStart.current = null;
                   if (start == null || end == null || Math.abs(end - start) < 40 || events.length < 2) return;
-                  setHeroIndex((index) => (index + (end < start ? 1 : -1) + events.length) % events.length);
+                  changeHero(end < start ? 1 : -1);
                 }}
               >
                 <HeroFeature event={featured} locale={locale} onQuickView={setQuickViewEvent} />
                 {events.length > 1 ? (
                   <div className="pointer-events-none absolute inset-x-0 top-1/2 z-10 hidden -translate-y-1/2 items-center justify-between px-4 sm:flex">
-                    <button type="button" aria-label="Previous featured event" onClick={() => setHeroIndex((index) => (index - 1 + events.length) % events.length)} className="pointer-events-auto flex h-11 w-11 items-center justify-center rounded-full bg-white/90 text-slate-900 shadow-lg transition hover:bg-white">
+                    <button type="button" aria-label="Previous featured event" onClick={() => changeHero(-1)} className="pointer-events-auto flex h-11 w-11 items-center justify-center rounded-full bg-white/90 text-slate-900 shadow-lg transition hover:bg-white">
                       <ChevronLeft className="h-5 w-5" />
                     </button>
-                    <button type="button" aria-label="Next featured event" onClick={() => setHeroIndex((index) => (index + 1) % events.length)} className="pointer-events-auto flex h-11 w-11 items-center justify-center rounded-full bg-white/90 text-slate-900 shadow-lg transition hover:bg-white">
+                    <button type="button" aria-label="Next featured event" onClick={() => changeHero(1)} className="pointer-events-auto flex h-11 w-11 items-center justify-center rounded-full bg-white/90 text-slate-900 shadow-lg transition hover:bg-white">
                       <ChevronRight className="h-5 w-5" />
                     </button>
                   </div>
