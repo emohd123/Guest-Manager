@@ -391,6 +391,15 @@ function AppShell() {
           message: "This ticket was already scanned.",
         };
       }
+      if (result.result === "expired") {
+        return {
+          outcome: "expired" as const,
+          attendeeName: result.attendeeName ?? undefined,
+          message: result.expiresAt
+            ? `This ticket expired on ${new Date(result.expiresAt).toLocaleString()}.`
+            : "This ticket has expired.",
+        };
+      }
       return {
         outcome: "invalid" as const,
         attendeeName: result.attendeeName ?? undefined,
