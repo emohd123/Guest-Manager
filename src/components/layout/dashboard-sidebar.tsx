@@ -12,6 +12,7 @@ import {
   ChevronLeft,
   LogOut,
   LockKeyhole,
+  Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -33,6 +34,11 @@ const navigation = [
     label: "Events",
     href: "/dashboard/events",
     icon: CalendarDays,
+  },
+  {
+    label: "Customers",
+    href: "/dashboard/customers",
+    icon: Users,
   },
   {
     label: "Private Conferences",
