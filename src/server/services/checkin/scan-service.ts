@@ -1,6 +1,7 @@
 import { and, desc, eq, gt, ilike, inArray, isNotNull, or, sql } from "drizzle-orm";
 import crypto from "crypto";
 import { getDb } from "@/server/db";
+import { isTicketExpired, parseTicketQrValue } from "@/lib/ticket-qr";
 import {
   checkIns,
   devices,
@@ -41,6 +42,7 @@ type ScanWorkflowResult = {
   attendanceState: "not_arrived" | "checked_in" | "checked_out" | null;
   scanType: "check_in" | "checkout" | "invalid";
   scanId: string;
+  expiresAt?: string | null;
 };
 
 type WalkupResult = ScanWorkflowResult & {
@@ -197,6 +199,15 @@ export async function processScanWorkflow(db: Db, input: ScanWorkflowInput): Pro
 
   const response: ScanWorkflowResult = await db.transaction(
     async (tx): Promise<ScanWorkflowResult> => {
+    const qr = parseTicketQrValue(input.barcode);
+    const barcode = qr.ticket;
+    const [event] = await tx
+      .select({ startsAt: events.startsAt, endsAt: events.endsAt })
+      .from(events)
+      .where(and(eq(events.id, input.eventId), eq(events.companyId, input.actor.companyId)))
+      .limit(1);
+    const expiresAt = qr.expiresAt ?? event?.endsAt?.toISOString() ?? event?.startsAt?.toISOString();
+
     const [ticket] = await tx
       .select()
       .from(tickets)
@@ -204,7 +215,7 @@ export async function processScanWorkflow(db: Db, input: ScanWorkflowInput): Pro
         and(
           eq(tickets.eventId, input.eventId),
           eq(tickets.companyId, input.actor.companyId),
-          eq(tickets.barcode, input.barcode)
+          eq(tickets.barcode, barcode)
         )
       )
       .limit(1);
@@ -228,6 +239,31 @@ export async function processScanWorkflow(db: Db, input: ScanWorkflowInput): Pro
         attendanceState: null,
         scanType: "invalid" as const,
         scanId,
+      };
+    }
+
+    if (isTicketExpired(expiresAt)) {
+      const scanId = await writeScanLog(tx, {
+        actor: input.actor,
+        eventId: input.eventId,
+        ticketId: ticket.id,
+        barcode: ticket.barcode,
+        scanType: "invalid",
+        method,
+        result: "expired",
+        notes: expiresAt ? `Expired at ${expiresAt}` : "Expired",
+      });
+
+      return {
+        status: "invalid" as const,
+        result: "expired",
+        ticketId: ticket.id,
+        guestId: ticket.guestId ?? null,
+        attendeeName: ticket.attendeeName ?? null,
+        attendanceState: null,
+        scanType: "invalid" as const,
+        scanId,
+        expiresAt: expiresAt ?? null,
       };
     }
 
