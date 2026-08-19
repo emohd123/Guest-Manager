@@ -114,10 +114,10 @@ export function TicketPDFDocument({ data }: { data: TicketPDFData }) {
     },
     overlay: {
       position: "absolute",
-      top: HERO_MARGIN,
+      top: HERO_MARGIN + 8,
       left: HERO_MARGIN,
       width: W - HERO_MARGIN * 2,
-      height: HERO_H - HERO_MARGIN * 2,
+      height: HERO_H - HERO_MARGIN * 2 - 8,
       borderRadius: 10,
       backgroundColor: "rgba(0,0,0,0.15)",
     },
