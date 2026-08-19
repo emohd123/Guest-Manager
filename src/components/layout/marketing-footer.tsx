@@ -40,14 +40,6 @@ export function MarketingFooter() {
                 textClassName="text-[2.1rem] text-slate-950 dark:text-white sm:text-[2.6rem]"
               />
             </Link>
-            <a
-              href="https://onestoneads.com/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-2 inline-block text-[10px] font-black uppercase tracking-[0.24em] text-slate-500 transition-colors hover:text-cyan-700 dark:text-slate-400 dark:hover:text-cyan-300"
-            >
-              A OneStone Platform
-            </a>
             <p className="mt-6 text-sm leading-relaxed text-slate-600 dark:text-slate-300">
               Egypt event discovery, ticketing, check-in, and managed event operations.
               Built by the iTicket team for public and corporate experiences.
