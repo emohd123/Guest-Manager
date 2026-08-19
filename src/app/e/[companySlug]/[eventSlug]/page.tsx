@@ -451,6 +451,7 @@ export default function PublicEventPage({
     ) ?? 0;
   const seatsIoChartKey = readSeatsIoChartKey(event.settings);
   const seatsIoEventKey = readSeatsIoEventKey(event.settings);
+  const seatsIoPricing = readSeatsIoPricing(event.settings);
   const usesSeatsIo = Boolean(seatsIoChartKey && process.env.NEXT_PUBLIC_SEATSIO_WORKSPACE_KEY);
   const hasNativeSeatMap = Boolean(
     seatingPlan?.enabled &&
