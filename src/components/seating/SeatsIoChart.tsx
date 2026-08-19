@@ -42,6 +42,7 @@ export function SeatsIoChart({
   const [selectedPrices, setSelectedPrices] = useState<Record<string, number>>(
     {},
   );
+  const [selectedNames, setSelectedNames] = useState<Record<string, string>>({});
   const [secondsLeft, setSecondsLeft] = useState(900);
   const resolvedEventKey =
     eventKey || (chartKey ? `iticket-${eventId}-${chartKey}`.slice(0, 128) : eventId);
@@ -107,6 +108,7 @@ export function SeatsIoChart({
           onObjectSelected: (obj: any) =>
             setSelected((current) => {
               const id = obj.id || obj.label;
+              const label = obj.label || obj.id || ticketTypeName;
               const next = current.includes(id) ? current : [...current, id];
               const rawCategory =
                 obj.category && typeof obj.category === "object"
@@ -124,6 +126,7 @@ export function SeatsIoChart({
                 ...prices,
                 [id]: categoryPrice,
               }));
+              setSelectedNames((names) => ({ ...names, [id]: String(label) }));
               onSelection?.(next);
               return next;
             }),
@@ -133,6 +136,11 @@ export function SeatsIoChart({
               const next = current.filter((value) => value !== id);
               setSelectedPrices((prices) => {
                 const copy = { ...prices };
+                delete copy[id];
+                return copy;
+              });
+              setSelectedNames((names) => {
+                const copy = { ...names };
                 delete copy[id];
                 return copy;
               });
@@ -259,14 +267,19 @@ export function SeatsIoChart({
                         );
                       } catch {}
                     }
-                    const grouped = new Map<number, number>();
+                    const grouped = new Map<string, { price: number; name: string; quantity: number }>();
                     selected.forEach((id) => {
                       const price = selectedPrices[id] ?? basePrice;
-                      grouped.set(price, (grouped.get(price) ?? 0) + 1);
+                      const name = selectedNames[id] || ticketTypeName;
+                      const key = `${price}|${name}`;
+                      const current = grouped.get(key);
+                      grouped.set(key, current
+                        ? { ...current, quantity: current.quantity + 1 }
+                        : { price, name, quantity: 1 });
                     });
-                    const items = Array.from(grouped, ([price, quantity]) => ({
+                    const items = Array.from(grouped.values(), ({ price, name, quantity }) => ({
                       ticketTypeId: ticketTypeId || "",
-                      name: ticketTypeName,
+                      name,
                       price,
                       currency,
                       quantity,
