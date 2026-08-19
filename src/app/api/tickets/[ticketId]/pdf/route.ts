@@ -140,6 +140,7 @@ export async function GET(
 
     const settings = (event?.settings ?? {}) as Record<string, any>;
     const publicPage = (settings.publicPage ?? {}) as Record<string, any>;
+    const isPaidEvent = publicPage.isPaidEvent !== false;
     const ticketDesign = (settings.ticketDesign ?? {}) as Record<string, any>;
     const terms = Array.isArray(publicPage.terms) && publicPage.terms.length
       ? publicPage.terms.filter((term: unknown): term is string => typeof term === "string")
@@ -180,7 +181,7 @@ export async function GET(
     const ticketTypeLabel = typeof metadata.ticketTypeName === "string" && metadata.ticketTypeName.trim()
       ? metadata.ticketTypeName.trim()
       : ticketType?.name ?? (typeof seatCategory === "string" ? seatCategory : "General Admission");
-    const rawTicketPrice = resolvedMetadata.seat?.price ?? resolvedMetadata.price ?? ticketType?.price;
+    const rawTicketPrice = isPaidEvent ? (resolvedMetadata.seat?.price ?? resolvedMetadata.price ?? ticketType?.price ?? 0) : 0;
     const ticketCurrency = typeof resolvedMetadata.currency === "string" && metadata.currency.trim()
       ? resolvedMetadata.currency.trim().toUpperCase()
       : ticketType?.currency ?? "EGP";
