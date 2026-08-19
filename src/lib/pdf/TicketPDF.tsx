@@ -62,7 +62,7 @@ const HERO_H = 380;
 const HERO_MARGIN = 28;
 
 export function TicketPDFDocument({ data }: { data: TicketPDFData }) {
-  const accentColor = data.design.labelColor ?? "#4F46E5";
+  const accentColor = "#2563EB";
   const textColor = data.design.textColor ?? "#111111";
   const posX = data.design.imagePositionX ?? 50;
   const posY = data.design.imagePositionY ?? 50;
@@ -97,18 +97,18 @@ export function TicketPDFDocument({ data }: { data: TicketPDFData }) {
       position: "absolute",
       top: 4,
       left: HERO_MARGIN,
-      height: 20,
+      height: 28,
       flexDirection: "row",
       alignItems: "center",
       gap: 4,
     },
     logoMark: {
-      width: 20,
-      height: 20,
+      width: 28,
+      height: 28,
       objectFit: "contain",
     },
     logoText: {
-      fontSize: 13,
+      fontSize: 16,
       fontFamily: "Helvetica-Bold",
       color: "#111827",
     },
