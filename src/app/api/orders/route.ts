@@ -292,7 +292,11 @@ export async function POST(request: NextRequest) {
 
         return {
           ...item,
-          name: ticketType.name ?? item.name,
+          // Keep the Seats.io category label for the customer's ticket/PDF;
+          // normal tickets continue to use the catalog ticket type name.
+          name: isReservedSeating && seatsIo && item.name?.trim()
+            ? item.name.trim()
+            : ticketType.name ?? item.name,
           currency: ticketType.currency ?? item.currency,
           price: isPaidEvent
             ? selectedSeatIds?.length
@@ -565,14 +569,29 @@ export async function POST(request: NextRequest) {
               barcode,
               attendeeName: resolvedAttendeeName,
               attendeeEmail: resolvedAttendeeEmail,
-              ...(selectedSeatIds?.length
-                ? {
-                    metadata: {
+              metadata: {
+                ...(selectedSeatIds?.length
+                  ? {
                       seatingProvider: seatHoldToken ? "iticket" : "seats.io",
                       selectedSeatId: selectedSeatIds[ticketTasks.length] ?? null,
-                    },
-                  }
-                : {}),
+                    }
+                  : {}),
+                // Persist the exact display label and unit price used at checkout
+                // so generated PDFs cannot fall back to a different catalog row.
+                ticketTypeName: item.name,
+                price: selectedSeats[ticketTasks.length]?.price ?? item.price,
+                currency: item.currency,
+                ...(selectedSeats[ticketTasks.length]
+                  ? {
+                      seat: {
+                        section: selectedSeats[ticketTasks.length].section_name,
+                        row: selectedSeats[ticketTasks.length].row_label,
+                        seat: selectedSeats[ticketTasks.length].label,
+                        price: selectedSeats[ticketTasks.length].price,
+                      },
+                    }
+                  : {}),
+              },
               status: "valid",
             })
             .returning();
