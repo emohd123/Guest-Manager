@@ -45,6 +45,8 @@ export interface TicketPDFData {
   /** Unique ticket barcode/number printed on the ticket. */
   ticketNumber?: string;
   qrCodeDataUri: string;
+  /** iTicket logo URL shown in the PDF header. */
+  logoUrl?: string;
   design: TicketPDFDesign;
   /** Unique event code shown at the bottom of the ticket (when enabled in design settings) */
   visitorCode?: string;
@@ -87,6 +89,28 @@ export function TicketPDFDocument({ data }: { data: TicketPDFData }) {
       left: -(W * (posX / 100) * (imgScale - 1)),
       width: W * imgScale,
       height: HERO_H * imgScale,
+    },
+    logoHeader: {
+      position: "absolute",
+      top: 18,
+      left: 24,
+      height: 42,
+      padding: "6 10 6 6",
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 7,
+      backgroundColor: "rgba(255,255,255,0.96)",
+      borderRadius: 8,
+    },
+    logoMark: {
+      width: 28,
+      height: 28,
+      objectFit: "contain",
+    },
+    logoText: {
+      fontSize: 17,
+      fontFamily: "Helvetica-Bold",
+      color: "#111827",
     },
     overlay: {
       position: "absolute",
@@ -206,6 +230,12 @@ export function TicketPDFDocument({ data }: { data: TicketPDFData }) {
 
         {/* Subtle overlay */}
         <View style={styles.overlay} />
+
+        {/* iTicket brand header */}
+        <View style={styles.logoHeader}>
+          {data.logoUrl ? <Image src={data.logoUrl} style={styles.logoMark} /> : null}
+          <Text style={styles.logoText}>iTicket</Text>
+        </View>
 
         {/* Bottom info strip */}
         <View style={styles.bottomStrip}>
