@@ -74,6 +74,8 @@ const labels = {
     sharePaid: "Share the event page with guests ready to purchase access.",
     shareFree: "Invite friends and colleagues to reserve a free spot.",
     copyLink: "Copy link",
+    shareEvent: "Share event",
+    addToCalendar: "Add to calendar",
     appTitle: "Get the attendee app",
     appBody:
       "Access live streams, agenda saves, networking, and event updates from your phone.",
@@ -122,6 +124,8 @@ const labels = {
     sharePaid: "شارك صفحة الفعالية مع الضيوف الراغبين في شراء التذاكر.",
     shareFree: "ادع الأصدقاء والزملاء لحجز مقعد مجاني.",
     copyLink: "نسخ الرابط",
+    shareEvent: "مشاركة الفعالية",
+    addToCalendar: "إضافة إلى التقويم",
     appTitle: "تطبيق الحضور",
     appBody: "تابع البث المباشر والجدول والتواصل وتحديثات الفعالية من هاتفك.",
     openApp: "تفاصيل التطبيق",
@@ -383,13 +387,48 @@ export default function PublicEventPage({
     window.location.assign(`/checkout/tickets?${checkoutParams.toString()}`);
   };
 
-  const handleCopyLink = async () => {
+  const handleShareEvent = async () => {
+    const shareData = {
+      title: eventTitle,
+      text: eventDescription,
+      url: window.location.href,
+    };
     try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+        return;
+      }
       await navigator.clipboard.writeText(window.location.href);
       toast.success("Event link copied.");
     } catch {
-      toast.error("Could not copy the event link.");
+      if (!navigator.share) toast.error("Could not share the event link.");
     }
+  };
+
+  const handleAddToCalendar = () => {
+    const toCalendarDate = (value: string) =>
+      new Date(value).toISOString().replace(/[-:]/g, "").replace(/\.\d{3}Z$/, "Z");
+    const escapeIcs = (value: string) =>
+      value.replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\r?\n/g, "\\n");
+    const start = toCalendarDate(event.startsAt);
+    const fallbackEnd = new Date(new Date(event.startsAt).getTime() + 2 * 60 * 60 * 1000).toISOString();
+    const end = toCalendarDate(event.endsAt ?? fallbackEnd);
+    const ics = [
+      "BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//iTicket//Event//EN", "BEGIN:VEVENT",
+      `UID:${event.id}@iticket`, `DTSTAMP:${toCalendarDate(new Date().toISOString())}`,
+      `DTSTART:${start}`, `DTEND:${end}`, `SUMMARY:${escapeIcs(eventTitle)}`,
+      `DESCRIPTION:${escapeIcs(eventDescription)}`, `LOCATION:${escapeIcs(venueLabel)}`,
+      "END:VEVENT", "END:VCALENDAR",
+    ].join("\r\n");
+    const url = URL.createObjectURL(new Blob([ics], { type: "text/calendar;charset=utf-8" }));
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `${eventSlug}-event.ics`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+    toast.success("Calendar file downloaded.");
   };
 
   const tickets = ticketTypes ?? [];
@@ -502,11 +541,20 @@ export default function PublicEventPage({
             <Button
               variant="ghost"
               size="sm"
-              onClick={handleCopyLink}
+              onClick={handleShareEvent}
               className="h-9 rounded-full gap-2 text-zinc-700"
             >
               <Share2 className="h-4 w-4" />
-              Share event
+              {t.shareEvent}
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleAddToCalendar}
+              className="h-9 rounded-full gap-2 text-zinc-700"
+            >
+              <Calendar className="h-4 w-4" />
+              {t.addToCalendar}
             </Button>
             <Button
               variant="ghost"
