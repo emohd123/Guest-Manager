@@ -93,7 +93,7 @@ export function DashboardSidebar({ collapsed, onToggle }: DashboardSidebarProps)
       {/* Logo */}
       <div className="flex h-20 items-center justify-between px-6">
         {collapsed ? (
-          <Link href="/dashboard" aria-label="iTicket dashboard">
+          <Link href="/" aria-label="Return to iTicket website">
             <BrandMark className="h-11 w-11" />
           </Link>
         ) : (
