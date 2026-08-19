@@ -202,7 +202,7 @@ export async function notifyNewEvents(events: DiscoverEvent[]): Promise<void> {
     await ensureNotificationChannel();
     await Notifications.scheduleNotificationAsync({
       content: {
-        title: events.length === 1 ? "New event in Bahrain 🎉" : `${events.length} new events in Bahrain 🎉`,
+        title: events.length === 1 ? "New event on iTicket 🎉" : `${events.length} new events on iTicket 🎉`,
         body: events.slice(0, 3).map((e) => e.title).join(" · "),
         // Single new event → tapping the notification deep-links straight to it.
         data: events.length === 1 ? { eventId: events[0].id } : {},
@@ -217,7 +217,7 @@ export async function notifyNewEvents(events: DiscoverEvent[]): Promise<void> {
 
 // ── Directions ───────────────────────────────────────────────────────────────
 export function buildDirectionsUrl(event: DiscoverEvent): string {
-  const target = event.venueName ?? event.locationText ?? `${event.title} Bahrain`;
+  const target = event.venueName ?? event.locationText ?? event.title;
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(target)}`;
 }
 
@@ -251,3 +251,4 @@ export async function getLang(): Promise<AppLang> {
 export async function setLang(lang: AppLang): Promise<void> {
   await AsyncStorage.setItem(LANG_KEY, lang);
 }
+
