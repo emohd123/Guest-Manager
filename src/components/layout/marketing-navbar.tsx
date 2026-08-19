@@ -67,22 +67,14 @@ export function MarketingNavbar() {
   return (
     <header dir="ltr" className="fixed top-0 z-50 w-full border-b border-slate-200/90 bg-white/95 text-slate-950 shadow-sm backdrop-blur-xl dark:border-slate-700 dark:bg-slate-950/95 dark:text-white">
       <div className="mx-auto flex h-14 max-w-[1600px] items-center justify-between gap-2 px-3 sm:h-16 sm:px-8 lg:px-12">
-        <div dir="ltr" className="flex shrink-0 flex-col">
+        <div dir="ltr" className="flex shrink-0 items-center">
           <Link href="/" aria-label="iTicket home">
             <BrandWordmark
               className="gap-x-2 sm:gap-x-4"
-              markClassName="h-7 w-7 sm:h-10 sm:w-10"
-              textClassName="text-[1.2rem] text-slate-950 dark:text-white sm:text-[1.8rem]"
+              markClassName="h-9 w-9 sm:h-12 sm:w-12"
+              textClassName="text-[1.45rem] text-slate-950 dark:text-white sm:text-[2.1rem]"
             />
           </Link>
-          <a
-            href="https://onestoneads.com/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="mt-1 hidden w-fit pl-1 text-[9px] font-black uppercase tracking-[0.24em] text-slate-500 transition hover:text-cyan-700 dark:text-slate-400 dark:hover:text-cyan-300 sm:block sm:text-[10px]"
-          >
-            A OneStone Platform
-          </a>
         </div>
 
         <form action="/" method="get" className="mx-5 hidden w-full max-w-md items-center rounded-full border border-slate-200 bg-slate-50 px-4 transition focus-within:border-cyan-500 focus-within:bg-white dark:border-slate-700 dark:bg-slate-900 dark:focus-within:bg-slate-900 sm:flex">
