@@ -292,6 +292,12 @@ export function TicketRow({ ticket }: { ticket: Record<string, any> }) {
   const eventImage = event?.cover_image_url || publicPage.coverImage || publicPage.heroImage || "";
   const venueName = publicPage.venueName || publicPage.locationText || "Venue TBA";
   const location = publicPage.locationText || "Cairo, Egypt";
+  const metadata = ticket.metadata ?? {};
+  const ticketLabel = typeof metadata.ticketTypeName === "string" && metadata.ticketTypeName.trim()
+    ? metadata.ticketTypeName.trim()
+    : ticketType?.name ?? "General Admission";
+  const ticketPrice = metadata.seat?.price ?? metadata.price ?? ticketType?.price ?? 0;
+  const ticketCurrency = metadata.currency ?? ticketType?.currency ?? "EGP";
   const checkedIn = ticket.checked_in || ticket.status === "checked_in";
   const used = checkedIn || ticket.status === "used";
   return (
@@ -329,7 +335,7 @@ export function TicketRow({ ticket }: { ticket: Record<string, any> }) {
       <div className="grid gap-5 p-5 sm:grid-cols-[1fr_auto] sm:items-center">
         <div>
         <div>
-          <p className="text-xs font-black uppercase tracking-[0.24em] text-blue-600">{ticketType?.name ?? "Ticket"}</p>
+          <p className="text-xs font-black uppercase tracking-[0.24em] text-blue-600">{ticketLabel}</p>
           {event?.starts_at ? (
             <p className="mt-2 flex items-center gap-2 text-sm text-slate-600">
               <CalendarDays className="h-4 w-4" />
@@ -337,9 +343,9 @@ export function TicketRow({ ticket }: { ticket: Record<string, any> }) {
             </p>
           ) : null}
           <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
-            <div><p className="text-slate-500">Ticket type</p><p className="font-black">{ticketType?.name ?? "General Admission"}</p></div>
+            <div><p className="text-slate-500">Ticket type</p><p className="font-black">{ticketLabel}</p></div>
             <div><p className="text-slate-500">Status</p><p className="font-black">{used ? "Used" : "Available"}</p></div>
-            <div><p className="text-slate-500">Price</p><p className="font-black">{formatMoney(ticketType?.price ?? 0, ticketType?.currency ?? "EGP")}</p></div>
+            <div><p className="text-slate-500">Price</p><p className="font-black">{formatMoney(Number(ticketPrice), ticketCurrency)}</p></div>
             <div><p className="text-slate-500">Ticket number</p><p className="truncate font-mono text-xs font-black">{ticket.barcode}</p></div>
           </div>
         </div>
