@@ -56,7 +56,7 @@ export const settingsRouter = router({
     const { data: authData } = await ctx.supabase.auth.getUser();
     const metadata = authData.user?.user_metadata ?? {};
     const fallbackName = [metadata.full_name, metadata.name]
-      .find((value): value is string => typeof value === "string" && value.trim())
+      .find((value): value is string => typeof value === "string" && Boolean(value.trim()))
       ?? authData.user?.email?.split("@")[0]
       ?? "";
     return { ...data, name: fallbackName };
