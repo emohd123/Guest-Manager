@@ -108,7 +108,11 @@ export function SeatsIoChart({
           onObjectSelected: (obj: any) =>
             setSelected((current) => {
               const id = obj.id || obj.label;
-              const label = obj.label || obj.id || ticketTypeName;
+              const categoryName =
+                obj.category && typeof obj.category === "object"
+                  ? (obj.category.label ?? obj.category.key)
+                  : obj.category;
+              const label = categoryName || ticketTypeName;
               const next = current.includes(id) ? current : [...current, id];
               const rawCategory =
                 obj.category && typeof obj.category === "object"
