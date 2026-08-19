@@ -166,8 +166,10 @@ export async function GET(
           const configured = readSeatsIoPricing(event.settings).find((entry) => String(entry.category) === String(categoryKey));
           resolvedMetadata = {
             ...metadata,
-            ...(typeof categoryLabel === "string" && categoryLabel.trim() ? { ticketTypeName: categoryLabel.trim() } : {}),
-            ...(configured ? { price: configured.price } : {}),
+            ...(typeof metadata.ticketTypeName !== "string" && typeof categoryLabel === "string" && categoryLabel.trim()
+              ? { ticketTypeName: categoryLabel.trim() }
+              : {}),
+            ...(metadata.price == null && configured ? { price: configured.price } : {}),
           };
         }
       } catch {
