@@ -297,7 +297,8 @@ export function TicketRow({ ticket }: { ticket: Record<string, any> }) {
   const ticketLabel = typeof metadata.ticketTypeName === "string" && metadata.ticketTypeName.trim()
     ? metadata.ticketTypeName.trim()
     : ticketType?.name ?? "General Admission";
-  const ticketPrice = metadata.seat?.price ?? metadata.price ?? ticketType?.price ?? 0;
+  const isPaidEvent = event?.settings?.publicPage?.isPaidEvent !== false;
+  const ticketPrice = isPaidEvent ? (metadata.seat?.price ?? metadata.price ?? ticketType?.price ?? 0) : 0;
   const ticketCurrency = metadata.currency ?? ticketType?.currency ?? "EGP";
   const checkedIn = ticket.checked_in || ticket.status === "checked_in";
   const used = checkedIn || ticket.status === "used";
