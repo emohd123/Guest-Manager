@@ -9,6 +9,7 @@ import type { LucideIcon } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { formatMoney } from "@/lib/marketplace";
+import { createTicketQrPayload, isTicketExpired } from "@/lib/ticket-qr";
 
 type AccountSummary = {
   profile: { email: string; name: string };
@@ -300,6 +301,8 @@ export function TicketRow({ ticket }: { ticket: Record<string, any> }) {
   const ticketCurrency = metadata.currency ?? ticketType?.currency ?? "EGP";
   const checkedIn = ticket.checked_in || ticket.status === "checked_in";
   const used = checkedIn || ticket.status === "used";
+  const expiresAt = event?.ends_at || event?.starts_at || null;
+  const expired = isTicketExpired(expiresAt);
   return (
     <div className="overflow-hidden rounded-[1.5rem] border border-slate-200 bg-white shadow-sm">
       <div className="border-b border-slate-200 bg-slate-950 px-5 py-4 text-white">
@@ -323,13 +326,19 @@ export function TicketRow({ ticket }: { ticket: Record<string, any> }) {
               <p className="mt-1 truncate text-xs text-slate-400">{location}</p>
             </div>
           </div>
-          <a
-            href={`/api/tickets/${ticket.id}/pdf`}
-            className="inline-flex shrink-0 items-center gap-2 rounded-full bg-white px-3 py-2 text-xs font-black text-slate-950 transition hover:bg-cyan-100"
-          >
-            <Download className="h-4 w-4" />
-            <span className="hidden sm:inline">Download PDF</span>
-          </a>
+          {expired ? (
+            <span className="inline-flex shrink-0 items-center gap-2 rounded-full bg-white/15 px-3 py-2 text-xs font-black text-amber-200">
+              Expired
+            </span>
+          ) : (
+            <a
+              href={`/api/tickets/${ticket.id}/pdf`}
+              className="inline-flex shrink-0 items-center gap-2 rounded-full bg-white px-3 py-2 text-xs font-black text-slate-950 transition hover:bg-cyan-100"
+            >
+              <Download className="h-4 w-4" />
+              <span className="hidden sm:inline">Download PDF</span>
+            </a>
+          )}
         </div>
       </div>
       <div className="grid gap-5 p-5 sm:grid-cols-[1fr_auto] sm:items-center">
@@ -344,13 +353,14 @@ export function TicketRow({ ticket }: { ticket: Record<string, any> }) {
           ) : null}
           <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
             <div><p className="text-slate-500">Ticket type</p><p className="font-black">{ticketLabel}</p></div>
-            <div><p className="text-slate-500">Status</p><p className="font-black">{used ? "Used" : "Available"}</p></div>
+            <div><p className="text-slate-500">Status</p><p className="font-black">{expired ? "Expired" : used ? "Used" : "Available"}</p></div>
             <div><p className="text-slate-500">Price</p><p className="font-black">{formatMoney(Number(ticketPrice), ticketCurrency)}</p></div>
             <div><p className="text-slate-500">Ticket number</p><p className="truncate font-mono text-xs font-black">{ticket.barcode}</p></div>
+            {expiresAt ? <div><p className="text-slate-500">Valid until</p><p className="font-black">{format(new Date(expiresAt), "MMM d, yyyy - h:mm a")}</p></div> : null}
           </div>
         </div>
         </div>
-        <TicketQr value={ticket.barcode} />
+        <TicketQr value={createTicketQrPayload(ticket.barcode, expiresAt)} />
       </div>
       <div className="border-t border-slate-200 px-5 py-4">
       <Button asChild className="w-full rounded-full bg-slate-950 font-black text-white hover:bg-slate-800">
