@@ -79,6 +79,18 @@ export function SeatsIoChart({
     const load = async () => {
       if (!fullScreen) return;
       if (cancelled || !ref.current) return;
+      if (eventKey && chartKey) {
+        const ensureResponse = await fetch(`/api/seatsio/events/${encodeURIComponent(eventId)}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ eventKey, chartKey }),
+        });
+        if (!ensureResponse.ok) {
+          const payload = await ensureResponse.json().catch(() => ({}));
+          throw new Error(payload.error || "Unable to initialize the seating chart");
+        }
+      }
+      if (cancelled || !ref.current) return;
       const render = () => {
         if (!ref.current || !(window as any).seatsio) return;
         chart = new (window as any).seatsio.SeatingChart({
