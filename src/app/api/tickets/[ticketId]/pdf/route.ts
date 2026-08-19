@@ -29,7 +29,9 @@ type TicketTypeRow = {
 type EventRow = {
   id: string;
   title: string;
+  description: string | null;
   starts_at: string | null;
+  ends_at: string | null;
   cover_image_url: string | null;
   visitor_code: string | null;
   settings: Record<string, unknown> | null;
@@ -73,7 +75,7 @@ export async function GET(
     const [eventResult, ticketTypeResult, orderResult] = await Promise.all([
       supabase
         .from("events")
-        .select("id,title,starts_at,cover_image_url,visitor_code,settings")
+        .select("id,title,description,starts_at,ends_at,cover_image_url,visitor_code,settings")
         .eq("id", ticket.event_id)
         .maybeSingle(),
       ticket.ticket_type_id
@@ -109,7 +111,20 @@ export async function GET(
     const order = orderResult.data as OrderRow | null;
 
     const settings = (event?.settings ?? {}) as Record<string, any>;
+    const publicPage = (settings.publicPage ?? {}) as Record<string, any>;
     const ticketDesign = (settings.ticketDesign ?? {}) as Record<string, any>;
+    const terms = Array.isArray(publicPage.terms) && publicPage.terms.length
+      ? publicPage.terms.filter((term: unknown): term is string => typeof term === "string")
+      : [
+          "QR tickets are valid once for the stated event and date.",
+          "Entry is subject to venue and organiser safety rules.",
+          "Unauthorized resale or copying of tickets is not permitted.",
+        ];
+    const venue = [publicPage.venueName, publicPage.locationText]
+      .filter((value): value is string => typeof value === "string" && value.trim().length > 0)
+      .join(" · ");
+    const metadata = ticket.metadata ?? {};
+    const seatCategory = metadata.seat?.categoryName ?? metadata.seat?.category ?? metadata.categoryName ?? metadata.ticketTypeName;
     const formattedDate = event?.starts_at
       ? format(new Date(event.starts_at), "MMM d, yyyy • h:mm a")
       : undefined;
@@ -117,13 +132,16 @@ export async function GET(
     const pdfElement = React.createElement(TicketPDFDocument, {
       data: {
         eventName: event?.title ?? "Event",
-        ticketType: ticketType?.name ?? "General Admission",
+        ticketType: ticketType?.name ?? (typeof seatCategory === "string" ? seatCategory : "General Admission"),
+        venue: venue || undefined,
         startDate: formattedDate,
+        description: (typeof publicPage.description === "string" && publicPage.description.trim()) || event?.description || undefined,
+        terms,
         attendeeName: ticket.attendee_name ?? "Attendee",
         orderNumber: order?.order_number ?? ticket.barcode,
         qrCodeDataUri,
         design: {
-          backgroundImageUrl: ticketDesign.backgroundImageUrl ?? event?.cover_image_url ?? undefined,
+          backgroundImageUrl: ticketDesign.backgroundImageUrl ?? event?.cover_image_url ?? publicPage.coverImage ?? publicPage.heroImage ?? undefined,
           labelColor: ticketDesign.labelColor ?? "#2563EB",
           textColor: ticketDesign.textColor ?? "#111111",
           showVisitorCode: ticketDesign.showVisitorCode,
