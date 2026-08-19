@@ -29,7 +29,13 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     return NextResponse.json({ error: detail || "Unable to load chart categories" }, { status: 502 });
   }
   const payload = await response.json().catch(() => []);
-  const categories = Array.isArray(payload) ? payload : Array.isArray((payload as { items?: unknown[] }).items) ? (payload as { items: unknown[] }).items : [];
+  const categories = Array.isArray(payload)
+    ? payload
+    : Array.isArray((payload as { categories?: unknown[] }).categories)
+      ? (payload as { categories: unknown[] }).categories
+      : Array.isArray((payload as { items?: unknown[] }).items)
+        ? (payload as { items: unknown[] }).items
+        : [];
   return NextResponse.json({ categories: categories.map((category: any) => ({
     key: String(category.key),
     label: category.label ?? String(category.key),
