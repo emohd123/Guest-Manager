@@ -34,7 +34,9 @@ export function PublicShortcutDock() {
       search.focus();
       return;
     }
-    router.push(localeHref("/"));
+    // The navbar search is intentionally hidden on narrow screens. Navigate
+    // home with a focus flag so the mobile navbar can open its search field.
+    router.push(localeHref("/?focus=search"));
   }
 
   function goHome() {
@@ -79,3 +81,4 @@ export function PublicShortcutDock() {
     </div>
   );
 }
+
