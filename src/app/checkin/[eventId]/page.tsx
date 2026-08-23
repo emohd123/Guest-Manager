@@ -164,6 +164,14 @@ export default function CheckinPage({
       return { status: "already_checked_in", attendeeName: result.attendeeName ?? "Guest", barcode };
     }
     if (result.status === "invalid") {
+      if (result.result === "expired") {
+        return {
+          status: "expired",
+          attendeeName: result.attendeeName ?? "Guest",
+          barcode,
+          expiresAt: result.expiresAt ?? undefined,
+        };
+      }
       if (result.result === "voided") {
         return { status: "voided", attendeeName: result.attendeeName ?? "Guest", barcode };
       }

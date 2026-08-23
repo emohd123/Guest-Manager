@@ -45,3 +45,4 @@ async function userHasDashboardAccess(
   const access = data?.dashboard_access ?? (data?.company_id && ["owner", "admin"].includes(data?.role) ? "full" : "none");
   return Boolean(data?.company_id && access !== "none");
 }
+

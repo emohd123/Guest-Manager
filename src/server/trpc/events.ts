@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { router, protectedProcedure, publicProcedure } from "../index";
+import { router, protectedProcedure, publicProcedure } from "./index";
 import { nanoid } from "nanoid";
 import { createSupabaseAdminClient } from "@/server/supabase/admin";
 import { handleEventPublished } from "@/server/services/discover-push";
@@ -187,18 +187,16 @@ export const eventsRouter = router({
         .select("*")
         .single();
 
-      // Retry against older schemas by removing columns that PostgREST reports as missing.
-      // This keeps event creation working while the production schema cache catches up.
-      const legacyPayload = { ...insertPayload };
-      for (let attempt = 0; error?.message.includes("schema cache") && attempt < 8; attempt += 1) {
-        const missingColumn = error.message.match(/Could not find the '([^']+)' column/i)?.[1];
-        if (!missingColumn || !(missingColumn in legacyPayload)) break;
-        delete legacyPayload[missingColumn as keyof typeof legacyPayload];
-        ({ data, error } = await ctx.supabase
-          .from("events")
-          .insert(legacyPayload)
-          .select("*")
-          .single());
+      // The production schema may not contain legacy ownership columns.
+      // Retry with only columns that exist so assigning a customer never
+      // prevents an event from being created.
+      if (error?.message.includes("schema cache")) {
+        const { created_by: _createdBy, ...withoutCreatedBy } = insertPayload;
+        ({ data, error } = await ctx.supabase.from("events").insert(withoutCreatedBy).select("*").single());
+        if (error?.message.includes("schema cache")) {
+          const { customer_company_id: _customerCompanyId, ...legacyPayload } = withoutCreatedBy;
+          ({ data, error } = await ctx.supabase.from("events").insert(legacyPayload).select("*").single());
+        }
       }
 
       if (error) throw new Error(error.message);
@@ -334,9 +332,7 @@ export const eventsRouter = router({
       if (!original) throw new Error("Event not found");
 
       const duplicateTitle = `${original.title} (Copy)`;
-      const { data, error } = await ctx.supabase
-        .from("events")
-        .insert({
+      const duplicatePayload = {
           company_id: ctx.companyId,
           created_by: ctx.userId,
           customer_company_id: original.customer_company_id ?? null,
@@ -359,9 +355,20 @@ export const eventsRouter = router({
           settings: original.settings,
           custom_fields: original.custom_fields,
           metadata: original.metadata,
-        })
+        };
+      let { data, error } = await ctx.supabase
+        .from("events")
+        .insert(duplicatePayload)
         .select("*")
         .single();
+      if (error?.message.includes("schema cache")) {
+        const { created_by: _createdBy, ...withoutCreatedBy } = duplicatePayload;
+        ({ data, error } = await ctx.supabase.from("events").insert(withoutCreatedBy).select("*").single());
+        if (error?.message.includes("schema cache")) {
+          const { customer_company_id: _customerCompanyId, ...legacyPayload } = withoutCreatedBy;
+          ({ data, error } = await ctx.supabase.from("events").insert(legacyPayload).select("*").single());
+        }
+      }
 
       if (error) throw new Error(error.message);
       void recordAudit({ companyId: ctx.companyId, actorId: ctx.userId, action: "event.duplicated", entityType: "event", entityId: data.id, eventId: data.id, metadata: { sourceEventId: input.id } });

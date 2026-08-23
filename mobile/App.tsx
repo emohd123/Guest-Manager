@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   BackHandler,
@@ -52,7 +52,6 @@ import { VisitorLoginScreen } from "./src/screens/VisitorLoginScreen";
 import { VisitorSignupScreen } from "./src/screens/VisitorSignupScreen";
 import { VisitorDashboardScreen } from "./src/screens/VisitorDashboardScreen";
 import { PublicHubScreen } from "./src/screens/PublicHubScreen";
-import { PublicWebsiteScreen } from "./src/screens/PublicWebsiteScreen";
 import { JoinEventScreen } from "./src/screens/JoinEventScreen";
 import { ComposeMessageScreen } from "./src/screens/ComposeMessageScreen";
 import { EventHomeScreen } from "./src/screens/EventHomeScreen";
@@ -392,6 +391,15 @@ function AppShell() {
           message: "This ticket was already scanned.",
         };
       }
+      if (result.result === "expired") {
+        return {
+          outcome: "expired" as const,
+          attendeeName: result.attendeeName ?? undefined,
+          message: result.expiresAt
+            ? `This ticket expired on ${new Date(result.expiresAt).toLocaleString()}.`
+            : "This ticket has expired.",
+        };
+      }
       return {
         outcome: "invalid" as const,
         attendeeName: result.attendeeName ?? undefined,
@@ -557,12 +565,6 @@ function AppShell() {
 
   // â”€â”€ Visitor is logged in â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   if (visitorSession) {
-    return (
-      <SafeAreaView style={styles.full}>
-        <PublicWebsiteScreen session={visitorSession} onSignIn={() => undefined} onSignOut={visitorSignOut} />
-      </SafeAreaView>
-    );
-    /*
     // Compose message screen
     if (authStep === "visitor_compose") {
       return (
@@ -596,7 +598,6 @@ function AppShell() {
         />
       </SafeAreaView>
     );
-    */
   }
 
   // â”€â”€ Staff is paired â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -664,17 +665,6 @@ function AppShell() {
   return (
     <SafeAreaView style={styles.full}>
       {authStep === "role_choice" && (
-        <PublicWebsiteScreen
-          session={null}
-          onSignIn={() => setAuthStep("visitor_login")}
-          onSignOut={() => undefined}
-          onStaff={() => setAuthStep("staff_access")}
-        />
-      )}
-      {/* Legacy native customer flow retained for visitors who explicitly use
-          the native auth screens; the default customer surface is the website
-          mirror above so Android stays in parity with the live site. */}
-      {false && authStep === "role_choice" && (
         <PublicHubScreen
           session={null}
           onSignIn={() => setAuthStep("visitor_login")}
@@ -877,3 +867,4 @@ const styles = StyleSheet.create({
   tabText: { color: "#C3CCDD", fontSize: 12, fontWeight: "800", letterSpacing: 0.2 },
   tabTextActive: { color: "#FFFFFF" },
 });
+

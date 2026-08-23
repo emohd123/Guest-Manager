@@ -20,11 +20,13 @@ import {
   Megaphone,
   Paintbrush,
   ArrowLeft,
-  Armchair
+  Armchair,
+  Tag
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
+import { trpc } from "@/lib/trpc/client";
 
 const getNavigation = (eventId: string) => [
   {
@@ -41,6 +43,7 @@ const getNavigation = (eventId: string) => [
     items: [
       { label: "Orders", href: `/dashboard/events/${eventId}/orders`, icon: ShoppingCart },
       { label: "Ticket types", href: `/dashboard/events/${eventId}/tickets`, icon: Ticket },
+      { label: "Promo codes", href: `/dashboard/events/${eventId}/promotions`, icon: Tag },
     ],
   },
   {
@@ -66,7 +69,23 @@ const getNavigation = (eventId: string) => [
 
 export function EventSidebar({ eventId }: { eventId: string }) {
   const pathname = usePathname();
-  const navigation = getNavigation(eventId);
+  const { data: access } = trpc.settings.getAccess.useQuery();
+  // Fail closed while access is loading so restricted customers never see admin links flash.
+  const isReadOnly = access?.readOnly === true;
+  const navigation = access === undefined
+    ? []
+    : isReadOnly
+      ? getNavigation(eventId)
+        .map((group) => ({ ...group, items: group.items.filter((item) =>
+          [
+            `/dashboard/events/${eventId}`,
+            `/dashboard/events/${eventId}/guests`,
+            `/dashboard/events/${eventId}/check-in`,
+            `/dashboard/events/${eventId}/reports`,
+          ].includes(item.href)
+        ) }))
+        .filter((group) => group.items.length > 0)
+    : getNavigation(eventId);
 
   return (
     <div className="flex h-full w-64 flex-col border-r border-border glass-panel">
@@ -83,7 +102,13 @@ export function EventSidebar({ eventId }: { eventId: string }) {
       
       <ScrollArea className="flex-1 px-3 py-4">
         <div className="space-y-6">
-          {navigation.map((group) => (
+          {access === undefined ? (
+            <div className="space-y-3 px-2" aria-label="Loading event navigation">
+              {[1, 2, 3, 4].map((item) => (
+                <div key={item} className="h-9 rounded-xl bg-muted/60 animate-pulse" />
+              ))}
+            </div>
+          ) : navigation.map((group) => (
             <div key={group.group}>
               <h4 className="mb-2 px-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">
                 {group.group}

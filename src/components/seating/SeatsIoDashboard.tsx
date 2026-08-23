@@ -421,3 +421,4 @@ export function SeatsIoDashboard({ eventId }: { eventId: string }) {
     </main>
   );
 }
+

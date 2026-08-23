@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { trpc } from "@/lib/trpc/client";
 import {
@@ -30,6 +32,13 @@ import { CountUp } from "@/components/visual/reactbits";
 
 
 export default function DashboardPage() {
+  const router = useRouter();
+  const { data: access } = trpc.settings.getAccess.useQuery();
+  useEffect(() => {
+    if (access?.readOnly) router.replace("/dashboard/events");
+  }, [access?.readOnly, router]);
+  if (access?.readOnly) return null;
+
   const { data: eventStats, isLoading: eventsLoading } = trpc.events.stats.useQuery();
   const { data: upcomingEvents, isLoading: upcomingLoading } = trpc.events.list.useQuery({
     status: "published",
@@ -471,51 +480,6 @@ export default function DashboardPage() {
             </SpotlightCard>
           </motion.div>
 
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.2 }}
-            className="relative overflow-hidden rounded-[40px] border border-primary/30 bg-linear-to-br from-primary/20 to-transparent p-10"
-          >
-            <div className="relative z-10 space-y-6">
-              <div className="flex items-center justify-between">
-                <h3 className="text-xl font-black uppercase italic leading-none tracking-tighter text-foreground dark:text-white">
-                  Plan Usage
-                </h3>
-                <Badge className="border-none bg-primary px-3 text-[9px] font-black uppercase text-white">
-                  BASIC
-                </Badge>
-              </div>
-
-              <div className="space-y-4">
-                <div className="flex items-end justify-between">
-                  <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground dark:text-white/40">
-                    Check-in Credits
-                  </p>
-                  <p className="text-xl font-black italic leading-none text-foreground dark:text-white">
-                    {totalCheckIns}{" "}
-                    <span className="text-[10px] text-muted-foreground/70 dark:text-white/20">
-                      / 50
-                    </span>
-                  </p>
-                </div>
-                <div className="h-2.5 overflow-hidden rounded-full bg-white/10">
-                  <motion.div
-                    initial={{ width: 0 }}
-                    animate={{ width: `${Math.min((totalCheckIns / 50) * 100, 100)}%` }}
-                    className="h-full bg-primary"
-                  />
-                </div>
-              </div>
-
-              <Link href="/dashboard/settings" className="block">
-                <Button className="h-14 w-full rounded-2xl border border-border bg-card/80 font-black uppercase italic tracking-widest text-foreground transition-all hover:bg-muted dark:border-white/10 dark:bg-white/5 dark:text-white dark:hover:bg-white/10">
-                  Manage Plan
-                </Button>
-              </Link>
-            </div>
-            <div className="absolute -right-10 -bottom-10 h-32 w-32 rounded-full bg-primary/20 blur-3xl" />
-          </motion.div>
         </div>
       </div>
     </div>

@@ -55,6 +55,7 @@ interface DataTableProps<TData, TValue> {
   isLoading?: boolean;
   rowSelection?: Record<string, boolean>;
   setRowSelection?: React.Dispatch<React.SetStateAction<Record<string, boolean>>>;
+  onExport?: () => void;
 }
 
 export function DataTable<TData, TValue>({
@@ -67,6 +68,7 @@ export function DataTable<TData, TValue>({
   isLoading = false,
   rowSelection: externalRowSelection,
   setRowSelection: setExternalRowSelection,
+  onExport,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
@@ -131,7 +133,9 @@ export function DataTable<TData, TValue>({
           <Button
             variant="ghost"
             size="sm"
-            className="hidden h-10 gap-2 rounded-xl border border-border bg-card/80 px-4 text-muted-foreground hover:bg-card hover:text-foreground sm:flex"
+            className="flex h-10 gap-2 rounded-xl border border-border bg-card/80 px-4 text-muted-foreground hover:bg-card hover:text-foreground"
+            onClick={onExport}
+            disabled={!onExport}
           >
             <Download className="h-4 w-4" /> Export
           </Button>

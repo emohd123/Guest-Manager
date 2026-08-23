@@ -36,6 +36,7 @@ export function DashboardTopbar({
     () => false
   );
   const { setTheme, resolvedTheme } = useTheme();
+  const { data: access } = trpc.settings.getAccess.useQuery();
   const isDark = mounted && resolvedTheme === "dark";
   const { data: event } = trpc.events.get.useQuery(
     { id: eventId ?? "" },
@@ -103,9 +104,10 @@ export function DashboardTopbar({
           <>
 
 
-              <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button className="h-11 px-6 rounded-2xl bg-primary hover:bg-primary/90 text-white font-bold shadow-lg shadow-primary/20 gap-2">
+              {access && !access.readOnly && (
+                <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button className="h-11 px-6 rounded-2xl bg-primary hover:bg-primary/90 text-white font-bold shadow-lg shadow-primary/20 gap-2">
                   <Plus className="h-5 w-5" />
                   <span className="hidden sm:inline">Create</span>
                 </Button>
@@ -135,8 +137,9 @@ export function DashboardTopbar({
                     <span className="font-semibold">Create Order</span>
                   </Link>
                 </DropdownMenuItem>
-              </DropdownMenuContent>
-              </DropdownMenu>
+                </DropdownMenuContent>
+                </DropdownMenu>
+              )}
 
               <Button
                 variant="ghost"

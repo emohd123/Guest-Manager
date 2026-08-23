@@ -218,3 +218,4 @@ export function FallingSparkles({
 
   return <canvas ref={canvasRef} aria-hidden="true" className={className} />;
 }
+

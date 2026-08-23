@@ -93,6 +93,12 @@ export const settingsRouter = router({
     return data ?? [];
   }),
 
+  getAccess: protectedProcedure.query(({ ctx }) => ({
+    dashboardAccess: ctx.dashboardAccess,
+    dashboardPermissions: ctx.dashboardPermissions,
+    readOnly: ctx.dashboardAccess === "limited",
+  })),
+
   listAccounts: dashboardAdminProcedure.query(async ({ ctx }) => {
     const admin = createSupabaseAdminClient();
     const [{ data: authData, error: authError }, { data: profiles, error: profileError }] = await Promise.all([
@@ -180,3 +186,4 @@ export const settingsRouter = router({
       };
     }),
 });
+

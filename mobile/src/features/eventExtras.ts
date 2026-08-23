@@ -251,3 +251,4 @@ export async function getLang(): Promise<AppLang> {
 export async function setLang(lang: AppLang): Promise<void> {
   await AsyncStorage.setItem(LANG_KEY, lang);
 }
+

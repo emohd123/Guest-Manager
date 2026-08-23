@@ -1,6 +1,8 @@
 "use client";
 
-import { use } from "react";
+import { use, useEffect } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { trpc } from "@/lib/trpc/client";
 import { EventSidebar } from "@/components/layout/event-sidebar";
 
 export default function EventDashboardLayout({
@@ -11,6 +13,21 @@ export default function EventDashboardLayout({
   params: Promise<{ eventId: string }>;
 }) {
   const { eventId } = use(params);
+  const pathname = usePathname();
+  const router = useRouter();
+  const { data: access } = trpc.settings.getAccess.useQuery();
+  useEffect(() => {
+    if (!access?.readOnly) return;
+    const allowed = [
+      `/dashboard/events/${eventId}`,
+      `/dashboard/events/${eventId}/guests`,
+      `/dashboard/events/${eventId}/check-in`,
+      `/dashboard/events/${eventId}/reports`,
+    ];
+    if (!allowed.some((route) => pathname === route || pathname.startsWith(route + "/"))) {
+      router.replace(`/dashboard/events/${eventId}`);
+    }
+  }, [access?.readOnly, eventId, pathname, router]);
 
   return (
     <div className="flex -mx-4 lg:-mx-8 -my-4 lg:-my-8 h-[calc(100vh-4rem)]">

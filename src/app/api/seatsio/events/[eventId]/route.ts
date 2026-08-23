@@ -11,10 +11,16 @@ export async function POST(request: Request, { params }: { params: Promise<{ eve
   const { eventId } = await params;
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const appUser = await ensureAppUserForAuthUser(supabase, user);
-  if (!appUser?.companyId) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  const { data: event } = await supabase.from("events").select("id, title").eq("id", eventId).eq("company_id", appUser.companyId).maybeSingle();
+  let event: { id: string; title?: string | null } | null = null;
+  if (user) {
+    const appUser = await ensureAppUserForAuthUser(supabase, user);
+    if (!appUser?.companyId) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    const result = await supabase.from("events").select("id, title").eq("id", eventId).eq("company_id", appUser.companyId).maybeSingle();
+    event = result.data;
+  } else {
+    const result = await supabase.from("events").select("id, title, status").eq("id", eventId).eq("status", "published").maybeSingle();
+    event = result.data;
+  }
   if (!event) return NextResponse.json({ error: "Event not found" }, { status: 404 });
   const body = await request.json().catch(() => ({})) as { chartKey?: unknown; eventKey?: unknown };
   const chartKey = typeof body.chartKey === "string" && /^[A-Za-z0-9_-]{3,128}$/.test(body.chartKey)
@@ -27,9 +33,13 @@ export async function POST(request: Request, { params }: { params: Promise<{ eve
     method: "POST", headers: { "Content-Type": "application/json", Authorization: `Basic ${Buffer.from(`${secret}:`).toString("base64")}` },
     body: JSON.stringify({ chartKey, eventKey }),
   });
-  if (!response.ok && response.status !== 409) {
+  if (!response.ok) {
     const detail = await response.text().catch(() => "");
-    return NextResponse.json({ error: detail || "Unable to create Seats.io event" }, { status: 502 });
+    // Seats.io may return 400 (or 409) when this event key already exists.
+    // That is safe and idempotent: the existing event can be reused.
+    if (!detail.includes("EVENT_KEY_ALREADY_EXISTS") && !detail.includes("event key already exists")) {
+      return NextResponse.json({ error: detail || "Unable to create Seats.io event" }, { status: 502 });
+    }
   }
   return NextResponse.json({ ok: true, eventKey, chartKey });
 }

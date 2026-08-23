@@ -35,6 +35,9 @@ function TicketCheckout() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [submitting, setSubmitting] = useState(false);
+  const [promoCode, setPromoCode] = useState("");
+  const [appliedPromo, setAppliedPromo] = useState<{ code: string; percentage: number } | null>(null);
+  const [promoLoading, setPromoLoading] = useState(false);
   const companySlug = searchParams.get("company") ?? "";
   const eventSlug = searchParams.get("event") ?? "";
   const selectedSeatIds = (searchParams.get("seats") ?? "").split(",").filter(Boolean);
@@ -56,9 +59,32 @@ function TicketCheckout() {
   const seatHoldToken = searchParams.get("hold") ?? undefined;
   const subtotal = cartItems.reduce((total, item) => total + Number(item.price || 0) * item.quantity, 0);
   const currency = cartItems[0]?.currency ?? "EGP";
-  const serviceFee = subtotal > 0 ? subtotal * 0.1 : 0;
-  const total = subtotal + serviceFee;
+  const discountAmount = appliedPromo ? subtotal * (appliedPromo.percentage / 100) : 0;
+  const discountedSubtotal = Math.max(0, subtotal - discountAmount);
+  const serviceFee = discountedSubtotal > 0 ? discountedSubtotal * 0.1 : 0;
+  const total = discountedSubtotal + serviceFee;
   const totalTickets = cartItems.reduce((count, item) => count + item.quantity, 0);
+
+  const applyPromo = async () => {
+    if (!promoCode.trim()) return;
+    setPromoLoading(true);
+    try {
+      const response = await fetch("/api/promotions/validate", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ companySlug, eventSlug, code: promoCode, ticketCount: totalTickets }),
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error ?? "Promo code is not valid.");
+      setAppliedPromo({ code: result.code, percentage: Number(result.percentage) });
+      toast.success(`${result.code} applied`);
+    } catch (error) {
+      setAppliedPromo(null);
+      toast.error(error instanceof Error ? error.message : "Promo code is not valid.");
+    } finally {
+      setPromoLoading(false);
+    }
+  };
 
   const backToEvent = () => {
     if (!companySlug || !eventSlug) return router.push("/");
@@ -82,7 +108,7 @@ function TicketCheckout() {
       const response = await fetch("/api/orders", {
         method: "POST",
         headers: { "content-type": "application/json", ...(sessionData.session?.access_token ? { authorization: `Bearer ${sessionData.session.access_token}` } : {}) },
-        body: JSON.stringify({ companySlug, eventSlug, cartItems, selectedSeatIds, seatHoldToken, seatsIo }),
+        body: JSON.stringify({ companySlug, eventSlug, cartItems, selectedSeatIds, seatHoldToken, seatsIo, promoCode: appliedPromo?.code }),
       });
       const result = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(result.error ?? "Checkout failed");
@@ -115,8 +141,17 @@ function TicketCheckout() {
         <div className="mt-7 space-y-3 rounded-2xl bg-zinc-50 p-4">
           {cartItems.map((item) => <div key={item.ticketTypeId} className="flex justify-between gap-4 text-sm"><span className="text-zinc-700"><strong>{item.quantity}×</strong> {item.name}</span><strong className="whitespace-nowrap text-zinc-950">{subtotal === 0 ? "FREE" : formatMoney(item.price * item.quantity, item.currency || currency)}</strong></div>)}
           <div className="flex justify-between border-t border-zinc-200 pt-3 text-sm"><span className="text-zinc-600">Tickets ({totalTickets})</span><strong>{subtotal === 0 ? "FREE" : formatMoney(subtotal, currency)}</strong></div>
-          {subtotal > 0 && <div className="flex justify-between text-sm"><span className="text-zinc-600">Service fee (10%)</span><strong>{formatMoney(serviceFee, currency)}</strong></div>}
+          {discountAmount > 0 && <div className="flex justify-between text-sm text-emerald-700"><span>Promo ({appliedPromo?.code})</span><strong>-{formatMoney(discountAmount, currency)}</strong></div>}
+          {discountedSubtotal > 0 && <div className="flex justify-between text-sm"><span className="text-zinc-600">Service fee (10%)</span><strong>{formatMoney(serviceFee, currency)}</strong></div>}
           <div className="flex justify-between border-t border-zinc-200 pt-3 text-lg font-black text-zinc-950"><span>Total</span><span>{total === 0 ? "FREE" : formatMoney(total, currency)}</span></div>
+        </div>
+        <div className="mt-5 rounded-xl border border-zinc-200 bg-white p-4">
+          <label className="text-xs font-black uppercase tracking-wider text-zinc-600">Promo code</label>
+          <div className="mt-2 flex gap-2">
+            <input value={promoCode} onChange={(e) => { setPromoCode(e.target.value.toUpperCase()); setAppliedPromo(null); }} placeholder="Enter code" className="h-11 min-w-0 flex-1 rounded-lg border border-zinc-200 px-3 text-sm font-bold outline-none focus:border-cyan-500" />
+            <button type="button" onClick={applyPromo} disabled={promoLoading || !promoCode.trim()} className="h-11 rounded-lg bg-zinc-900 px-4 text-sm font-black text-white disabled:opacity-50">{promoLoading ? "Checking…" : "Apply"}</button>
+          </div>
+          {appliedPromo && <p className="mt-2 text-sm font-bold text-emerald-700">{appliedPromo.percentage}% discount applied.</p>}
         </div>
         {subtotal === 0 && <p className="mt-5 flex items-center gap-2 rounded-xl bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800"><CheckCircle2 className="h-5 w-5 shrink-0" /> Free tickets are added directly to your account.</p>}
         <button type="button" disabled={submitting} onClick={submit} className="mt-6 flex h-14 w-full items-center justify-center gap-2 rounded-xl bg-cyan-600 px-5 font-black text-white shadow-lg shadow-cyan-500/20 transition hover:bg-cyan-700 disabled:cursor-not-allowed disabled:opacity-60"><CreditCard className="h-5 w-5" />{submitting ? "Processing…" : total === 0 ? "Get free tickets" : "Continue to secure payment"}</button>

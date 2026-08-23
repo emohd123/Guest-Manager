@@ -101,3 +101,4 @@ export function ConferencePortalClient({ attendeeName, guestId, event, sessions,
     </div>
   );
 }
+

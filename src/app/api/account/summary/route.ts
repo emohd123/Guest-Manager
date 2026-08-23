@@ -3,6 +3,8 @@ export const dynamic = "force-dynamic";
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createSupabaseAdminClient } from "@/server/supabase/admin";
+import { ensureAppUserForAuthUser } from "@/server/auth/app-user";
+import { readSeatsIoChartKey, readSeatsIoEventKey, readSeatsIoObjectInfos, readSeatsIoPricing, seatsIoEventKeyFor } from "@/lib/seatsio";
 
 export async function GET() {
   const supabase = await createClient();
@@ -16,14 +18,38 @@ export async function GET() {
 
   const admin = createSupabaseAdminClient();
   const email = user.email.toLowerCase();
+
+  // Provision/link a customer contact before checking dashboard access. This
+  // makes the account button work on the very first visit, not only after the
+  // customer has already opened the dashboard.
+  try {
+    await ensureAppUserForAuthUser(supabase, user);
+  } catch {
+    // Buyer accounts remain usable even when optional dashboard provisioning
+    // cannot run in a partially configured local environment.
+  }
   const { data: adminProfile, error: adminProfileError } = await admin
     .from("users")
-    .select("id,role,company_id,companies(id,name,slug)")
+    .select("id,role,company_id,dashboard_access,customer_company_id,companies(id,name,slug)")
     .eq("id", user.id)
     .maybeSingle();
 
   if (adminProfileError) {
     return NextResponse.json({ error: adminProfileError.message }, { status: 500 });
+  }
+
+  // A customer contact may be a buyer before their first dashboard session.
+  // Resolve the company link directly by verified email so the buyer account
+  // can still offer the read-only company dashboard immediately.
+  let linkedCustomerCompany: { id: string; owner_company_id: string } | null = null;
+  if (!adminProfile?.customer_company_id) {
+    const { data: customerCompany } = await admin
+      .from("customer_companies")
+      .select("id,owner_company_id")
+      .ilike("email", email)
+      .is("deleted_at", null)
+      .maybeSingle();
+    linkedCustomerCompany = customerCompany ?? null;
   }
 
   const [
@@ -39,7 +65,7 @@ export async function GET() {
       .limit(50),
     admin
       .from("tickets")
-      .select("id,barcode,status,attendee_name,attendee_email,checked_in,created_at,events(id,title,slug,starts_at,ends_at,cover_image_url,settings,companies(slug,name)),ticket_types(name,currency,price)")
+      .select("id,barcode,status,attendee_name,attendee_email,checked_in,metadata,created_at,events(id,title,slug,starts_at,ends_at,cover_image_url,settings,companies(slug,name)),ticket_types(name,currency,price)")
       .ilike("attendee_email", email)
       .order("created_at", { ascending: false })
       .limit(100),
@@ -90,20 +116,60 @@ export async function GET() {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
+  // Backfill the display label and price for older Seats.io tickets that were
+  // created before category metadata was persisted on each ticket.
+  const enrichedTickets = await Promise.all((tickets ?? []).map(async (ticket: any) => {
+    const metadata = ticket.metadata && typeof ticket.metadata === "object" ? ticket.metadata : {};
+    if (metadata.seatingProvider !== "seats.io" || typeof metadata.selectedSeatId !== "string") return ticket;
+    const eventRecord = Array.isArray(ticket.events) ? ticket.events[0] : ticket.events;
+    const settings = eventRecord?.settings ?? {};
+    const chartKey = readSeatsIoChartKey(settings);
+    const eventKey = readSeatsIoEventKey(settings) ?? (chartKey && eventRecord?.id ? seatsIoEventKeyFor(eventRecord.id, chartKey) : null);
+    if (!eventKey) return ticket;
+    try {
+      const infos = await readSeatsIoObjectInfos(eventKey, [metadata.selectedSeatId]);
+      const info = infos[metadata.selectedSeatId] ?? {};
+      const nestedCategory = info.category && typeof info.category === "object" ? info.category as Record<string, unknown> : null;
+      const categoryKey = info.categoryKey ?? nestedCategory?.key;
+      const categoryLabel = info.categoryLabel ?? nestedCategory?.label ?? (typeof categoryKey === "string" ? categoryKey : null);
+      const configured = readSeatsIoPricing(settings).find((entry) => String(entry.category) === String(categoryKey));
+      return {
+        ...ticket,
+        metadata: {
+          ...metadata,
+          ...(typeof metadata.ticketTypeName !== "string" && typeof categoryLabel === "string" && categoryLabel.trim()
+            ? { ticketTypeName: categoryLabel.trim() }
+            : {}),
+          ...(metadata.price == null && configured ? { price: configured.price } : {}),
+        },
+      };
+    } catch {
+      return ticket;
+    }
+  }));
+
   return NextResponse.json({
     profile: {
       email: user.email,
       name: user.user_metadata?.name ?? user.email.split("@")[0],
     },
-    adminAccess: adminProfile?.company_id
-      ? {
-          role: adminProfile.role,
-          companyId: adminProfile.company_id,
-          company: adminProfile.companies,
-        }
-      : null,
+    adminAccess:
+      (adminProfile?.company_id &&
+        (adminProfile.dashboard_access === "limited" ||
+          adminProfile.dashboard_access === "full" ||
+          adminProfile.role === "owner" ||
+          adminProfile.role === "admin")) ||
+      Boolean(linkedCustomerCompany)
+        ? {
+            role: adminProfile?.role ?? "staff",
+            companyId: adminProfile?.company_id ?? linkedCustomerCompany?.owner_company_id,
+            customerCompanyId: adminProfile?.customer_company_id ?? linkedCustomerCompany?.id ?? null,
+            readOnly: !adminProfile?.dashboard_access || adminProfile.dashboard_access === "limited" || Boolean(adminProfile?.customer_company_id ?? linkedCustomerCompany),
+            company: adminProfile?.companies ?? null,
+          }
+        : null,
     orders: orders ?? [],
-    tickets: tickets ?? [],
+    tickets: enrichedTickets,
     notifications,
     messages: messages ?? [],
     unreadCount: (notifications ?? []).filter((notification: any) => !notification.is_read).length,

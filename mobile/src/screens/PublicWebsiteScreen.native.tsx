@@ -24,7 +24,6 @@ type PublicWebsiteScreenProps = {
   session: VisitorSession | null;
   onSignIn: () => void;
   onSignOut: () => void;
-  onStaff?: () => void;
 };
 
 export function PublicWebsiteScreen({}: PublicWebsiteScreenProps) {
@@ -67,3 +66,4 @@ const styles = StyleSheet.create({
   },
   loadingText: { color: "#0E172F", fontWeight: "800" },
 });
+

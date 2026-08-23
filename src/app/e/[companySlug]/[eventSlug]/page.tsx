@@ -36,7 +36,8 @@ import {
 } from "@/lib/marketplace";
 import { CustomerHallMap } from "@/components/seating/CustomerHallMap";
 import { SeatsIoChart } from "@/components/seating/SeatsIoChart";
-import { readSeatsIoChartKey, readSeatsIoEventKey, readSeatsIoPricing } from "@/lib/seatsio";
+import { readSeatsIoPricing } from "@/lib/seatsio";
+import { readSeatsIoChartKey, readSeatsIoEventKey } from "@/lib/seatsio";
 import { createClient } from "@/lib/supabase/client";
 
 const CUSTOMER_TERMS = [
@@ -356,9 +357,6 @@ export default function PublicEventPage({
       0,
     );
     let seatHoldToken: string | undefined;
-    // Seats.io charts are an optional seat-picking flow. They navigate to
-    // checkout themselves; regular ticket purchases must not be blocked by
-    // an attached chart. Native seat maps still require a matching hold.
     if (hasNativeSeatMap) {
       if (selectedSeatIds.length !== requestedQuantity) {
         toast.error(
@@ -656,6 +654,29 @@ export default function PublicEventPage({
               </ul>
             </section>
 
+            {mediaItems.length > 1 ? (
+              <section className="border-t border-zinc-200 pt-7">
+                <div className="mb-4 flex items-center justify-between">
+                  <h2 className="text-xl font-black tracking-tight sm:text-2xl">
+                    Event media
+                  </h2>
+                  <span className="text-sm font-bold text-zinc-500">{mediaItems.length} items</span>
+                </div>
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                  {mediaItems.map((media, index) => (
+                    <button key={`${media}-${index}`} type="button" onClick={() => setActiveMediaIndex(index)} className={`relative overflow-hidden rounded-xl border-2 text-left transition ${index === activeMediaIndex ? "border-cyan-500 ring-2 ring-cyan-100" : "border-zinc-200 hover:border-cyan-300"}`} aria-label={`Show media ${index + 1}`}>
+                      {isVideoMedia(media) ? (
+                        <video src={media} muted playsInline preload="metadata" className="aspect-[4/3] w-full object-cover" />
+                      ) : (
+                        <img src={media} alt={`${event?.title ?? "Event"} media ${index + 1}`} className="aspect-[4/3] w-full object-cover" />
+                      )}
+                      {isVideoMedia(media) ? <span className="absolute bottom-2 left-2 rounded-full bg-black/75 px-2 py-1 text-[10px] font-bold text-white">Video</span> : null}
+                    </button>
+                  ))}
+                </div>
+              </section>
+            ) : null}
+
             <section id="location" className="scroll-mt-24 border-t border-zinc-200 pt-7">
               <h2 className="mb-4 text-xl font-black tracking-tight sm:text-2xl">
                 {t.location}
@@ -929,7 +950,8 @@ export default function PublicEventPage({
                     </span>
                   </div>
                   {usesSeatsIo ? (
-                    <SeatsIoChart eventId={event.id} eventKey={seatsIoEventKey ?? undefined} workspaceKey={process.env.NEXT_PUBLIC_SEATSIO_WORKSPACE_KEY!} chartKey={seatsIoChartKey ?? undefined} pricing={seatsIoPricing} basePrice={lowestPrice} currency={currency} ticketTypeId={tickets[0]?.id} ticketTypeName={tickets[0]?.name} autoOpen={searchParams.get("openSeats") === "1"} companySlug={companySlug} eventSlug={eventSlug} returnTo={`/e/${companySlug}/${eventSlug}?openSeats=1#tickets`} />
+                    <SeatsIoChart eventId={event.id} eventKey={seatsIoEventKey ?? undefined} workspaceKey={process.env.NEXT_PUBLIC_SEATSIO_WORKSPACE_KEY!} chartKey={seatsIoChartKey ?? undefined}
+              pricing={seatsIoPricing} basePrice={lowestPrice} currency={currency} ticketTypeId={tickets[0]?.id} ticketTypeName={tickets[0]?.name} autoOpen={searchParams.get("openSeats") === "1"} companySlug={companySlug} eventSlug={eventSlug} returnTo={`/e/${companySlug}/${eventSlug}?openSeats=1#tickets`} />
                   ) : !seatingPlan.floor_plan_url ||
                   !/\.pdf(?:$|[?#])/i.test(seatingPlan.floor_plan_url) ? (
                     <CustomerHallMap
@@ -1094,24 +1116,6 @@ export default function PublicEventPage({
               </section>
             ) : null}
           </aside>
-        </div>
-
-        <div className="fixed inset-x-3 bottom-3 z-40 flex items-center justify-between gap-3 rounded-2xl border border-zinc-200 bg-white/95 p-3 shadow-[0_10px_35px_rgba(15,23,42,0.22)] backdrop-blur sm:hidden">
-          <div className="min-w-0">
-            <p className="truncate text-xs font-bold text-zinc-500">{eventTitle}</p>
-            <p className="text-sm font-black text-zinc-950">{publicPage.isPaidEvent ? priceFrom : t.freeEvent}</p>
-          </div>
-          <div className="flex items-center gap-2">
-            <button type="button" onClick={handleShareEvent} aria-label={t.shareEvent} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-zinc-200 bg-white text-zinc-700 shadow-sm">
-              <Share2 className="h-4 w-4" />
-            </button>
-            <button type="button" onClick={handleAddToCalendar} aria-label={t.addToCalendar} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-zinc-200 bg-white text-zinc-700 shadow-sm">
-              <Calendar className="h-4 w-4" />
-            </button>
-            <a href="#tickets" className="shrink-0 rounded-xl bg-cyan-600 px-4 py-3 text-sm font-black text-white shadow-sm transition hover:bg-cyan-700">
-              {publicPage.isPaidEvent ? "Buy tickets" : t.reservePlace}
-            </a>
-          </div>
         </div>
       </main>
     </div>

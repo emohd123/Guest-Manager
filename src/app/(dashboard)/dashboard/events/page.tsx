@@ -54,6 +54,8 @@ export default function EventsPage() {
   const router = useRouter();
   type EventStatus = "draft" | "published" | "cancelled" | "completed";
   const [statusFilter, setStatusFilter] = useState<EventStatus | "all">("all");
+  const { data: access } = trpc.settings.getAccess.useQuery();
+  const readOnly = access?.readOnly === true;
 
   const { data, isLoading, refetch } = trpc.events.list.useQuery(
     statusFilter !== "all"
@@ -229,6 +231,10 @@ export default function EventsPage() {
     },
   ];
 
+  const visibleColumns = readOnly
+    ? columns.filter((column) => column.id !== "select" && column.id !== "actions")
+    : columns;
+
   const events = (data?.events ?? []) as Event[];
 
   if (!isLoading && events.length === 0 && statusFilter === "all") {
@@ -247,11 +253,13 @@ export default function EventsPage() {
             Get started by creating your first event. You can set up check-ins,
             guest lists, and vibrant ticketing experiences.
           </p>
-          <Link href="/dashboard/events/new">
-            <Button size="lg" className="h-14 px-10 rounded-2xl bg-primary hover:bg-primary/90 text-white font-black text-lg shadow-2xl shadow-primary/20 transition-all hover:-translate-y-1">
-              Create Your First Event
-            </Button>
-          </Link>
+          {!readOnly && (
+            <Link href="/dashboard/events/new">
+              <Button size="lg" className="h-14 px-10 rounded-2xl bg-primary hover:bg-primary/90 text-white font-black text-lg shadow-2xl shadow-primary/20 transition-all hover:-translate-y-1">
+                Create Your First Event
+              </Button>
+            </Link>
+          )}
         </motion.div>
       </div>
     );
@@ -266,16 +274,18 @@ export default function EventsPage() {
             {data?.total ?? 0} active event{(data?.total ?? 0) !== 1 ? "s" : ""}
           </p>
         </div>
+        {!readOnly && (
         <Link href="/dashboard/events/new">
           <Button className="flex h-14 gap-3 rounded-2xl border border-border bg-card px-8 text-base font-black text-foreground shadow-2xl transition-all hover:-translate-y-1 hover:bg-card/90">
             <Plus className="h-6 w-6" />
             New Event
           </Button>
         </Link>
+        )}
       </div>
 
       <DataTable
-        columns={columns}
+        columns={visibleColumns}
         data={events}
         searchKey="title"
         searchPlaceholder="Find an event..."

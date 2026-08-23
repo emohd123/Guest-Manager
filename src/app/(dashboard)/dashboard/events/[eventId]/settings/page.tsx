@@ -48,6 +48,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { TIMEZONE_OPTIONS } from "@/lib/timezones";
+import { eventCategories } from "@/lib/marketplace";
 
 function formatDateTimeLocal(dateStr: string): string {
   const d = new Date(dateStr);
@@ -78,6 +79,7 @@ export default function EventSettingsPage({
   const [registrationEnabled, setRegistrationEnabled] = useState(false);
   const [visitorCode, setVisitorCode] = useState("");
   const [customerCompanyId, setCustomerCompanyId] = useState<string | null>(null);
+  const [categorySlug, setCategorySlug] = useState("");
   const [welcomeMessage, setWelcomeMessage] = useState("");
   const [homeHeadline, setHomeHeadline] = useState("");
   const [liveStreamUrl, setLiveStreamUrl] = useState("");
@@ -117,6 +119,9 @@ export default function EventSettingsPage({
     setRegistrationEnabled(event.registrationEnabled ?? false);
     setVisitorCode(event.visitorCode ?? "");
     setCustomerCompanyId(event.customerCompanyId ?? null);
+    const eventSettings = event.settings && typeof event.settings === "object" ? (event.settings as Record<string, unknown>) : {};
+    const publicPage = eventSettings.publicPage && typeof eventSettings.publicPage === "object" ? (eventSettings.publicPage as Record<string, unknown>) : {};
+    setCategorySlug(typeof publicPage.categorySlug === "string" ? publicPage.categorySlug : "");
   }, [event]);
 
   useEffect(() => {
@@ -231,6 +236,15 @@ export default function EventSettingsPage({
       registrationEnabled,
       visitorCode: eventType === "conference" && visitorCode.trim() ? visitorCode.trim().toUpperCase() : undefined,
       customerCompanyId: customerCompanyId || null,
+      settings: {
+        ...(event?.settings && typeof event.settings === "object" ? (event.settings as Record<string, unknown>) : {}),
+        publicPage: {
+          ...(event?.settings && typeof event.settings === "object" && (event.settings as Record<string, unknown>).publicPage && typeof (event.settings as Record<string, unknown>).publicPage === "object"
+            ? ((event.settings as Record<string, unknown>).publicPage as Record<string, unknown>)
+            : {}),
+          categorySlug: categorySlug || null,
+        },
+      },
     });
   };
 
@@ -635,6 +649,26 @@ export default function EventSettingsPage({
               placeholder="Detailed event description..."
               rows={5}
             />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="edit-category">Homepage Filter</Label>
+            <Select value={categorySlug || "none"} onValueChange={(value) => setCategorySlug(value === "none" ? "" : value)}>
+              <SelectTrigger id="edit-category">
+                <SelectValue placeholder="Choose a homepage filter" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">No homepage filter</SelectItem>
+                {eventCategories.filter((category) => category.kind !== "service").map((category) => (
+                  <SelectItem key={category.slug} value={category.slug}>
+                    {category.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">
+              Choose the customer homepage filter where this event should appear.
+            </p>
           </div>
 
           <div className="space-y-2">

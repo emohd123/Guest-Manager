@@ -37,10 +37,16 @@ export interface TicketPDFData {
   ticketType: string;
   venue?: string;
   startDate?: string;
+  description?: string;
+  terms?: string[];
   attendeeName: string;
   price?: string;
   orderNumber: string;
+  /** Unique ticket barcode/number printed on the ticket. */
+  ticketNumber?: string;
   qrCodeDataUri: string;
+  /** iTicket logo URL shown in the PDF header. */
+  logoUrl?: string;
   design: TicketPDFDesign;
   /** Unique event code shown at the bottom of the ticket (when enabled in design settings) */
   visitorCode?: string;
@@ -52,10 +58,11 @@ export interface TicketPDFData {
 // A4 portrait ticket: a visual upper half and a practical detail/QR lower half.
 const W = 595;
 const H = 842;
-const HERO_H = 404;
+const HERO_H = 380;
+const HERO_MARGIN = 28;
 
 export function TicketPDFDocument({ data }: { data: TicketPDFData }) {
-  const accentColor = data.design.labelColor ?? "#2563EB";
+  const accentColor = "#2563EB";
   const textColor = data.design.textColor ?? "#111111";
   const posX = data.design.imagePositionX ?? 50;
   const posY = data.design.imagePositionY ?? 50;
@@ -79,17 +86,39 @@ export function TicketPDFDocument({ data }: { data: TicketPDFData }) {
     },
     bgImage: {
       position: "absolute",
-      top: -(HERO_H * (posY / 100) * (imgScale - 1)),
-      left: -(W * (posX / 100) * (imgScale - 1)),
-      width: W * imgScale,
-      height: HERO_H * imgScale,
+      top: HERO_MARGIN + 8 - (HERO_H * (posY / 100) * (imgScale - 1)),
+      left: HERO_MARGIN - ((W - HERO_MARGIN * 2) * (posX / 100) * (imgScale - 1)),
+      width: (W - HERO_MARGIN * 2) * imgScale,
+      height: (HERO_H - HERO_MARGIN * 2) * imgScale,
+      borderRadius: 10,
+      objectFit: "cover",
+    },
+    logoHeader: {
+      position: "absolute",
+      top: 4,
+      left: HERO_MARGIN,
+      height: 28,
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 4,
+    },
+    logoMark: {
+      width: 28,
+      height: 28,
+      objectFit: "contain",
+    },
+    logoText: {
+      fontSize: 16,
+      fontFamily: "Helvetica-Bold",
+      color: "#111827",
     },
     overlay: {
       position: "absolute",
-      top: 0,
-      left: 0,
-      width: W,
-      height: HERO_H,
+      top: HERO_MARGIN + 8,
+      left: HERO_MARGIN,
+      width: W - HERO_MARGIN * 2,
+      height: HERO_H - HERO_MARGIN * 2 - 8,
+      borderRadius: 10,
       backgroundColor: "rgba(0,0,0,0.15)",
     },
     bottomStrip: {
@@ -99,9 +128,14 @@ export function TicketPDFDocument({ data }: { data: TicketPDFData }) {
       right: 0,
       bottom: 0,
       backgroundColor: "#ffffff",
-      padding: "28 32 28 32",
+      padding: "24 28 22 28",
+      flexDirection: "column",
+      gap: 10,
+    },
+    detailsRow: {
       flexDirection: "row",
       alignItems: "flex-start",
+      flex: 1,
       gap: 12,
     },
     fieldsGrid: {
@@ -144,6 +178,37 @@ export function TicketPDFDocument({ data }: { data: TicketPDFData }) {
       color: "#9ca3af",
       textAlign: "center",
     },
+    extraDetails: {
+      backgroundColor: "#f8fafc",
+      borderRadius: 8,
+      padding: 8,
+      gap: 4,
+    },
+    extraLabel: {
+      fontSize: 7,
+      fontFamily: "Helvetica-Bold",
+      textTransform: "uppercase",
+      letterSpacing: 1.1,
+      color: accentColor,
+    },
+    extraText: {
+      fontSize: 8,
+      color: textColor,
+      lineHeight: 1.35,
+    },
+    termsList: {
+      gap: 3,
+    },
+    termRow: {
+      flexDirection: "row",
+      alignItems: "flex-start",
+      gap: 4,
+    },
+    termBullet: {
+      fontSize: 8,
+      color: accentColor,
+      lineHeight: 1.35,
+    },
   });
 
   const renderField = (label: string, value: string | undefined) => {
@@ -167,9 +232,16 @@ export function TicketPDFDocument({ data }: { data: TicketPDFData }) {
         {/* Subtle overlay */}
         <View style={styles.overlay} />
 
+        {/* iTicket brand header */}
+        <View style={styles.logoHeader}>
+          {data.logoUrl ? <Image src={data.logoUrl} style={styles.logoMark} /> : null}
+          <Text style={styles.logoText}>iTicket</Text>
+        </View>
+
         {/* Bottom info strip */}
         <View style={styles.bottomStrip}>
-          <View style={styles.fieldsGrid}>
+          <View style={styles.detailsRow}>
+            <View style={styles.fieldsGrid}>
             {visible.eventName && renderField("EVENT", data.eventName)}
             {visible.startDate && renderField("DATE", data.startDate)}
             {visible.ticketType && renderField("TICKET TYPE", data.ticketType)}
@@ -178,13 +250,12 @@ export function TicketPDFDocument({ data }: { data: TicketPDFData }) {
             {visible.attendeeName && renderField("ATTENDEE", data.attendeeName)}
             {visible.price && data.price && renderField("PRICE", data.price)}
             {visible.orderNumber && renderField("ORDER #", data.orderNumber)}
+            {data.ticketNumber && renderField("TICKET NUMBER", data.ticketNumber)}
             {/* Visitor Portal Code + App Download QR — side by side */}
             {data.design.showVisitorCode !== false && data.visitorCode ? (
               <View style={[
                 styles.fieldItem,
                 {
-                  borderTopWidth: 1,
-                  borderTopColor: accentColor,
                   paddingTop: 4,
                   marginTop: 2,
                   minWidth: 160,
@@ -214,15 +285,35 @@ export function TicketPDFDocument({ data }: { data: TicketPDFData }) {
                 ) : null}
               </View>
             ) : null}
-          </View>
-
-          {/* QR Code */}
-          {visible.barcode && (
-            <View style={styles.qrSection}>
-              <Image src={data.qrCodeDataUri} style={styles.qrImage} />
-              <Text style={styles.barcodeText}>{data.orderNumber}</Text>
             </View>
-          )}
+
+            {/* QR Code */}
+            {visible.barcode && (
+              <View style={styles.qrSection}>
+                <Image src={data.qrCodeDataUri} style={styles.qrImage} />
+                <Text style={styles.barcodeText}>{data.orderNumber}</Text>
+              </View>
+            )}
+          </View>
+          {data.description ? (
+            <View style={styles.extraDetails}>
+              <Text style={styles.extraLabel}>EVENT DETAILS</Text>
+              <Text style={styles.extraText}>{data.description}</Text>
+            </View>
+          ) : null}
+          {data.terms?.length ? (
+            <View style={styles.extraDetails}>
+              <Text style={styles.extraLabel}>TERMS &amp; CONDITIONS</Text>
+              <View style={styles.termsList}>
+                {data.terms.map((term, index) => (
+                  <View key={`${term}-${index}`} style={styles.termRow}>
+                    <Text style={styles.termBullet}>•</Text>
+                    <Text style={styles.extraText}>{term}</Text>
+                  </View>
+                ))}
+              </View>
+            </View>
+          ) : null}
         </View>
       </Page>
     </Document>

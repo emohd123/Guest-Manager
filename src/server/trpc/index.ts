@@ -79,7 +79,9 @@ export const protectedProcedure = t.procedure.use(async ({ ctx, next, path, inpu
       ? candidate.eventId
       : typeof candidate.event_id === "string"
         ? candidate.event_id
-        : null;
+        : path.startsWith("events.") && typeof candidate.id === "string"
+          ? candidate.id
+          : null;
     if (eventId) {
       try {
         await assertEventAccess({ ...ctx, userId: ctx.userId, companyId: ctx.companyId }, eventId);
@@ -96,6 +98,13 @@ export const protectedProcedure = t.procedure.use(async ({ ctx, next, path, inpu
         throw error;
       }
     }
+  }
+
+  if (ctx.dashboardAccess === "limited" && /\.(create|update|delete|duplicate|archive|remove|send|publish|cancel|upsert|add|revoke|assign|generate|import|export|checkin|scan|pair|invite)$/i.test(path)) {
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message: "This customer account has read-only access",
+    });
   }
 
   const result = await next({

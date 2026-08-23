@@ -26,8 +26,8 @@ export async function generateQRCodeDataUri(text: string): Promise<string> {
  * public HTTPS URL suitable for use in emails.
  * Falls back to a data URI if the upload fails.
  */
-export async function generateAndUploadQRCode(barcode: string): Promise<string> {
-  const buffer = await QRCode.toBuffer(barcode, QR_OPTIONS);
+export async function generateAndUploadQRCode(barcode: string, qrValue = barcode): Promise<string> {
+  const buffer = await QRCode.toBuffer(qrValue, QR_OPTIONS);
 
   try {
     const supabase = createClient(

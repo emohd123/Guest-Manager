@@ -165,8 +165,9 @@ export async function GET(request: NextRequest) {
         const localized = settingObject(settings.localized);
         const category = event.category_id ? categoryMap.get(event.category_id) : undefined;
         const categorySlug =
+          (typeof publicPage.categorySlug === "string" ? publicPage.categorySlug : null) ??
           category?.slug ??
-          (typeof publicPage.categorySlug === "string" ? publicPage.categorySlug : null);
+          null;
         const tickets = ticketsByEvent.get(event.id) ?? [];
         const prices = tickets.map((ticket) => ticket.price ?? 0);
         const minPrice = prices.length > 0 ? Math.min(...prices) : null;

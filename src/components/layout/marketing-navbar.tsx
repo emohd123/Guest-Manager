@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
@@ -36,9 +36,6 @@ export function MarketingNavbar() {
   const [mounted, setMounted] = useState(false);
   const { resolvedTheme, setTheme } = useTheme();
   const nextLang = lang === "ar" ? "en" : "ar";
-  const isSearchPage = pathname === "/search";
-  const mobileSearchOpen = !isSearchPage && searchParams.get("focus") === "search";
-  const searchInputRef = useRef<HTMLInputElement>(null);
   const languageParams = new URLSearchParams(searchParams.toString());
   languageParams.set("locale", nextLang);
   const languageHref = `${pathname || "/"}?${languageParams.toString()}`;
@@ -67,14 +64,8 @@ export function MarketingNavbar() {
     }
   }, []);
 
-  useEffect(() => {
-    if (!mobileSearchOpen) return;
-    const timer = window.setTimeout(() => searchInputRef.current?.focus(), 80);
-    return () => window.clearTimeout(timer);
-  }, [mobileSearchOpen]);
-
   return (
-    <header dir="ltr" className={`${isSearchPage ? "hidden sm:block" : ""} fixed top-0 z-50 w-full border-b border-slate-200/90 bg-white/95 text-slate-950 shadow-sm backdrop-blur-xl dark:border-slate-700 dark:bg-slate-950/95 dark:text-white`}>
+    <header dir="ltr" className="fixed top-0 z-50 w-full border-b border-slate-200/90 bg-white/95 text-slate-950 shadow-sm backdrop-blur-xl dark:border-slate-700 dark:bg-slate-950/95 dark:text-white">
       <div className="mx-auto flex h-14 max-w-[1600px] items-center justify-between gap-2 px-3 sm:h-16 sm:px-8 lg:px-12">
         <div dir="ltr" className="flex shrink-0 items-center">
           <Link href="/" aria-label="iTicket home">
@@ -86,12 +77,10 @@ export function MarketingNavbar() {
           </Link>
         </div>
 
-        <form action="/search" method="get" className={`${mobileSearchOpen ? "fixed left-3 right-3 top-[4.25rem] z-10 flex max-w-none shadow-lg sm:static sm:mx-5 sm:w-full sm:max-w-md sm:shadow-none" : "hidden sm:flex mx-5 w-full max-w-md"} items-center rounded-full border border-slate-200 bg-slate-50 px-4 transition focus-within:border-cyan-500 focus-within:bg-white dark:border-slate-700 dark:bg-slate-900 dark:focus-within:bg-slate-900`}>
+        <form action="/" method="get" className="mx-5 hidden w-full max-w-md items-center rounded-full border border-slate-200 bg-slate-50 px-4 transition focus-within:border-cyan-500 focus-within:bg-white dark:border-slate-700 dark:bg-slate-900 dark:focus-within:bg-slate-900 sm:flex">
           <input type="hidden" name="locale" value={lang} />
-          <input type="hidden" name="focus" value="search" />
           <Search className="h-4 w-4 shrink-0 text-slate-500 dark:text-slate-400" />
           <input
-            ref={searchInputRef}
             name="q"
             type="search"
             placeholder={lang === "ar" ? "ابحث عن فعاليات..." : "Search events..."}
@@ -149,3 +138,4 @@ export function MarketingNavbar() {
     </header>
   );
 }
+

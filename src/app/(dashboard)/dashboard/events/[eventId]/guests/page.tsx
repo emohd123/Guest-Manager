@@ -440,8 +440,9 @@ export default function EventGuestsPage({
           isLoading={isLoading}
           rowSelection={rowSelection}
           setRowSelection={setRowSelection}
+          onExport={handleExportCSV}
           toolbar={
-            <div className="flex gap-3 items-center">
+            <div className="flex flex-wrap gap-3 items-center">
               {Object.keys(rowSelection).length > 0 && (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>

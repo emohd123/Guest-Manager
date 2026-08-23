@@ -4,11 +4,12 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { format } from "date-fns";
 import QRCode from "qrcode";
-import { Bell, CalendarDays, Heart, LayoutDashboard, LogOut, MessageSquare, QrCode, ReceiptText, Ticket, UserRound } from "lucide-react";
+import { Bell, CalendarDays, Download, Heart, LayoutDashboard, LogOut, MessageSquare, QrCode, ReceiptText, Ticket, UserRound } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { formatMoney } from "@/lib/marketplace";
+import { createTicketQrPayload, isTicketExpired } from "@/lib/ticket-qr";
 
 type AccountSummary = {
   profile: { email: string; name: string };
@@ -20,6 +21,8 @@ type AccountSummary = {
   adminAccess: null | {
     role: string;
     companyId: string;
+    customerCompanyId: string | null;
+    readOnly: boolean;
     company: { id: string; name: string; slug: string } | Array<{ id: string; name: string; slug: string }> | null;
   };
 };
@@ -92,7 +95,7 @@ export default function AccountPage() {
               <Button asChild className="rounded-full bg-cyan-200 px-6 font-black text-black hover:bg-cyan-100">
                 <Link href="/dashboard">
                   <LayoutDashboard className="mr-2 h-4 w-4" />
-                  Open admin dashboard
+                  {summary.adminAccess.readOnly ? "Open company dashboard" : "Open admin dashboard"}
                 </Link>
               </Button>
             ) : null}
@@ -124,14 +127,20 @@ export default function AccountPage() {
           <section className="mt-10 rounded-[1.5rem] border border-cyan-200/25 bg-cyan-200/[0.08] p-6">
             <div className="flex flex-col justify-between gap-5 md:flex-row md:items-center">
               <div>
-                <p className="text-xs font-black uppercase tracking-[0.24em] text-blue-600">Internal access</p>
-                <h2 className="mt-2 text-2xl font-black">iTicket admin dashboard is enabled</h2>
+                <p className="text-xs font-black uppercase tracking-[0.24em] text-blue-600">
+                  {summary.adminAccess.readOnly ? "Company access" : "Internal access"}
+                </p>
+                <h2 className="mt-2 text-2xl font-black">
+                  {summary.adminAccess.readOnly ? "Your company dashboard is enabled" : "iTicket admin dashboard is enabled"}
+                </h2>
                 <p className="mt-2 text-sm text-slate-600">
-                  Manage company-created events, tickets, guests, orders, scans, reports, and messages.
+                  {summary.adminAccess.readOnly
+                    ? "View the events assigned to your company. Editing and management actions are disabled."
+                    : "Manage company-created events, tickets, guests, orders, scans, reports, and messages."}
                 </p>
               </div>
               <Button asChild className="rounded-full bg-cyan-200 px-7 font-black text-black hover:bg-cyan-100">
-                <Link href="/dashboard">Open dashboard</Link>
+                <Link href="/dashboard">{summary.adminAccess.readOnly ? "Open company dashboard" : "Open dashboard"}</Link>
               </Button>
             </div>
           </section>
@@ -281,25 +290,62 @@ export function TicketRow({ ticket }: { ticket: Record<string, any> }) {
   const ticketType = ticket.ticket_types;
   const url = event?.companies?.slug && event?.slug ? `/e/${event.companies.slug}/${event.slug}` : "/events";
   const publicPage = event?.settings?.publicPage ?? {};
+  const eventImage = event?.cover_image_url || publicPage.coverImage || publicPage.heroImage || "";
   const venueName = publicPage.venueName || publicPage.locationText || "Venue TBA";
   const location = publicPage.locationText || "Cairo, Egypt";
+  const metadata = ticket.metadata ?? {};
+  const ticketLabel = typeof metadata.ticketTypeName === "string" && metadata.ticketTypeName.trim()
+    ? metadata.ticketTypeName.trim()
+    : ticketType?.name ?? "General Admission";
+  const isPaidEvent = event?.settings?.publicPage?.isPaidEvent !== false;
+  const ticketPrice = isPaidEvent ? (metadata.seat?.price ?? metadata.price ?? ticketType?.price ?? 0) : 0;
+  const ticketCurrency = metadata.currency ?? ticketType?.currency ?? "EGP";
   const checkedIn = ticket.checked_in || ticket.status === "checked_in";
   const used = checkedIn || ticket.status === "used";
+  const expiresAt = event?.ends_at || event?.starts_at || null;
+  const expired = isTicketExpired(expiresAt);
   return (
     <div className="overflow-hidden rounded-[1.5rem] border border-slate-200 bg-white shadow-sm">
       <div className="border-b border-slate-200 bg-slate-950 px-5 py-4 text-white">
-        <div className="flex items-center justify-between gap-3">
-          <p className={`text-xs font-black uppercase tracking-[0.24em] ${used ? "text-amber-300" : "text-emerald-300"}`}>{used ? "Used ticket" : "Available ticket"}</p>
-          <span className="font-mono text-xs text-slate-300">{ticket.barcode}</span>
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex min-w-0 items-start gap-4">
+            {eventImage ? (
+              <img
+                src={eventImage}
+                alt=""
+                className="h-24 w-24 shrink-0 rounded-2xl object-cover ring-1 ring-white/15"
+              />
+            ) : (
+              <div className="flex h-24 w-24 shrink-0 items-center justify-center rounded-2xl bg-white/10 text-3xl font-black text-cyan-200">
+                {(event?.title ?? "E").slice(0, 1).toUpperCase()}
+              </div>
+            )}
+            <div className="min-w-0">
+              <p className={`text-xs font-black uppercase tracking-[0.24em] ${used || expired ? "text-amber-300" : "text-emerald-300"}`}>{used ? "Used ticket" : expired ? "Expired ticket" : "Available ticket"}</p>
+              <h3 className="mt-2 truncate text-xl font-black">{event?.title ?? "Event"}</h3>
+              <p className="mt-1 truncate text-sm text-slate-300">{venueName}</p>
+              <p className="mt-1 truncate text-xs text-slate-400">{location}</p>
+            </div>
+          </div>
+          {used || expired ? (
+            <span className="inline-flex shrink-0 items-center gap-2 rounded-full bg-white/15 px-3 py-2 text-xs font-black text-amber-200">
+              {used ? "Used" : "Expired"}
+            </span>
+          ) : (
+            <a
+              href={`/api/tickets/${ticket.id}/pdf`}
+              className="inline-flex shrink-0 items-center gap-2 rounded-full bg-white px-3 py-2 text-xs font-black text-slate-950 transition hover:bg-cyan-100"
+            >
+              <Download className="h-4 w-4" />
+              <span className="hidden sm:inline">Download PDF</span>
+            </a>
+          )}
         </div>
-        <h3 className="mt-2 text-xl font-black">{event?.title ?? "Event"}</h3>
-        <p className="mt-1 text-sm text-slate-300">{venueName}</p>
-        <p className="mt-1 text-xs text-slate-400">{location}</p>
       </div>
       <div className="grid gap-5 p-5 sm:grid-cols-[1fr_auto] sm:items-center">
         <div>
         <div>
-          <p className="text-xs font-black uppercase tracking-[0.24em] text-blue-600">{ticketType?.name ?? "Ticket"}</p>
+          <p className="text-xs font-black uppercase tracking-[0.24em] text-blue-600">{ticketLabel}</p>
           {event?.starts_at ? (
             <p className="mt-2 flex items-center gap-2 text-sm text-slate-600">
               <CalendarDays className="h-4 w-4" />
@@ -307,14 +353,15 @@ export function TicketRow({ ticket }: { ticket: Record<string, any> }) {
             </p>
           ) : null}
           <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
-            <div><p className="text-slate-500">Ticket type</p><p className="font-black">{ticketType?.name ?? "General Admission"}</p></div>
-            <div><p className="text-slate-500">Status</p><p className="font-black">{used ? "Used" : "Available"}</p></div>
-            <div><p className="text-slate-500">Price</p><p className="font-black">{formatMoney(ticketType?.price ?? 0, ticketType?.currency ?? "EGP")}</p></div>
+            <div><p className="text-slate-500">Ticket type</p><p className="font-black">{ticketLabel}</p></div>
+            <div><p className="text-slate-500">Status</p><p className="font-black">{expired ? "Expired" : used ? "Used" : "Available"}</p></div>
+            <div><p className="text-slate-500">Price</p><p className="font-black">{formatMoney(Number(ticketPrice), ticketCurrency)}</p></div>
             <div><p className="text-slate-500">Ticket number</p><p className="truncate font-mono text-xs font-black">{ticket.barcode}</p></div>
+            {expiresAt ? <div><p className="text-slate-500">Valid until</p><p className="font-black">{format(new Date(expiresAt), "MMM d, yyyy - h:mm a")}</p></div> : null}
           </div>
         </div>
         </div>
-        <TicketQr value={ticket.barcode} />
+        <TicketQr value={createTicketQrPayload(ticket.barcode, expiresAt)} disabled={used || expired} label={used ? "Used" : "Expired"} />
       </div>
       <div className="border-t border-slate-200 px-5 py-4">
       <Button asChild className="w-full rounded-full bg-slate-950 font-black text-white hover:bg-slate-800">
@@ -325,13 +372,33 @@ export function TicketRow({ ticket }: { ticket: Record<string, any> }) {
   );
 }
 
-function TicketQr({ value }: { value: string }) {
+function TicketQr({ value, disabled = false, label = "Used" }: { value: string; disabled?: boolean; label?: string }) {
   const [src, setSrc] = useState("");
   useEffect(() => {
     if (!value) return;
     QRCode.toDataURL(value, { width: 180, margin: 1, errorCorrectionLevel: "M" }).then(setSrc).catch(() => setSrc(""));
   }, [value]);
-  return src ? <img src={src} alt="Ticket QR code" className="h-36 w-36 rounded-xl bg-white p-2" /> : <div className="flex h-36 w-36 items-center justify-center rounded-xl bg-slate-100"><QrCode className="h-12 w-12 text-slate-700" /></div>;
+
+  return (
+    <div className="relative h-36 w-36 overflow-hidden rounded-xl bg-white p-2">
+      {src ? (
+        <img
+          src={src}
+          alt={disabled ? `${label} ticket QR code` : "Ticket QR code"}
+          className={disabled ? "h-full w-full blur-[6px] opacity-30" : "h-full w-full"}
+        />
+      ) : (
+        <div className="flex h-full w-full items-center justify-center bg-slate-100">
+          <QrCode className="h-12 w-12 text-slate-700" />
+        </div>
+      )}
+      {disabled ? (
+        <div className="absolute inset-0 flex items-center justify-center bg-slate-950/45 text-center text-lg font-black text-white">
+          {label}
+        </div>
+      ) : null}
+    </div>
+  );
 }
 
 function OrderRow({ order }: { order: Record<string, any> }) {
