@@ -13,10 +13,20 @@ import {
   LogOut,
   LockKeyhole,
   Users,
+  Armchair,
+  ShoppingCart,
+  Smartphone,
+  ScanLine,
+  FileText,
+  Mail,
+  List,
+  Upload,
+  Megaphone,
+  Paintbrush,
+  Tag,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { BrandMark } from "@/components/brand/brand-mark";
@@ -65,6 +75,45 @@ const bottomNavigation = [
   },
 ];
 
+const getEventNavigation = (eventId: string) => [
+  {
+    group: "Event",
+    items: [
+      { label: "Overview", href: `/dashboard/events/${eventId}`, icon: LayoutDashboard },
+      { label: "Attendees", href: `/dashboard/events/${eventId}/guests`, icon: Users },
+      { label: "Seating", href: `/dashboard/events/${eventId}/seating`, icon: Armchair },
+      { label: "Sessions", href: `/dashboard/events/${eventId}/sessions`, icon: CalendarDays },
+    ],
+  },
+  {
+    group: "Ticketing",
+    items: [
+      { label: "Orders", href: `/dashboard/events/${eventId}/orders`, icon: ShoppingCart },
+      { label: "Ticket types", href: `/dashboard/events/${eventId}/tickets`, icon: Ticket },
+      { label: "Promo codes", href: `/dashboard/events/${eventId}/promotions`, icon: Tag },
+    ],
+  },
+  {
+    group: "Onsite",
+    items: [
+      { label: "Devices", href: `/dashboard/events/${eventId}/devices`, icon: Smartphone },
+      { label: "Arrivals", href: `/dashboard/events/${eventId}/check-in`, icon: ScanLine },
+      { label: "Check in report", href: `/dashboard/events/${eventId}/reports`, icon: FileText },
+    ],
+  },
+  {
+    group: "Manage",
+    items: [
+      { label: "Design and setup", href: `/dashboard/events/${eventId}/design`, icon: Paintbrush },
+      { label: "Edit event details", href: `/dashboard/events/${eventId}/settings`, icon: Settings },
+      { label: "Sent emails", href: `/dashboard/events/${eventId}/emails`, icon: Mail },
+      { label: "Imports", href: `/dashboard/events/${eventId}/imports`, icon: Upload },
+      { label: "Lists", href: `/dashboard/events/${eventId}/lists`, icon: List },
+      { label: "Campaigns", href: `/dashboard/events/${eventId}/campaigns`, icon: Megaphone },
+    ],
+  },
+];
+
 interface DashboardSidebarProps {
   collapsed: boolean;
   onToggle: () => void;
@@ -81,6 +130,23 @@ export function DashboardSidebar({ collapsed, onToggle }: DashboardSidebarProps)
     : isReadOnly
       ? navigation.filter((item) => item.href === "/dashboard/events")
       : navigation;
+  const eventMatch = pathname.match(/^\/dashboard\/events\/([^/]+)/);
+  const eventId = eventMatch?.[1] && eventMatch[1] !== "new" ? eventMatch[1] : null;
+  const eventNavigation = eventId && access
+    ? getEventNavigation(eventId)
+        .map((group) => ({
+          ...group,
+          items: access.readOnly
+            ? group.items.filter((item) => [
+                `/dashboard/events/${eventId}`,
+                `/dashboard/events/${eventId}/guests`,
+                `/dashboard/events/${eventId}/check-in`,
+                `/dashboard/events/${eventId}/reports`,
+              ].includes(item.href))
+            : group.items,
+        }))
+        .filter((group) => group.items.length > 0)
+    : [];
 
   const handleSignOut = async () => {
     const supabase = createClient();
@@ -168,6 +234,47 @@ export function DashboardSidebar({ collapsed, onToggle }: DashboardSidebarProps)
             );
           })}
         </nav>
+
+        {eventId && eventNavigation.length > 0 && (
+          <div className="mt-5 border-t border-border/70 pt-4 lg:hidden">
+            <div className="mb-2 px-4 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+              Current event
+            </div>
+            <div className="space-y-4">
+              {eventNavigation.map((group) => (
+                <div key={group.group}>
+                  <div className="mb-1 px-4 text-[10px] font-bold uppercase tracking-wider text-muted-foreground/80">
+                    {group.group}
+                  </div>
+                  <nav className="space-y-1.5">
+                    {group.items.map((item) => {
+                      const isActive = item.href === `/dashboard/events/${eventId}`
+                        ? pathname === item.href
+                        : pathname.startsWith(item.href);
+                      return (
+                        <Link
+                          key={item.href}
+                          href={item.href}
+                          onClick={() => onToggle()}
+                          className={cn(
+                            "flex items-center gap-3 rounded-2xl px-4 py-2.5 text-sm font-semibold transition-all duration-300",
+                            isActive
+                              ? "bg-primary/10 text-primary"
+                              : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                          )}
+                          aria-current={isActive ? "page" : undefined}
+                        >
+                          <item.icon className="h-5 w-5 shrink-0" />
+                          <span>{item.label}</span>
+                        </Link>
+                      );
+                    })}
+                  </nav>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </ScrollArea>
 
       <div className="px-4 my-2">
