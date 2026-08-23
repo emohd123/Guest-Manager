@@ -34,17 +34,25 @@ import { CountUp } from "@/components/visual/reactbits";
 export default function DashboardPage() {
   const router = useRouter();
   const { data: access } = trpc.settings.getAccess.useQuery();
+  // Keep all hooks unconditional. Limited company accounts are redirected to
+  // their read-only events view once access resolves, but the queries still
+  // need to be declared on every render to avoid a hook-order crash.
+  const adminQueriesEnabled = access !== undefined && access.readOnly !== true;
+  const { data: eventStats, isLoading: eventsLoading } = trpc.events.stats.useQuery(undefined, {
+    enabled: adminQueriesEnabled,
+  });
+  const { data: upcomingEvents, isLoading: upcomingLoading } = trpc.events.list.useQuery(
+    {
+      status: "published",
+      limit: 5,
+      offset: 0,
+    },
+    { enabled: adminQueriesEnabled }
+  );
   useEffect(() => {
     if (access?.readOnly) router.replace("/dashboard/events");
   }, [access?.readOnly, router]);
   if (access?.readOnly) return null;
-
-  const { data: eventStats, isLoading: eventsLoading } = trpc.events.stats.useQuery();
-  const { data: upcomingEvents, isLoading: upcomingLoading } = trpc.events.list.useQuery({
-    status: "published",
-    limit: 5,
-    offset: 0,
-  });
 
   const totalEvents = eventStats?.total ?? 0;
   const totalGuests = eventStats?.totalGuests ?? 0;
