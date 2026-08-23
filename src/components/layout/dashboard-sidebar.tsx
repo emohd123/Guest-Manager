@@ -10,6 +10,7 @@ import {
   BarChart3,
   Settings,
   ChevronLeft,
+  ArrowLeft,
   LogOut,
   LockKeyhole,
   Users,
@@ -117,9 +118,11 @@ const getEventNavigation = (eventId: string) => [
 interface DashboardSidebarProps {
   collapsed: boolean;
   onToggle: () => void;
+  onEventsClick?: () => void;
+  onMobileNavigate?: () => void;
 }
 
-export function DashboardSidebar({ collapsed, onToggle }: DashboardSidebarProps) {
+export function DashboardSidebar({ collapsed, onToggle, onEventsClick, onMobileNavigate }: DashboardSidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const { data: access } = trpc.settings.getAccess.useQuery();
@@ -130,24 +133,6 @@ export function DashboardSidebar({ collapsed, onToggle }: DashboardSidebarProps)
     : isReadOnly
       ? navigation.filter((item) => item.href === "/dashboard/events")
       : navigation;
-  const eventMatch = pathname.match(/^\/dashboard\/events\/([^/]+)/);
-  const eventId = eventMatch?.[1] && eventMatch[1] !== "new" ? eventMatch[1] : null;
-  const eventNavigation = eventId && access
-    ? getEventNavigation(eventId)
-        .map((group) => ({
-          ...group,
-          items: access.readOnly
-            ? group.items.filter((item) => [
-                `/dashboard/events/${eventId}`,
-                `/dashboard/events/${eventId}/guests`,
-                `/dashboard/events/${eventId}/check-in`,
-                `/dashboard/events/${eventId}/reports`,
-              ].includes(item.href))
-            : group.items,
-        }))
-        .filter((group) => group.items.length > 0)
-    : [];
-
   const handleSignOut = async () => {
     const supabase = createClient();
     await supabase.auth.signOut();
@@ -213,6 +198,14 @@ export function DashboardSidebar({ collapsed, onToggle }: DashboardSidebarProps)
               <Link
                 key={item.href}
                 href={item.href}
+                onClick={(event) => {
+                  if (item.href === "/dashboard/events" && onEventsClick) {
+                    event.preventDefault();
+                    onEventsClick();
+                    return;
+                  }
+                  onMobileNavigate?.();
+                }}
                 className={cn(
                   "flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold transition-all duration-300 relative group outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
                   isActive
@@ -235,46 +228,6 @@ export function DashboardSidebar({ collapsed, onToggle }: DashboardSidebarProps)
           })}
         </nav>
 
-        {eventId && eventNavigation.length > 0 && (
-          <div className="mt-5 border-t border-border/70 pt-4 lg:hidden">
-            <div className="mb-2 px-4 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-              Current event
-            </div>
-            <div className="space-y-4">
-              {eventNavigation.map((group) => (
-                <div key={group.group}>
-                  <div className="mb-1 px-4 text-[10px] font-bold uppercase tracking-wider text-muted-foreground/80">
-                    {group.group}
-                  </div>
-                  <nav className="space-y-1.5">
-                    {group.items.map((item) => {
-                      const isActive = item.href === `/dashboard/events/${eventId}`
-                        ? pathname === item.href
-                        : pathname.startsWith(item.href);
-                      return (
-                        <Link
-                          key={item.href}
-                          href={item.href}
-                          onClick={() => onToggle()}
-                          className={cn(
-                            "flex items-center gap-3 rounded-2xl px-4 py-2.5 text-sm font-semibold transition-all duration-300",
-                            isActive
-                              ? "bg-primary/10 text-primary"
-                              : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                          )}
-                          aria-current={isActive ? "page" : undefined}
-                        >
-                          <item.icon className="h-5 w-5 shrink-0" />
-                          <span>{item.label}</span>
-                        </Link>
-                      );
-                    })}
-                  </nav>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
       </ScrollArea>
 
       <div className="px-4 my-2">
@@ -291,6 +244,7 @@ export function DashboardSidebar({ collapsed, onToggle }: DashboardSidebarProps)
             <Link
               key={item.href}
               href={item.href}
+              onClick={() => onMobileNavigate?.()}
               className={cn(
                 "flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold transition-all duration-300 group outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
                 isActive
@@ -315,6 +269,104 @@ export function DashboardSidebar({ collapsed, onToggle }: DashboardSidebarProps)
         </button>
       </div>
       )}
+    </aside>
+  );
+}
+
+export function MobileEventSidebar({
+  eventId,
+  onBack,
+  onNavigate,
+}: {
+  eventId: string | null;
+  onBack: () => void;
+  onNavigate: () => void;
+}) {
+  const pathname = usePathname();
+  const { data: access } = trpc.settings.getAccess.useQuery();
+  const navigation = eventId && access
+    ? getEventNavigation(eventId)
+        .map((group) => ({
+          ...group,
+          items: access.readOnly
+            ? group.items.filter((item) => [
+                `/dashboard/events/${eventId}`,
+                `/dashboard/events/${eventId}/guests`,
+                `/dashboard/events/${eventId}/check-in`,
+                `/dashboard/events/${eventId}/reports`,
+              ].includes(item.href))
+            : group.items,
+        }))
+        .filter((group) => group.items.length > 0)
+    : [];
+
+  return (
+    <aside className="glass-panel relative z-50 flex h-screen w-full flex-col border-r border-border text-foreground">
+      <div className="flex h-20 items-center gap-3 border-b border-border px-5">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={onBack}
+          className="h-10 w-10 shrink-0 rounded-full text-muted-foreground hover:bg-muted hover:text-foreground"
+          aria-label="Back to dashboard menu"
+        >
+          <ArrowLeft className="h-5 w-5" />
+        </Button>
+        <div>
+          <p className="text-sm font-black text-foreground">Events</p>
+          <p className="text-xs text-muted-foreground">Event navigation</p>
+        </div>
+      </div>
+
+      <ScrollArea className="flex-1 px-3 py-5">
+        {!eventId ? (
+          <div className="rounded-2xl border border-border bg-muted/30 p-4">
+            <p className="font-bold text-foreground">Choose an event</p>
+            <p className="mt-1 text-sm text-muted-foreground">Open an event first to manage its attendees, tickets, seating, and reports.</p>
+            <Link
+              href="/dashboard/events"
+              onClick={onNavigate}
+              className="mt-4 inline-flex rounded-xl bg-primary px-4 py-2 text-sm font-bold text-white"
+            >
+              View events
+            </Link>
+          </div>
+        ) : access === undefined ? (
+          <div className="space-y-3 px-1" aria-label="Loading event navigation">
+            {[1, 2, 3, 4, 5].map((item) => <div key={item} className="h-11 rounded-2xl bg-muted/60 animate-pulse" />)}
+          </div>
+        ) : (
+          <div className="space-y-6">
+            {navigation.map((group) => (
+              <div key={group.group}>
+                <div className="mb-2 px-4 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">{group.group}</div>
+                <nav className="space-y-1.5">
+                  {group.items.map((item) => {
+                    const isActive = item.href === `/dashboard/events/${eventId}`
+                      ? pathname === item.href
+                      : pathname.startsWith(item.href);
+                    return (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        onClick={onNavigate}
+                        className={cn(
+                          "flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold transition-all duration-300",
+                          isActive ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                        )}
+                        aria-current={isActive ? "page" : undefined}
+                      >
+                        <item.icon className="h-5 w-5 shrink-0" />
+                        <span>{item.label}</span>
+                      </Link>
+                    );
+                  })}
+                </nav>
+              </div>
+            ))}
+          </div>
+        )}
+      </ScrollArea>
     </aside>
   );
 }
