@@ -56,7 +56,7 @@ export function PublicShortcutDock() {
 
   return (
     <div className="pointer-events-none fixed inset-x-0 bottom-2 z-50 flex justify-center px-2 sm:bottom-3">
-      <nav dir={isArabic ? "rtl" : "ltr"} aria-label="Application shortcuts" className={`pointer-events-auto flex items-stretch rounded-2xl border p-1 backdrop-blur sm:shadow-[0_12px_40px_rgba(15,23,42,0.2)] ${isSearchPage ? "border-white/10 bg-[#191923]/95 text-white shadow-[0_10px_28px_rgba(0,0,0,0.38)]" : "border-slate-200 bg-white/95 shadow-[0_10px_28px_rgba(15,23,42,0.18)] dark:border-slate-700 dark:bg-slate-900/95"}`}>
+      <nav dir={isArabic ? "rtl" : "ltr"} aria-label="Application shortcuts" className={`pointer-events-auto flex items-stretch rounded-2xl border p-1 backdrop-blur sm:shadow-[0_12px_40px_rgba(15,23,42,0.2)] ${isSearchPage ? "border-slate-200 bg-white/95 text-slate-900 shadow-[0_10px_28px_rgba(15,23,42,0.18)]" : "border-slate-200 bg-white/95 shadow-[0_10px_28px_rgba(15,23,42,0.18)] dark:border-slate-700 dark:bg-slate-900/95"}`}>
         {shortcuts.map((shortcut) => {
           const active = activeShortcut === shortcut.id;
           return (
@@ -65,9 +65,9 @@ export function PublicShortcutDock() {
               type="button"
               onClick={shortcut.onClick}
               aria-current={active ? "page" : undefined}
-              className={`flex min-w-[54px] flex-col items-center gap-0.5 rounded-xl px-1.5 py-1.5 text-[9px] font-black leading-tight transition sm:min-w-[74px] sm:gap-1 sm:px-2 sm:py-2 sm:text-[10px] ${active ? (isSearchPage ? "bg-white/10 text-cyan-300" : "bg-cyan-50 text-blue-600 dark:bg-cyan-300/10 dark:text-cyan-300") : (isSearchPage ? "text-white/70 hover:bg-white/10 hover:text-white" : "text-slate-700 hover:bg-slate-100 hover:text-blue-600 dark:text-slate-200 dark:hover:bg-slate-800 dark:hover:text-cyan-300")}`}
+              className={`flex min-w-[54px] flex-col items-center gap-0.5 rounded-xl px-1.5 py-1.5 text-[9px] font-black leading-tight transition sm:min-w-[74px] sm:gap-1 sm:px-2 sm:py-2 sm:text-[10px] ${active ? (isSearchPage ? "bg-cyan-50 text-blue-600" : "bg-cyan-50 text-blue-600 dark:bg-cyan-300/10 dark:text-cyan-300") : (isSearchPage ? "text-slate-700 hover:bg-slate-100 hover:text-blue-600" : "text-slate-700 hover:bg-slate-100 hover:text-blue-600 dark:text-slate-200 dark:hover:bg-slate-800 dark:hover:text-cyan-300")}`}
             >
-              <span className={active ? (isSearchPage ? "text-cyan-300" : "text-blue-600 dark:text-cyan-300") : (isSearchPage ? "text-white/80" : "text-slate-800 dark:text-slate-200")}>{shortcut.icon}</span>
+              <span className={active ? (isSearchPage ? "text-blue-600" : "text-blue-600 dark:text-cyan-300") : (isSearchPage ? "text-slate-800" : "text-slate-800 dark:text-slate-200")}>{shortcut.icon}</span>
               <span className="text-center">{shortcut.label}</span>
             </button>
           );
