@@ -3,7 +3,6 @@ import { getAppUrl } from "@/lib/app-urls";
 import { normalizeLocale } from "@/lib/marketplace";
 import type { MarketplaceDiscoveryResponse } from "@/types/marketplace";
 import { headers } from "next/headers";
-import { localPreviewData } from "../page";
 
 export const dynamic = "force-dynamic";
 
@@ -16,15 +15,13 @@ async function discover(locale: string): Promise<MarketplaceDiscoveryResponse> {
   const host = requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host");
   const protocol = requestHeaders.get("x-forwarded-proto") ?? "http";
   const origin = host ? `${protocol}://${host}` : getAppUrl();
-  const isLocalPreview = host?.startsWith("localhost") || host?.startsWith("127.0.0.1");
-
   try {
     const response = await fetch(`${origin}/api/events/discover?limit=36&locale=${locale}`, { cache: "no-store" });
-    if (!response.ok) return isLocalPreview ? localPreviewData() : { events: [], categories: [], total: 0 };
+    if (!response.ok) return { events: [], categories: [], total: 0 };
     const data = (await response.json()) as MarketplaceDiscoveryResponse;
-    return isLocalPreview && data.events.length === 0 ? localPreviewData() : data;
+    return data;
   } catch {
-    return isLocalPreview ? localPreviewData() : { events: [], categories: [], total: 0 };
+    return { events: [], categories: [], total: 0 };
   }
 }
 

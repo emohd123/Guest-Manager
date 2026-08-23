@@ -14,7 +14,7 @@ type HomePageProps = {
   }>;
 };
 
-export function localPreviewData(): MarketplaceDiscoveryResponse {
+function localPreviewData(): MarketplaceDiscoveryResponse {
   const now = Date.now();
   const makeDate = (daysFromToday: number, hour: number) =>
     new Date(now + daysFromToday * 86_400_000).setHours(hour, 0, 0, 0);
