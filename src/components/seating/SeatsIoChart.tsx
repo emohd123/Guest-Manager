@@ -50,6 +50,7 @@ export function SeatsIoChart({
     if (!fullScreen) return;
     const previousOverflow = document.body.style.overflow;
     const previousOverscroll = document.body.style.overscrollBehavior;
+    const previousTouchAction = document.body.style.touchAction;
     const previousHtmlOverflow = document.documentElement.style.overflow;
     const viewportMeta = document.querySelector('meta[name="viewport"]');
     const previousViewportContent =
@@ -61,6 +62,10 @@ export function SeatsIoChart({
       );
     document.body.style.overflow = "hidden";
     document.body.style.overscrollBehavior = "none";
+    // Keep browser pinch/scroll gestures inside the fixed seating surface.
+    // Seats.io handles the actual chart zoom; without this, mobile browsers
+    // can zoom the document instead of the chart.
+    document.body.style.touchAction = "none";
     document.documentElement.style.overflow = "hidden";
     setSecondsLeft(900);
     const timer = window.setInterval(
@@ -71,6 +76,7 @@ export function SeatsIoChart({
       window.clearInterval(timer);
       document.body.style.overflow = previousOverflow;
       document.body.style.overscrollBehavior = previousOverscroll;
+      document.body.style.touchAction = previousTouchAction;
       document.documentElement.style.overflow = previousHtmlOverflow;
       if (viewportMeta && previousViewportContent)
         viewportMeta.setAttribute("content", previousViewportContent);
@@ -189,7 +195,7 @@ export function SeatsIoChart({
       <div
         className={
           fullScreen
-            ? "fixed inset-0 z-[200] flex flex-col bg-white overscroll-none"
+            ? "fixed inset-0 z-[200] flex flex-col bg-white overscroll-none touch-none"
             : "w-full"
         }
         role={fullScreen ? "dialog" : undefined}
@@ -228,7 +234,7 @@ export function SeatsIoChart({
           <div
             id={`seatsio-${eventId}`}
             ref={ref}
-            className="min-h-0 flex-1 w-full bg-white pb-16 pt-14 sm:pb-20 sm:pt-16"
+            className="min-h-0 flex-1 w-full touch-none select-none overscroll-contain bg-white pb-16 pt-14 sm:pb-20 sm:pt-16"
           />
         ) : null}
         {fullScreen && typeof document !== "undefined"

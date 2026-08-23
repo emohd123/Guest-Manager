@@ -52,6 +52,8 @@ export function CustomerHallMap({
     panX: number;
     panY: number;
   } | null>(null);
+  const pointers = useRef(new Map<number, { x: number; y: number }>());
+  const pinch = useRef<{ distance: number; zoom: number } | null>(null);
   const allSeats = useMemo(
     () =>
       plan.sections.flatMap((section: any) =>
@@ -155,9 +157,19 @@ export function CustomerHallMap({
       <div className={fullScreen ? "mx-auto mt-8 max-w-[1500px] px-5 pb-8" : "grid lg:grid-cols-[minmax(0,1fr)_280px]"}>
         <div className="min-w-0">
           <div
-            className={fullScreen ? "relative h-[clamp(560px,72dvh,820px)] cursor-grab overflow-hidden rounded-[28px] border border-slate-200 bg-slate-50 active:cursor-grabbing sm:h-[clamp(430px,68vh,780px)]" : "relative min-h-[420px] cursor-grab overflow-hidden bg-slate-50 active:cursor-grabbing sm:min-h-[520px] lg:min-h-[640px]"}
+            className={fullScreen ? "relative h-[clamp(560px,72dvh,820px)] cursor-grab touch-none overflow-hidden rounded-[28px] border border-slate-200 bg-slate-50 active:cursor-grabbing sm:h-[clamp(430px,68vh,780px)]" : "relative min-h-[420px] cursor-grab touch-none overflow-hidden bg-slate-50 active:cursor-grabbing sm:min-h-[520px] lg:min-h-[640px]"}
             onPointerDown={(event) => {
               if ((event.target as HTMLElement).closest("button")) return;
+              pointers.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
+              if (pointers.current.size === 2) {
+                const [a, b] = Array.from(pointers.current.values());
+                pinch.current = {
+                  distance: Math.hypot(a.x - b.x, a.y - b.y),
+                  zoom,
+                };
+                drag.current = null;
+                return;
+              }
               drag.current = {
                 x: event.clientX,
                 y: event.clientY,
@@ -167,13 +179,29 @@ export function CustomerHallMap({
               event.currentTarget.setPointerCapture(event.pointerId);
             }}
             onPointerMove={(event) => {
+              if (pointers.current.has(event.pointerId)) {
+                pointers.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
+              }
+              if (pinch.current && pointers.current.size >= 2) {
+                const [a, b] = Array.from(pointers.current.values());
+                const distance = Math.hypot(a.x - b.x, a.y - b.y);
+                setZoom(Math.max(1, Math.min(3, pinch.current.zoom * (distance / Math.max(1, pinch.current.distance)))));
+                return;
+              }
               if (!drag.current) return;
               setPan({
                 x: drag.current.panX + event.clientX - drag.current.x,
                 y: drag.current.panY + event.clientY - drag.current.y,
               });
             }}
-            onPointerUp={() => {
+            onPointerUp={(event) => {
+              pointers.current.delete(event.pointerId);
+              if (pointers.current.size < 2) pinch.current = null;
+              drag.current = null;
+            }}
+            onPointerCancel={(event) => {
+              pointers.current.delete(event.pointerId);
+              pinch.current = null;
               drag.current = null;
             }}
           >
