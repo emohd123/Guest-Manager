@@ -92,12 +92,25 @@ export default function AccountPage() {
           </div>
           <div className="flex flex-wrap gap-3">
             {summary?.adminAccess ? (
-              <Button asChild className="rounded-full bg-cyan-200 px-6 font-black text-black hover:bg-cyan-100">
-                <Link href="/dashboard">
-                  <LayoutDashboard className="mr-2 h-4 w-4" />
-                  {summary.adminAccess.readOnly ? "Open company dashboard" : "Open admin dashboard"}
-                </Link>
-              </Button>
+              <div className="flex flex-wrap gap-3">
+                <Button asChild className="rounded-full bg-cyan-200 px-6 font-black text-black hover:bg-cyan-100">
+                  <Link href="/dashboard">
+                    <LayoutDashboard className="mr-2 h-4 w-4" />
+                    {summary.adminAccess.readOnly ? "Open company dashboard" : "Open admin dashboard"}
+                  </Link>
+                </Button>
+                <Button
+                  asChild
+                  variant="outline"
+                  className="rounded-full border-cyan-300 bg-white px-4 text-slate-900 hover:bg-cyan-50"
+                  title="Scan tickets for your assigned events"
+                >
+                  <Link href="/checkin/scanner" aria-label="Open event ticket scanner">
+                    <QrCode className="h-5 w-5 text-cyan-700" />
+                    <span className="sr-only">Open event ticket scanner</span>
+                  </Link>
+                </Button>
+              </div>
             ) : null}
             <Button asChild variant="outline" className="rounded-full border-slate-200 bg-white text-slate-900 hover:bg-slate-100">
               <Link href="/events">Browse events</Link>
@@ -139,9 +152,17 @@ export default function AccountPage() {
                     : "Manage company-created events, tickets, guests, orders, scans, reports, and messages."}
                 </p>
               </div>
-              <Button asChild className="rounded-full bg-cyan-200 px-7 font-black text-black hover:bg-cyan-100">
-                <Link href="/dashboard">{summary.adminAccess.readOnly ? "Open company dashboard" : "Open dashboard"}</Link>
-              </Button>
+              <div className="flex flex-wrap gap-3">
+                <Button asChild className="rounded-full bg-cyan-200 px-7 font-black text-black hover:bg-cyan-100">
+                  <Link href="/dashboard">{summary.adminAccess.readOnly ? "Open company dashboard" : "Open dashboard"}</Link>
+                </Button>
+                <Button asChild variant="outline" className="rounded-full border-cyan-300 bg-white text-slate-900 hover:bg-cyan-50" title="Scan tickets for your assigned events">
+                  <Link href="/checkin/scanner" aria-label="Open event ticket scanner">
+                    <QrCode className="mr-2 h-4 w-4 text-cyan-700" />
+                    Scan tickets
+                  </Link>
+                </Button>
+              </div>
             </div>
           </section>
         ) : null}
