@@ -36,7 +36,7 @@ import {
 } from "@/lib/marketplace";
 import { CustomerHallMap } from "@/components/seating/CustomerHallMap";
 import { SeatsIoChart } from "@/components/seating/SeatsIoChart";
-import { readSeatsIoChartKey, readSeatsIoEventKey } from "@/lib/seatsio";
+import { readSeatsIoChartKey, readSeatsIoEventKey, readSeatsIoPricing } from "@/lib/seatsio";
 import { createClient } from "@/lib/supabase/client";
 
 const CUSTOMER_TERMS = [
@@ -74,6 +74,8 @@ const labels = {
     sharePaid: "Share the event page with guests ready to purchase access.",
     shareFree: "Invite friends and colleagues to reserve a free spot.",
     copyLink: "Copy link",
+    shareEvent: "Share event",
+    addToCalendar: "Add to calendar",
     appTitle: "Get the attendee app",
     appBody:
       "Access live streams, agenda saves, networking, and event updates from your phone.",
@@ -122,6 +124,8 @@ const labels = {
     sharePaid: "شارك صفحة الفعالية مع الضيوف الراغبين في شراء التذاكر.",
     shareFree: "ادع الأصدقاء والزملاء لحجز مقعد مجاني.",
     copyLink: "نسخ الرابط",
+    shareEvent: "مشاركة الفعالية",
+    addToCalendar: "إضافة إلى التقويم",
     appTitle: "تطبيق الحضور",
     appBody: "تابع البث المباشر والجدول والتواصل وتحديثات الفعالية من هاتفك.",
     openApp: "تفاصيل التطبيق",
@@ -336,7 +340,7 @@ export default function PublicEventPage({
           ticketTypeId,
           name: ticketType.name,
           price: publicPage.isPaidEvent ? (ticketType.price ?? 0) : 0,
-          currency: ticketType.currency ?? "BHD",
+          currency: ticketType.currency ?? "EGP",
           quantity,
         };
       })
@@ -352,7 +356,10 @@ export default function PublicEventPage({
       0,
     );
     let seatHoldToken: string | undefined;
-    if (hasActiveSeatMap) {
+    // Seats.io charts are an optional seat-picking flow. They navigate to
+    // checkout themselves; regular ticket purchases must not be blocked by
+    // an attached chart. Native seat maps still require a matching hold.
+    if (hasNativeSeatMap) {
       if (selectedSeatIds.length !== requestedQuantity) {
         toast.error(
           `Select ${requestedQuantity} seat${requestedQuantity === 1 ? "" : "s"} before checkout.`,
@@ -383,13 +390,48 @@ export default function PublicEventPage({
     window.location.assign(`/checkout/tickets?${checkoutParams.toString()}`);
   };
 
-  const handleCopyLink = async () => {
+  const handleShareEvent = async () => {
+    const shareData = {
+      title: eventTitle,
+      text: eventDescription,
+      url: window.location.href,
+    };
     try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+        return;
+      }
       await navigator.clipboard.writeText(window.location.href);
       toast.success("Event link copied.");
     } catch {
-      toast.error("Could not copy the event link.");
+      if (!navigator.share) toast.error("Could not share the event link.");
     }
+  };
+
+  const handleAddToCalendar = () => {
+    const toCalendarDate = (value: string) =>
+      new Date(value).toISOString().replace(/[-:]/g, "").replace(/\.\d{3}Z$/, "Z");
+    const escapeIcs = (value: string) =>
+      value.replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\r?\n/g, "\\n");
+    const start = toCalendarDate(event.startsAt);
+    const fallbackEnd = new Date(new Date(event.startsAt).getTime() + 2 * 60 * 60 * 1000).toISOString();
+    const end = toCalendarDate(event.endsAt ?? fallbackEnd);
+    const ics = [
+      "BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//iTicket//Event//EN", "BEGIN:VEVENT",
+      `UID:${event.id}@iticket`, `DTSTAMP:${toCalendarDate(new Date().toISOString())}`,
+      `DTSTART:${start}`, `DTEND:${end}`, `SUMMARY:${escapeIcs(eventTitle)}`,
+      `DESCRIPTION:${escapeIcs(eventDescription)}`, `LOCATION:${escapeIcs(venueLabel)}`,
+      "END:VEVENT", "END:VCALENDAR",
+    ].join("\r\n");
+    const url = URL.createObjectURL(new Blob([ics], { type: "text/calendar;charset=utf-8" }));
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `${eventSlug}-event.ics`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+    toast.success("Calendar file downloaded.");
   };
 
   const tickets = ticketTypes ?? [];
@@ -397,7 +439,7 @@ export default function PublicEventPage({
   const lowestPrice =
     pricedTickets.map((ticket) => ticket.price ?? 0).sort((a, b) => a - b)[0] ??
     0;
-  const currency = tickets[0]?.currency ?? "BHD";
+  const currency = tickets[0]?.currency ?? "EGP";
   const seatingPlan = publicSeating.plan;
   const reservedSeatCount =
     seatingPlan?.sections?.reduce(
@@ -411,12 +453,14 @@ export default function PublicEventPage({
     ) ?? 0;
   const seatsIoChartKey = readSeatsIoChartKey(event.settings);
   const seatsIoEventKey = readSeatsIoEventKey(event.settings);
+  const seatsIoPricing = readSeatsIoPricing(event.settings);
   const usesSeatsIo = Boolean(seatsIoChartKey && process.env.NEXT_PUBLIC_SEATSIO_WORKSPACE_KEY);
-  const hasActiveSeatMap = usesSeatsIo || Boolean(
+  const hasNativeSeatMap = Boolean(
     seatingPlan?.enabled &&
       seatingPlan.sections?.length &&
       reservedSeatCount > 0,
   );
+  const hasActiveSeatMap = usesSeatsIo || hasNativeSeatMap;
   const priceFrom = publicPage.isPaidEvent
     ? formatMoney(lowestPrice, currency, locale)
     : t.freeEvent;
@@ -501,11 +545,20 @@ export default function PublicEventPage({
             <Button
               variant="ghost"
               size="sm"
-              onClick={handleCopyLink}
+              onClick={handleShareEvent}
               className="h-9 rounded-full gap-2 text-zinc-700"
             >
               <Share2 className="h-4 w-4" />
-              Share event
+              {t.shareEvent}
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleAddToCalendar}
+              className="h-9 rounded-full gap-2 text-zinc-700"
+            >
+              <Calendar className="h-4 w-4" />
+              {t.addToCalendar}
             </Button>
             <Button
               variant="ghost"
@@ -603,29 +656,6 @@ export default function PublicEventPage({
               </ul>
             </section>
 
-            {mediaItems.length > 1 ? (
-              <section className="border-t border-zinc-200 pt-7">
-                <div className="mb-4 flex items-center justify-between">
-                  <h2 className="text-xl font-black tracking-tight sm:text-2xl">
-                    Event media
-                  </h2>
-                  <span className="text-sm font-bold text-zinc-500">{mediaItems.length} items</span>
-                </div>
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                  {mediaItems.map((media, index) => (
-                    <button key={`${media}-${index}`} type="button" onClick={() => setActiveMediaIndex(index)} className={`relative overflow-hidden rounded-xl border-2 text-left transition ${index === activeMediaIndex ? "border-cyan-500 ring-2 ring-cyan-100" : "border-zinc-200 hover:border-cyan-300"}`} aria-label={`Show media ${index + 1}`}>
-                      {isVideoMedia(media) ? (
-                        <video src={media} muted playsInline preload="metadata" className="aspect-[4/3] w-full object-cover" />
-                      ) : (
-                        <img src={media} alt={`${event?.title ?? "Event"} media ${index + 1}`} className="aspect-[4/3] w-full object-cover" />
-                      )}
-                      {isVideoMedia(media) ? <span className="absolute bottom-2 left-2 rounded-full bg-black/75 px-2 py-1 text-[10px] font-bold text-white">Video</span> : null}
-                    </button>
-                  ))}
-                </div>
-              </section>
-            ) : null}
-
             <section id="location" className="scroll-mt-24 border-t border-zinc-200 pt-7">
               <h2 className="mb-4 text-xl font-black tracking-tight sm:text-2xl">
                 {t.location}
@@ -682,7 +712,7 @@ export default function PublicEventPage({
                       </span>
                       <span className="font-semibold text-zinc-600">
                         {publicPage.isPaidEvent
-                          ? `from ${formatMoney(ticket.price ?? 0, ticket.currency ?? "BHD", locale)}`
+                          ? `from ${formatMoney(ticket.price ?? 0, ticket.currency ?? "EGP", locale)}`
                           : t.freeEvent}
                       </span>
                     </div>
@@ -899,7 +929,7 @@ export default function PublicEventPage({
                     </span>
                   </div>
                   {usesSeatsIo ? (
-                    <SeatsIoChart eventId={event.id} eventKey={seatsIoEventKey ?? undefined} workspaceKey={process.env.NEXT_PUBLIC_SEATSIO_WORKSPACE_KEY!} chartKey={seatsIoChartKey ?? undefined} basePrice={lowestPrice} currency={currency} autoOpen={searchParams.get("openSeats") === "1"} returnTo={`/e/${companySlug}/${eventSlug}?openSeats=1#tickets`} />
+                    <SeatsIoChart eventId={event.id} eventKey={seatsIoEventKey ?? undefined} workspaceKey={process.env.NEXT_PUBLIC_SEATSIO_WORKSPACE_KEY!} chartKey={seatsIoChartKey ?? undefined} pricing={seatsIoPricing} basePrice={lowestPrice} currency={currency} ticketTypeId={tickets[0]?.id} ticketTypeName={tickets[0]?.name} autoOpen={searchParams.get("openSeats") === "1"} companySlug={companySlug} eventSlug={eventSlug} returnTo={`/e/${companySlug}/${eventSlug}?openSeats=1#tickets`} />
                   ) : !seatingPlan.floor_plan_url ||
                   !/\.pdf(?:$|[?#])/i.test(seatingPlan.floor_plan_url) ? (
                     <CustomerHallMap
@@ -1064,6 +1094,24 @@ export default function PublicEventPage({
               </section>
             ) : null}
           </aside>
+        </div>
+
+        <div className="fixed inset-x-3 bottom-3 z-40 flex items-center justify-between gap-3 rounded-2xl border border-zinc-200 bg-white/95 p-3 shadow-[0_10px_35px_rgba(15,23,42,0.22)] backdrop-blur sm:hidden">
+          <div className="min-w-0">
+            <p className="truncate text-xs font-bold text-zinc-500">{eventTitle}</p>
+            <p className="text-sm font-black text-zinc-950">{publicPage.isPaidEvent ? priceFrom : t.freeEvent}</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <button type="button" onClick={handleShareEvent} aria-label={t.shareEvent} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-zinc-200 bg-white text-zinc-700 shadow-sm">
+              <Share2 className="h-4 w-4" />
+            </button>
+            <button type="button" onClick={handleAddToCalendar} aria-label={t.addToCalendar} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-zinc-200 bg-white text-zinc-700 shadow-sm">
+              <Calendar className="h-4 w-4" />
+            </button>
+            <a href="#tickets" className="shrink-0 rounded-xl bg-cyan-600 px-4 py-3 text-sm font-black text-white shadow-sm transition hover:bg-cyan-700">
+              {publicPage.isPaidEvent ? "Buy tickets" : t.reservePlace}
+            </a>
+          </div>
         </div>
       </main>
     </div>

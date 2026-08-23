@@ -37,8 +37,22 @@ function TicketCheckout() {
   const [submitting, setSubmitting] = useState(false);
   const companySlug = searchParams.get("company") ?? "";
   const eventSlug = searchParams.get("event") ?? "";
-  const cartItems = useMemo(() => parseCart(searchParams.get("items")), [searchParams]);
   const selectedSeatIds = (searchParams.get("seats") ?? "").split(",").filter(Boolean);
+  const parsedCartItems = useMemo(() => parseCart(searchParams.get("items")), [searchParams]);
+  // Seats.io can return only seat IDs after a browser restore or an older
+  // chart redirect. Keep checkout usable by synthesising a catalog hint; the
+  // server resolves the real active ticket type for the event whenever seats
+  // are selected.
+  const cartItems = parsedCartItems.length || !selectedSeatIds.length
+    ? parsedCartItems
+    : [{
+        ticketTypeId: "",
+        name: "Reserved seating",
+        price: 0,
+        currency: "EGP",
+        quantity: selectedSeatIds.length,
+      }];
+  const seatsIo = searchParams.get("seatsIo") === "1";
   const seatHoldToken = searchParams.get("hold") ?? undefined;
   const subtotal = cartItems.reduce((total, item) => total + Number(item.price || 0) * item.quantity, 0);
   const currency = cartItems[0]?.currency ?? "EGP";
@@ -64,10 +78,11 @@ function TicketCheckout() {
     }
     setSubmitting(true);
     try {
+      const { data: sessionData } = await supabase.auth.getSession();
       const response = await fetch("/api/orders", {
         method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ companySlug, eventSlug, cartItems, selectedSeatIds, seatHoldToken }),
+        headers: { "content-type": "application/json", ...(sessionData.session?.access_token ? { authorization: `Bearer ${sessionData.session.access_token}` } : {}) },
+        body: JSON.stringify({ companySlug, eventSlug, cartItems, selectedSeatIds, seatHoldToken, seatsIo }),
       });
       const result = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(result.error ?? "Checkout failed");

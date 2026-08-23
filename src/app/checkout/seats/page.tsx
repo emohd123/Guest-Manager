@@ -7,17 +7,19 @@ import { createClient } from "@/lib/supabase/client";
 
 function Content() {
   const p = useSearchParams(); const router = useRouter();
-  const eventId = p.get("event") || ""; const returnTo = p.get("returnTo"); const [storedReturnTo, setStoredReturnTo] = useState<string | null>(null); const seats = (p.get("seats") || "").split(",").filter(Boolean);
+  const eventId = p.get("event") || ""; const companySlug = p.get("company") || ""; const eventSlug = p.get("eventSlug") || ""; const returnTo = p.get("returnTo"); const [storedReturnTo, setStoredReturnTo] = useState<string | null>(null); const seats = (p.get("seats") || "").split(",").filter(Boolean);
   useEffect(() => { if (!returnTo) { try { setStoredReturnTo(window.sessionStorage.getItem("iticket.seatReturnTo")); } catch {} } }, [returnTo]);
   const subtotal = Number(p.get("subtotal") || 0); const fee = subtotal > 0 ? subtotal * 0.1 : 0; const total = subtotal + fee; const currency = p.get("currency") || "EGP";
   const [submitting, setSubmitting] = useState(false);
   const submit = async () => {
     if (!eventId || !seats.length) return toast.error("Choose at least one seat.");
-    const { data } = await createClient().auth.getUser();
+    const supabase = createClient();
+    const { data } = await supabase.auth.getUser();
     if (!data.user) { window.location.assign(`/account/login?redirectTo=${encodeURIComponent(window.location.pathname + window.location.search)}`); return; }
+    const { data: sessionData } = await supabase.auth.getSession();
     setSubmitting(true);
     try {
-      const response = await fetch("/api/orders", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ eventId, selectedSeatIds: seats }) });
+      const response = await fetch("/api/orders", { method: "POST", headers: { "content-type": "application/json", ...(sessionData.session?.access_token ? { authorization: `Bearer ${sessionData.session.access_token}` } : {}) }, body: JSON.stringify({ eventId, companySlug, eventSlug, selectedSeatIds: seats }) });
       const result = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(result.error || "Checkout failed");
       if (result.checkoutUrl) return window.location.assign(result.checkoutUrl);

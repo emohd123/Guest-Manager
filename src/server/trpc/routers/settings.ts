@@ -49,7 +49,17 @@ export const settingsRouter = router({
 
     if (error) throw new Error(error.message);
     if (!data) throw new Error("User not found");
-    return data;
+    // Older accounts can have an empty profile name even though Supabase Auth
+    // has the user's name. Use the Auth metadata as a read-time fallback so
+    // the settings field is populated immediately, without requiring a save.
+    if (typeof data.name === "string" && data.name.trim()) return data;
+    const { data: authData } = await ctx.supabase.auth.getUser();
+    const metadata = authData.user?.user_metadata ?? {};
+    const fallbackName = [metadata.full_name, metadata.name]
+      .find((value): value is string => typeof value === "string" && Boolean(value.trim()))
+      ?? authData.user?.email?.split("@")[0]
+      ?? "";
+    return { ...data, name: fallbackName };
   }),
 
   updateUser: protectedProcedure
@@ -87,7 +97,10 @@ export const settingsRouter = router({
     const admin = createSupabaseAdminClient();
     const [{ data: authData, error: authError }, { data: profiles, error: profileError }] = await Promise.all([
       admin.auth.admin.listUsers({ page: 1, perPage: 1000 }),
-      admin.from("users").select("id, company_id, email, name, role, dashboard_access, dashboard_permissions, created_at").eq("company_id", ctx.companyId),
+      // Include both workspace members and unassigned customer accounts. New
+      // buyer accounts intentionally have no company_id until an admin grants
+      // access, so filtering only by the workspace hid them from this list.
+      admin.from("users").select("id, company_id, email, name, role, dashboard_access, dashboard_permissions, created_at").or(`company_id.eq.${ctx.companyId},company_id.is.null`),
     ]);
     if (authError) throw new Error(authError.message);
     if (profileError) throw new Error(profileError.message);

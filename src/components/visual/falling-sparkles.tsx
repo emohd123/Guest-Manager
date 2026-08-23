@@ -103,7 +103,7 @@ export function FallingSparkles({
     let width = 0;
     let height = 0;
     let dpr = 1;
-    let sparkles: Sparkle[] = [];
+    const sparkles: Sparkle[] = [];
     let raf = 0;
     let running = true;
 

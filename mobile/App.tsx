@@ -51,6 +51,7 @@ import { PremiumIntroScreen } from "./src/screens/PremiumIntroScreen";
 import { VisitorLoginScreen } from "./src/screens/VisitorLoginScreen";
 import { VisitorSignupScreen } from "./src/screens/VisitorSignupScreen";
 import { VisitorDashboardScreen } from "./src/screens/VisitorDashboardScreen";
+import { PublicHubScreen } from "./src/screens/PublicHubScreen";
 import { PublicWebsiteScreen } from "./src/screens/PublicWebsiteScreen";
 import { JoinEventScreen } from "./src/screens/JoinEventScreen";
 import { ComposeMessageScreen } from "./src/screens/ComposeMessageScreen";
@@ -556,6 +557,12 @@ function AppShell() {
 
   // â”€â”€ Visitor is logged in â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   if (visitorSession) {
+    return (
+      <SafeAreaView style={styles.full}>
+        <PublicWebsiteScreen session={visitorSession} onSignIn={() => undefined} onSignOut={visitorSignOut} />
+      </SafeAreaView>
+    );
+    /*
     // Compose message screen
     if (authStep === "visitor_compose") {
       return (
@@ -581,13 +588,15 @@ function AppShell() {
     }
     return (
       <SafeAreaView style={styles.full}>
-        <PublicWebsiteScreen
+        <PublicHubScreen
           session={visitorSession}
           onSignIn={() => setAuthStep("visitor_login")}
           onSignOut={visitorSignOut}
+          onStaff={() => setAuthStep("staff_access")}
         />
       </SafeAreaView>
     );
+    */
   }
 
   // â”€â”€ Staff is paired â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -659,6 +668,18 @@ function AppShell() {
           session={null}
           onSignIn={() => setAuthStep("visitor_login")}
           onSignOut={() => undefined}
+          onStaff={() => setAuthStep("staff_access")}
+        />
+      )}
+      {/* Legacy native customer flow retained for visitors who explicitly use
+          the native auth screens; the default customer surface is the website
+          mirror above so Android stays in parity with the live site. */}
+      {false && authStep === "role_choice" && (
+        <PublicHubScreen
+          session={null}
+          onSignIn={() => setAuthStep("visitor_login")}
+          onSignOut={() => undefined}
+          onStaff={() => setAuthStep("staff_access")}
         />
       )}
 

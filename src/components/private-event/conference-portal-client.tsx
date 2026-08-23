@@ -24,8 +24,8 @@ function formatDate(value: string) {
   return new Intl.DateTimeFormat(undefined, { dateStyle: "full", timeStyle: "short" }).format(new Date(value));
 }
 
-function countdown(target: string) {
-  const distance = Math.max(0, new Date(target).getTime() - Date.now());
+function countdown(target: string, now: number) {
+  const distance = Math.max(0, new Date(target).getTime() - now);
   const days = Math.floor(distance / 86_400_000);
   const hours = Math.floor((distance % 86_400_000) / 3_600_000);
   const minutes = Math.floor((distance % 3_600_000) / 60_000);
@@ -39,10 +39,10 @@ export function ConferencePortalClient({ attendeeName, guestId, event, sessions,
   sessions: EventSessionRecord[];
   features: EventFeatureFlags;
 }) {
-  const [now, setNow] = useState(Date.now());
+  const [now, setNow] = useState(() => Date.now());
   const [saved, setSaved] = useState<string[]>([]);
   const [qr, setQr] = useState("");
-  const remaining = countdown(event.startsAt);
+  const remaining = countdown(event.startsAt, now);
   const sessionDays = useMemo(() => [...new Set(sessions.map((session) => session.startsAt ? new Date(session.startsAt).toDateString() : "Schedule"))], [sessions]);
 
   useEffect(() => {

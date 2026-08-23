@@ -18,7 +18,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ArrowLeft, ArrowRight, CalendarDays, Activity, Zap, ShieldCheck } from "lucide-react";
+import { ArrowLeft, ArrowRight, CalendarDays, Activity, Zap, ShieldCheck, Plus, Building2 } from "lucide-react";
 import { toast } from "sonner";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
@@ -35,6 +35,7 @@ const eventSchema = z.object({
   timezone: z.string().optional(),
   maxCapacity: z.number().int().positive().optional(),
   registrationEnabled: z.boolean().optional().default(false),
+  customerCompanyId: z.string().uuid().nullable().optional(),
 });
 
 type EventFormData = z.input<typeof eventSchema>;
@@ -48,6 +49,21 @@ const steps = [
 export default function NewEventPage() {
   const router = useRouter();
   const [step, setStep] = useState(0);
+  const [showCustomerForm, setShowCustomerForm] = useState(false);
+  const [customerDraft, setCustomerDraft] = useState({
+    legalName: "", displayName: "", email: "", mobile: "", vatNumber: "", website: "", country: "", address: "", notes: "",
+  });
+  const customerCompanies = trpc.customerCompanies.list.useQuery(undefined, { enabled: step === 2 });
+  const createCustomerCompany = trpc.customerCompanies.create.useMutation({
+    onSuccess: (customer) => {
+      setValue("customerCompanyId", customer.id);
+      setShowCustomerForm(false);
+      setCustomerDraft({ legalName: "", displayName: "", email: "", mobile: "", vatNumber: "", website: "", country: "", address: "", notes: "" });
+      void customerCompanies.refetch();
+      toast.success("Customer company added and linked");
+    },
+    onError: (err) => toast.error(err.message),
+  });
 
   const {
     register,
@@ -85,6 +101,7 @@ export default function NewEventPage() {
       timezone: data.timezone,
       maxCapacity: typeof data.maxCapacity === "number" ? data.maxCapacity : undefined,
       registrationEnabled: data.registrationEnabled,
+      customerCompanyId: data.customerCompanyId ?? undefined,
     });
   };
 
@@ -281,6 +298,54 @@ export default function NewEventPage() {
             {/* Step 3: Settings */}
             {step === 2 && (
               <div className="space-y-8">
+                <div className="theme-panel-subtle space-y-5 p-8">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex items-start gap-4">
+                      <div className="rounded-2xl bg-primary/10 p-3 text-primary"><Building2 className="h-5 w-5" /></div>
+                      <div>
+                        <Label className={labelClasses}>Related customer / company</Label>
+                        <p className="text-xs text-muted-foreground">Assign this event to a customer so their approved account can access only this event.</p>
+                      </div>
+                    </div>
+                    <Button type="button" variant="outline" onClick={() => setShowCustomerForm((value) => !value)} className="theme-ghost-surface shrink-0 rounded-xl font-bold">
+                      <Plus className="mr-2 h-4 w-4" /> Add customer
+                    </Button>
+                  </div>
+                  <select
+                    value={watch("customerCompanyId") ?? ""}
+                    onChange={(event) => setValue("customerCompanyId", event.target.value || null)}
+                    className={cn(inputClasses, "w-full bg-background px-4")}
+                  >
+                    <option value="">No customer linked</option>
+                    {(customerCompanies.data ?? []).map((customer) => (
+                      <option key={customer.id} value={customer.id}>{customer.displayName || customer.legalName} — {customer.email}</option>
+                    ))}
+                  </select>
+                  {showCustomerForm && (
+                    <div className="space-y-4 rounded-2xl border border-border bg-background/70 p-5">
+                      <div className="grid gap-4 sm:grid-cols-2">
+                        {([
+                          ["legalName", "Legal name *"], ["displayName", "Display name"], ["email", "Company email *"], ["mobile", "Mobile"],
+                          ["vatNumber", "VAT number"], ["website", "Website"], ["country", "Country"], ["address", "Address"],
+                        ] as const).map(([key, label]) => (
+                          <div key={key} className="space-y-2">
+                            <Label>{label}</Label>
+                            <Input value={customerDraft[key]} onChange={(event) => setCustomerDraft((draft) => ({ ...draft, [key]: event.target.value }))} placeholder={label.replace(" *", "")} />
+                          </div>
+                        ))}
+                      </div>
+                      <div className="space-y-2"><Label>Notes</Label><Textarea value={customerDraft.notes} onChange={(event) => setCustomerDraft((draft) => ({ ...draft, notes: event.target.value }))} /></div>
+                      <div className="flex justify-end gap-3">
+                        <Button type="button" variant="ghost" onClick={() => setShowCustomerForm(false)}>Cancel</Button>
+                        <Button type="button" disabled={createCustomerCompany.isPending || !customerDraft.legalName || !customerDraft.email} onClick={() => createCustomerCompany.mutate({
+                          legalName: customerDraft.legalName, displayName: customerDraft.displayName || null, email: customerDraft.email,
+                          mobile: customerDraft.mobile || null, vatNumber: customerDraft.vatNumber || null, website: customerDraft.website || null,
+                          country: customerDraft.country || null, address: customerDraft.address ? { line1: customerDraft.address } : null, notes: customerDraft.notes || null,
+                        })}>{createCustomerCompany.isPending ? "Saving..." : "Save customer"}</Button>
+                      </div>
+                    </div>
+                  )}
+                </div>
                 <div className="space-y-2">
                   <Label className={labelClasses}>Maximum Capacity</Label>
                   <Input

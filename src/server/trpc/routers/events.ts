@@ -10,6 +10,7 @@ type EventRow = {
   id: string;
   company_id: string;
   created_by: string | null;
+  customer_company_id: string | null;
   venue_id: string | null;
   category_id: string | null;
   title: string;
@@ -50,6 +51,7 @@ function mapEvent(row: EventRow, companySlug?: string | null) {
     id: row.id,
     companyId: row.company_id,
     createdBy: row.created_by,
+    customerCompanyId: row.customer_company_id,
     venueId: row.venue_id,
     categoryId: row.category_id,
     title: row.title,
@@ -116,7 +118,7 @@ export const eventsRouter = router({
       if (error) throw new Error(error.message);
 
       return {
-        events: ((data ?? []) as EventRow[]).map((row) => mapEvent(row)),
+        events: ((data ?? []) as unknown as EventRow[]).map((row) => mapEvent(row)),
         total: count ?? 0,
       };
     }),
@@ -138,15 +140,17 @@ export const eventsRouter = router({
         throw new Error("Event not found");
       }
 
+      const eventRow = event as unknown as EventRow;
+
       const { data: company, error: companyError } = await ctx.supabase
         .from("companies")
         .select("slug")
-        .eq("id", event.company_id)
+        .eq("id", eventRow.company_id)
         .maybeSingle();
 
       if (companyError) throw new Error(companyError.message);
 
-      return mapEvent(event as EventRow, company?.slug ?? null);
+      return mapEvent(eventRow, company?.slug ?? null);
     }),
 
   create: protectedProcedure
@@ -163,14 +167,19 @@ export const eventsRouter = router({
         categoryId: z.string().uuid().optional(),
         maxCapacity: z.number().int().positive().optional(),
         registrationEnabled: z.boolean().default(false),
+        customerCompanyId: z.string().uuid().nullable().optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const { data, error } = await ctx.supabase
-        .from("events")
-        .insert({
+      if (input.customerCompanyId) {
+        const { data: customer, error: customerError } = await ctx.supabase.from("customer_companies").select("id").eq("id", input.customerCompanyId).eq("owner_company_id", ctx.companyId).is("deleted_at", null).maybeSingle();
+        if (customerError) throw new Error(customerError.message);
+        if (!customer) throw new Error("Customer company not found");
+      }
+      const insertPayload = {
           company_id: ctx.companyId,
           created_by: ctx.userId,
+          customer_company_id: input.customerCompanyId ?? null,
           title: input.title,
           slug: buildSlug(input.title),
           description: input.description ?? null,
@@ -183,13 +192,27 @@ export const eventsRouter = router({
           category_id: input.categoryId ?? null,
           max_capacity: input.maxCapacity ?? null,
           registration_enabled: input.registrationEnabled,
-        })
+      };
+      let { data, error } = await ctx.supabase
+        .from("events")
+        .insert(insertPayload)
         .select(EVENT_SELECT)
         .single();
 
+      // Retry without the optional customer-company field for older schemas.
+      if (error?.message.includes("customer_company_id") && error.message.includes("schema cache")) {
+        const { customer_company_id: _customerCompanyId, ...legacyPayload } = insertPayload;
+        ({ data, error } = await ctx.supabase
+          .from("events")
+          .insert(legacyPayload)
+          .select(EVENT_SELECT)
+          .single());
+      }
       if (error) throw new Error(error.message);
-      void recordAudit({ companyId: ctx.companyId, actorId: ctx.userId, action: "event.created", entityType: "event", entityId: data.id, eventId: data.id, metadata: { title: input.title } });
-      return mapEvent(data as EventRow);
+      if (!data) throw new Error("Event was not created");
+      const createdEvent = data as unknown as EventRow;
+      void recordAudit({ companyId: ctx.companyId, actorId: ctx.userId, action: "event.created", entityType: "event", entityId: createdEvent.id, eventId: createdEvent.id, metadata: { title: input.title } });
+      return mapEvent(createdEvent);
     }),
 
   update: protectedProcedure
@@ -208,6 +231,7 @@ export const eventsRouter = router({
         categoryId: z.string().uuid().optional(),
         maxCapacity: z.number().int().positive().optional(),
         registrationEnabled: z.boolean().optional(),
+        customerCompanyId: z.string().uuid().nullable().optional(),
         coverImageUrl: z.string().url().optional(),
         visitorCode: z.string().trim().regex(/^[A-Za-z0-9-]{4,10}$/).optional(),
         settings: z.any().optional(),
@@ -245,6 +269,14 @@ export const eventsRouter = router({
       if (input.categoryId !== undefined) payload.category_id = input.categoryId;
       if (input.maxCapacity !== undefined) payload.max_capacity = input.maxCapacity;
       if (input.registrationEnabled !== undefined) payload.registration_enabled = input.registrationEnabled;
+      if (input.customerCompanyId !== undefined) {
+        if (input.customerCompanyId) {
+          const { data: customer, error: customerError } = await ctx.supabase.from("customer_companies").select("id").eq("id", input.customerCompanyId).eq("owner_company_id", ctx.companyId).is("deleted_at", null).maybeSingle();
+          if (customerError) throw new Error(customerError.message);
+          if (!customer) throw new Error("Customer company not found");
+        }
+        payload.customer_company_id = input.customerCompanyId;
+      }
       if (input.coverImageUrl !== undefined) payload.cover_image_url = input.coverImageUrl;
       if (input.visitorCode !== undefined) payload.visitor_code = input.visitorCode.toUpperCase();
       if (input.settings !== undefined) payload.settings = input.settings;
@@ -261,7 +293,7 @@ export const eventsRouter = router({
 
       if (error) throw new Error(error.message);
 
-      const updated = data as EventRow;
+      const updated = data as unknown as EventRow;
       void recordAudit({ companyId: ctx.companyId, actorId: ctx.userId, action: "event.updated", entityType: "event", entityId: updated.id, eventId: updated.id, metadata: { fields: Object.keys(input).filter((key) => key !== "id") } });
       if (input.status === "published" && previousStatus !== "published") {
         // Fire-and-forget: never delay or fail the mutation over a push.
@@ -309,39 +341,43 @@ export const eventsRouter = router({
 
       if (originalError) throw new Error(originalError.message);
       if (!original) throw new Error("Event not found");
+      const originalRow = original as unknown as EventRow;
 
-      const duplicateTitle = `${original.title} (Copy)`;
+      const duplicateTitle = `${originalRow.title} (Copy)`;
       const { data, error } = await ctx.supabase
         .from("events")
         .insert({
           company_id: ctx.companyId,
           created_by: ctx.userId,
-          venue_id: original.venue_id,
-          category_id: original.category_id,
+          customer_company_id: originalRow.customer_company_id ?? null,
+          venue_id: originalRow.venue_id,
+          category_id: originalRow.category_id,
           title: duplicateTitle,
           slug: buildSlug(`${duplicateTitle}-copy`),
-          description: original.description,
-          short_description: original.short_description,
-          cover_image_url: original.cover_image_url,
-          event_type: original.event_type,
+          description: originalRow.description,
+          short_description: originalRow.short_description,
+          cover_image_url: originalRow.cover_image_url,
+          event_type: originalRow.event_type,
           status: "draft",
-          starts_at: original.starts_at,
-          ends_at: original.ends_at,
-          timezone: original.timezone,
-          registration_enabled: original.registration_enabled,
-          registration_opens_at: original.registration_opens_at,
-          registration_closes_at: original.registration_closes_at,
-          max_capacity: original.max_capacity,
-          settings: original.settings,
-          custom_fields: original.custom_fields,
-          metadata: original.metadata,
+          starts_at: originalRow.starts_at,
+          ends_at: originalRow.ends_at,
+          timezone: originalRow.timezone,
+          registration_enabled: originalRow.registration_enabled,
+          registration_opens_at: originalRow.registration_opens_at,
+          registration_closes_at: originalRow.registration_closes_at,
+          max_capacity: originalRow.max_capacity,
+          settings: originalRow.settings,
+          custom_fields: originalRow.custom_fields,
+          metadata: originalRow.metadata,
         })
         .select(EVENT_SELECT)
         .single();
 
       if (error) throw new Error(error.message);
-      void recordAudit({ companyId: ctx.companyId, actorId: ctx.userId, action: "event.duplicated", entityType: "event", entityId: data.id, eventId: data.id, metadata: { sourceEventId: input.id } });
-      return mapEvent(data as EventRow);
+      if (!data) throw new Error("Event was not duplicated");
+      const duplicated = data as unknown as EventRow;
+      void recordAudit({ companyId: ctx.companyId, actorId: ctx.userId, action: "event.duplicated", entityType: "event", entityId: duplicated.id, eventId: duplicated.id, metadata: { sourceEventId: input.id } });
+      return mapEvent(duplicated);
     }),
 
   archive: protectedProcedure
@@ -361,7 +397,8 @@ export const eventsRouter = router({
       const { data, error } = await archiveQuery;
 
       if (error) throw new Error(error.message);
-      return mapEvent(data as EventRow);
+      if (!data) throw new Error("Event was not archived");
+      return mapEvent(data as unknown as EventRow);
     }),
 
   getBySlug: publicProcedure
@@ -391,10 +428,11 @@ export const eventsRouter = router({
       const { data, error } = await query.maybeSingle();
       if (error) throw new Error(error.message);
       if (!data) return null;
+      const eventRow = data as unknown as EventRow;
 
       const settings =
-        data.settings && typeof data.settings === "object"
-          ? (data.settings as Record<string, any>)
+        eventRow.settings && typeof eventRow.settings === "object"
+          ? (eventRow.settings as Record<string, any>)
           : {};
       const publicPageEnabled = settings.publicPage?.enabled;
 
@@ -402,7 +440,7 @@ export const eventsRouter = router({
         return null;
       }
 
-      return mapEvent(data as EventRow, company.slug);
+      return mapEvent(eventRow, company.slug);
     }),
 
   relatedByCompany: publicProcedure
@@ -427,7 +465,7 @@ export const eventsRouter = router({
         .order("starts_at", { ascending: true })
         .limit(input.limit);
       if (error) throw new Error(error.message);
-      return (data ?? []).map((row) => mapEvent(row as EventRow, company.slug));
+      return (data ?? []).map((row) => mapEvent(row as unknown as EventRow, company.slug));
     }),
 
   relatedByCategory: publicProcedure
@@ -444,23 +482,24 @@ export const eventsRouter = router({
         .order("starts_at", { ascending: true })
         .limit(input.limit);
       if (error) throw new Error(error.message);
-      const companyIds = [...new Set((data ?? []).map((row) => row.company_id))];
+      const companyIds = [...new Set((data ?? []).map((row) => (row as unknown as EventRow).company_id))];
       const { data: companies, error: companiesError } = companyIds.length
         ? await supabase.from("companies").select("id,slug").in("id", companyIds)
         : { data: [], error: null };
       if (companiesError) throw new Error(companiesError.message);
       const slugs = new Map((companies ?? []).map((company) => [company.id, company.slug]));
-      return (data ?? []).map((row) => mapEvent(row as EventRow, slugs.get(row.company_id) ?? null));
+      return (data ?? []).map((row) => mapEvent(row as unknown as EventRow, slugs.get((row as unknown as EventRow).company_id) ?? null));
     }),
 
   stats: protectedProcedure.query(async ({ ctx }) => {
     if (!isFullDashboardAccess(ctx)) {
-      const { data: ownedEvents, error: ownedEventsError } = await ctx.supabase
+      let ownedEventsQuery = ctx.supabase
         .from("events")
         .select("id")
         .eq("company_id", ctx.companyId)
-        .eq("created_by", ctx.userId)
         .is("deleted_at", null);
+      ownedEventsQuery = applyEventOwnership(ownedEventsQuery, ctx);
+      const { data: ownedEvents, error: ownedEventsError } = await ownedEventsQuery;
       if (ownedEventsError) throw new Error(ownedEventsError.message);
       const eventIds = (ownedEvents ?? []).map((event) => event.id);
       if (!eventIds.length) return { total: 0, totalGuests: 0, totalCheckIns: 0 };

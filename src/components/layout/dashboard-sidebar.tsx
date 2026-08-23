@@ -12,6 +12,7 @@ import {
   ChevronLeft,
   LogOut,
   LockKeyhole,
+  Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -32,6 +33,11 @@ const navigation = [
     label: "Events",
     href: "/dashboard/events",
     icon: CalendarDays,
+  },
+  {
+    label: "Customers",
+    href: "/dashboard/customers",
+    icon: Users,
   },
   {
     label: "Private Conferences",
@@ -69,7 +75,7 @@ export function DashboardSidebar({ collapsed, onToggle }: DashboardSidebarProps)
   const handleSignOut = async () => {
     const supabase = createClient();
     await supabase.auth.signOut();
-    router.push("/login");
+    router.push("/");
     router.refresh();
   };
 
@@ -83,11 +89,11 @@ export function DashboardSidebar({ collapsed, onToggle }: DashboardSidebarProps)
       {/* Logo */}
       <div className="flex h-20 items-center justify-between px-6">
         {collapsed ? (
-          <Link href="/dashboard" aria-label="iTicket dashboard">
+          <Link href="/" aria-label="Return to iTicket website">
             <BrandMark className="h-11 w-11" />
           </Link>
         ) : (
-          <Link href="/dashboard" aria-label="iTicket dashboard">
+          <Link href="/" aria-label="Return to iTicket website">
             <BrandWordmark
               className="gap-2.5"
               markClassName="h-11 w-11"

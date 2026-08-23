@@ -17,6 +17,13 @@ import {
 } from "@/server/db/schema";
 import { generateAndSendTicket } from "@/server/actions/generateAndSendTicket";
 import { createClient as createSupabaseServerClient } from "@/lib/supabase/server";
+import {
+  bookSeatsIoObjects,
+  readSeatsIoEventKey,
+  readSeatsIoObjectInfos,
+  readSeatsIoPricing,
+  releaseSeatsIoObjects,
+} from "@/lib/seatsio";
 
 function generateOrderNumber(): string {
   const timestamp = Date.now().toString(36).toUpperCase();
@@ -38,11 +45,18 @@ class CheckoutValidationError extends Error {}
 export async function POST(request: NextRequest) {
   try {
     const supabase = await createSupabaseServerClient();
-    const { data: authData } = await supabase.auth.getUser();
+    const authorization = request.headers.get("authorization");
+    const bearerToken = authorization?.match(/^Bearer\s+(.+)$/i)?.[1];
+    const { data: authData } = bearerToken
+      ? await supabase.auth.getUser(bearerToken)
+      : await supabase.auth.getUser();
     const buyer = authData.user;
     if (!buyer) {
       return NextResponse.json(
-        { error: "Please sign in before purchasing tickets.", code: "AUTH_REQUIRED" },
+        {
+          error: "Please sign in before purchasing tickets.",
+          code: "AUTH_REQUIRED",
+        },
         { status: 401 },
       );
     }
@@ -56,6 +70,7 @@ export async function POST(request: NextRequest) {
       cartItems: requestedCartItems,
       selectedSeatIds,
       seatHoldToken,
+      seatsIo,
     } = body as {
       companySlug?: string;
       eventSlug?: string;
@@ -71,6 +86,7 @@ export async function POST(request: NextRequest) {
       }>;
       selectedSeatIds?: string[];
       seatHoldToken?: string;
+      seatsIo?: boolean;
     };
 
     const buyerName =
@@ -82,19 +98,36 @@ export async function POST(request: NextRequest) {
     const resolvedAttendeeName = attendeeName?.trim() || buyerName;
     const resolvedAttendeeEmail = attendeeEmail?.trim() || buyer.email || "";
 
-    // Seats.io selections arrive as seat object IDs and do not carry a
-    // ticket-type payload. Resolve the event and its first active ticket type
-    // on the server instead of trusting client-supplied pricing.
+    // Seats.io selections are external object IDs and must use the event's
+    // active ticket type. Resolve the catalog row on the server instead of
+    // trusting browser-supplied pricing.
     let cartItems = requestedCartItems ?? [];
     if (!cartItems.length && requestedEventId && selectedSeatIds?.length) {
       const fallbackTicketType = await getDb()
         .select()
         .from(ticketTypes)
-        .where(and(eq(ticketTypes.eventId, requestedEventId), eq(ticketTypes.status, "active")))
+        .where(
+          and(
+            eq(ticketTypes.eventId, requestedEventId),
+            eq(ticketTypes.status, "active"),
+          ),
+        )
         .limit(1);
       const type = fallbackTicketType[0];
-      if (!type) return NextResponse.json({ error: "No active ticket type is configured for this event." }, { status: 400 });
-      cartItems = [{ ticketTypeId: type.id, name: type.name, price: type.price ?? 0, currency: type.currency ?? "EGP", quantity: selectedSeatIds.length }];
+      if (!type)
+        return NextResponse.json(
+          { error: "No active ticket type is configured for this event." },
+          { status: 400 },
+        );
+      cartItems = [
+        {
+          ticketTypeId: type.id,
+          name: type.name,
+          price: type.price ?? 0,
+          currency: type.currency ?? "EGP",
+          quantity: selectedSeatIds.length,
+        },
+      ];
     }
 
     if ((!companySlug || !eventSlug) && !requestedEventId) {
@@ -106,19 +139,114 @@ export async function POST(request: NextRequest) {
 
     const db = getDb();
     const company = companySlug
-      ? await db.select({ id: companies.id, name: companies.name }).from(companies).where(eq(companies.slug, companySlug)).limit(1)
+      ? await db
+          .select({ id: companies.id, name: companies.name })
+          .from(companies)
+          .where(eq(companies.slug, companySlug))
+          .limit(1)
       : [];
     const event = requestedEventId
-      ? await db.select().from(events).where(and(eq(events.id, requestedEventId), eq(events.status, "published"))).limit(1)
+      ? await db
+          .select()
+          .from(events)
+          .where(
+            and(
+              eq(events.id, requestedEventId),
+              eq(events.status, "published"),
+            ),
+          )
+          .limit(1)
       : company[0]
-        ? await db.select().from(events).where(and(eq(events.companyId, company[0].id), eq(events.slug, eventSlug!), eq(events.status, "published"))).limit(1)
+        ? await db
+            .select()
+            .from(events)
+            .where(
+              and(
+                eq(events.companyId, company[0].id),
+                eq(events.slug, eventSlug!),
+                eq(events.status, "published"),
+              ),
+            )
+            .limit(1)
         : [];
 
-    if (!event[0]) return NextResponse.json({ error: "Event not found" }, { status: 404 });
+    if (!event[0])
+      return NextResponse.json({ error: "Event not found" }, { status: 404 });
     const resolvedCompany = company[0]
       ? company[0]
-      : (await db.select({ id: companies.id, name: companies.name }).from(companies).where(eq(companies.id, event[0].companyId)).limit(1))[0];
-    if (!resolvedCompany) return NextResponse.json({ error: "Company not found" }, { status: 404 });
+      : (
+          await db
+            .select({ id: companies.id, name: companies.name })
+            .from(companies)
+            .where(eq(companies.id, event[0].companyId))
+            .limit(1)
+        )[0];
+    if (!resolvedCompany)
+      return NextResponse.json({ error: "Company not found" }, { status: 404 });
+    // A selected seat is authoritative evidence that this is a seating
+    // checkout. Do not rely solely on the client-side `seatsIo` marker: older
+    // links, browser restores, and third-party chart redirects can drop that
+    // flag. Always resolve the ticket type from the same published event so a
+    // seat can never be booked against a different event's ticket type.
+    if (selectedSeatIds?.length) {
+      const activeTicketTypes = await db
+        .select()
+        .from(ticketTypes)
+        .where(
+          and(
+            eq(ticketTypes.eventId, event[0].id),
+            eq(ticketTypes.status, "active"),
+          ),
+        );
+      const requestedTypeId = requestedCartItems?.[0]?.ticketTypeId;
+      const type =
+        activeTicketTypes.find((record) => record.id === requestedTypeId) ??
+        activeTicketTypes.find((record) => Number(record.price ?? 0) === 0) ??
+        activeTicketTypes[0];
+      if (!type) {
+        return NextResponse.json(
+          { error: "No active ticket type is configured for this event." },
+          { status: 400 },
+        );
+      }
+      const fallbackPrice = Number(type.price ?? 0);
+      const seatsIoEventKey =
+        readSeatsIoEventKey(event[0].settings) ?? event[0].id;
+      const categoryPrices = readSeatsIoPricing(event[0].settings);
+      const seatPrices = new Map<number, number>();
+      if (categoryPrices.length) {
+        const objectInfos = await readSeatsIoObjectInfos(
+          seatsIoEventKey,
+          selectedSeatIds,
+        );
+        selectedSeatIds.forEach((seatId) => {
+          const info = objectInfos[seatId] ?? {};
+          const nestedCategory =
+            info.category && typeof info.category === "object"
+              ? (info.category as Record<string, unknown>)
+              : null;
+          const category =
+            info.categoryKey ??
+            info.categoryLabel ??
+            nestedCategory?.key ??
+            nestedCategory?.label;
+          const configured = categoryPrices.find(
+            (entry) => String(entry.category) === String(category),
+          );
+          const price = configured?.price ?? fallbackPrice;
+          seatPrices.set(price, (seatPrices.get(price) ?? 0) + 1);
+        });
+      } else {
+        seatPrices.set(fallbackPrice, selectedSeatIds.length);
+      }
+      cartItems = Array.from(seatPrices, ([price, quantity]) => ({
+        ticketTypeId: type.id,
+        name: type.name,
+        price,
+        currency: type.currency ?? "EGP",
+        quantity,
+      }));
+    }
 
     const eventSettings =
       event[0].settings && typeof event[0].settings === "object"
@@ -136,8 +264,9 @@ export async function POST(request: NextRequest) {
       cartItems
         .reduce((itemsByTicketType, item) => {
           const quantity = normalizeQuantity(item.quantity) ?? 0;
-          const existing = itemsByTicketType.get(item.ticketTypeId);
-          itemsByTicketType.set(item.ticketTypeId, {
+          const key = `${item.ticketTypeId}:${item.price}`;
+          const existing = itemsByTicketType.get(key);
+          itemsByTicketType.set(key, {
             ...item,
             quantity: (existing?.quantity ?? 0) + quantity,
           });
@@ -175,8 +304,13 @@ export async function POST(request: NextRequest) {
     // the paid registration switch is disabled. Decide this from the server's
     // catalog prices rather than trusting the client subtotal.
     const catalogSubtotal = aggregatedCart.reduce((sum, item) => {
-      const ticketType = validTicketTypes.find((record) => record.id === item.ticketTypeId);
-      return sum + (ticketType?.price ?? 0) * item.quantity;
+      const ticketType = validTicketTypes.find(
+        (record) => record.id === item.ticketTypeId,
+      );
+      const unitPrice = selectedSeatIds?.length
+        ? item.price
+        : (ticketType?.price ?? 0);
+      return sum + unitPrice * item.quantity;
     }, 0);
     if (!event[0].registrationEnabled && isPaidEvent && catalogSubtotal > 0) {
       return NextResponse.json(
@@ -236,7 +370,11 @@ export async function POST(request: NextRequest) {
           ...item,
           name: ticketType.name ?? item.name,
           currency: ticketType.currency ?? item.currency,
-          price: isPaidEvent ? (ticketType.price ?? item.price) : 0,
+          price: isPaidEvent
+            ? selectedSeatIds?.length
+              ? item.price
+              : (ticketType.price ?? item.price)
+            : 0,
         };
       })
       .filter(Boolean) as Array<
@@ -368,6 +506,44 @@ export async function POST(request: NextRequest) {
 
     const orderNumber = generateOrderNumber();
     const origin = request.nextUrl.origin;
+    const externalSeatIds =
+      selectedSeatIds?.length && !seatHoldToken ? selectedSeatIds : [];
+    const seatsIoEventKey = externalSeatIds.length
+      ? // The public renderer falls back to the database event id when an
+        // explicit Seats.io event key has not been saved yet. Keep checkout on
+        // that exact same key so a newly connected chart can be booked too.
+        (readSeatsIoEventKey(eventSettings) ?? event[0].id)
+      : "";
+    let seatsIoBooked = false;
+    if (externalSeatIds.length) {
+      if (!process.env.SEATSIO_SECRET_KEY) {
+        return NextResponse.json(
+          {
+            error:
+              "Reserved seating is not configured yet. Please try again later.",
+            code: "SEATSIO_NOT_CONFIGURED",
+          },
+          { status: 503 },
+        );
+      }
+      try {
+        // Seats.io's booking endpoint is atomic and prevents two buyers from
+        // claiming the same table/seat. The chart is rendered without a
+        // client session so this server-side booking is authoritative.
+        await bookSeatsIoObjects(seatsIoEventKey, externalSeatIds, orderNumber);
+        seatsIoBooked = true;
+      } catch (error) {
+        console.error("[orders] Seats.io booking failed:", error);
+        return NextResponse.json(
+          {
+            error:
+              "One or more selected seats are no longer available. Please choose again.",
+            code: "SEATS_UNAVAILABLE",
+          },
+          { status: 409 },
+        );
+      }
+    }
     const ticketTasks: Array<{
       ticketId: string;
       barcode: string;
@@ -375,110 +551,125 @@ export async function POST(request: NextRequest) {
     }> = [];
     let orderId = "";
 
-    await db.transaction(async (tx) => {
-      const [order] = await tx
-        .insert(orders)
-        .values({
-          companyId: resolvedCompany.id,
-          eventId: event[0].id,
-          orderNumber,
-          status: "completed",
-          email: resolvedAttendeeEmail,
-          name: resolvedAttendeeName,
-          subtotal: 0,
-          total: 0,
-          currency: normalizedCartItems[0]?.currency ?? "BHD",
-          completedAt: new Date(),
-        })
-        .returning();
-      orderId = order.id;
-
-      await tx.insert(orderItems).values(
-        normalizedCartItems.map((item) => ({
-          orderId: order.id,
-          ticketTypeId: item.ticketTypeId,
-          quantity: item.quantity,
-          unitPrice: item.price,
-          total: item.price * item.quantity,
-        })),
-      );
-
-      for (const item of normalizedCartItems) {
-        const updatedTicketType = await tx
-          .update(ticketTypes)
-          .set({
-            // Older ticket rows may have a null quantity_sold despite the
-            // column default. Treat those as zero for free reservations too.
-            quantitySold: sql`coalesce(${ticketTypes.quantitySold}, 0) + ${item.quantity}`,
-            updatedAt: new Date(),
+    try {
+      await db.transaction(async (tx) => {
+        const [order] = await tx
+          .insert(orders)
+          .values({
+            companyId: resolvedCompany.id,
+            eventId: event[0].id,
+            orderNumber,
+            status: "completed",
+            email: resolvedAttendeeEmail,
+            name: resolvedAttendeeName,
+            subtotal: 0,
+            total: 0,
+            currency: normalizedCartItems[0]?.currency ?? "BHD",
+            completedAt: new Date(),
           })
-          .where(
-            and(
-              eq(ticketTypes.id, item.ticketTypeId),
-              eq(ticketTypes.status, "active"),
-              sql`(${ticketTypes.quantityTotal} IS NULL OR coalesce(${ticketTypes.quantitySold}, 0) + ${item.quantity} <= ${ticketTypes.quantityTotal})`,
-            ),
-          )
-          .returning({ id: ticketTypes.id });
+          .returning();
+        orderId = order.id;
 
-        if (!updatedTicketType[0]) {
-          throw new CheckoutValidationError(
-            `${item.name} is no longer available.`,
+        await tx.insert(orderItems).values(
+          normalizedCartItems.map((item) => ({
+            orderId: order.id,
+            ticketTypeId: item.ticketTypeId,
+            quantity: item.quantity,
+            unitPrice: item.price,
+            total: item.price * item.quantity,
+          })),
+        );
+
+        for (const item of normalizedCartItems) {
+          const updatedTicketType = await tx
+            .update(ticketTypes)
+            .set({
+              // Older ticket rows may have a null quantity_sold despite the
+              // column default. Treat those as zero for free reservations too.
+              quantitySold: sql`coalesce(${ticketTypes.quantitySold}, 0) + ${item.quantity}`,
+              updatedAt: new Date(),
+            })
+            .where(
+              and(
+                eq(ticketTypes.id, item.ticketTypeId),
+                eq(ticketTypes.status, "active"),
+                sql`(${ticketTypes.quantityTotal} IS NULL OR coalesce(${ticketTypes.quantitySold}, 0) + ${item.quantity} <= ${ticketTypes.quantityTotal})`,
+              ),
+            )
+            .returning({ id: ticketTypes.id });
+
+          if (!updatedTicketType[0]) {
+            throw new CheckoutValidationError(
+              `${item.name} is no longer available.`,
+            );
+          }
+
+          const ticketType = validTicketTypes.find(
+            (record) => record.id === item.ticketTypeId,
+          );
+          const [firstName, ...lastNameParts] = resolvedAttendeeName
+            .trim()
+            .split(/\s+/)
+            .filter(Boolean);
+
+          for (let i = 0; i < item.quantity; i++) {
+            const barcode = `TKT-${crypto.randomBytes(6).toString("hex").toUpperCase()}`;
+            const [newGuest] = await tx
+              .insert(guests)
+              .values({
+                companyId: resolvedCompany.id,
+                eventId: event[0].id,
+                firstName: firstName || "Guest",
+                lastName: lastNameParts.join(" "),
+                email: resolvedAttendeeEmail,
+                status: "confirmed",
+                guestType: ticketType?.name ?? item.name,
+                source: "registration",
+              })
+              .returning();
+
+            const [newTicket] = await tx
+              .insert(tickets)
+              .values({
+                companyId: resolvedCompany.id,
+                eventId: event[0].id,
+                ticketTypeId: item.ticketTypeId,
+                orderId: order.id,
+                guestId: newGuest.id,
+                barcode,
+                attendeeName: resolvedAttendeeName,
+                attendeeEmail: resolvedAttendeeEmail,
+                ...(selectedSeatIds?.length
+                  ? {
+                      metadata: {
+                        seatingProvider: seatHoldToken ? "iticket" : "seats.io",
+                        selectedSeatId:
+                          selectedSeatIds[ticketTasks.length] ?? null,
+                      },
+                    }
+                  : {}),
+                status: "valid",
+              })
+              .returning();
+
+            ticketTasks.push({
+              ticketId: newTicket.id,
+              barcode,
+              ticketTypeName: ticketType?.name ?? item.name,
+            });
+          }
+        }
+        if (seatHoldToken) {
+          await tx.execute(
+            sql`SELECT finalize_seat_hold(${seatHoldToken}::uuid, ${order.id}::uuid, ${ticketTasks.map((task) => task.ticketId)}::uuid[])`,
           );
         }
-
-        const ticketType = validTicketTypes.find(
-          (record) => record.id === item.ticketTypeId,
-        );
-        const [firstName, ...lastNameParts] = resolvedAttendeeName
-          .trim()
-          .split(/\s+/)
-          .filter(Boolean);
-
-        for (let i = 0; i < item.quantity; i++) {
-          const barcode = `TKT-${crypto.randomBytes(6).toString("hex").toUpperCase()}`;
-          const [newGuest] = await tx
-            .insert(guests)
-            .values({
-              companyId: resolvedCompany.id,
-              eventId: event[0].id,
-              firstName: firstName || "Guest",
-              lastName: lastNameParts.join(" "),
-              email: resolvedAttendeeEmail,
-              status: "confirmed",
-              guestType: ticketType?.name ?? item.name,
-              source: "registration",
-            })
-            .returning();
-
-          const [newTicket] = await tx
-            .insert(tickets)
-            .values({
-              companyId: resolvedCompany.id,
-              eventId: event[0].id,
-              ticketTypeId: item.ticketTypeId,
-              orderId: order.id,
-              guestId: newGuest.id,
-              barcode,
-              attendeeName: resolvedAttendeeName,
-              attendeeEmail: resolvedAttendeeEmail,
-              status: "valid",
-            })
-            .returning();
-
-          ticketTasks.push({
-            ticketId: newTicket.id,
-            barcode,
-            ticketTypeName: ticketType?.name ?? item.name,
-          });
-        }
-      }
-      if (seatHoldToken) {
-        await tx.execute(
-          sql`SELECT finalize_seat_hold(${seatHoldToken}::uuid, ${order.id}::uuid, ${ticketTasks.map((task) => task.ticketId)}::uuid[])`,
-        );
-      }
-    });
+      });
+    } catch (error) {
+      if (seatsIoBooked)
+        await releaseSeatsIoObjects(seatsIoEventKey, externalSeatIds);
+      throw error;
+    }
 
     for (const task of ticketTasks) {
       generateAndSendTicket({

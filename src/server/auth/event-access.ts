@@ -5,6 +5,7 @@ type EventAccessContext = {
   role: string | null;
   userId: string;
   companyId: string;
+  customerCompanyId: string | null;
   supabase: { from: (table: string) => any };
 };
 
@@ -14,14 +15,18 @@ export function isFullDashboardAccess(ctx: { dashboardAccess: string; role: stri
 
 export function applyEventOwnership<T>(
   query: T,
-  ctx: { dashboardAccess: string; role: string | null; userId: string },
+  ctx: { dashboardAccess: string; role: string | null; userId: string; customerCompanyId?: string | null },
 ) {
-  return isFullDashboardAccess(ctx) ? query : (query as any).eq("created_by", ctx.userId);
+  if (isFullDashboardAccess(ctx)) return query;
+  if (ctx.customerCompanyId) {
+    return (query as any).or(`created_by.eq.${ctx.userId},customer_company_id.eq.${ctx.customerCompanyId}`);
+  }
+  return (query as any).eq("created_by", ctx.userId);
 }
 
-export function assertOwnedEvent(row: { created_by?: string | null } | null, ctx: { dashboardAccess: string; role: string | null; userId: string }) {
-  if (!row || (!isFullDashboardAccess(ctx) && row.created_by !== ctx.userId)) {
-    throw new TRPCError({ code: "FORBIDDEN", message: "You can only access events created by your account" });
+export function assertOwnedEvent(row: { created_by?: string | null; customer_company_id?: string | null } | null, ctx: { dashboardAccess: string; role: string | null; userId: string; customerCompanyId?: string | null }) {
+  if (!row || (!isFullDashboardAccess(ctx) && row.created_by !== ctx.userId && row.customer_company_id !== ctx.customerCompanyId)) {
+    throw new TRPCError({ code: "FORBIDDEN", message: "You can only access events assigned to your account" });
   }
 }
 
@@ -30,11 +35,12 @@ export async function assertEventAccess(ctx: EventAccessContext, eventId: string
   if (isFullDashboardAccess(ctx)) return;
   const { data, error } = await ctx.supabase
     .from("events")
-    .select("id,created_by")
+    .select("id,created_by,customer_company_id")
     .eq("id", eventId)
     .eq("company_id", ctx.companyId)
     .maybeSingle();
-  if (error || !data || data.created_by !== ctx.userId) {
+  const allowed = data && (data.created_by === ctx.userId || (ctx.customerCompanyId && data.customer_company_id === ctx.customerCompanyId));
+  if (error || !allowed) {
     throw new TRPCError({ code: "FORBIDDEN", message: "You can only access events created by your account" });
   }
 }
