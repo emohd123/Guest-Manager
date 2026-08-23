@@ -1,4 +1,6 @@
-export const dynamic = "force-dynamic";
+// Public discovery data changes frequently enough to stay fresh with a short
+// cache, while avoiding a database round-trip for every page view.
+export const revalidate = 30;
 
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseAdminClient } from "@/server/supabase/admin";

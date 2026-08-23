@@ -16,7 +16,9 @@ async function discover(locale: string): Promise<MarketplaceDiscoveryResponse> {
   const protocol = requestHeaders.get("x-forwarded-proto") ?? "http";
   const origin = host ? `${protocol}://${host}` : getAppUrl();
   try {
-    const response = await fetch(`${origin}/api/events/discover?limit=36&locale=${locale}`, { cache: "no-store" });
+    const response = await fetch(`${origin}/api/events/discover?limit=36&locale=${locale}`, {
+      next: { revalidate: 30, tags: ["public-events"] },
+    });
     if (!response.ok) return { events: [], categories: [], total: 0 };
     const data = (await response.json()) as MarketplaceDiscoveryResponse;
     return data;

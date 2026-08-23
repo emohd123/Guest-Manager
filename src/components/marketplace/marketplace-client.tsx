@@ -81,6 +81,7 @@ export function MarketplaceClient({
   const [currentTime] = useState(() => Date.now());
   const [heroIndex, setHeroIndex] = useState(0);
   const [heroResetToken, setHeroResetToken] = useState(0);
+  const hasHydratedInitialData = useRef(false);
   const heroTouchStart = useRef<number | null>(null);
   const datePickerRef = useRef<HTMLInputElement>(null);
   const dir = locale === "ar" ? "rtl" : "ltr";
@@ -164,6 +165,12 @@ export function MarketplaceClient({
 
   useEffect(() => {
     const controller = new AbortController();
+    // The page is server-rendered with the initial event feed. Do not request
+    // that exact feed again on mount; only fetch after a filter actually changes.
+    if (!hasHydratedInitialData.current) {
+      hasHydratedInitialData.current = true;
+      return () => controller.abort();
+    }
 
     async function load() {
       setLoading(true);
@@ -183,11 +190,16 @@ export function MarketplaceClient({
       setLoading(false);
     }
 
-    load().catch(() => {
-      if (!controller.signal.aborted) setLoading(false);
-    });
+    const timer = window.setTimeout(() => {
+      load().catch(() => {
+        if (!controller.signal.aborted) setLoading(false);
+      });
+    }, query.trim() ? 250 : 0);
 
-    return () => controller.abort();
+    return () => {
+      window.clearTimeout(timer);
+      controller.abort();
+    };
   }, [category, dateFilter, locale, query]);
 
   function openDatePicker() {

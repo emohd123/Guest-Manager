@@ -116,7 +116,7 @@ async function getMarketplaceData(locale: string): Promise<MarketplaceDiscoveryR
   const origin = host ? `${protocol}://${host}` : getAppUrl();
   const isLocalPreview = host?.startsWith("localhost") || host?.startsWith("127.0.0.1");
   const response = await fetch(`${origin}/api/events/discover?limit=24&locale=${locale}`, {
-    cache: "no-store",
+    next: { revalidate: 30, tags: ["public-events"] },
   });
 
   if (!response.ok) {
