@@ -82,7 +82,7 @@ export default function CompanyScannerPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 px-4 py-8 text-white sm:px-6">
+    <div className="h-full min-h-0 overflow-y-auto overscroll-contain bg-slate-950 px-4 py-8 pb-12 text-white sm:px-6">
       <div className="mx-auto max-w-3xl">
         <div className="flex items-center justify-between gap-4">
           <Button asChild variant="ghost" className="text-white hover:bg-white/10 hover:text-white"><Link href="/account"><ArrowLeft className="mr-2 h-4 w-4" />Profile</Link></Button>
