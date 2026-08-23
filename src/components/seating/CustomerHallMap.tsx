@@ -22,6 +22,8 @@ type CustomerHallMapProps = {
   locale: string;
   eventContext: { title: string; date: string; time: string; location: string };
   startFullScreen?: boolean;
+  onContinue?: () => void;
+  continueDisabled?: boolean;
 };
 
 function seatPrice(seat: any, row: any, section: any) {
@@ -36,6 +38,8 @@ export function CustomerHallMap({
   locale,
   eventContext,
   startFullScreen = false,
+  onContinue,
+  continueDisabled = false,
 }: CustomerHallMapProps) {
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
@@ -109,9 +113,9 @@ export function CustomerHallMap({
   }, []);
 
   return (
-    <div className={fullScreen ? "fixed inset-0 z-[200] overflow-y-auto bg-white text-slate-900" : "overflow-hidden rounded-3xl border border-slate-200 bg-white text-slate-900 shadow-2xl"}>
+    <div className={fullScreen ? "fixed inset-0 z-[200] overflow-hidden bg-white text-slate-900" : "overflow-hidden rounded-3xl border border-slate-200 bg-white text-slate-900 shadow-2xl"}>
       {fullScreen ? (
-        <div className="sticky top-0 z-[70] border-b border-slate-200 bg-white/95 backdrop-blur">
+        <div className="fixed inset-x-0 top-0 z-[70] border-b border-slate-200 bg-white/95 backdrop-blur">
           <div className="mx-auto flex h-16 max-w-[1500px] items-center justify-between px-5">
             <div className="flex items-center gap-3 text-lg font-black">
               <span className="grid h-9 w-9 place-items-center rounded-lg bg-[#071017] text-cyan-300"><Ticket className="h-5 w-5" /></span>
@@ -121,7 +125,7 @@ export function CustomerHallMap({
           </div>
         </div>
       ) : null}
-      <div className={fullScreen ? "mx-auto mt-5 flex max-w-[1200px] flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-md" : "flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 px-5 py-4"}>
+      <div className={fullScreen ? "fixed inset-x-0 top-16 z-[70] mx-auto flex max-w-[1200px] flex-wrap items-center justify-between gap-3 border-b border-slate-200 bg-white/95 px-5 py-3 shadow-md backdrop-blur" : "flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 px-5 py-4"}>
         <div className="flex items-start gap-3">
           <button type="button" onClick={() => fullScreen && setFullScreen(false)} aria-label={fullScreen ? "Close full seat map" : "Event details"} className="grid h-9 w-9 place-items-center rounded-full bg-slate-100 hover:bg-slate-200">
             <ArrowLeft className="h-4 w-4" />
@@ -154,10 +158,10 @@ export function CustomerHallMap({
           </button>
         </div>
       </div>
-      <div className={fullScreen ? "mx-auto mt-8 max-w-[1500px] px-5 pb-8" : "grid lg:grid-cols-[minmax(0,1fr)_280px]"}>
+      <div className={fullScreen ? "fixed inset-x-0 bottom-16 top-[8.5rem] mx-auto max-w-[1500px] overflow-hidden px-3 sm:px-5" : "grid lg:grid-cols-[minmax(0,1fr)_280px]"}>
         <div className="min-w-0">
           <div
-            className={fullScreen ? "relative h-[clamp(560px,72dvh,820px)] cursor-grab touch-none overflow-hidden rounded-[28px] border border-slate-200 bg-slate-50 active:cursor-grabbing sm:h-[clamp(430px,68vh,780px)]" : "relative min-h-[420px] cursor-grab touch-none overflow-hidden bg-slate-50 active:cursor-grabbing sm:min-h-[520px] lg:min-h-[640px]"}
+            className={fullScreen ? "relative h-full cursor-grab touch-none overflow-hidden rounded-[28px] border border-slate-200 bg-slate-50 active:cursor-grabbing" : "relative min-h-[420px] cursor-grab touch-none overflow-hidden bg-slate-50 active:cursor-grabbing sm:min-h-[520px] lg:min-h-[640px]"}
             onPointerDown={(event) => {
               if ((event.target as HTMLElement).closest("button")) return;
               pointers.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
@@ -436,6 +440,22 @@ export function CustomerHallMap({
           </div>
         </aside>
       </div>
+      {fullScreen ? (
+        <div className="fixed inset-x-0 bottom-0 z-[80] flex h-16 items-center justify-between gap-3 border-t border-slate-200 bg-white px-4 pb-[env(safe-area-inset-bottom)] shadow-[0_-6px_20px_rgba(15,23,42,.12)] sm:h-20 sm:px-6">
+          <div className="text-xs font-black text-slate-800 sm:text-sm">
+            <span>{selectedSeatIds.length} selected</span>
+            <span className="ml-3 text-slate-500">{money(selected.reduce((sum: number, item: any) => sum + item.price, 0))}</span>
+          </div>
+          <button
+            type="button"
+            disabled={continueDisabled || !selectedSeatIds.length || !onContinue}
+            onClick={onContinue}
+            className="rounded-full bg-blue-600 px-6 py-2.5 text-sm font-black text-white shadow-lg transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-slate-300 sm:px-9 sm:py-3"
+          >
+            Continue
+          </button>
+        </div>
+      ) : null}
     </div>
   );
 }

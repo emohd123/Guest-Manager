@@ -966,6 +966,11 @@ export default function PublicEventPage({
                         time: eventTime,
                         location: venueLabel,
                       }}
+                      onContinue={() => void handleCheckout({
+                        [tickets[0]?.id ?? "reserved-seat"]: selectedSeatIds.length,
+                      })}
+                      continueDisabled={checkoutLoading}
+                      startFullScreen={searchParams.get("openSeats") === "1"}
                     />
                   ) : (
                     <div className="space-y-4 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
