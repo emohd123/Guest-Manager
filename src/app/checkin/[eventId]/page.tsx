@@ -17,6 +17,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { QRScannerModal, type ScanResult } from "@/components/checkin/QRScannerModal";
+import { parseTicketQrValue } from "@/lib/ticket-qr";
 
 type DeviceIdentity = {
   id: string;
@@ -151,42 +152,44 @@ export default function CheckinPage({
   }
 
   async function handleBarcodeScan(barcode: string): Promise<ScanResult> {
+    const normalizedBarcode = parseTicketQrValue(barcode).ticket;
+    if (!normalizedBarcode) return { status: "not_found", barcode };
     // The scan workflow performs the authoritative lookup. Keep this
     // metadata lookup best-effort so a ticket-type query cannot make a valid
     // scan appear to do nothing.
     const ticket = await utils.client.tickets.getByBarcode
-      .query({ eventId, barcode })
+      .query({ eventId, barcode: normalizedBarcode })
       .catch(() => null);
     const result = await processScanMutation.mutateAsync({
       eventId,
-      barcode,
+      barcode: normalizedBarcode,
       action: actionMode,
       deviceId: device.id,
       deviceName: device.name,
     });
 
     if (result.status === "revalidated") {
-      return { status: "already_checked_in", attendeeName: result.attendeeName ?? "Guest", barcode };
+      return { status: "already_checked_in", attendeeName: result.attendeeName ?? "Guest", barcode: normalizedBarcode };
     }
     if (result.status === "invalid") {
       if (result.result === "expired") {
         return {
           status: "expired",
           attendeeName: result.attendeeName ?? "Guest",
-          barcode,
+          barcode: normalizedBarcode,
           expiresAt: result.expiresAt ?? undefined,
         };
       }
       if (result.result === "voided") {
-        return { status: "voided", attendeeName: result.attendeeName ?? "Guest", barcode };
+        return { status: "voided", attendeeName: result.attendeeName ?? "Guest", barcode: normalizedBarcode };
       }
-      return { status: "not_found", barcode };
+      return { status: "not_found", barcode: normalizedBarcode };
     }
     return {
       status: "success",
       attendeeName: result.attendeeName ?? ticket?.attendeeName ?? "Guest",
       ticketType: actionMode === "check_in" ? ticket?.ticketTypeName ?? "Ticket" : "Checked Out",
-      barcode,
+      barcode: normalizedBarcode,
     };
   }
 

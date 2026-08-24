@@ -201,6 +201,9 @@ export async function processScanWorkflow(db: Db, input: ScanWorkflowInput): Pro
     async (tx): Promise<ScanWorkflowResult> => {
     const qr = parseTicketQrValue(input.barcode);
     const barcode = qr.ticket;
+    // The caller is authorised for the selected event before this workflow
+    // runs. Older ticket records may hold a legacy company id, so event id is
+    // the boundary for resolving a ticket at the door.
     const [event] = await tx
       .select({ startsAt: events.startsAt, endsAt: events.endsAt })
       .from(events)
@@ -214,7 +217,6 @@ export async function processScanWorkflow(db: Db, input: ScanWorkflowInput): Pro
       .where(
         and(
           eq(tickets.eventId, input.eventId),
-          eq(tickets.companyId, input.actor.companyId),
           eq(tickets.barcode, barcode)
         )
       )
@@ -297,8 +299,7 @@ export async function processScanWorkflow(db: Db, input: ScanWorkflowInput): Pro
           .where(
             and(
               eq(guests.id, ticket.guestId),
-              eq(guests.eventId, input.eventId),
-              eq(guests.companyId, input.actor.companyId)
+              eq(guests.eventId, input.eventId)
             )
           )
           .limit(1)

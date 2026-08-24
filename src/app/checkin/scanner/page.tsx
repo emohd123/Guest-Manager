@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { QRScannerModal, type ScanResult } from "@/components/checkin/QRScannerModal";
 import { trpc } from "@/lib/trpc/client";
+import { parseTicketQrValue } from "@/lib/ticket-qr";
 
 type DeviceIdentity = { id: string; name: string };
 
@@ -44,33 +45,35 @@ export default function CompanyScannerPage() {
 
   const handleScan = useCallback(async (barcode: string): Promise<ScanResult> => {
     if (!eventId) return { status: "not_found", barcode };
+    const normalizedBarcode = parseTicketQrValue(barcode).ticket;
+    if (!normalizedBarcode) return { status: "not_found", barcode };
     // Validation is authoritative in the scan workflow. The metadata lookup
     // is best-effort and must not prevent a valid QR from being checked in
     // when a ticket-type/RLS lookup is unavailable.
     const ticket = await utils.client.tickets.getByBarcode
-      .query({ eventId, barcode })
+      .query({ eventId, barcode: normalizedBarcode })
       .catch(() => null);
     const result = await processScan.mutateAsync({
       eventId,
-      barcode,
+      barcode: normalizedBarcode,
       action: "check_in",
       deviceId: device.id,
       deviceName: device.name,
     });
 
     if (result.status === "revalidated") {
-      return { status: "already_checked_in", attendeeName: result.attendeeName ?? "Guest", barcode };
+      return { status: "already_checked_in", attendeeName: result.attendeeName ?? "Guest", barcode: normalizedBarcode };
     }
     if (result.status === "invalid") {
-      if (result.result === "expired") return { status: "expired", attendeeName: result.attendeeName ?? "Guest", barcode, expiresAt: result.expiresAt ?? undefined };
-      if (result.result === "voided") return { status: "voided", attendeeName: result.attendeeName ?? "Guest", barcode };
-      return { status: "not_found", barcode };
+      if (result.result === "expired") return { status: "expired", attendeeName: result.attendeeName ?? "Guest", barcode: normalizedBarcode, expiresAt: result.expiresAt ?? undefined };
+      if (result.result === "voided") return { status: "voided", attendeeName: result.attendeeName ?? "Guest", barcode: normalizedBarcode };
+      return { status: "not_found", barcode: normalizedBarcode };
     }
     return {
       status: "success",
       attendeeName: result.attendeeName ?? ticket?.attendeeName ?? "Guest",
       ticketType: ticket?.ticketTypeName ?? "Ticket",
-      barcode,
+      barcode: normalizedBarcode,
     };
   }, [device.id, device.name, eventId, processScan, utils.client.tickets.getByBarcode]);
 
