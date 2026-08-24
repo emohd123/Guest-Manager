@@ -33,7 +33,11 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
       {mounted ? <CommandPalette /> : null}
       <div className="hidden lg:block absolute inset-y-0 left-0 z-50"><DashboardSidebar collapsed={collapsed} onToggle={() => setCollapsed(!collapsed)} /></div>
       <Sheet open={mobileOpen} onOpenChange={handleMobileOpenChange}>
-        <SheetContent side="left" className="w-80 p-0 border-r border-border bg-card">
+        <SheetContent
+          side="left"
+          showCloseButton={false}
+          className="w-80 max-w-[calc(100vw-1rem)] gap-0 overflow-hidden border-r border-border bg-card p-0"
+        >
           {mobileNavView === "main" ? (
             <DashboardSidebar
               collapsed={false}

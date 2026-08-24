@@ -143,7 +143,7 @@ export function DashboardSidebar({ collapsed, onToggle, onEventsClick, onMobileN
   return (
     <aside
       className={cn(
-        "glass-panel relative z-50 flex h-screen flex-col border-r border-border text-foreground transition-all duration-300",
+        "glass-panel relative z-50 flex h-full min-h-0 flex-col border-r border-border text-foreground transition-all duration-300",
         collapsed ? "w-16" : "w-64"
       )}
     >
@@ -182,7 +182,7 @@ export function DashboardSidebar({ collapsed, onToggle, onEventsClick, onMobileN
       </div>
 
       {/* Navigation */}
-      <ScrollArea className="flex-1 px-3 py-2">
+      <ScrollArea className="min-h-0 flex-1 overflow-y-auto px-3 py-2 overscroll-contain">
         <nav className="space-y-1.5">
           {access === undefined ? (
             <div className="space-y-3 px-1" aria-label="Loading navigation">
@@ -301,7 +301,7 @@ export function MobileEventSidebar({
     : [];
 
   return (
-    <aside className="glass-panel relative z-50 flex h-screen w-full flex-col border-r border-border text-foreground">
+    <aside className="glass-panel relative z-50 flex h-full min-h-0 w-full flex-col border-r border-border text-foreground">
       <div className="flex h-20 items-center gap-3 border-b border-border px-5">
         <Button
           variant="ghost"
@@ -318,7 +318,7 @@ export function MobileEventSidebar({
         </div>
       </div>
 
-      <ScrollArea className="flex-1 px-3 py-5">
+      <ScrollArea className="min-h-0 flex-1 overflow-y-auto px-3 py-5 overscroll-contain">
         {!eventId ? (
           <div className="rounded-2xl border border-border bg-muted/30 p-4">
             <p className="font-bold text-foreground">Choose an event</p>
