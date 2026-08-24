@@ -201,6 +201,7 @@ export async function scanTicket(
     ticketId: string | null;
     guestId: string | null;
     attendeeName: string | null;
+    expiresAt?: string | null;
     attendanceState: "checked_in" | "checked_out" | "not_checked_in" | null;
     scanType: "check_in" | "checkout" | "invalid";
   }>(

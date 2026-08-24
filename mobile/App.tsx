@@ -51,7 +51,7 @@ import { PremiumIntroScreen } from "./src/screens/PremiumIntroScreen";
 import { VisitorLoginScreen } from "./src/screens/VisitorLoginScreen";
 import { VisitorSignupScreen } from "./src/screens/VisitorSignupScreen";
 import { VisitorDashboardScreen } from "./src/screens/VisitorDashboardScreen";
-import { PublicHubScreen } from "./src/screens/PublicHubScreen";
+import { PublicWebsiteScreen } from "./src/screens/PublicWebsiteScreen";
 import { JoinEventScreen } from "./src/screens/JoinEventScreen";
 import { ComposeMessageScreen } from "./src/screens/ComposeMessageScreen";
 import { EventHomeScreen } from "./src/screens/EventHomeScreen";
@@ -590,11 +590,10 @@ function AppShell() {
     }
     return (
       <SafeAreaView style={styles.full}>
-        <PublicHubScreen
+        <PublicWebsiteScreen
           session={visitorSession}
-          onSignIn={() => setAuthStep("visitor_login")}
+          onSignIn={() => undefined}
           onSignOut={visitorSignOut}
-          onStaff={() => setAuthStep("staff_access")}
         />
       </SafeAreaView>
     );
@@ -665,11 +664,10 @@ function AppShell() {
   return (
     <SafeAreaView style={styles.full}>
       {authStep === "role_choice" && (
-        <PublicHubScreen
+        <PublicWebsiteScreen
           session={null}
-          onSignIn={() => setAuthStep("visitor_login")}
+          onSignIn={() => undefined}
           onSignOut={() => undefined}
-          onStaff={() => setAuthStep("staff_access")}
         />
       )}
 
