@@ -41,6 +41,7 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
           {mobileNavView === "main" ? (
             <DashboardSidebar
               collapsed={false}
+              className="!w-full"
               onToggle={closeMobileNavigation}
               onEventsClick={() => setMobileNavView("event")}
               onMobileNavigate={closeMobileNavigation}

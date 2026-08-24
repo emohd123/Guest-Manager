@@ -120,9 +120,10 @@ interface DashboardSidebarProps {
   onToggle: () => void;
   onEventsClick?: () => void;
   onMobileNavigate?: () => void;
+  className?: string;
 }
 
-export function DashboardSidebar({ collapsed, onToggle, onEventsClick, onMobileNavigate }: DashboardSidebarProps) {
+export function DashboardSidebar({ collapsed, onToggle, onEventsClick, onMobileNavigate, className }: DashboardSidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const { data: access } = trpc.settings.getAccess.useQuery();
@@ -144,6 +145,7 @@ export function DashboardSidebar({ collapsed, onToggle, onEventsClick, onMobileN
     <aside
       className={cn(
         "glass-panel relative z-50 flex h-full min-h-0 flex-col border-r border-border text-foreground transition-all duration-300",
+        className,
         collapsed ? "w-16" : "w-64"
       )}
     >
@@ -207,7 +209,7 @@ export function DashboardSidebar({ collapsed, onToggle, onEventsClick, onMobileN
                   onMobileNavigate?.();
                 }}
                 className={cn(
-                  "flex items-center gap-3 rounded-2xl px-4 py-3 text-base font-semibold transition-all duration-300 relative group outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                  "flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold transition-all duration-300 relative group outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
                   isActive
                     ? "bg-primary text-white shadow-[0_0_22px_rgba(124,58,237,0.45)]"
                     : "text-muted-foreground hover:bg-muted hover:text-foreground"
@@ -351,7 +353,7 @@ export function MobileEventSidebar({
                         href={item.href}
                         onClick={onNavigate}
                         className={cn(
-                          "flex items-center gap-3 rounded-2xl px-4 py-3 text-base font-semibold transition-all duration-300",
+                          "flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold transition-all duration-300",
                           isActive ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-muted hover:text-foreground"
                         )}
                         aria-current={isActive ? "page" : undefined}
