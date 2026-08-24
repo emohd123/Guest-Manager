@@ -29,8 +29,16 @@ export function QRScannerModal({ open, onClose, onScan }: QRScannerModalProps) {
   const [isProcessing, setIsProcessing] = useState(false);
   const [lastResult, setLastResult] = useState<ScanResult | null>(null);
   const lastBarcodeRef = useRef<string | null>(null);
+  const isProcessingRef = useRef(false);
+  const onScanRef = useRef(onScan);
   const cooldownRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const resultTouchStartRef = useRef<number | null>(null);
+
+  // Keep the latest validation callback without making the camera session
+  // restart when a parent mutation changes identity during a scan.
+  useEffect(() => {
+    onScanRef.current = onScan;
+  }, [onScan]);
 
   const stopScanning = useCallback(() => {
     if (readerRef.current) {
@@ -59,6 +67,10 @@ export function QRScannerModal({ open, onClose, onScan }: QRScannerModalProps) {
         async (result, error) => {
           if (result) {
             const barcode = result.getText();
+
+            // ZXing can emit the same frame several times while the network
+            // validation is pending. Only one request may be active.
+            if (isProcessingRef.current) return;
             
             // Debounce — ignore same barcode for 3 seconds
             if (lastBarcodeRef.current === barcode) return;
@@ -69,9 +81,10 @@ export function QRScannerModal({ open, onClose, onScan }: QRScannerModalProps) {
               lastBarcodeRef.current = null;
             }, 3000);
             
+            isProcessingRef.current = true;
             setIsProcessing(true);
             try {
-              const scanResult = await onScan(barcode);
+              const scanResult = await onScanRef.current(barcode);
               setLastResult(scanResult);
             } catch (scanError) {
               // Never leave the scanner looking idle when the validation
@@ -80,6 +93,7 @@ export function QRScannerModal({ open, onClose, onScan }: QRScannerModalProps) {
               console.error("Ticket scan failed:", scanError);
               setLastResult({ status: "not_found", barcode });
             } finally {
+              isProcessingRef.current = false;
               setIsProcessing(false);
             }
           }
@@ -93,10 +107,11 @@ export function QRScannerModal({ open, onClose, onScan }: QRScannerModalProps) {
       setHasCamera(false);
       setIsScanning(false);
     }
-  }, [onScan]);
+  }, []);
 
   const dismissResult = useCallback(() => {
     setLastResult(null);
+    isProcessingRef.current = false;
     setIsProcessing(false);
     // Allow the same ticket to be scanned again only after the staff member
     // explicitly dismisses the result (the normal 3-second debounce remains).
@@ -108,6 +123,7 @@ export function QRScannerModal({ open, onClose, onScan }: QRScannerModalProps) {
       startScanning();
     } else {
       stopScanning();
+      isProcessingRef.current = false;
       setLastResult(null);
     }
     
