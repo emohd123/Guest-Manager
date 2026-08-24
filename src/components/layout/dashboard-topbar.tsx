@@ -67,23 +67,23 @@ export function DashboardTopbar({
   })();
 
   return (
-    <header className="sticky top-0 z-40 flex h-20 items-center justify-between border-b border-border bg-background/80 backdrop-blur-3xl px-6 lg:px-8">
-      <div className="flex items-center gap-4">
+    <header className="sticky top-0 z-40 flex min-h-16 h-auto items-center justify-between gap-3 border-b border-border bg-background/80 px-3 py-2 backdrop-blur-3xl lg:h-20 lg:px-8 lg:py-0">
+      <div className="flex min-w-0 flex-1 items-center gap-2 lg:gap-4">
         <Button
           variant="ghost"
           size="icon"
-          className="lg:hidden text-foreground"
+          className="h-9 w-9 shrink-0 text-foreground lg:hidden"
           onClick={onMenuClick}
         >
-          <Menu className="h-6 w-6" />
+          <Menu className="h-5 w-5" />
         </Button>
-        <div className="flex flex-col">
-          <p className="text-sm font-bold text-muted-foreground uppercase tracking-widest">{companyName}</p>
-          <h2 className="text-xl font-bold text-foreground capitalize">{pageTitle}</h2>
+        <div className="min-w-0 max-w-[52vw] lg:max-w-none">
+          <p className="truncate text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground lg:text-sm lg:tracking-widest">{companyName}</p>
+          <h2 className="truncate text-base font-bold capitalize leading-tight text-foreground lg:text-xl">{pageTitle}</h2>
         </div>
       </div>
 
-      <div className="flex items-center gap-4">
+      <div className="flex shrink-0 items-center gap-2 lg:gap-4">
         <Button
           variant="secondary"
           className="hidden h-11 w-72 justify-start gap-3 rounded-2xl border border-border bg-card/80 text-muted-foreground hover:bg-card hover:text-foreground lg:flex"
