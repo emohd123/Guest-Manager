@@ -42,12 +42,25 @@ export default function StaffCheckinPage({ params }: { params: Promise<{ eventId
     const normalizedBarcode = parseTicketQrValue(barcode).ticket;
     if (!normalizedBarcode) return { status: "not_found", barcode };
 
-    const response = await fetch(`/api/mobile/v1/events/${encodeURIComponent(eventId)}/scan`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ barcode: normalizedBarcode, action: "check_in", method: "scan", clientMutationId: crypto.randomUUID() }),
-    });
-    const payload = (await response.json()) as ScanPayload & { message?: string; error?: string };
+    let response: Response;
+    try {
+      const clientMutationId = globalThis.crypto?.randomUUID?.() ?? `scan-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      response = await fetch(`/api/mobile/v1/events/${encodeURIComponent(eventId)}/scan`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ barcode: normalizedBarcode, action: "check_in", method: "scan", clientMutationId }),
+      });
+    } catch {
+      return { status: "error", barcode: normalizedBarcode, message: "The scanner could not connect to the check-in service. Check your internet connection and try again." };
+    }
+
+    const rawPayload = await response.text();
+    let payload: ScanPayload & { message?: string; error?: string };
+    try {
+      payload = JSON.parse(rawPayload) as ScanPayload & { message?: string; error?: string };
+    } catch {
+      return { status: "error", barcode: normalizedBarcode, message: `Check-in service returned an invalid response (${response.status}). Please try again.` };
+    }
     if (response.status === 401 || response.status === 403) {
       sessionStorage.removeItem(STAFF_TOKEN_KEY);
       router.replace("/staff-access");
