@@ -12,6 +12,7 @@ type ScanPayload = {
   attendeeName: string | null;
   result: string;
   ticketType?: string | null;
+  expiresAt?: string | null;
 };
 
 export default function StaffCheckinPage({ params }: { params: Promise<{ eventId: string }> }) {
@@ -53,6 +54,17 @@ export default function StaffCheckinPage({ params }: { params: Promise<{ eventId
     }
     if (payload.status === "revalidated") {
       return { status: "already_checked_in", attendeeName: payload.attendeeName ?? "Attendee", barcode };
+    }
+    if (payload.result === "expired") {
+      return {
+        status: "expired",
+        attendeeName: payload.attendeeName ?? "Attendee",
+        barcode,
+        expiresAt: payload.expiresAt ?? undefined,
+      };
+    }
+    if (payload.result === "voided") {
+      return { status: "voided", attendeeName: payload.attendeeName ?? "Attendee", barcode };
     }
     return { status: "not_found", barcode };
   }, [eventId, router]);
