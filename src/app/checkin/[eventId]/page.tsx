@@ -151,7 +151,12 @@ export default function CheckinPage({
   }
 
   async function handleBarcodeScan(barcode: string): Promise<ScanResult> {
-    const ticket = await utils.client.tickets.getByBarcode.query({ eventId, barcode });
+    // The scan workflow performs the authoritative lookup. Keep this
+    // metadata lookup best-effort so a ticket-type query cannot make a valid
+    // scan appear to do nothing.
+    const ticket = await utils.client.tickets.getByBarcode
+      .query({ eventId, barcode })
+      .catch(() => null);
     const result = await processScanMutation.mutateAsync({
       eventId,
       barcode,

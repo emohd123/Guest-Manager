@@ -44,7 +44,12 @@ export default function CompanyScannerPage() {
 
   const handleScan = useCallback(async (barcode: string): Promise<ScanResult> => {
     if (!eventId) return { status: "not_found", barcode };
-    const ticket = await utils.client.tickets.getByBarcode.query({ eventId, barcode });
+    // Validation is authoritative in the scan workflow. The metadata lookup
+    // is best-effort and must not prevent a valid QR from being checked in
+    // when a ticket-type/RLS lookup is unavailable.
+    const ticket = await utils.client.tickets.getByBarcode
+      .query({ eventId, barcode })
+      .catch(() => null);
     const result = await processScan.mutateAsync({
       eventId,
       barcode,

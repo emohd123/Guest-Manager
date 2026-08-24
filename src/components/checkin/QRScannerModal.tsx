@@ -73,6 +73,12 @@ export function QRScannerModal({ open, onClose, onScan }: QRScannerModalProps) {
             try {
               const scanResult = await onScan(barcode);
               setLastResult(scanResult);
+            } catch (scanError) {
+              // Never leave the scanner looking idle when the validation
+              // request fails.  Surface the rejection so staff can retry and
+              // continue scanning instead of assuming the camera did nothing.
+              console.error("Ticket scan failed:", scanError);
+              setLastResult({ status: "not_found", barcode });
             } finally {
               setIsProcessing(false);
             }
