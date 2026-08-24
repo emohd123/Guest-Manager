@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { QRScannerModal, type ScanResult } from "@/components/checkin/QRScannerModal";
+import { parseTicketQrValue } from "@/lib/ticket-qr";
 
 const STAFF_TOKEN_KEY = "iticket_staff_device_token";
 
@@ -38,35 +39,40 @@ export default function StaffCheckinPage({ params }: { params: Promise<{ eventId
       return { status: "not_found", barcode };
     }
 
+    const normalizedBarcode = parseTicketQrValue(barcode).ticket;
+    if (!normalizedBarcode) return { status: "not_found", barcode };
+
     const response = await fetch(`/api/mobile/v1/events/${encodeURIComponent(eventId)}/scan`, {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ barcode, action: "check_in", method: "scan", clientMutationId: crypto.randomUUID() }),
+      body: JSON.stringify({ barcode: normalizedBarcode, action: "check_in", method: "scan", clientMutationId: crypto.randomUUID() }),
     });
-    const payload = (await response.json()) as ScanPayload;
+    const payload = (await response.json()) as ScanPayload & { message?: string; error?: string };
     if (response.status === 401 || response.status === 403) {
       sessionStorage.removeItem(STAFF_TOKEN_KEY);
       router.replace("/staff-access");
     }
 
     if (payload.status === "success") {
-      return { status: "success", attendeeName: payload.attendeeName ?? "Attendee", ticketType: payload.ticketType ?? "Ticket", barcode };
+      return { status: "success", attendeeName: payload.attendeeName ?? "Attendee", ticketType: payload.ticketType ?? "Ticket", barcode: normalizedBarcode };
     }
     if (payload.status === "revalidated") {
-      return { status: "already_checked_in", attendeeName: payload.attendeeName ?? "Attendee", barcode };
+      return { status: "already_checked_in", attendeeName: payload.attendeeName ?? "Attendee", barcode: normalizedBarcode };
     }
     if (payload.result === "expired") {
       return {
         status: "expired",
         attendeeName: payload.attendeeName ?? "Attendee",
-        barcode,
+        barcode: normalizedBarcode,
         expiresAt: payload.expiresAt ?? undefined,
       };
     }
     if (payload.result === "voided") {
-      return { status: "voided", attendeeName: payload.attendeeName ?? "Attendee", barcode };
+      return { status: "voided", attendeeName: payload.attendeeName ?? "Attendee", barcode: normalizedBarcode };
     }
-    return { status: "not_found", barcode };
+    if (payload.result === "wrong_event") return { status: "wrong_event", barcode: normalizedBarcode };
+    if (!response.ok) return { status: "error", barcode: normalizedBarcode, message: payload.message ?? payload.error ?? "Unable to validate this ticket" };
+    return { status: "not_found", barcode: normalizedBarcode };
   }, [eventId, router]);
 
   if (!ready || !eventId) {

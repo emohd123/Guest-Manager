@@ -183,6 +183,7 @@ export default function CheckinPage({
       if (result.result === "voided") {
         return { status: "voided", attendeeName: result.attendeeName ?? "Guest", barcode: normalizedBarcode };
       }
+      if (result.result === "wrong_event") return { status: "wrong_event", barcode: normalizedBarcode };
       return { status: "not_found", barcode: normalizedBarcode };
     }
     return {

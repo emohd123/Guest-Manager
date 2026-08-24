@@ -209,6 +209,27 @@ export async function processScanWorkflow(db: Db, input: ScanWorkflowInput): Pro
       .from(events)
       .where(and(eq(events.id, input.eventId), eq(events.companyId, input.actor.companyId)))
       .limit(1);
+    if (!event) {
+      const scanId = await writeScanLog(tx, {
+        actor: input.actor,
+        eventId: input.eventId,
+        barcode: input.barcode,
+        scanType: "invalid",
+        method,
+        result: "not_found",
+        notes: "Event not found or scanner is not authorised for this event",
+      });
+      return {
+        status: "invalid" as const,
+        result: "not_found",
+        ticketId: null,
+        guestId: null,
+        attendeeName: null,
+        attendanceState: null,
+        scanType: "invalid" as const,
+        scanId,
+      };
+    }
     const expiresAt = qr.expiresAt ?? event?.endsAt?.toISOString() ?? event?.startsAt?.toISOString();
 
     const [ticket] = await tx
@@ -223,18 +244,25 @@ export async function processScanWorkflow(db: Db, input: ScanWorkflowInput): Pro
       .limit(1);
 
     if (!ticket) {
+      const [ticketInAnotherEvent] = await tx
+        .select({ id: tickets.id })
+        .from(tickets)
+        .where(eq(tickets.barcode, barcode))
+        .limit(1);
+      const result = ticketInAnotherEvent ? "wrong_event" : "not_found";
       const scanId = await writeScanLog(tx, {
         actor: input.actor,
         eventId: input.eventId,
         barcode: input.barcode,
         scanType: "invalid",
         method,
-        result: "not_found",
+        result,
+        notes: ticketInAnotherEvent ? "Ticket belongs to another event" : undefined,
       });
 
       return {
         status: "invalid" as const,
-        result: "not_found",
+        result,
         ticketId: null,
         guestId: null,
         attendeeName: null,

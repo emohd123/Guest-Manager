@@ -67,6 +67,7 @@ export default function CompanyScannerPage() {
     if (result.status === "invalid") {
       if (result.result === "expired") return { status: "expired", attendeeName: result.attendeeName ?? "Guest", barcode: normalizedBarcode, expiresAt: result.expiresAt ?? undefined };
       if (result.result === "voided") return { status: "voided", attendeeName: result.attendeeName ?? "Guest", barcode: normalizedBarcode };
+      if (result.result === "wrong_event") return { status: "wrong_event", barcode: normalizedBarcode };
       return { status: "not_found", barcode: normalizedBarcode };
     }
     return {

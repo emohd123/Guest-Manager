@@ -12,6 +12,8 @@ export type ScanResult =
   | { status: "success"; attendeeName: string; ticketType: string; barcode: string }
   | { status: "already_checked_in"; attendeeName: string; barcode: string }
   | { status: "not_found"; barcode: string }
+  | { status: "wrong_event"; barcode: string }
+  | { status: "error"; barcode: string; message: string }
   | { status: "voided"; attendeeName: string; barcode: string }
   | { status: "expired"; attendeeName: string; barcode: string; expiresAt?: string };
 
@@ -91,7 +93,11 @@ export function QRScannerModal({ open, onClose, onScan }: QRScannerModalProps) {
               // request fails.  Surface the rejection so staff can retry and
               // continue scanning instead of assuming the camera did nothing.
               console.error("Ticket scan failed:", scanError);
-              setLastResult({ status: "not_found", barcode });
+              setLastResult({
+                status: "error",
+                barcode,
+                message: "Could not reach the ticket service. Check the connection and try again.",
+              });
             } finally {
               isProcessingRef.current = false;
               setIsProcessing(false);
@@ -274,6 +280,20 @@ export function QRScannerModal({ open, onClose, onScan }: QRScannerModalProps) {
             <p className="text-white font-bold text-lg">{lastResult.attendeeName}</p>
             <p className="text-red-100 font-semibold">Ticket is Voided — Entry Denied</p>
             <p className="text-xs text-white/70">Swipe or tap the scan icon for the next ticket</p>
+          </div>
+        ) : lastResult.status === "wrong_event" ? (
+          <div className="flex flex-col items-center gap-2 text-center animate-in fade-in-0 duration-300">
+            <XCircle className="h-10 w-10 text-amber-200" />
+            <p className="text-white font-bold text-lg">Wrong Event Selected</p>
+            <p className="text-amber-100 font-semibold">Select the event assigned to this ticket</p>
+            <p className="text-xs text-white/70">Swipe or tap the scan icon for the next ticket</p>
+          </div>
+        ) : lastResult.status === "error" ? (
+          <div className="flex flex-col items-center gap-2 text-center animate-in fade-in-0 duration-300">
+            <XCircle className="h-10 w-10 text-amber-200" />
+            <p className="text-white font-bold text-lg">Scan Unavailable</p>
+            <p className="text-amber-100 font-semibold">{lastResult.message}</p>
+            <p className="text-xs text-white/70">Swipe or tap the scan icon to try again</p>
           </div>
         ) : (
           <div className="flex flex-col items-center gap-2 text-center animate-in fade-in-0 duration-300">
