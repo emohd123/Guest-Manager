@@ -5,12 +5,13 @@ import * as schema from "./schema";
 let _db: ReturnType<typeof createDb> | null = null;
 
 function createDb() {
-  // Vercel's pooled Postgres URL is reachable from serverless functions;
-  // keep DATABASE_URL as a local/legacy fallback.
+  // Serverless functions must prefer the pooled connection. Supabase's direct
+  // endpoint is IPv6-only unless the project has the IPv4 add-on, which can
+  // make otherwise healthy API requests fail only when they reach Postgres.
   const connectionString =
-    process.env.POSTGRES_URL_NON_POOLING ??
     process.env.POSTGRES_URL ??
-    process.env.DATABASE_URL;
+    process.env.DATABASE_URL ??
+    process.env.POSTGRES_URL_NON_POOLING;
   if (!connectionString) {
     throw new Error("DATABASE_URL environment variable is not set");
   }

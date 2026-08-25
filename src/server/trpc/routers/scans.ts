@@ -153,6 +153,7 @@ export const scansRouter = router({
         action: z.enum(["check_in", "checkout"]).default("check_in"),
         deviceId: z.string().optional(),
         deviceName: z.string().optional(),
+        clientMutationId: z.string().max(120).optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -161,6 +162,7 @@ export const scansRouter = router({
         barcode: input.barcode,
         action: input.action,
         method: "scan",
+        clientMutationId: input.clientMutationId,
         actor: {
           companyId: ctx.companyId,
           userId: ctx.userId,

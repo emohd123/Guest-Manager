@@ -19,6 +19,7 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ eventId: string }> }
 ) {
+  const requestId = crypto.randomUUID();
   try {
     ensureMobileV2Enabled();
     const { eventId } = await params;
@@ -72,7 +73,9 @@ export async function POST(
     if (error instanceof Error && error.message === "CHECKIN_APP_V2_DISABLED") {
       return jsonError("Mobile v2 is disabled", 404, "feature_disabled");
     }
-    return jsonError(error instanceof Error ? error.message : "Unable to process scan", 400, "scan_failed");
+    const message = error instanceof Error ? error.message : "Unable to process scan";
+    console.error("Ticket scan API failed", { requestId, message, stack: error instanceof Error ? error.stack : undefined });
+    return jsonError(`Unable to process scan. Reference: ${requestId}`, 500, "scan_failed");
   }
 }
 

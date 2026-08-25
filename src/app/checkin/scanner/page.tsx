@@ -44,38 +44,51 @@ export default function CompanyScannerPage() {
   };
 
   const handleScan = useCallback(async (barcode: string): Promise<ScanResult> => {
-    if (!eventId) return { status: "not_found", barcode };
-    const normalizedBarcode = parseTicketQrValue(barcode).ticket;
-    if (!normalizedBarcode) return { status: "not_found", barcode };
-    // Validation is authoritative in the scan workflow. The metadata lookup
-    // is best-effort and must not prevent a valid QR from being checked in
-    // when a ticket-type/RLS lookup is unavailable.
-    const ticket = await utils.client.tickets.getByBarcode
-      .query({ eventId, barcode: normalizedBarcode })
-      .catch(() => null);
-    const result = await processScan.mutateAsync({
-      eventId,
-      barcode: normalizedBarcode,
-      action: "check_in",
-      deviceId: device.id,
-      deviceName: device.name,
-    });
+    try {
+      if (!eventId) return { status: "not_found", barcode };
+      const normalizedBarcode = parseTicketQrValue(barcode).ticket;
+      if (!normalizedBarcode) return { status: "not_found", barcode };
+      // Validation is authoritative in the scan workflow. The metadata lookup
+      // is best-effort and must not prevent a valid QR from being checked in.
+      const ticket = await utils.client.tickets.getByBarcode
+        .query({ eventId, barcode: normalizedBarcode })
+        .catch(() => null);
+      const clientMutationId = globalThis.crypto?.randomUUID?.()
+        ?? `scan-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      const result = await processScan.mutateAsync({
+        eventId,
+        barcode: normalizedBarcode,
+        action: "check_in",
+        deviceId: device.id,
+        deviceName: device.name,
+        clientMutationId,
+      });
 
-    if (result.status === "revalidated") {
-      return { status: "already_checked_in", attendeeName: result.attendeeName ?? "Guest", barcode: normalizedBarcode };
+      if (result.status === "revalidated") {
+        return { status: "already_checked_in", attendeeName: result.attendeeName ?? "Guest", barcode: normalizedBarcode };
+      }
+      if (result.status === "invalid") {
+        if (result.result === "expired") return { status: "expired", attendeeName: result.attendeeName ?? "Guest", barcode: normalizedBarcode, expiresAt: result.expiresAt ?? undefined };
+        if (result.result === "voided") return { status: "voided", attendeeName: result.attendeeName ?? "Guest", barcode: normalizedBarcode };
+        if (result.result === "wrong_event") return { status: "wrong_event", barcode: normalizedBarcode };
+        return { status: "not_found", barcode: normalizedBarcode };
+      }
+      return {
+        status: "success",
+        attendeeName: result.attendeeName ?? ticket?.attendeeName ?? "Guest",
+        ticketType: ticket?.ticketTypeName ?? "Ticket",
+        barcode: normalizedBarcode,
+      };
+    } catch (error) {
+      console.error("Company ticket scan failed", error);
+      return {
+        status: "error",
+        barcode,
+        message: error instanceof Error
+          ? `Ticket service error: ${error.message}`
+          : "The ticket service is temporarily unavailable. Please retry.",
+      };
     }
-    if (result.status === "invalid") {
-      if (result.result === "expired") return { status: "expired", attendeeName: result.attendeeName ?? "Guest", barcode: normalizedBarcode, expiresAt: result.expiresAt ?? undefined };
-      if (result.result === "voided") return { status: "voided", attendeeName: result.attendeeName ?? "Guest", barcode: normalizedBarcode };
-      if (result.result === "wrong_event") return { status: "wrong_event", barcode: normalizedBarcode };
-      return { status: "not_found", barcode: normalizedBarcode };
-    }
-    return {
-      status: "success",
-      attendeeName: result.attendeeName ?? ticket?.attendeeName ?? "Guest",
-      ticketType: ticket?.ticketTypeName ?? "Ticket",
-      barcode: normalizedBarcode,
-    };
   }, [device.id, device.name, eventId, processScan, utils.client.tickets.getByBarcode]);
 
   if (eventsQuery.isLoading) {

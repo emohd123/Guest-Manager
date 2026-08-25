@@ -152,46 +152,59 @@ export default function CheckinPage({
   }
 
   async function handleBarcodeScan(barcode: string): Promise<ScanResult> {
-    const normalizedBarcode = parseTicketQrValue(barcode).ticket;
-    if (!normalizedBarcode) return { status: "not_found", barcode };
-    // The scan workflow performs the authoritative lookup. Keep this
-    // metadata lookup best-effort so a ticket-type query cannot make a valid
-    // scan appear to do nothing.
-    const ticket = await utils.client.tickets.getByBarcode
-      .query({ eventId, barcode: normalizedBarcode })
-      .catch(() => null);
-    const result = await processScanMutation.mutateAsync({
-      eventId,
-      barcode: normalizedBarcode,
-      action: actionMode,
-      deviceId: device.id,
-      deviceName: device.name,
-    });
+    try {
+      const normalizedBarcode = parseTicketQrValue(barcode).ticket;
+      if (!normalizedBarcode) return { status: "not_found", barcode };
+      // The scan workflow performs the authoritative lookup. Keep this
+      // metadata lookup best-effort so a ticket-type query cannot block it.
+      const ticket = await utils.client.tickets.getByBarcode
+        .query({ eventId, barcode: normalizedBarcode })
+        .catch(() => null);
+      const clientMutationId = globalThis.crypto?.randomUUID?.()
+        ?? `scan-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      const result = await processScanMutation.mutateAsync({
+        eventId,
+        barcode: normalizedBarcode,
+        action: actionMode,
+        deviceId: device.id,
+        deviceName: device.name,
+        clientMutationId,
+      });
 
-    if (result.status === "revalidated") {
-      return { status: "already_checked_in", attendeeName: result.attendeeName ?? "Guest", barcode: normalizedBarcode };
-    }
-    if (result.status === "invalid") {
-      if (result.result === "expired") {
-        return {
-          status: "expired",
-          attendeeName: result.attendeeName ?? "Guest",
-          barcode: normalizedBarcode,
-          expiresAt: result.expiresAt ?? undefined,
-        };
+      if (result.status === "revalidated") {
+        return { status: "already_checked_in", attendeeName: result.attendeeName ?? "Guest", barcode: normalizedBarcode };
       }
-      if (result.result === "voided") {
-        return { status: "voided", attendeeName: result.attendeeName ?? "Guest", barcode: normalizedBarcode };
+      if (result.status === "invalid") {
+        if (result.result === "expired") {
+          return {
+            status: "expired",
+            attendeeName: result.attendeeName ?? "Guest",
+            barcode: normalizedBarcode,
+            expiresAt: result.expiresAt ?? undefined,
+          };
+        }
+        if (result.result === "voided") {
+          return { status: "voided", attendeeName: result.attendeeName ?? "Guest", barcode: normalizedBarcode };
+        }
+        if (result.result === "wrong_event") return { status: "wrong_event", barcode: normalizedBarcode };
+        return { status: "not_found", barcode: normalizedBarcode };
       }
-      if (result.result === "wrong_event") return { status: "wrong_event", barcode: normalizedBarcode };
-      return { status: "not_found", barcode: normalizedBarcode };
+      return {
+        status: "success",
+        attendeeName: result.attendeeName ?? ticket?.attendeeName ?? "Guest",
+        ticketType: actionMode === "check_in" ? ticket?.ticketTypeName ?? "Ticket" : "Checked Out",
+        barcode: normalizedBarcode,
+      };
+    } catch (error) {
+      console.error("Dashboard ticket scan failed", error);
+      return {
+        status: "error",
+        barcode,
+        message: error instanceof Error
+          ? `Ticket service error: ${error.message}`
+          : "The ticket service is temporarily unavailable. Please retry.",
+      };
     }
-    return {
-      status: "success",
-      attendeeName: result.attendeeName ?? ticket?.attendeeName ?? "Guest",
-      ticketType: actionMode === "check_in" ? ticket?.ticketTypeName ?? "Ticket" : "Checked Out",
-      barcode: normalizedBarcode,
-    };
   }
 
   const isMutating =
