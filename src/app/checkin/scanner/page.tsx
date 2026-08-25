@@ -32,8 +32,6 @@ export default function CompanyScannerPage() {
   const [scannerOpen, setScannerOpen] = useState(false);
   const [device] = useState<DeviceIdentity>(() => getDeviceIdentity());
   const eventsQuery = trpc.events.list.useQuery({ limit: 100, offset: 0 });
-  const utils = trpc.useUtils();
-  const processScan = trpc.scans.process.useMutation();
 
   const events = useMemo(() => eventsQuery.data?.events ?? [], [eventsQuery.data?.events]);
   const selectedEvent = events.find((event) => event.id === eventId) ?? null;
@@ -48,21 +46,33 @@ export default function CompanyScannerPage() {
       if (!eventId) return { status: "not_found", barcode };
       const normalizedBarcode = parseTicketQrValue(barcode).ticket;
       if (!normalizedBarcode) return { status: "not_found", barcode };
-      // Validation is authoritative in the scan workflow. The metadata lookup
-      // is best-effort and must not prevent a valid QR from being checked in.
-      const ticket = await utils.client.tickets.getByBarcode
-        .query({ eventId, barcode: normalizedBarcode })
-        .catch(() => null);
       const clientMutationId = globalThis.crypto?.randomUUID?.()
         ?? `scan-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-      const result = await processScan.mutateAsync({
-        eventId,
-        barcode: normalizedBarcode,
-        action: "check_in",
-        deviceId: device.id,
-        deviceName: device.name,
-        clientMutationId,
+      const response = await fetch(`/api/checkin/events/${encodeURIComponent(eventId)}/scan`, {
+        method: "POST",
+        credentials: "same-origin",
+        cache: "no-store",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          barcode: normalizedBarcode,
+          action: "check_in",
+          deviceId: device.id,
+          deviceName: device.name,
+          clientMutationId,
+        }),
       });
+      const payload = await response.json().catch(() => null) as ({
+        status: "success" | "revalidated" | "invalid";
+        result: string;
+        attendeeName: string | null;
+        expiresAt?: string | null;
+        ticketTypeName?: string | null;
+      } & { error?: string; requestId?: string }) | null;
+      if (!response.ok || !payload?.status) {
+        const reference = payload?.requestId ? ` Reference: ${payload.requestId}` : "";
+        throw new Error(`${payload?.error ?? `Ticket service returned ${response.status}.`}${reference}`);
+      }
+      const result = payload;
 
       if (result.status === "revalidated") {
         return { status: "already_checked_in", attendeeName: result.attendeeName ?? "Guest", barcode: normalizedBarcode };
@@ -75,8 +85,8 @@ export default function CompanyScannerPage() {
       }
       return {
         status: "success",
-        attendeeName: result.attendeeName ?? ticket?.attendeeName ?? "Guest",
-        ticketType: ticket?.ticketTypeName ?? "Ticket",
+        attendeeName: result.attendeeName ?? "Guest",
+        ticketType: result.ticketTypeName ?? "Ticket",
         barcode: normalizedBarcode,
       };
     } catch (error) {
@@ -89,7 +99,7 @@ export default function CompanyScannerPage() {
           : "The ticket service is temporarily unavailable. Please retry.",
       };
     }
-  }, [device.id, device.name, eventId, processScan, utils.client.tickets.getByBarcode]);
+  }, [device.id, device.name, eventId]);
 
   if (eventsQuery.isLoading) {
     return <div className="flex min-h-screen items-center justify-center bg-slate-950 text-white"><Loader2 className="h-8 w-8 animate-spin text-cyan-300" /></div>;
