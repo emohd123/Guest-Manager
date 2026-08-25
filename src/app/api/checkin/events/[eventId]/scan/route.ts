@@ -5,7 +5,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createClient as createSupabaseServerClient } from "@/lib/supabase/server";
 import { createSupabaseAdminClient } from "@/server/supabase/admin";
-import { processScanWorkflowSupabase } from "@/server/services/checkin";
+import { getBearerToken, processScanWorkflowSupabase } from "@/server/services/checkin";
 
 const bodySchema = z.object({
   barcode: z.string().trim().min(1).max(512),
@@ -35,17 +35,30 @@ export async function POST(
     const parsed = bodySchema.safeParse(await request.json());
     if (!parsed.success) return errorResponse("Invalid scan request.", 400, requestId);
 
+    const admin = createSupabaseAdminClient();
     const sessionClient = await createSupabaseServerClient();
-    const { data: authData, error: authError } = await sessionClient.auth.getUser();
-    if (authError || !authData.user) {
+    const { data: authData } = await sessionClient.auth.getUser();
+    let authUserId = authData.user?.id ?? null;
+
+    // Browser scans normally authenticate with the Supabase session cookie. The
+    // bearer fallback keeps the endpoint usable in restrictive mobile browsers
+    // and lets the native scanner use the exact same, event-scoped workflow.
+    if (!authUserId) {
+      const bearerToken = getBearerToken(request);
+      if (bearerToken) {
+        const { data: bearerAuth } = await admin.auth.getUser(bearerToken);
+        authUserId = bearerAuth.user?.id ?? null;
+      }
+    }
+
+    if (!authUserId) {
       return errorResponse("Your session expired. Sign in again.", 401, requestId);
     }
 
-    const admin = createSupabaseAdminClient();
     const { data: appUser, error: userError } = await admin
       .from("users")
       .select("id,company_id")
-      .eq("id", authData.user.id)
+      .eq("id", authUserId)
       .maybeSingle();
     if (userError || !appUser?.company_id) {
       return errorResponse("This account does not have scanner access.", 403, requestId);
