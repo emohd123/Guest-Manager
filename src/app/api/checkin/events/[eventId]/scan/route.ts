@@ -84,7 +84,10 @@ export async function POST(
       actor: {
         companyId: appUser.company_id,
         userId: appUser.id,
-        deviceId: parsed.data.deviceId ?? null,
+        // The company browser scanner is authenticated as a staff user, not as
+        // a paired hardware device. Never persist its local browser label as a
+        // devices.id foreign key; paired native scanners use the mobile route.
+        deviceId: null,
         deviceName: parsed.data.deviceName ?? "Company Web Scanner",
       },
     });
