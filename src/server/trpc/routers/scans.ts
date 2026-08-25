@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { router, protectedProcedure } from "../index";
-import { processScanWorkflow } from "@/server/services/checkin";
+import { processScanWorkflowSupabase } from "@/server/services/checkin";
 
 type ScanRow = {
   id: string;
@@ -157,7 +157,7 @@ export const scansRouter = router({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      return processScanWorkflow(ctx.db, {
+      return processScanWorkflowSupabase({
         eventId: input.eventId,
         barcode: input.barcode,
         action: input.action,

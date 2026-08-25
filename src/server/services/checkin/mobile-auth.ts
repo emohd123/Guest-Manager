@@ -4,6 +4,7 @@ import { createClient } from "@supabase/supabase-js";
 import { getDb } from "@/server/db";
 import { devices, users } from "@/server/db/schema";
 import { verifyDeviceToken, type DeviceTokenClaims } from "./crypto";
+import { createSupabaseAdminClient } from "@/server/supabase/admin";
 
 type Db = ReturnType<typeof getDb>;
 
@@ -80,6 +81,40 @@ export async function authenticateMobileRequest(db: Db, request: NextRequest): P
   const staff = await validateStaffToken(db, token);
   if (staff) {
     return { kind: "staff", ...staff };
+  }
+
+  throw new Error("Invalid authentication token");
+}
+
+/** Serverless-safe authentication for the critical scan endpoint. */
+export async function authenticateMobileScanRequest(request: NextRequest): Promise<MobileAuth> {
+  const token = getBearerToken(request);
+  if (!token) throw new Error("Missing bearer token");
+  const supabase = createSupabaseAdminClient();
+
+  const claims = verifyDeviceToken(token);
+  if (claims) {
+    const { data: device, error } = await supabase
+      .from("devices")
+      .select("id")
+      .eq("id", claims.sub)
+      .eq("event_id", claims.eventId)
+      .eq("company_id", claims.companyId)
+      .is("archived_at", null)
+      .maybeSingle();
+    if (!error && device) return { kind: "device", claims };
+  }
+
+  const { data: authData, error: authError } = await supabase.auth.getUser(token);
+  if (!authError && authData.user) {
+    const { data: appUser, error: userError } = await supabase
+      .from("users")
+      .select("id,company_id")
+      .eq("id", authData.user.id)
+      .maybeSingle();
+    if (!userError && appUser?.company_id) {
+      return { kind: "staff", userId: appUser.id, companyId: appUser.company_id };
+    }
   }
 
   throw new Error("Invalid authentication token");

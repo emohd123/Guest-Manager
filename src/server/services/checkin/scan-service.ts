@@ -2,6 +2,7 @@ import { and, desc, eq, gt, ilike, inArray, isNotNull, or, sql } from "drizzle-o
 import crypto from "crypto";
 import { getDb } from "@/server/db";
 import { isTicketExpired, parseTicketQrValue } from "@/lib/ticket-qr";
+import { createSupabaseAdminClient } from "@/server/supabase/admin";
 import {
   checkIns,
   devices,
@@ -523,6 +524,46 @@ export async function processScanWorkflow(db: Db, input: ScanWorkflowInput): Pro
   });
 
   return response;
+}
+
+/**
+ * Serverless-safe scan workflow. The database function owns the transaction,
+ * row lock, event boundary, state change, duplicate handling, and audit rows.
+ * It deliberately uses Supabase HTTP instead of a direct Postgres socket so
+ * mobile scanners are not dependent on Vercel-to-Postgres connectivity.
+ */
+export async function processScanWorkflowSupabase(input: ScanWorkflowInput): Promise<ScanWorkflowResult> {
+  const qr = parseTicketQrValue(input.barcode);
+  if (!qr.ticket) throw new Error("The scanned QR code does not contain a ticket number.");
+
+  const supabase = createSupabaseAdminClient();
+  const { data, error } = await supabase.rpc("process_ticket_scan", {
+    p_event_id: input.eventId,
+    p_company_id: input.actor.companyId,
+    p_barcode: qr.ticket,
+    p_raw_barcode: input.barcode,
+    p_action: input.action ?? "check_in",
+    p_method: input.method ?? "scan",
+    p_user_id: input.actor.userId ?? null,
+    p_device_id: input.actor.deviceId ?? null,
+    p_device_name: input.actor.deviceName ?? null,
+    p_client_mutation_id: input.clientMutationId ?? null,
+    p_qr_expires_at: qr.expiresAt ?? null,
+  });
+
+  if (error) {
+    console.error("Atomic ticket scan failed", {
+      eventId: input.eventId,
+      code: error.code,
+      message: error.message,
+      details: error.details,
+    });
+    throw new Error(`Ticket validation service failed: ${error.message}`);
+  }
+  if (!data || typeof data !== "object") {
+    throw new Error("Ticket validation service returned an empty response.");
+  }
+  return data as unknown as ScanWorkflowResult;
 }
 
 type WalkupInput = {
