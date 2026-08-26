@@ -533,7 +533,7 @@ export default function PublicEventPage({
               Home
             </Link>
             <ChevronRight className="h-3.5 w-3.5" />
-            <Link href="/events" className="hover:text-zinc-950">
+            <Link href="/" className="hover:text-zinc-950">
               Events
             </Link>
             <ChevronRight className="h-3.5 w-3.5" />
