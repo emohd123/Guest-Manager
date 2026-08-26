@@ -187,44 +187,59 @@ export default function DesignSetupPage({
     },
   });
 
+  const buildSettings = (lineup: LineupArtist[]) => {
+    const currentSettings = event?.settings && typeof event.settings === "object"
+      ? event.settings as Record<string, unknown>
+      : {};
+    const currentPublicPage = currentSettings.publicPage && typeof currentSettings.publicPage === "object"
+      ? currentSettings.publicPage as Record<string, unknown>
+      : {};
+
+    return {
+      ...currentSettings,
+      logoUrl,
+      primaryColor,
+      backgroundColor,
+      customCss,
+      publicPage: {
+        ...currentPublicPage,
+        enabled: publicPageEnabled,
+        showInApp,
+        isPaidEvent,
+        heroLabel,
+        headline: pageHeadline,
+        subheadline: pageSubheadline,
+        venueName,
+        locationText,
+        mapUrl: mapUrl.trim(),
+        ctaLabel: pageCtaLabel,
+        highlights: highlightsCsv.split("\n").map((line) => line.trim()).filter(Boolean),
+        terms: termsCsv.split("\n").map((line) => line.trim()).filter(Boolean),
+        galleryImages: galleryUrls.split("\n").map((line) => line.trim()).filter(Boolean),
+        videoUrl: videoUrl.trim(),
+        showAgenda,
+        lineup,
+      },
+      ticketDesign,
+      emailDesigns,
+      agenda: agendaSettings,
+    };
+  };
+
+  const persistLineup = (nextLineup: LineupArtist[]) => {
+    setLineupArtists(nextLineup);
+    updateMutation.mutate({
+      id: eventId,
+      settings: buildSettings(nextLineup),
+    });
+  };
+
   const handleSave = () => {
     setIsSaving(true);
     updateMutation.mutate({
       id: eventId,
       coverImageUrl: coverImageUrl || undefined,
-      settings: {
-        logoUrl,
-        primaryColor,
-        backgroundColor,
-        customCss,
-        publicPage: {
-          enabled: publicPageEnabled,
-          showInApp,
-          isPaidEvent,
-          heroLabel,
-          headline: pageHeadline,
-          subheadline: pageSubheadline,
-          venueName,
-          locationText,
-          mapUrl: mapUrl.trim(),
-          ctaLabel: pageCtaLabel,
-          highlights: highlightsCsv
-            .split("\n")
-            .map((line) => line.trim())
-            .filter(Boolean),
-          terms: termsCsv.split("\n").map((line) => line.trim()).filter(Boolean),
-          galleryImages: galleryUrls
-            .split("\n")
-            .map((line) => line.trim())
-            .filter(Boolean),
-          videoUrl: videoUrl.trim(),
-          showAgenda,
-          lineup: lineupArtists,
-        },
-        ticketDesign,
-        emailDesigns,
-        agenda: agendaSettings,
-      },
+      settings: buildSettings(lineupArtists),
     });
   };
 
@@ -260,10 +275,6 @@ export default function DesignSetupPage({
     }
   };
 
-  const addArtistToLineup = (artist: LineupArtist) => {
-    setLineupArtists((current) => current.some((item) => item.id === artist.id) ? current : [...current, artist]);
-  };
-
   const createArtist = async () => {
     const name = newArtistName.trim();
     if (!name || !event?.companyId) {
@@ -289,9 +300,10 @@ export default function DesignSetupPage({
       ? current.map((item) => item.id === artist.id ? artist : item)
       : [...current, artist]
     ).sort((a, b) => a.name.localeCompare(b.name)));
-    setLineupArtists((current) => current.some((item) => item.id === artist.id)
-      ? current.map((item) => item.id === artist.id ? artist : item)
-      : [...current, artist]);
+    const nextLineup = lineupArtists.some((item) => item.id === artist.id)
+      ? lineupArtists.map((item) => item.id === artist.id ? artist : item)
+      : [...lineupArtists, artist];
+    persistLineup(nextLineup);
     setNewArtistName("");
     setNewArtistRole("");
     setNewArtistBio("");
@@ -588,8 +600,8 @@ export default function DesignSetupPage({
                             <div className="min-w-0 flex-1"><p className="truncate text-sm font-black text-foreground dark:text-white">{artist.name}</p><p className="truncate text-xs text-muted-foreground">{artist.role || "Lineup artist"}</p></div>
                             <div className="flex shrink-0 gap-1">
                               <Button type="button" variant="ghost" size="icon" className="h-8 w-8 rounded-lg" aria-label={`Edit ${artist.name}`} onClick={() => editArtist(artist)}><Pencil className="h-4 w-4" /></Button>
-                              <Button type="button" variant="ghost" size="icon" className="h-8 w-8 rounded-lg" aria-label={`Move ${artist.name} earlier`} disabled={index === 0} onClick={() => setLineupArtists((current) => { const next = [...current]; [next[index - 1], next[index]] = [next[index], next[index - 1]]; return next; })}><ArrowUp className="h-4 w-4" /></Button>
-                              <Button type="button" variant="ghost" size="icon" className="h-8 w-8 rounded-lg text-destructive hover:text-destructive" aria-label={`Remove ${artist.name} from lineup`} onClick={() => setLineupArtists((current) => current.filter((item) => item.id !== artist.id))}><Trash2 className="h-4 w-4" /></Button>
+                              <Button type="button" variant="ghost" size="icon" className="h-8 w-8 rounded-lg" aria-label={`Move ${artist.name} earlier`} disabled={index === 0} onClick={() => { const next = [...lineupArtists]; [next[index - 1], next[index]] = [next[index], next[index - 1]]; persistLineup(next); }}><ArrowUp className="h-4 w-4" /></Button>
+                              <Button type="button" variant="ghost" size="icon" className="h-8 w-8 rounded-lg text-destructive hover:text-destructive" aria-label={`Remove ${artist.name} from lineup`} onClick={() => persistLineup(lineupArtists.filter((item) => item.id !== artist.id))}><Trash2 className="h-4 w-4" /></Button>
                             </div>
                           </div>
                         ))}
@@ -600,7 +612,7 @@ export default function DesignSetupPage({
                       <p className="text-[9px] font-black uppercase tracking-[0.25em] text-muted-foreground">Choose from saved artists</p>
                       {artistsLoading ? <div className="flex items-center gap-2 py-3 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" />Loading artist library…</div> : artistLibrary.length ? <div className="grid gap-2 sm:grid-cols-2">{artistLibrary.map((artist) => {
                         const selected = lineupArtists.some((item) => item.id === artist.id);
-                        return <button key={artist.id} type="button" onClick={() => selected ? setLineupArtists((current) => current.filter((item) => item.id !== artist.id)) : addArtistToLineup(artist)} className={cn("flex min-w-0 items-center gap-3 rounded-2xl border p-3 text-left transition", selected ? "border-violet-500 bg-violet-100/70 dark:border-violet-300 dark:bg-violet-300/10" : "border-border bg-white hover:border-violet-300 dark:border-white/10 dark:bg-slate-950/30")}>
+                        return <button key={artist.id} type="button" onClick={() => persistLineup(selected ? lineupArtists.filter((item) => item.id !== artist.id) : [...lineupArtists, artist])} className={cn("flex min-w-0 items-center gap-3 rounded-2xl border p-3 text-left transition", selected ? "border-violet-500 bg-violet-100/70 dark:border-violet-300 dark:bg-violet-300/10" : "border-border bg-white hover:border-violet-300 dark:border-white/10 dark:bg-slate-950/30")}>
                           <div className="h-10 w-10 shrink-0 overflow-hidden rounded-xl bg-muted"><>{artist.imageUrl ? <img src={artist.imageUrl} alt="" className="h-full w-full object-cover" /> : <div className="grid h-full w-full place-items-center text-muted-foreground"><UserRound className="h-4 w-4" /></div>}</></div>
                           <span className="min-w-0 flex-1"><span className="block truncate text-sm font-black text-foreground dark:text-white">{artist.name}</span><span className="block truncate text-xs text-muted-foreground">{artist.role || "Artist"}</span></span>
                           <span className={cn("text-xs font-black", selected ? "text-violet-700 dark:text-violet-200" : "text-muted-foreground")}>{selected ? "Added" : "Add"}</span>
