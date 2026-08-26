@@ -791,7 +791,7 @@ export default function PublicEventPage({
               </section>
             ) : null}
 
-            {false && organiserEvents?.length ? (
+            {organiserEvents?.length ? (
               <section id="organiser" className="scroll-mt-24 border-t border-zinc-200 pt-7">
                 <div className="mb-4 flex items-center justify-between gap-4">
                   <div><p className="text-xs font-black uppercase tracking-[.18em] text-cyan-600">More to explore</p><h2 className="mt-1 text-xl font-black tracking-tight sm:text-2xl">More from this organiser</h2></div>
@@ -1097,20 +1097,6 @@ export default function PublicEventPage({
                 {t.terms}
               </p>
             </section>
-
-            {organiserEvents?.length ? (
-              <section id="organiser" className="scroll-mt-24 rounded-2xl border border-zinc-200 bg-white p-5">
-                <div className="mb-4"><p className="text-xs font-black uppercase tracking-[.18em] text-cyan-600">More to explore</p><h2 className="mt-1 text-xl font-black tracking-tight">More from this organiser</h2></div>
-                <div className="grid gap-4 sm:grid-cols-3">
-                  {organiserEvents.map((related) => (
-                    <Link key={related.id} href={`/e/${companySlug}/${related.slug}`} className="group overflow-hidden rounded-2xl border border-zinc-200 bg-white transition hover:border-cyan-300 hover:shadow-lg">
-                      <div className="aspect-[4/3] bg-zinc-100">{related.coverImageUrl ? <img src={related.coverImageUrl} alt="" className="h-full w-full object-cover" /> : <div className="grid h-full place-items-center bg-slate-900 text-white"><Ticket className="h-6 w-6" /></div>}</div>
-                      <div className="p-4"><p className="text-xs font-bold text-cyan-700">{format(new Date(related.startsAt), "MMM d, yyyy")}</p><h3 className="mt-1 line-clamp-2 font-black text-zinc-950">{related.title}</h3></div>
-                    </Link>
-                  ))}
-                </div>
-              </section>
-            ) : null}
 
             {false && publicPage.showAppDownload ? (
               <section className="rounded-2xl border border-zinc-200 bg-white p-5">
