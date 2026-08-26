@@ -1,18 +1,18 @@
 "use client";
 
-import { use, useState, useEffect, useRef } from "react";
+import { use, useState, useEffect, useRef, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ImagePlus, ExternalLink, Loader2, Ticket, Mail, CalendarDays, Activity, ShieldCheck, Globe, BadgeDollarSign, ArrowUp, ArrowDown, Trash2, Film } from "lucide-react";
+import { ImagePlus, ExternalLink, Loader2, Ticket, Mail, CalendarDays, Activity, ShieldCheck, Globe, BadgeDollarSign, ArrowUp, ArrowDown, Trash2, Film, Music2, Plus, UserRound } from "lucide-react";
 import { trpc } from "@/lib/trpc/client";
 import { ImageUpload } from "@/components/shared/ImageUpload";
 import { toast } from "sonner";
 import Link from "next/link";
-import { DesignSettings } from "@/types/event";
+import { DesignSettings, type LineupArtist } from "@/types/event";
 import { TicketDesignEditor } from "@/components/tickets/TicketDesignEditor";
 import type { TicketDesignSettings } from "@/components/tickets/TicketPreview";
 import { EmailDesignEditor } from "@/components/emails/EmailDesignEditor";
@@ -55,8 +55,16 @@ export default function DesignSetupPage({
   const [videoUrl, setVideoUrl] = useState("");
   const [uploadingVideo, setUploadingVideo] = useState(false);
   const [uploadingGallery, setUploadingGallery] = useState(false);
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
   const [showAgenda, setShowAgenda] = useState(true);
+  const [artistLibrary, setArtistLibrary] = useState<LineupArtist[]>([]);
+  const [lineupArtists, setLineupArtists] = useState<LineupArtist[]>([]);
+  const [artistsLoading, setArtistsLoading] = useState(false);
+  const [artistPhotoUploading, setArtistPhotoUploading] = useState(false);
+  const [newArtistName, setNewArtistName] = useState("");
+  const [newArtistRole, setNewArtistRole] = useState("");
+  const [newArtistBio, setNewArtistBio] = useState("");
+  const [newArtistImageUrl, setNewArtistImageUrl] = useState("");
 
   // ---------- Ticket design tab state ----------
   const [ticketDesign, setTicketDesign] = useState<TicketDesignSettings>({
@@ -114,6 +122,7 @@ export default function DesignSetupPage({
         setGalleryUrls((settings.publicPage?.galleryImages ?? []).join("\n"));
         setVideoUrl(settings.publicPage?.videoUrl || "");
         setShowAgenda(settings.publicPage?.showAgenda !== false);
+        setLineupArtists(Array.isArray(settings.publicPage?.lineup) ? settings.publicPage.lineup : []);
         if (settings.ticketDesign) setTicketDesign(settings.ticketDesign);
         if (settings.emailDesigns) setEmailDesigns(settings.emailDesigns);
         if (settings.agenda) setAgendaSettings(settings.agenda);
@@ -121,6 +130,33 @@ export default function DesignSetupPage({
       }, 0);
     }
   }, [event, isInitialized]);
+
+  useEffect(() => {
+    if (!event?.companyId) return;
+    let active = true;
+    setArtistsLoading(true);
+    void supabase
+      .from("artists")
+      .select("id, name, role, image_url, bio")
+      .eq("company_id", event.companyId)
+      .order("name", { ascending: true })
+      .then(({ data, error }) => {
+        if (!active) return;
+        if (error) {
+          toast.error(`Could not load artist library: ${error.message}`);
+        } else {
+          setArtistLibrary((data ?? []).map((artist) => ({
+            id: artist.id,
+            name: artist.name,
+            role: artist.role,
+            imageUrl: artist.image_url,
+            bio: artist.bio,
+          })));
+        }
+        setArtistsLoading(false);
+      });
+    return () => { active = false; };
+  }, [event?.companyId, supabase]);
 
   const prevAgendaRef = useRef<string>("");
 
@@ -183,6 +219,7 @@ export default function DesignSetupPage({
             .filter(Boolean),
           videoUrl: videoUrl.trim(),
           showAgenda,
+          lineup: lineupArtists,
         },
         ticketDesign,
         emailDesigns,
@@ -202,6 +239,60 @@ export default function DesignSetupPage({
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Video upload failed");
     } finally { setUploadingVideo(false); }
+  };
+
+  const uploadArtistPhoto = async (file: File) => {
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please choose an image file for the artist");
+      return;
+    }
+    setArtistPhotoUploading(true);
+    try {
+      const path = `artists/${crypto.randomUUID()}-${file.name.replace(/[^a-zA-Z0-9._-]/g, "-")}`;
+      const { error } = await supabase.storage.from("events").upload(path, file, { contentType: file.type, cacheControl: "3600" });
+      if (error) throw error;
+      setNewArtistImageUrl(supabase.storage.from("events").getPublicUrl(path).data.publicUrl);
+      toast.success("Artist photo uploaded");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Artist photo upload failed");
+    } finally {
+      setArtistPhotoUploading(false);
+    }
+  };
+
+  const addArtistToLineup = (artist: LineupArtist) => {
+    setLineupArtists((current) => current.some((item) => item.id === artist.id) ? current : [...current, artist]);
+  };
+
+  const createArtist = async () => {
+    const name = newArtistName.trim();
+    if (!name || !event?.companyId) {
+      toast.error("Enter an artist name first");
+      return;
+    }
+    const { data, error } = await supabase
+      .from("artists")
+      .insert({
+        company_id: event.companyId,
+        name,
+        role: newArtistRole.trim() || null,
+        bio: newArtistBio.trim() || null,
+        image_url: newArtistImageUrl || null,
+      })
+      .select("id, name, role, image_url, bio")
+      .single();
+    if (error) {
+      toast.error(error.code === "23505" ? "This artist is already in your library" : error.message);
+      return;
+    }
+    const artist: LineupArtist = { id: data.id, name: data.name, role: data.role, imageUrl: data.image_url, bio: data.bio };
+    setArtistLibrary((current) => [...current, artist].sort((a, b) => a.name.localeCompare(b.name)));
+    addArtistToLineup(artist);
+    setNewArtistName("");
+    setNewArtistRole("");
+    setNewArtistBio("");
+    setNewArtistImageUrl("");
+    toast.success("Artist saved to your library and added to this lineup");
   };
 
   const uploadGalleryMedia = async (files: File[]) => {
@@ -454,6 +545,63 @@ export default function DesignSetupPage({
                     <Label className="text-[9px] font-black uppercase tracking-[0.3em] text-muted-foreground dark:text-white/40 italic">TERMS &amp; CONDITIONS</Label>
                     <Textarea value={termsCsv} onChange={(e) => setTermsCsv(e.target.value)} className="theme-textarea min-h-[140px]" placeholder="One term per line" />
                     <p className="text-xs text-muted-foreground">These terms appear in the public event page before checkout.</p>
+                  </div>
+
+                  <div className="space-y-5 rounded-[28px] border border-violet-200 bg-violet-50/50 p-5 dark:border-violet-300/20 dark:bg-violet-300/5">
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div>
+                        <p className="text-[9px] font-black uppercase tracking-[0.3em] text-violet-700 dark:text-violet-200">Reusable artist library</p>
+                        <h3 className="mt-1 flex items-center gap-2 text-lg font-black text-foreground dark:text-white"><Music2 className="h-5 w-5 text-violet-600" />Lineup artists</h3>
+                        <p className="mt-1 text-xs text-muted-foreground">Add artists once, then select them for any event in this company.</p>
+                      </div>
+                      <span className="rounded-full bg-white px-3 py-1 text-xs font-black text-violet-700 shadow-sm dark:bg-violet-300/10 dark:text-violet-200">{lineupArtists.length} selected</span>
+                    </div>
+
+                    {lineupArtists.length ? (
+                      <div className="grid gap-2 sm:grid-cols-2">
+                        {lineupArtists.map((artist, index) => (
+                          <div key={artist.id} className="flex min-w-0 items-center gap-3 rounded-2xl border border-violet-200/80 bg-white p-3 dark:border-violet-300/15 dark:bg-slate-950/40">
+                            <div className="h-11 w-11 shrink-0 overflow-hidden rounded-xl bg-violet-100 dark:bg-violet-300/10">
+                              {artist.imageUrl ? <img src={artist.imageUrl} alt="" className="h-full w-full object-cover" /> : <div className="grid h-full w-full place-items-center text-violet-700 dark:text-violet-200"><UserRound className="h-5 w-5" /></div>}
+                            </div>
+                            <div className="min-w-0 flex-1"><p className="truncate text-sm font-black text-foreground dark:text-white">{artist.name}</p><p className="truncate text-xs text-muted-foreground">{artist.role || "Lineup artist"}</p></div>
+                            <div className="flex shrink-0 gap-1">
+                              <Button type="button" variant="ghost" size="icon" className="h-8 w-8 rounded-lg" aria-label={`Move ${artist.name} earlier`} disabled={index === 0} onClick={() => setLineupArtists((current) => { const next = [...current]; [next[index - 1], next[index]] = [next[index], next[index - 1]]; return next; })}><ArrowUp className="h-4 w-4" /></Button>
+                              <Button type="button" variant="ghost" size="icon" className="h-8 w-8 rounded-lg text-destructive hover:text-destructive" aria-label={`Remove ${artist.name} from lineup`} onClick={() => setLineupArtists((current) => current.filter((item) => item.id !== artist.id))}><Trash2 className="h-4 w-4" /></Button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : <div className="rounded-2xl border border-dashed border-violet-300/70 bg-white/70 p-4 text-sm text-muted-foreground dark:bg-slate-950/20">No artists selected for this event yet. Choose from your saved library or create a new artist below.</div>}
+
+                    <div className="space-y-3 border-t border-violet-200/80 pt-4 dark:border-violet-300/15">
+                      <p className="text-[9px] font-black uppercase tracking-[0.25em] text-muted-foreground">Choose from saved artists</p>
+                      {artistsLoading ? <div className="flex items-center gap-2 py-3 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" />Loading artist library…</div> : artistLibrary.length ? <div className="grid gap-2 sm:grid-cols-2">{artistLibrary.map((artist) => {
+                        const selected = lineupArtists.some((item) => item.id === artist.id);
+                        return <button key={artist.id} type="button" onClick={() => selected ? setLineupArtists((current) => current.filter((item) => item.id !== artist.id)) : addArtistToLineup(artist)} className={cn("flex min-w-0 items-center gap-3 rounded-2xl border p-3 text-left transition", selected ? "border-violet-500 bg-violet-100/70 dark:border-violet-300 dark:bg-violet-300/10" : "border-border bg-white hover:border-violet-300 dark:border-white/10 dark:bg-slate-950/30")}>
+                          <div className="h-10 w-10 shrink-0 overflow-hidden rounded-xl bg-muted"><>{artist.imageUrl ? <img src={artist.imageUrl} alt="" className="h-full w-full object-cover" /> : <div className="grid h-full w-full place-items-center text-muted-foreground"><UserRound className="h-4 w-4" /></div>}</></div>
+                          <span className="min-w-0 flex-1"><span className="block truncate text-sm font-black text-foreground dark:text-white">{artist.name}</span><span className="block truncate text-xs text-muted-foreground">{artist.role || "Artist"}</span></span>
+                          <span className={cn("text-xs font-black", selected ? "text-violet-700 dark:text-violet-200" : "text-muted-foreground")}>{selected ? "Added" : "Add"}</span>
+                        </button>;
+                      })}</div> : <p className="text-sm text-muted-foreground">Your artist library is empty.</p>}
+                    </div>
+
+                    <div className="space-y-4 border-t border-violet-200/80 pt-4 dark:border-violet-300/15">
+                      <p className="text-[9px] font-black uppercase tracking-[0.25em] text-muted-foreground">Add a new artist</p>
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        <Input value={newArtistName} onChange={(e) => setNewArtistName(e.target.value)} className="theme-input" placeholder="Artist name *" />
+                        <Input value={newArtistRole} onChange={(e) => setNewArtistRole(e.target.value)} className="theme-input" placeholder="Role, e.g. Headliner" />
+                      </div>
+                      <Textarea value={newArtistBio} onChange={(e) => setNewArtistBio(e.target.value)} className="theme-textarea min-h-[80px]" placeholder="Short artist bio (optional)" />
+                      <div className="flex flex-wrap items-center gap-3">
+                        <label className={cn("inline-flex h-11 cursor-pointer items-center gap-2 rounded-xl border border-violet-300 bg-white px-4 text-xs font-black text-violet-700 transition hover:bg-violet-50 dark:border-violet-300/30 dark:bg-slate-950/30 dark:text-violet-200", artistPhotoUploading && "pointer-events-none opacity-60")}>
+                          {artistPhotoUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ImagePlus className="h-4 w-4" />}{newArtistImageUrl ? "Photo uploaded" : "Upload artist photo"}
+                          <Input type="file" accept="image/*" className="hidden" disabled={artistPhotoUploading} onChange={(e) => { const file = e.target.files?.[0]; if (file) void uploadArtistPhoto(file); e.currentTarget.value = ""; }} />
+                        </label>
+                        {newArtistImageUrl ? <img src={newArtistImageUrl} alt="Artist preview" className="h-11 w-11 rounded-xl object-cover" /> : null}
+                        <Button type="button" onClick={() => { void createArtist(); }} className="h-11 rounded-xl bg-violet-600 px-4 font-black text-white hover:bg-violet-700"><Plus className="mr-2 h-4 w-4" />Save artist &amp; add to lineup</Button>
+                      </div>
+                    </div>
                   </div>
 
                   <div className="space-y-3 rounded-2xl border border-cyan-200/60 bg-cyan-50/50 p-4 dark:border-cyan-300/20 dark:bg-cyan-300/5">

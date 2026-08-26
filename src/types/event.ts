@@ -19,8 +19,18 @@ export interface DesignSettings {
     showAgenda?: boolean;
     showSponsors?: boolean;
     showAppDownload?: boolean;
+    /** Artists selected from the organiser's reusable artist library. */
+    lineup?: LineupArtist[];
   };
 }
+
+export type LineupArtist = {
+  id: string;
+  name: string;
+  role?: string | null;
+  imageUrl?: string | null;
+  bio?: string | null;
+};
 
 export type EventFeatureFlags = {
   networkingEnabled: boolean;

@@ -19,6 +19,7 @@ import {
   CreditCard,
   Headphones,
   CheckCircle2,
+  Music2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { TicketWidget } from "@/components/public/TicketWidget";
@@ -26,7 +27,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import type { DesignSettings } from "@/types/event";
+import type { DesignSettings, LineupArtist } from "@/types/event";
 import { toast } from "sonner";
 import {
   formatMoney,
@@ -176,6 +177,7 @@ function getPublicPageSettings(
     ctaLabel: localizedValue(publicPage.ctaLabel, locale),
     highlights: publicPage.highlights ?? [],
     terms: (Array.isArray((publicPage as any).terms) && (publicPage as any).terms.length ? (publicPage as any).terms : CUSTOMER_TERMS) as string[],
+    lineup: (Array.isArray(publicPage.lineup) ? publicPage.lineup : []).filter((artist): artist is LineupArtist => Boolean(artist && typeof artist.id === "string" && typeof artist.name === "string" && artist.name.trim())),
     showAgenda: publicPage.showAgenda !== false,
     showSponsors: publicPage.showSponsors !== false,
     showAppDownload: publicPage.showAppDownload !== false,
@@ -746,12 +748,22 @@ export default function PublicEventPage({
               </div>
             </section>}
 
-            {publicPage.showAgenda ? (
+            {(publicPage.lineup.length || (publicPage.showAgenda && experience?.sessions?.length)) ? (
               <section id="lineup" className="scroll-mt-24 border-t border-zinc-200 pt-7">
                 <h2 className="mb-4 text-xl font-black tracking-tight sm:text-2xl">
                   Lineup &amp; schedule
                 </h2>
-                {experience?.sessions?.length ? <div className="space-y-3">
+                {publicPage.lineup.length ? <div className="mb-6 grid gap-3 sm:grid-cols-2">
+                  {publicPage.lineup.map((artist, index) => (
+                    <article key={artist.id} className="flex min-w-0 gap-4 rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
+                      <div className="h-16 w-16 shrink-0 overflow-hidden rounded-2xl bg-gradient-to-br from-violet-100 to-cyan-100">
+                        {artist.imageUrl ? <img src={artist.imageUrl} alt={artist.name} className="h-full w-full object-cover" /> : <div className="grid h-full w-full place-items-center text-violet-700"><Music2 className="h-7 w-7" /></div>}
+                      </div>
+                      <div className="min-w-0"><p className="text-[10px] font-black uppercase tracking-[.18em] text-violet-700">{artist.role || (index === 0 ? "Headliner" : "Lineup artist")}</p><h3 className="mt-1 truncate text-base font-black text-zinc-950">{artist.name}</h3>{artist.bio ? <p className="mt-1 line-clamp-2 text-xs leading-5 text-zinc-600">{artist.bio}</p> : null}</div>
+                    </article>
+                  ))}
+                </div> : null}
+                {publicPage.showAgenda && experience?.sessions?.length ? <div className="space-y-3">
                   {experience.sessions.slice(0, 6).map((session) => (
                     <div
                       key={session.id}
@@ -775,7 +787,7 @@ export default function PublicEventPage({
                       ) : null}
                     </div>
                   ))}
-                </div> : <div className="rounded-2xl border border-dashed border-zinc-300 bg-zinc-50 p-5 text-sm text-zinc-600">The artist lineup and event schedule will be announced by the organiser.</div>}
+                </div> : null}
               </section>
             ) : null}
 
