@@ -186,7 +186,7 @@ export default function DashboardPage() {
                     />
                   </div>
                 ) : (
-                  <p className="mt-4 text-[10px] font-bold uppercase tracking-tighter text-muted-foreground/70 dark:text-white/10">
+                  <p className="mt-4 text-[10px] font-bold uppercase tracking-tighter text-muted-foreground dark:text-white/50">
                     {stat.sub}
                   </p>
                 )}
@@ -389,6 +389,7 @@ export default function DashboardPage() {
                         </div>
                         <Button
                           variant="ghost"
+                          aria-label={`Open ${event.title}`}
                           className="h-12 w-12 rounded-2xl p-0 text-muted-foreground/70 hover:bg-muted hover:text-foreground dark:text-white/10 dark:hover:bg-white/5 dark:hover:text-white"
                         >
                           <ChevronRight className="h-6 w-6" />

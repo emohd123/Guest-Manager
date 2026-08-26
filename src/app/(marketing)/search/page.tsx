@@ -7,7 +7,7 @@ import { headers } from "next/headers";
 export const dynamic = "force-dynamic";
 
 type SearchPageProps = {
-  searchParams: Promise<{ locale?: string }>;
+  searchParams: Promise<{ locale?: string; q?: string }>;
 };
 
 async function discover(locale: string): Promise<MarketplaceDiscoveryResponse> {
@@ -31,5 +31,5 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
   const params = await searchParams;
   const locale = normalizeLocale(params.locale);
   const data = await discover(locale);
-  return <MobileSearchPage initialEvents={data.events} locale={locale} />;
+  return <MobileSearchPage initialEvents={data.events} locale={locale} initialQuery={params.q?.trim() ?? ""} />;
 }

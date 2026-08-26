@@ -168,6 +168,7 @@ export function DashboardSidebar({ collapsed, onToggle, onEventsClick, onMobileN
           variant="ghost"
           size="icon"
           onClick={onToggle}
+          aria-label={collapsed ? "Expand dashboard navigation" : "Collapse dashboard navigation"}
           className="h-8 w-8 shrink-0 text-muted-foreground hover:bg-muted hover:text-foreground"
         >
           <ChevronLeft

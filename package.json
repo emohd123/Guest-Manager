@@ -9,6 +9,7 @@
     "video:studio": "remotion studio remotion/index.ts",
     "video:render": "remotion render remotion/index.ts ITicketAndroidAd output/social/iticket-android-ad-v2.mp4",
     "lint": "eslint",
+    "test:release-scanner": "node scripts/release-scanner-smoke.mjs",
     "db:generate": "drizzle-kit generate",
     "db:push": "drizzle-kit push",
     "db:migrate": "drizzle-kit migrate",

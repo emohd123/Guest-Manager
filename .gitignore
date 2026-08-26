@@ -61,8 +61,26 @@ mobile/.npm-cache/
 mobile/builds/
 mobile/*.log
 mobile/android/local.properties
+mobile/android/.kotlin/
 *.out.log
 *.err.log
 
 # git worktrees
 .worktrees/
+
+# local agent, build, and tool caches
+.codex*/
+.gradle-user-home/
+supabase/.temp/
+mobile/dist/
+mobile/commandlinetools-win*.zip
+
+# generated release artifacts and local logs
+output/
+auth-local-*.log
+local-dev.log
+next-localhost-*.log
+server-error.log
+server-output.log
+.env.local.txt
+.release-dashboard-fixture.json

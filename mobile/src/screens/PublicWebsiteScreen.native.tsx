@@ -1,5 +1,5 @@
-import React, { useMemo, useState } from "react";
-import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { ActivityIndicator, BackHandler, StyleSheet, Text, View } from "react-native";
 import { WebView } from "react-native-webview";
 import Constants from "expo-constants";
 import type { VisitorSession } from "../types";
@@ -29,10 +29,22 @@ type PublicWebsiteScreenProps = {
 export function PublicWebsiteScreen({}: PublicWebsiteScreenProps) {
   const source = useMemo(() => ({ uri: getWebsiteUrl() }), []);
   const [loading, setLoading] = useState(true);
+  const [canGoBack, setCanGoBack] = useState(false);
+  const webViewRef = useRef<React.ElementRef<typeof WebView>>(null);
+
+  useEffect(() => {
+    const subscription = BackHandler.addEventListener("hardwareBackPress", () => {
+      if (!canGoBack) return false;
+      webViewRef.current?.goBack();
+      return true;
+    });
+    return () => subscription.remove();
+  }, [canGoBack]);
 
   return (
     <View style={styles.root}>
       <WebView
+        ref={webViewRef}
         source={source}
         style={styles.webview}
         startInLoadingState
@@ -42,6 +54,9 @@ export function PublicWebsiteScreen({}: PublicWebsiteScreenProps) {
         cacheEnabled={false}
         cacheMode="LOAD_NO_CACHE"
         allowsBackForwardNavigationGestures
+        setSupportMultipleWindows={false}
+        mediaPlaybackRequiresUserAction={false}
+        onNavigationStateChange={(navigation) => setCanGoBack(navigation.canGoBack)}
         onLoadEnd={() => setLoading(false)}
       />
       {loading ? (

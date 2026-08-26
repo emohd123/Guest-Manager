@@ -24,19 +24,20 @@ export function PublicShortcutDock() {
     if (pathname.startsWith("/account/favorites")) setActiveShortcut("favourite");
     else if (pathname.startsWith("/private-event")) setActiveShortcut("private");
     else if (pathname.startsWith("/account")) setActiveShortcut("tickets");
+    else if (pathname.startsWith("/search")) setActiveShortcut("search");
     else if (pathname === "/") setActiveShortcut("home");
   }, [pathname]);
 
   function focusSearch() {
     setActiveShortcut("search");
-    const search = document.querySelector<HTMLInputElement>('input[name="q"]');
+    const search = pathname.startsWith("/search")
+      ? document.querySelector<HTMLInputElement>('input[type="search"]')
+      : null;
     if (search) {
       search.focus();
       return;
     }
-    // The navbar search is intentionally hidden on narrow screens. Navigate
-    // home with a focus flag so the mobile navbar can open its search field.
-    router.push(localeHref("/?focus=search"));
+    router.push(localeHref("/search"));
   }
 
   function goHome() {

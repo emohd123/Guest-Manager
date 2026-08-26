@@ -36,6 +36,7 @@ export function MarketingNavbar() {
   const [mounted, setMounted] = useState(false);
   const { resolvedTheme, setTheme } = useTheme();
   const nextLang = lang === "ar" ? "en" : "ar";
+  const darkModeActive = mounted && resolvedTheme === "dark";
   const mobileSearchOpen = searchParams.get("focus") === "search";
   const searchInputRef = useRef<HTMLInputElement>(null);
   const languageParams = new URLSearchParams(searchParams.toString());
@@ -85,9 +86,8 @@ export function MarketingNavbar() {
           </Link>
         </div>
 
-        <form action="/" method="get" className={`${mobileSearchOpen ? "fixed left-3 right-3 top-[4.25rem] z-10 flex max-w-none shadow-lg sm:static sm:mx-5 sm:w-full sm:max-w-md sm:shadow-none" : "hidden sm:flex mx-5 w-full max-w-md"} items-center rounded-full border border-slate-200 bg-slate-50 px-4 transition focus-within:border-cyan-500 focus-within:bg-white dark:border-slate-700 dark:bg-slate-900 dark:focus-within:bg-slate-900`}>
+        <form action="/search" method="get" className={`${mobileSearchOpen ? "fixed left-3 right-3 top-[4.25rem] z-10 flex max-w-none shadow-lg sm:static sm:mx-5 sm:w-full sm:max-w-md sm:shadow-none" : "hidden sm:flex mx-5 w-full max-w-md"} items-center rounded-full border border-slate-200 bg-slate-50 px-4 transition focus-within:border-cyan-500 focus-within:bg-white dark:border-slate-700 dark:bg-slate-900 dark:focus-within:bg-slate-900`}>
           <input type="hidden" name="locale" value={lang} />
-          <input type="hidden" name="focus" value="search" />
           <Search className="h-4 w-4 shrink-0 text-slate-500 dark:text-slate-400" />
           <input
             ref={searchInputRef}
@@ -104,12 +104,12 @@ export function MarketingNavbar() {
         <div className="flex shrink-0 items-center gap-1.5 sm:gap-3">
           <button
             type="button"
-            onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
-            aria-label={resolvedTheme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
-            title={resolvedTheme === "dark" ? "Light mode" : "Dark mode"}
+            onClick={() => setTheme(darkModeActive ? "light" : "dark")}
+            aria-label={darkModeActive ? "Switch to light mode" : "Switch to dark mode"}
+            title={darkModeActive ? "Light mode" : "Dark mode"}
             className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 transition hover:border-cyan-300 hover:bg-cyan-50 hover:text-cyan-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800 dark:hover:text-cyan-300 sm:h-10 sm:w-10"
           >
-            {mounted && resolvedTheme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+            {darkModeActive ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
           </button>
           {account ? (
             <Link

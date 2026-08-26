@@ -110,6 +110,7 @@ export function TicketWidget({
                   <Button
                     variant="ghost"
                     size="icon"
+                    aria-label={`Decrease ${ticket.name} quantity`}
                     onClick={() =>
                       updateQuantity(
                         ticket.id,
@@ -129,6 +130,7 @@ export function TicketWidget({
                   <Button
                     variant="ghost"
                     size="icon"
+                    aria-label={`Increase ${ticket.name} quantity`}
                     onClick={() =>
                       updateQuantity(
                         ticket.id,
