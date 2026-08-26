@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ImagePlus, ExternalLink, Loader2, Ticket, Mail, CalendarDays, Activity, ShieldCheck, Globe, BadgeDollarSign, ArrowUp, ArrowDown, Trash2, Film, Music2, Plus, UserRound } from "lucide-react";
+import { ImagePlus, ExternalLink, Loader2, Ticket, Mail, CalendarDays, Activity, ShieldCheck, Globe, BadgeDollarSign, ArrowUp, ArrowDown, Trash2, Film, Music2, Pencil, Plus, UserRound } from "lucide-react";
 import { trpc } from "@/lib/trpc/client";
 import { ImageUpload } from "@/components/shared/ImageUpload";
 import { toast } from "sonner";
@@ -65,6 +65,7 @@ export default function DesignSetupPage({
   const [newArtistRole, setNewArtistRole] = useState("");
   const [newArtistBio, setNewArtistBio] = useState("");
   const [newArtistImageUrl, setNewArtistImageUrl] = useState("");
+  const [editingArtistId, setEditingArtistId] = useState<string | null>(null);
 
   // ---------- Ticket design tab state ----------
   const [ticketDesign, setTicketDesign] = useState<TicketDesignSettings>({
@@ -138,7 +139,6 @@ export default function DesignSetupPage({
     void supabase
       .from("artists")
       .select("id, name, role, image_url, bio")
-      .eq("company_id", event.companyId)
       .order("name", { ascending: true })
       .then(({ data, error }) => {
         if (!active) return;
@@ -270,29 +270,50 @@ export default function DesignSetupPage({
       toast.error("Enter an artist name first");
       return;
     }
-    const { data, error } = await supabase
-      .from("artists")
-      .insert({
-        company_id: event.companyId,
-        name,
-        role: newArtistRole.trim() || null,
-        bio: newArtistBio.trim() || null,
-        image_url: newArtistImageUrl || null,
-      })
-      .select("id, name, role, image_url, bio")
-      .single();
+    const artistPayload = {
+      name,
+      role: newArtistRole.trim() || null,
+      bio: newArtistBio.trim() || null,
+      image_url: newArtistImageUrl || null,
+    };
+    const query = editingArtistId
+      ? supabase.from("artists").update(artistPayload).eq("id", editingArtistId)
+      : supabase.from("artists").insert({ company_id: event.companyId, ...artistPayload });
+    const { data, error } = await query.select("id, name, role, image_url, bio").single();
     if (error) {
       toast.error(error.code === "23505" ? "This artist is already in your library" : error.message);
       return;
     }
     const artist: LineupArtist = { id: data.id, name: data.name, role: data.role, imageUrl: data.image_url, bio: data.bio };
-    setArtistLibrary((current) => [...current, artist].sort((a, b) => a.name.localeCompare(b.name)));
-    addArtistToLineup(artist);
+    setArtistLibrary((current) => (editingArtistId
+      ? current.map((item) => item.id === artist.id ? artist : item)
+      : [...current, artist]
+    ).sort((a, b) => a.name.localeCompare(b.name)));
+    setLineupArtists((current) => current.some((item) => item.id === artist.id)
+      ? current.map((item) => item.id === artist.id ? artist : item)
+      : [...current, artist]);
     setNewArtistName("");
     setNewArtistRole("");
     setNewArtistBio("");
     setNewArtistImageUrl("");
-    toast.success("Artist saved to your library and added to this lineup");
+    setEditingArtistId(null);
+    toast.success(editingArtistId ? "Artist updated across the shared library" : "Artist saved to the shared library and added to this lineup");
+  };
+
+  const editArtist = (artist: LineupArtist) => {
+    setEditingArtistId(artist.id);
+    setNewArtistName(artist.name);
+    setNewArtistRole(artist.role || "");
+    setNewArtistBio(artist.bio || "");
+    setNewArtistImageUrl(artist.imageUrl || "");
+  };
+
+  const cancelArtistEdit = () => {
+    setEditingArtistId(null);
+    setNewArtistName("");
+    setNewArtistRole("");
+    setNewArtistBio("");
+    setNewArtistImageUrl("");
   };
 
   const uploadGalleryMedia = async (files: File[]) => {
@@ -550,9 +571,9 @@ export default function DesignSetupPage({
                   <div className="space-y-5 rounded-[28px] border border-violet-200 bg-violet-50/50 p-5 dark:border-violet-300/20 dark:bg-violet-300/5">
                     <div className="flex flex-wrap items-start justify-between gap-3">
                       <div>
-                        <p className="text-[9px] font-black uppercase tracking-[0.3em] text-violet-700 dark:text-violet-200">Reusable artist library</p>
+                        <p className="text-[9px] font-black uppercase tracking-[0.3em] text-violet-700 dark:text-violet-200">Shared artist library</p>
                         <h3 className="mt-1 flex items-center gap-2 text-lg font-black text-foreground dark:text-white"><Music2 className="h-5 w-5 text-violet-600" />Lineup artists</h3>
-                        <p className="mt-1 text-xs text-muted-foreground">Add artists once, then select them for any event in this company.</p>
+                        <p className="mt-1 text-xs text-muted-foreground">Add artists once, then select them for any event in any company.</p>
                       </div>
                       <span className="rounded-full bg-white px-3 py-1 text-xs font-black text-violet-700 shadow-sm dark:bg-violet-300/10 dark:text-violet-200">{lineupArtists.length} selected</span>
                     </div>
@@ -566,6 +587,7 @@ export default function DesignSetupPage({
                             </div>
                             <div className="min-w-0 flex-1"><p className="truncate text-sm font-black text-foreground dark:text-white">{artist.name}</p><p className="truncate text-xs text-muted-foreground">{artist.role || "Lineup artist"}</p></div>
                             <div className="flex shrink-0 gap-1">
+                              <Button type="button" variant="ghost" size="icon" className="h-8 w-8 rounded-lg" aria-label={`Edit ${artist.name}`} onClick={() => editArtist(artist)}><Pencil className="h-4 w-4" /></Button>
                               <Button type="button" variant="ghost" size="icon" className="h-8 w-8 rounded-lg" aria-label={`Move ${artist.name} earlier`} disabled={index === 0} onClick={() => setLineupArtists((current) => { const next = [...current]; [next[index - 1], next[index]] = [next[index], next[index - 1]]; return next; })}><ArrowUp className="h-4 w-4" /></Button>
                               <Button type="button" variant="ghost" size="icon" className="h-8 w-8 rounded-lg text-destructive hover:text-destructive" aria-label={`Remove ${artist.name} from lineup`} onClick={() => setLineupArtists((current) => current.filter((item) => item.id !== artist.id))}><Trash2 className="h-4 w-4" /></Button>
                             </div>
@@ -583,11 +605,14 @@ export default function DesignSetupPage({
                           <span className="min-w-0 flex-1"><span className="block truncate text-sm font-black text-foreground dark:text-white">{artist.name}</span><span className="block truncate text-xs text-muted-foreground">{artist.role || "Artist"}</span></span>
                           <span className={cn("text-xs font-black", selected ? "text-violet-700 dark:text-violet-200" : "text-muted-foreground")}>{selected ? "Added" : "Add"}</span>
                         </button>;
-                      })}</div> : <p className="text-sm text-muted-foreground">Your artist library is empty.</p>}
+                      })}</div> : <p className="text-sm text-muted-foreground">The shared artist library is empty.</p>}
                     </div>
 
                     <div className="space-y-4 border-t border-violet-200/80 pt-4 dark:border-violet-300/15">
-                      <p className="text-[9px] font-black uppercase tracking-[0.25em] text-muted-foreground">Add a new artist</p>
+                      <div className="flex items-center justify-between gap-3">
+                        <p className="text-[9px] font-black uppercase tracking-[0.25em] text-muted-foreground">{editingArtistId ? "Edit shared artist" : "Add a new artist"}</p>
+                        {editingArtistId ? <Button type="button" variant="ghost" size="sm" className="h-8 rounded-lg text-xs" onClick={cancelArtistEdit}>Cancel edit</Button> : null}
+                      </div>
                       <div className="grid gap-3 sm:grid-cols-2">
                         <Input value={newArtistName} onChange={(e) => setNewArtistName(e.target.value)} className="theme-input" placeholder="Artist name *" />
                         <Input value={newArtistRole} onChange={(e) => setNewArtistRole(e.target.value)} className="theme-input" placeholder="Role, e.g. Headliner" />
@@ -599,7 +624,7 @@ export default function DesignSetupPage({
                           <Input type="file" accept="image/*" className="hidden" disabled={artistPhotoUploading} onChange={(e) => { const file = e.target.files?.[0]; if (file) void uploadArtistPhoto(file); e.currentTarget.value = ""; }} />
                         </label>
                         {newArtistImageUrl ? <img src={newArtistImageUrl} alt="Artist preview" className="h-11 w-11 rounded-xl object-cover" /> : null}
-                        <Button type="button" onClick={() => { void createArtist(); }} className="h-11 rounded-xl bg-violet-600 px-4 font-black text-white hover:bg-violet-700"><Plus className="mr-2 h-4 w-4" />Save artist &amp; add to lineup</Button>
+                        <Button type="button" onClick={() => { void createArtist(); }} className="h-11 rounded-xl bg-violet-600 px-4 font-black text-white hover:bg-violet-700">{editingArtistId ? <Pencil className="mr-2 h-4 w-4" /> : <Plus className="mr-2 h-4 w-4" />}{editingArtistId ? "Save artist changes" : "Save artist & add to lineup"}</Button>
                       </div>
                     </div>
                   </div>
