@@ -20,6 +20,7 @@ import {
   Headphones,
   CheckCircle2,
   Music2,
+  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { TicketWidget } from "@/components/public/TicketWidget";
@@ -197,6 +198,7 @@ export default function PublicEventPage({
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [selectedSeatIds, setSelectedSeatIds] = useState<string[]>([]);
   const [activeMediaIndex, setActiveMediaIndex] = useState(0);
+  const [expandedMediaIndex, setExpandedMediaIndex] = useState<number | null>(null);
   const [publicSeating, setPublicSeating] = useState<{
     loaded: boolean;
     plan: any | null;
@@ -487,6 +489,7 @@ export default function PublicEventPage({
     ...(videoUrl ? [videoUrl] : []),
   ].filter((item): item is string => Boolean(item))));
   const activeMedia = mediaItems[activeMediaIndex] ?? event.coverImageUrl;
+  const expandedMedia = expandedMediaIndex === null ? null : mediaItems[expandedMediaIndex];
   const isVideoMedia = (url: string) => /\.(mp4|webm|mov)(?:[?#].*)?$/i.test(url);
   const isActiveVideo = Boolean(activeMedia && isVideoMedia(activeMedia));
   const importantItems = publicPage.highlights.length
@@ -666,7 +669,7 @@ export default function PublicEventPage({
                 </div>
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                   {mediaItems.map((media, index) => (
-                    <button key={`${media}-${index}`} type="button" onClick={() => setActiveMediaIndex(index)} className={`relative overflow-hidden rounded-xl border-2 text-left transition ${index === activeMediaIndex ? "border-cyan-500 ring-2 ring-cyan-100" : "border-zinc-200 hover:border-cyan-300"}`} aria-label={`Show media ${index + 1}`}>
+                    <button key={`${media}-${index}`} type="button" onClick={() => { setActiveMediaIndex(index); setExpandedMediaIndex(index); }} className={`relative overflow-hidden rounded-xl border-2 text-left transition ${index === activeMediaIndex ? "border-cyan-500 ring-2 ring-cyan-100" : "border-zinc-200 hover:border-cyan-300"}`} aria-label={`Open media ${index + 1} full size`}>
                       {isVideoMedia(media) ? (
                         <video src={media} muted playsInline preload="metadata" className="aspect-[4/3] w-full object-cover" />
                       ) : (
@@ -1121,6 +1124,33 @@ export default function PublicEventPage({
           </aside>
         </div>
       </main>
+
+      {expandedMedia ? (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label={`Event media ${expandedMediaIndex! + 1}`}
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 p-4 sm:p-8"
+          onClick={() => setExpandedMediaIndex(null)}
+        >
+          <div className="relative flex h-full w-full max-w-6xl items-center justify-center" onClick={(event) => event.stopPropagation()}>
+            <button type="button" onClick={() => setExpandedMediaIndex(null)} className="absolute right-0 top-0 z-10 flex h-11 w-11 items-center justify-center rounded-full bg-white text-zinc-950 shadow-lg transition hover:bg-zinc-100" aria-label="Close media viewer">
+              <X className="h-5 w-5" />
+            </button>
+            {mediaItems.length > 1 ? <button type="button" onClick={() => setExpandedMediaIndex((index) => index === null ? 0 : (index - 1 + mediaItems.length) % mediaItems.length)} className="absolute left-0 z-10 flex h-11 w-11 items-center justify-center rounded-full bg-white text-zinc-950 shadow-lg transition hover:bg-zinc-100" aria-label="Previous media">
+              <ArrowLeft className="h-5 w-5" />
+            </button> : null}
+            {isVideoMedia(expandedMedia) ? (
+              <video src={expandedMedia} controls autoPlay className="max-h-full max-w-full rounded-2xl object-contain shadow-2xl" />
+            ) : (
+              <img src={expandedMedia} alt={`${event.title} media ${expandedMediaIndex! + 1}`} className="max-h-full max-w-full rounded-2xl object-contain shadow-2xl" />
+            )}
+            {mediaItems.length > 1 ? <button type="button" onClick={() => setExpandedMediaIndex((index) => index === null ? 0 : (index + 1) % mediaItems.length)} className="absolute right-0 z-10 flex h-11 w-11 items-center justify-center rounded-full bg-white text-zinc-950 shadow-lg transition hover:bg-zinc-100" aria-label="Next media">
+              <ChevronRight className="h-5 w-5" />
+            </button> : null}
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
