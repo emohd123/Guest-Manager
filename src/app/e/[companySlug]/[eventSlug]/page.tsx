@@ -923,16 +923,6 @@ export default function PublicEventPage({
               </div>
             </section>}
 
-            <details id="terms" className="order-80 group mb-5 scroll-mt-24 overflow-hidden rounded-xl border border-cyan-300/30 bg-[#0b151d] text-white">
-              <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-4 font-black marker:content-none">
-                <span className="flex items-center gap-2"><ShieldCheck className="h-5 w-5 text-cyan-300" />Terms &amp; Conditions</span>
-                <ChevronRight className="h-4 w-4 text-cyan-300 transition-transform group-open:rotate-90" />
-              </summary>
-              <ul className="space-y-2 border-t border-white/10 px-5 py-4 text-xs leading-5 text-slate-300">
-                {publicPage.terms.map((term) => <li key={term} className="flex gap-2"><span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-cyan-300" />{term}</li>)}
-              </ul>
-            </details>
-
             <section
               id="tickets"
               className="order-30 scroll-mt-6 rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm"
@@ -1100,6 +1090,16 @@ export default function PublicEventPage({
                 {t.terms}
               </p>
             </section>
+
+            <details id="terms" className="order-35 group scroll-mt-24 overflow-hidden rounded-xl border border-cyan-300/30 bg-[#0b151d] text-white">
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-4 font-black marker:content-none">
+                <span className="flex items-center gap-2"><ShieldCheck className="h-5 w-5 text-cyan-300" />Terms &amp; Conditions</span>
+                <ChevronRight className="h-4 w-4 text-cyan-300 transition-transform group-open:rotate-90" />
+              </summary>
+              <ul className="space-y-2 border-t border-white/10 px-5 py-4 text-xs leading-5 text-slate-300">
+                {publicPage.terms.map((term) => <li key={term} className="flex gap-2"><span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-cyan-300" />{term}</li>)}
+              </ul>
+            </details>
 
             {false && publicPage.showAppDownload ? (
               <section className="rounded-2xl border border-zinc-200 bg-white p-5">
