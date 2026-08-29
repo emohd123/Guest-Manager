@@ -608,9 +608,9 @@ export default function PublicEventPage({
           </button>
         </section>
 
-        <div className="mt-5 grid gap-7 sm:mt-8 sm:gap-9 lg:grid-cols-[minmax(0,1fr)_380px] lg:items-start">
-          <article className="space-y-7 sm:space-y-9">
-            <section id="details" className="scroll-mt-20 space-y-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_10px_28px_rgba(15,23,42,0.07)] sm:scroll-mt-24 sm:space-y-5 sm:rounded-[28px] sm:p-8 sm:shadow-[0_12px_40px_rgba(15,23,42,0.08)]">
+        <div className="mt-5 flex flex-col gap-7 sm:mt-8 sm:gap-9 lg:grid lg:grid-cols-[minmax(0,1fr)_380px] lg:items-start">
+          <article className="contents lg:block lg:space-y-9">
+            <section id="details" className="order-10 scroll-mt-20 space-y-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_10px_28px_rgba(15,23,42,0.07)] sm:scroll-mt-24 sm:space-y-5 sm:rounded-[28px] sm:p-8 sm:shadow-[0_12px_40px_rgba(15,23,42,0.08)]">
               <p className="text-xs font-black uppercase tracking-[0.2em] text-cyan-700">iTicket event</p>
               <h1 className="max-w-3xl text-2xl font-black leading-tight tracking-tight text-zinc-950 sm:text-4xl md:text-5xl">
                 {eventTitle}
@@ -639,7 +639,7 @@ export default function PublicEventPage({
               </p>
             </section>
 
-            <section className="border-t border-zinc-200 pt-7">
+            <section className="order-20 border-t border-zinc-200 pt-7">
               <div className="mb-4 flex items-center justify-between">
                 <h2 className="text-xl font-black tracking-tight sm:text-2xl">
                   Important Information
@@ -657,7 +657,7 @@ export default function PublicEventPage({
             </section>
 
             {mediaItems.length > 1 ? (
-              <section className="border-t border-zinc-200 pt-7">
+              <section className="order-40 border-t border-zinc-200 pt-7">
                 <div className="mb-4 flex items-center justify-between">
                   <h2 className="text-xl font-black tracking-tight sm:text-2xl">
                     Event media
@@ -679,7 +679,7 @@ export default function PublicEventPage({
               </section>
             ) : null}
 
-            <section id="location" className="scroll-mt-24 border-t border-zinc-200 pt-7">
+            <section id="location" className="order-50 scroll-mt-24 border-t border-zinc-200 pt-7">
               <h2 className="mb-4 text-xl font-black tracking-tight sm:text-2xl">
                 {t.location}
               </h2>
@@ -749,7 +749,7 @@ export default function PublicEventPage({
             </section>}
 
             {(publicPage.lineup.length || (publicPage.showAgenda && experience?.sessions?.length)) ? (
-              <section id="lineup" className="scroll-mt-24 border-t border-zinc-200 pt-7">
+              <section id="lineup" className="order-60 scroll-mt-24 border-t border-zinc-200 pt-7">
                 <h2 className="mb-4 text-xl font-black tracking-tight sm:text-2xl">
                   Lineup &amp; schedule
                 </h2>
@@ -792,7 +792,7 @@ export default function PublicEventPage({
             ) : null}
 
             {organiserEvents?.length ? (
-              <section id="organiser" className="scroll-mt-24 border-t border-zinc-200 pt-7">
+              <section id="organiser" className="order-90 scroll-mt-24 border-t border-zinc-200 pt-7">
                 <div className="mb-4 flex items-center justify-between gap-4">
                   <div><p className="text-xs font-black uppercase tracking-[.18em] text-cyan-600">More to explore</p><h2 className="mt-1 text-xl font-black tracking-tight sm:text-2xl">More from this organiser</h2></div>
                   <Link href="/" className="text-sm font-black text-cyan-700 hover:underline">View all events</Link>
@@ -809,7 +809,7 @@ export default function PublicEventPage({
             ) : null}
 
             {categoryEvents?.length ? (
-              <section className="border-t border-zinc-200 pt-7">
+              <section className="order-70 border-t border-zinc-200 pt-7">
                 <div className="mb-4">
                   <p className="text-xs font-black uppercase tracking-[.18em] text-cyan-600">Discover more</p>
                   <h2 className="mt-1 text-xl font-black tracking-tight sm:text-2xl">You might also like</h2>
@@ -844,7 +844,7 @@ export default function PublicEventPage({
             </section>}
           </article>
 
-          <aside className="space-y-4 lg:sticky lg:top-20">
+          <aside className="contents lg:block lg:space-y-4 lg:sticky lg:top-20">
             {false && <section className="rounded-2xl border border-zinc-300 bg-white p-5 shadow-sm">
               <p className="text-xs font-semibold text-zinc-500">Price from:</p>
               <div className="mt-1 flex items-center justify-between gap-4">
@@ -920,7 +920,7 @@ export default function PublicEventPage({
               </div>
             </section>}
 
-            <details id="terms" className="group mb-5 scroll-mt-24 overflow-hidden rounded-xl border border-cyan-300/30 bg-[#0b151d] text-white">
+            <details id="terms" className="order-80 group mb-5 scroll-mt-24 overflow-hidden rounded-xl border border-cyan-300/30 bg-[#0b151d] text-white">
               <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-4 font-black marker:content-none">
                 <span className="flex items-center gap-2"><ShieldCheck className="h-5 w-5 text-cyan-300" />Terms &amp; Conditions</span>
                 <ChevronRight className="h-4 w-4 text-cyan-300 transition-transform group-open:rotate-90" />
@@ -932,7 +932,7 @@ export default function PublicEventPage({
 
             <section
               id="tickets"
-              className="scroll-mt-6 rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm"
+              className="order-30 scroll-mt-6 rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm"
             >
               <div className="mb-5">
                 <p className="text-xs font-black uppercase tracking-[0.18em] text-violet-600">
