@@ -158,7 +158,9 @@ export function TicketWidget({
               {amountLabel ?? "Total Amount"}
             </span>
             <span className="text-xl font-black tracking-tight text-zinc-950 dark:text-white">
-              {freeEvent ? "FREE" : formatMoney(totalPrice, ticketTypes[0]?.currency ?? "BHD", locale)}
+              {freeEvent && totalItems > 0
+                ? "FREE"
+                : formatMoney(totalPrice, ticketTypes[0]?.currency ?? "BHD", locale)}
             </span>
           </div>
           
