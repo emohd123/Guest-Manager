@@ -56,6 +56,26 @@ export function TicketWidget({
 
   const totalItems = Object.values(quantities).reduce((acc, q) => acc + q, 0);
   const totalPrice = ticketTypes.reduce((acc, t) => acc + (quantities[t.id] || 0) * (t.price ?? 0), 0);
+  const totalCurrency = ticketTypes[0]?.currency ?? "BHD";
+  const zeroTotal = (() => {
+    const normalizedCurrency = totalCurrency || "BHD";
+    const fractionDigits = new Set(["BHD", "JOD", "KWD", "OMR", "TND"]).has(
+      normalizedCurrency.toUpperCase()
+    )
+      ? 3
+      : 2;
+
+    try {
+      return new Intl.NumberFormat(locale === "ar" ? "ar-BH" : "en-BH", {
+        style: "currency",
+        currency: normalizedCurrency,
+        minimumFractionDigits: fractionDigits,
+        maximumFractionDigits: fractionDigits,
+      }).format(0);
+    } catch {
+      return `${normalizedCurrency} ${0..toFixed(fractionDigits)}`;
+    }
+  })();
 
   return (
     <div className="space-y-4">
@@ -158,9 +178,11 @@ export function TicketWidget({
               {amountLabel ?? "Total Amount"}
             </span>
             <span className="text-xl font-black tracking-tight text-zinc-950 dark:text-white">
-              {freeEvent && totalItems > 0
-                ? "FREE"
-                : formatMoney(totalPrice, ticketTypes[0]?.currency ?? "BHD", locale)}
+              {totalItems === 0
+                ? zeroTotal
+                : freeEvent
+                  ? "FREE"
+                  : formatMoney(totalPrice, totalCurrency, locale)}
             </span>
           </div>
           
