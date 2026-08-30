@@ -1,7 +1,6 @@
 "use client";
 
 import { FormEvent, useEffect, useRef, useState } from "react";
-import { useSearchParams } from "next/navigation";
 import { ArrowRight, CalendarDays, KeyRound, MapPin, ShieldCheck, UserRound } from "lucide-react";
 
 type PrivateConference = {
@@ -23,7 +22,6 @@ function formatConferenceDate(value: string) {
 }
 
 export default function PrivateEventPage() {
-  const searchParams = useSearchParams();
   const [username, setUsername] = useState("");
   const [eventCode, setEventCode] = useState("");
   const [error, setError] = useState("");
@@ -34,7 +32,7 @@ export default function PrivateEventPage() {
 
   useEffect(() => {
     const controller = new AbortController();
-    if (searchParams.get("browse") !== "1") {
+    if (new URLSearchParams(window.location.search).get("browse") !== "1") {
       void fetch("/api/private-events/current", { signal: controller.signal })
         .then(async (response) => response.ok ? (await response.json()) as { portalUrl?: string | null } : { portalUrl: null })
         .then((payload) => { if (payload.portalUrl) window.location.replace(payload.portalUrl); })
@@ -48,7 +46,7 @@ export default function PrivateEventPage() {
       .then((payload) => setConferences(payload.conferences ?? []))
       .catch(() => undefined);
     return () => controller.abort();
-  }, [searchParams]);
+  }, []);
 
   function startConferenceAccess(conference: PrivateConference) {
     setSelectedConference(conference.title);
