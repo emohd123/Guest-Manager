@@ -85,7 +85,7 @@ export default function PrivateEventPage() {
   return (
     <div className="min-h-screen bg-slate-50 px-4 py-20 text-slate-900 dark:bg-[#080b12] dark:text-white sm:px-6 sm:py-24">
       <div className="mx-auto grid max-w-5xl overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-2xl dark:border-white/10 dark:bg-[#11131a] lg:grid-cols-[1.05fr_0.95fr]">
-        <section className="relative overflow-hidden border-b border-white/10 bg-[radial-gradient(circle_at_top_left,_rgba(34,211,238,0.2),_transparent_45%),linear-gradient(145deg,#15182a,#080808)] p-8 sm:p-12 lg:border-b-0 lg:border-r">
+        <section className="relative overflow-hidden border-b border-white/10 bg-[radial-gradient(circle_at_top_left,_rgba(34,211,238,0.2),_transparent_45%),linear-gradient(145deg,#15182a,#080808)] p-8 text-white sm:p-12 lg:border-b-0 lg:border-r">
           <div className="absolute -right-24 -top-24 h-64 w-64 rounded-full bg-cyan-300/10 blur-3xl" />
           <div className="relative">
             <span className="inline-flex items-center gap-2 rounded-full border border-cyan-300/30 bg-cyan-300/10 px-3 py-1.5 text-xs font-black uppercase tracking-[0.18em] text-cyan-200">
