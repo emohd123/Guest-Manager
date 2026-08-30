@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -49,6 +49,7 @@ const steps = [
 export default function NewEventPage() {
   const router = useRouter();
   const [step, setStep] = useState(0);
+  const [isPrivateConference, setIsPrivateConference] = useState(false);
   const [showCustomerForm, setShowCustomerForm] = useState(false);
   const [customerDraft, setCustomerDraft] = useState({
     legalName: "", displayName: "", email: "", mobile: "", vatNumber: "", website: "", country: "", address: "", notes: "",
@@ -80,10 +81,16 @@ export default function NewEventPage() {
     },
   });
 
+  useEffect(() => {
+    const privateMode = new URLSearchParams(window.location.search).get("private") === "1";
+    setIsPrivateConference(privateMode);
+    if (privateMode) setValue("eventType", "conference");
+  }, [setValue]);
+
   const createEvent = trpc.events.create.useMutation({
     onSuccess: (event) => {
       toast.success("Event created");
-      router.push(`/dashboard/events/${event.id}`);
+      router.push(isPrivateConference ? `/dashboard/private-events/${event.id}` : `/dashboard/events/${event.id}`);
     },
     onError: (err) => {
       toast.error(err.message);
@@ -123,16 +130,16 @@ export default function NewEventPage() {
   return (
     <div className="mx-auto max-w-2xl pb-20 px-2 space-y-12">
       <div className="flex items-center gap-6">
-        <Link href="/dashboard/events">
+        <Link href={isPrivateConference ? "/dashboard/private-events" : "/dashboard/events"}>
           <Button variant="ghost" size="icon" className="theme-ghost-surface h-14 w-14 rounded-2xl border transition-all group">
             <ArrowLeft className="h-6 w-6 group-hover:-translate-x-1 transition-transform" />
           </Button>
         </Link>
         <motion.div initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }}>
-          <h1 className="text-4xl font-black text-foreground dark:text-white tracking-tighter leading-none">Create Event</h1>
+          <h1 className="text-4xl font-black text-foreground dark:text-white tracking-tighter leading-none">{isPrivateConference ? "Create Private Conference" : "Create Event"}</h1>
           <p className="text-muted-foreground dark:text-white/40 font-bold uppercase tracking-[0.2em] text-[10px] mt-2 flex items-center gap-2">
              <Activity className="h-3 w-3 text-primary animate-pulse" />
-             Add the basics, schedule, and registration settings
+             {isPrivateConference ? "Add private access, schedule, speakers, and attendees" : "Add the basics, schedule, and registration settings"}
           </p>
         </motion.div>
       </div>
@@ -223,7 +230,7 @@ export default function NewEventPage() {
               <div className="space-y-8">
                 <div className="space-y-2">
                   <Label className={labelClasses}>Event Type</Label>
-                  <Select
+                  {isPrivateConference ? <div className="flex h-14 items-center rounded-2xl border border-cyan-500/30 bg-cyan-500/10 px-4 text-sm font-black text-cyan-700 dark:text-cyan-200">Private conference</div> : <Select
                     value={watch("eventType")}
                     onValueChange={(v) => setValue("eventType", v as EventFormData["eventType"])}
                   >
@@ -235,9 +242,8 @@ export default function NewEventPage() {
                       <SelectItem value="recurring" className="font-black uppercase text-[10px] tracking-widest py-3">Recurring event</SelectItem>
                       <SelectItem value="multi_day" className="font-black uppercase text-[10px] tracking-widest py-3">Multi-day event</SelectItem>
                       <SelectItem value="session" className="font-black uppercase text-[10px] tracking-widest py-3">Session</SelectItem>
-                      <SelectItem value="conference" className="font-black uppercase text-[10px] tracking-widest py-3">Conference</SelectItem>
                     </SelectContent>
-                  </Select>
+                  </Select>}
                 </div>
                 <div className="grid gap-8 sm:grid-cols-2">
                   <div className="space-y-2">

@@ -4,6 +4,7 @@ import { createSupabaseAdminClient } from "@/server/supabase/admin";
 import { getEventExperience } from "@/server/services/event-app";
 import { privateEventAccessCookie, readPrivateEventAccess } from "@/server/services/private-event-access";
 import { ConferencePortalClient } from "@/components/private-event/conference-portal-client";
+import type { LineupArtist } from "@/types/event";
 
 export const dynamic = "force-dynamic";
 
@@ -34,7 +35,7 @@ export default async function PrivateConferencePortal({ params }: { params: Prom
 
   const settings = experience.event.settings as Record<string, unknown> | null;
   const agenda = (settings?.agenda ?? {}) as { pdfUrl?: string; attachmentUrl?: string };
-  const publicPage = (settings?.publicPage ?? {}) as { venueName?: string; locationText?: string; galleryImages?: string[] };
+  const publicPage = (settings?.publicPage ?? {}) as { venueName?: string; locationText?: string; galleryImages?: string[]; lineup?: LineupArtist[] };
   const venueName = venue?.name ?? publicPage.venueName ?? "Venue to be confirmed";
   const location = venue?.address || publicPage.locationText || venueName;
 
@@ -55,6 +56,7 @@ export default async function PrivateConferencePortal({ params }: { params: Prom
         announcements: experience.settings.announcements,
         venueMapUrl: experience.settings.venueMapUrl ?? "",
         resources: experience.settings.resources ?? [],
+        speakers: Array.isArray(publicPage.lineup) ? publicPage.lineup : [],
       }}
       sessions={experience.sessions}
     />

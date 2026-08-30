@@ -432,10 +432,12 @@ export default function DesignSetupPage({
       <Tabs defaultValue="branding" className="space-y-12">
         <TabsList className="h-auto gap-4 rounded-[32px] border border-border bg-card/90 p-2 backdrop-blur-xl dark:border-white/10 dark:bg-white/5">
           {[
-            { value: "branding", label: "Branding + Event Page", icon: ImagePlus },
-            { value: "ticket", label: "Tickets", icon: Ticket },
-            { value: "email", label: "Email", icon: Mail },
-            { value: "agenda", label: "Agenda", icon: CalendarDays }
+            { value: "branding", label: event?.eventType === "conference" ? "Portal design + speakers" : "Branding + Event Page", icon: ImagePlus },
+            ...(event?.eventType === "conference" ? [] : [
+              { value: "ticket", label: "Tickets", icon: Ticket },
+              { value: "email", label: "Email", icon: Mail },
+              { value: "agenda", label: "Agenda", icon: CalendarDays },
+            ]),
           ].map((tab) => (
             <TabsTrigger 
               key={tab.value}
@@ -583,9 +585,9 @@ export default function DesignSetupPage({
                   <div className="space-y-5 rounded-[28px] border border-violet-200 bg-violet-50/50 p-5 dark:border-violet-300/20 dark:bg-violet-300/5">
                     <div className="flex flex-wrap items-start justify-between gap-3">
                       <div>
-                        <p className="text-[9px] font-black uppercase tracking-[0.3em] text-violet-700 dark:text-violet-200">Shared artist library</p>
-                        <h3 className="mt-1 flex items-center gap-2 text-lg font-black text-foreground dark:text-white"><Music2 className="h-5 w-5 text-violet-600" />Lineup artists</h3>
-                        <p className="mt-1 text-xs text-muted-foreground">Add artists once, then select them for any event in any company.</p>
+                        <p className="text-[9px] font-black uppercase tracking-[0.3em] text-violet-700 dark:text-violet-200">Shared {event?.eventType === "conference" ? "speaker" : "artist"} library</p>
+                        <h3 className="mt-1 flex items-center gap-2 text-lg font-black text-foreground dark:text-white"><Music2 className="h-5 w-5 text-violet-600" />{event?.eventType === "conference" ? "Conference speakers" : "Lineup artists"}</h3>
+                        <p className="mt-1 text-xs text-muted-foreground">Add a profile once, then select it for any event. For private conferences, selected profiles appear in the attendee portal as speakers.</p>
                       </div>
                       <span className="rounded-full bg-white px-3 py-1 text-xs font-black text-violet-700 shadow-sm dark:bg-violet-300/10 dark:text-violet-200">{lineupArtists.length} selected</span>
                     </div>
@@ -597,7 +599,7 @@ export default function DesignSetupPage({
                             <div className="h-11 w-11 shrink-0 overflow-hidden rounded-xl bg-violet-100 dark:bg-violet-300/10">
                               {artist.imageUrl ? <img src={artist.imageUrl} alt="" className="h-full w-full object-cover" /> : <div className="grid h-full w-full place-items-center text-violet-700 dark:text-violet-200"><UserRound className="h-5 w-5" /></div>}
                             </div>
-                            <div className="min-w-0 flex-1"><p className="truncate text-sm font-black text-foreground dark:text-white">{artist.name}</p><p className="truncate text-xs text-muted-foreground">{artist.role || "Lineup artist"}</p></div>
+                            <div className="min-w-0 flex-1"><p className="truncate text-sm font-black text-foreground dark:text-white">{artist.name}</p><p className="truncate text-xs text-muted-foreground">{artist.role || (event?.eventType === "conference" ? "Speaker" : "Lineup artist")}</p></div>
                             <div className="flex shrink-0 gap-1">
                               <Button type="button" variant="ghost" size="icon" className="h-8 w-8 rounded-lg" aria-label={`Edit ${artist.name}`} onClick={() => editArtist(artist)}><Pencil className="h-4 w-4" /></Button>
                               <Button type="button" variant="ghost" size="icon" className="h-8 w-8 rounded-lg" aria-label={`Move ${artist.name} earlier`} disabled={index === 0} onClick={() => { const next = [...lineupArtists]; [next[index - 1], next[index]] = [next[index], next[index - 1]]; persistLineup(next); }}><ArrowUp className="h-4 w-4" /></Button>
@@ -606,37 +608,37 @@ export default function DesignSetupPage({
                           </div>
                         ))}
                       </div>
-                    ) : <div className="rounded-2xl border border-dashed border-violet-300/70 bg-white/70 p-4 text-sm text-muted-foreground dark:bg-slate-950/20">No artists selected for this event yet. Choose from your saved library or create a new artist below.</div>}
+                    ) : <div className="rounded-2xl border border-dashed border-violet-300/70 bg-white/70 p-4 text-sm text-muted-foreground dark:bg-slate-950/20">No {event?.eventType === "conference" ? "speakers" : "artists"} selected for this event yet. Choose from your saved library or create a new profile below.</div>}
 
                     <div className="space-y-3 border-t border-violet-200/80 pt-4 dark:border-violet-300/15">
-                      <p className="text-[9px] font-black uppercase tracking-[0.25em] text-muted-foreground">Choose from saved artists</p>
-                      {artistsLoading ? <div className="flex items-center gap-2 py-3 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" />Loading artist library…</div> : artistLibrary.length ? <div className="grid gap-2 sm:grid-cols-2">{artistLibrary.map((artist) => {
+                      <p className="text-[9px] font-black uppercase tracking-[0.25em] text-muted-foreground">Choose from saved {event?.eventType === "conference" ? "speakers" : "artists"}</p>
+                      {artistsLoading ? <div className="flex items-center gap-2 py-3 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" />Loading shared profiles…</div> : artistLibrary.length ? <div className="grid gap-2 sm:grid-cols-2">{artistLibrary.map((artist) => {
                         const selected = lineupArtists.some((item) => item.id === artist.id);
                         return <button key={artist.id} type="button" onClick={() => persistLineup(selected ? lineupArtists.filter((item) => item.id !== artist.id) : [...lineupArtists, artist])} className={cn("flex min-w-0 items-center gap-3 rounded-2xl border p-3 text-left transition", selected ? "border-violet-500 bg-violet-100/70 dark:border-violet-300 dark:bg-violet-300/10" : "border-border bg-white hover:border-violet-300 dark:border-white/10 dark:bg-slate-950/30")}>
                           <div className="h-10 w-10 shrink-0 overflow-hidden rounded-xl bg-muted"><>{artist.imageUrl ? <img src={artist.imageUrl} alt="" className="h-full w-full object-cover" /> : <div className="grid h-full w-full place-items-center text-muted-foreground"><UserRound className="h-4 w-4" /></div>}</></div>
-                          <span className="min-w-0 flex-1"><span className="block truncate text-sm font-black text-foreground dark:text-white">{artist.name}</span><span className="block truncate text-xs text-muted-foreground">{artist.role || "Artist"}</span></span>
+                          <span className="min-w-0 flex-1"><span className="block truncate text-sm font-black text-foreground dark:text-white">{artist.name}</span><span className="block truncate text-xs text-muted-foreground">{artist.role || (event?.eventType === "conference" ? "Speaker" : "Artist")}</span></span>
                           <span className={cn("text-xs font-black", selected ? "text-violet-700 dark:text-violet-200" : "text-muted-foreground")}>{selected ? "Added" : "Add"}</span>
                         </button>;
-                      })}</div> : <p className="text-sm text-muted-foreground">The shared artist library is empty.</p>}
+                      })}</div> : <p className="text-sm text-muted-foreground">The shared profile library is empty.</p>}
                     </div>
 
                     <div className="space-y-4 border-t border-violet-200/80 pt-4 dark:border-violet-300/15">
                       <div className="flex items-center justify-between gap-3">
-                        <p className="text-[9px] font-black uppercase tracking-[0.25em] text-muted-foreground">{editingArtistId ? "Edit shared artist" : "Add a new artist"}</p>
+                        <p className="text-[9px] font-black uppercase tracking-[0.25em] text-muted-foreground">{editingArtistId ? "Edit shared profile" : `Add a new ${event?.eventType === "conference" ? "speaker" : "artist"}`}</p>
                         {editingArtistId ? <Button type="button" variant="ghost" size="sm" className="h-8 rounded-lg text-xs" onClick={cancelArtistEdit}>Cancel edit</Button> : null}
                       </div>
                       <div className="grid gap-3 sm:grid-cols-2">
-                        <Input value={newArtistName} onChange={(e) => setNewArtistName(e.target.value)} className="theme-input" placeholder="Artist name *" />
-                        <Input value={newArtistRole} onChange={(e) => setNewArtistRole(e.target.value)} className="theme-input" placeholder="Role, e.g. Headliner" />
+                        <Input value={newArtistName} onChange={(e) => setNewArtistName(e.target.value)} className="theme-input" placeholder={`${event?.eventType === "conference" ? "Speaker" : "Artist"} name *`} />
+                        <Input value={newArtistRole} onChange={(e) => setNewArtistRole(e.target.value)} className="theme-input" placeholder={event?.eventType === "conference" ? "Role, e.g. Keynote speaker" : "Role, e.g. Headliner"} />
                       </div>
-                      <Textarea value={newArtistBio} onChange={(e) => setNewArtistBio(e.target.value)} className="theme-textarea min-h-[80px]" placeholder="Short artist bio (optional)" />
+                      <Textarea value={newArtistBio} onChange={(e) => setNewArtistBio(e.target.value)} className="theme-textarea min-h-[80px]" placeholder={`Short ${event?.eventType === "conference" ? "speaker" : "artist"} bio (optional)`} />
                       <div className="flex flex-wrap items-center gap-3">
                         <label className={cn("inline-flex h-11 cursor-pointer items-center gap-2 rounded-xl border border-violet-300 bg-white px-4 text-xs font-black text-violet-700 transition hover:bg-violet-50 dark:border-violet-300/30 dark:bg-slate-950/30 dark:text-violet-200", artistPhotoUploading && "pointer-events-none opacity-60")}>
-                          {artistPhotoUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ImagePlus className="h-4 w-4" />}{newArtistImageUrl ? "Photo uploaded" : "Upload artist photo"}
+                          {artistPhotoUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ImagePlus className="h-4 w-4" />}{newArtistImageUrl ? "Photo uploaded" : `Upload ${event?.eventType === "conference" ? "speaker" : "artist"} photo`}
                           <Input type="file" accept="image/*" className="hidden" disabled={artistPhotoUploading} onChange={(e) => { const file = e.target.files?.[0]; if (file) void uploadArtistPhoto(file); e.currentTarget.value = ""; }} />
                         </label>
-                        {newArtistImageUrl ? <img src={newArtistImageUrl} alt="Artist preview" className="h-11 w-11 rounded-xl object-cover" /> : null}
-                        <Button type="button" onClick={() => { void createArtist(); }} className="h-11 rounded-xl bg-violet-600 px-4 font-black text-white hover:bg-violet-700">{editingArtistId ? <Pencil className="mr-2 h-4 w-4" /> : <Plus className="mr-2 h-4 w-4" />}{editingArtistId ? "Save artist changes" : "Save artist & add to lineup"}</Button>
+                        {newArtistImageUrl ? <img src={newArtistImageUrl} alt="Profile preview" className="h-11 w-11 rounded-xl object-cover" /> : null}
+                        <Button type="button" onClick={() => { void createArtist(); }} className="h-11 rounded-xl bg-violet-600 px-4 font-black text-white hover:bg-violet-700">{editingArtistId ? <Pencil className="mr-2 h-4 w-4" /> : <Plus className="mr-2 h-4 w-4" />}{editingArtistId ? "Save profile changes" : event?.eventType === "conference" ? "Save speaker & add to portal" : "Save artist & add to lineup"}</Button>
                       </div>
                     </div>
                   </div>
@@ -781,7 +783,7 @@ export default function DesignSetupPage({
             </motion.div>
           </TabsContent>
 
-          <TabsContent key="ticket" value="ticket" className="mt-0 outline-none">
+          {event?.eventType !== "conference" && <TabsContent key="ticket" value="ticket" className="mt-0 outline-none">
             <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="theme-panel p-10 md:p-12">
               <div className="mb-12">
                 <p className="theme-eyebrow mb-2">Ticket Layout</p>
@@ -798,9 +800,9 @@ export default function DesignSetupPage({
                 appDownloadUrl={process.env.NEXT_PUBLIC_APP_DOWNLOAD_URL ?? "http://localhost:8081"}
               />
             </motion.div>
-          </TabsContent>
+          </TabsContent>}
 
-          <TabsContent key="email" value="email" className="mt-0 outline-none">
+          {event?.eventType !== "conference" && <TabsContent key="email" value="email" className="mt-0 outline-none">
             <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="theme-panel p-10 md:p-12">
                <div className="mb-12">
                   <p className="theme-eyebrow mb-2">Email Templates</p>
@@ -815,9 +817,9 @@ export default function DesignSetupPage({
                 startDate={event?.startsAt ? new Date(event.startsAt).toISOString() : undefined}
               />
             </motion.div>
-          </TabsContent>
+          </TabsContent>}
 
-          <TabsContent key="agenda" value="agenda" className="mt-0 outline-none">
+          {event?.eventType !== "conference" && <TabsContent key="agenda" value="agenda" className="mt-0 outline-none">
             <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="theme-panel p-10 md:p-12">
                <div className="mb-12">
                   <p className="theme-eyebrow mb-2">Agenda</p>
@@ -828,7 +830,7 @@ export default function DesignSetupPage({
                 onChange={setAgendaSettings}
               />
             </motion.div>
-          </TabsContent>
+          </TabsContent>}
         </AnimatePresence>
       </Tabs>
     </div>

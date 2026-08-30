@@ -235,7 +235,8 @@ export default function EventsPage() {
     ? columns.filter((column) => column.id !== "select" && column.id !== "actions")
     : columns;
 
-  const events = (data?.events ?? []) as Event[];
+  // Conferences are managed from the dedicated Private Conferences workspace.
+  const events = ((data?.events ?? []) as Event[]).filter((event) => event.eventType !== "conference");
 
   if (!isLoading && events.length === 0 && statusFilter === "all") {
     return (
@@ -271,7 +272,7 @@ export default function EventsPage() {
         <div>
           <h1 className="text-4xl font-black italic tracking-tighter text-foreground">Events</h1>
           <p className="mt-2 text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
-            {data?.total ?? 0} active event{(data?.total ?? 0) !== 1 ? "s" : ""}
+            {events.length} active event{events.length !== 1 ? "s" : ""}
           </p>
         </div>
         {!readOnly && (
