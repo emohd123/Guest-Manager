@@ -9,6 +9,7 @@ import { createPrivateEventAccess, privateEventAccessCookie } from "@/server/ser
 const bodySchema = z.object({
   username: z.string().trim().min(2).max(120),
   eventCode: z.string().trim().regex(/^[A-Za-z0-9-]{4,10}$/),
+  eventId: z.string().uuid(),
 });
 
 function getRequestIp(request: NextRequest) {
@@ -50,7 +51,7 @@ export async function POST(request: NextRequest) {
         ? (event.settings as { publicPage?: { enabled?: boolean } }).publicPage?.enabled !== false
         : true;
 
-    if (!event || !publicPageEnabled) {
+    if (!event || event.id !== input.eventId || !publicPageEnabled) {
       registerAttempt(rateLimitKey, false);
       return NextResponse.json({ error: "The username or event code is not valid." }, { status: 401 });
     }
