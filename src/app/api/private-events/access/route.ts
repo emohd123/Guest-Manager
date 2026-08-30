@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
     const supabase = createSupabaseAdminClient();
     const { data: event, error: eventError } = await supabase
       .from("events")
-      .select("id,company_id,slug,settings")
+      .select("id,company_id,slug,settings,ends_at")
       .eq("visitor_code", eventCode)
       .eq("event_type", "conference")
       .eq("status", "published")
@@ -76,9 +76,9 @@ export async function POST(request: NextRequest) {
       eventId: event.id,
       guestId: matchingGuest.id,
       username: input.username.trim(),
-    });
+    }, event.ends_at);
     const response = NextResponse.json({ portalUrl: `/private-event/portal/${event.id}` });
-    response.cookies.set(privateEventAccessCookie.name, access.token, privateEventAccessCookie.options);
+    response.cookies.set(privateEventAccessCookie.name, access.token, { ...privateEventAccessCookie.options, maxAge: access.maxAge });
     registerAttempt(rateLimitKey, true);
     return response;
   } catch (error) {
