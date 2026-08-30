@@ -84,11 +84,24 @@ export type EventSessionRecord = {
   liveStreamUrl?: string;
   liveStreamLabel?: string;
   liveNow?: boolean;
+  /** A private code shared with the session speaker to review attendee questions. */
+  speakerAccessCode?: string;
   sortOrder: number;
   viewCount?: number;
   saveCount?: number;
   planCount?: number;
   liveOpenCount?: number;
+};
+
+export type EventSessionQuestion = {
+  id: string;
+  eventId: string;
+  sessionId: string;
+  attendeeGuestId: string;
+  attendeeName: string;
+  body: string;
+  createdAt: string;
+  status: "open" | "answered";
 };
 
 export type EventNetworkingTaxonomy = {

@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useEffect, useMemo, useState } from "react";
+import { use, useMemo, useState } from "react";
 import { trpc } from "@/lib/trpc/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { DataTable } from "@/components/shared/data-table";
-import { CalendarDays, Clock3, Radio, Save, Trash2, Users } from "lucide-react";
+import { CalendarDays, Clock3, MessageCircleQuestion, Radio, Save, Users } from "lucide-react";
 import { toast } from "sonner";
 
 function toLocalInput(date?: string | null) {
@@ -43,6 +43,7 @@ export default function SessionsPage({ params }: { params: Promise<{ eventId: st
     liveStreamUrl: "",
     liveStreamLabel: "",
     liveNow: false,
+    speakerAccessCode: "",
     sortOrder: "0",
   };
 
@@ -129,6 +130,7 @@ export default function SessionsPage({ params }: { params: Promise<{ eventId: st
                   liveStreamUrl: row.original.liveStreamUrl || "",
                   liveStreamLabel: row.original.liveStreamLabel || "",
                   liveNow: Boolean(row.original.liveNow),
+                  speakerAccessCode: row.original.speakerAccessCode || "",
                   sortOrder: `${row.original.sortOrder ?? 0}`,
                 })
               }
@@ -165,6 +167,7 @@ export default function SessionsPage({ params }: { params: Promise<{ eventId: st
         liveStreamUrl: form.liveStreamUrl,
         liveStreamLabel: form.liveStreamLabel,
         liveNow: form.liveNow,
+        speakerAccessCode: form.speakerAccessCode,
         sortOrder: Number(form.sortOrder || "0"),
       },
     });
@@ -243,6 +246,12 @@ export default function SessionsPage({ params }: { params: Promise<{ eventId: st
             <Label>Live Button Label</Label>
             <Input value={form.liveStreamLabel} onChange={(e) => setForm((current) => ({ ...current, liveStreamLabel: e.target.value }))} placeholder="Watch this session" />
           </div>
+          <div className="space-y-2 md:col-span-2">
+            <Label>Speaker question access code</Label>
+            <Input value={form.speakerAccessCode} onChange={(e) => setForm((current) => ({ ...current, speakerAccessCode: e.target.value }))} placeholder="Give this private code to the speaker" />
+            <p className="text-xs text-muted-foreground">The speaker uses this code on their session question page. Attendees can ask questions with their displayed name.</p>
+            {form.id && form.speakerAccessCode && <p className="rounded-md bg-muted px-3 py-2 font-mono text-xs break-all">Speaker link: /private-event/speaker/{eventId}/{form.id}?code={form.speakerAccessCode}</p>}
+          </div>
           <div className="md:col-span-2 flex flex-wrap gap-3">
             <Button variant={form.liveNow ? "default" : "outline"} onClick={() => setForm((current) => ({ ...current, liveNow: !current.liveNow }))}>
               <Radio className="mr-2 h-4 w-4" /> {form.liveNow ? "Live Now" : "Mark Live"}
@@ -275,6 +284,8 @@ export default function SessionsPage({ params }: { params: Promise<{ eventId: st
         </CardContent>
       </Card>
 
+      <SessionQuestions eventId={eventId} sessions={sessions} />
+
       <div className="grid gap-4 md:grid-cols-4">
         <MetricCard title="Sessions" value={sessions.length} icon={<CalendarDays className="h-4 w-4" />} />
         <MetricCard title="Views" value={sessions.reduce((sum, session) => sum + (session.viewCount ?? 0), 0)} icon={<Users className="h-4 w-4" />} />
@@ -282,6 +293,24 @@ export default function SessionsPage({ params }: { params: Promise<{ eventId: st
         <MetricCard title="Live Opens" value={sessions.reduce((sum, session) => sum + (session.liveOpenCount ?? 0), 0)} icon={<Radio className="h-4 w-4" />} />
       </div>
     </div>
+  );
+}
+
+function SessionQuestions({ eventId, sessions }: { eventId: string; sessions: Array<{ id: string; title: string; speakerAccessCode?: string }> }) {
+  const { data: questions = [], isLoading } = trpc.eventExperience.questions.useQuery({ eventId }, { refetchInterval: 5000 });
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2"><MessageCircleQuestion className="h-5 w-5" /> Live attendee questions</CardTitle>
+        <CardDescription>New questions appear automatically. Share the session speaker link and its private code with each speaker.</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {isLoading ? <div className="text-sm text-muted-foreground">Loading questions…</div> : questions.length === 0 ? <div className="rounded-lg border border-dashed p-6 text-sm text-muted-foreground">No attendee questions yet.</div> : questions.map((question) => {
+          const session = sessions.find((item) => item.id === question.sessionId);
+          return <article key={question.id} className="rounded-xl border p-4"><div className="flex flex-wrap items-center justify-between gap-2"><p className="font-semibold">{question.attendeeName}</p><Badge variant="outline">{session?.title ?? "Session"}</Badge></div><p className="mt-2 text-sm">{question.body}</p><p className="mt-3 text-xs text-muted-foreground">{new Date(question.createdAt).toLocaleString()}</p></article>;
+        })}
+      </CardContent>
+    </Card>
   );
 }
 

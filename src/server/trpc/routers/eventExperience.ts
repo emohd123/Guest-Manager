@@ -52,6 +52,7 @@ const sessionSchema = z.object({
   liveStreamUrl: z.string().optional().default(""),
   liveStreamLabel: z.string().optional().default(""),
   liveNow: z.boolean().default(false),
+  speakerAccessCode: z.string().trim().max(64).optional().default(""),
   sortOrder: z.number().int().default(0),
 });
 
@@ -159,5 +160,12 @@ export const eventExperienceRouter = router({
         sessions: experience.sessions,
         networkingSummary: experience.networkingSummary,
       };
+    }),
+
+  questions: protectedProcedure
+    .input(z.object({ eventId: z.string().uuid() }))
+    .query(async ({ ctx, input }) => {
+      const { getConferenceQuestions } = await import("@/server/services/event-app");
+      return getConferenceQuestions(input.eventId, ctx.companyId);
     }),
 });

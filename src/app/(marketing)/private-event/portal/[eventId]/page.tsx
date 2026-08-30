@@ -57,7 +57,6 @@ export default async function PrivateConferencePortal({ params }: { params: Prom
         resources: experience.settings.resources ?? [],
       }}
       sessions={experience.sessions}
-      features={experience.settings.features}
     />
   );
 }

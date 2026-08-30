@@ -9,6 +9,7 @@ import {
   type EventAppSettings,
   type EventFeatureFlags,
   type EventResource,
+  type EventSessionQuestion,
   type EventSessionRecord,
   type EventSessionStatus,
   type SponsorProfile,
@@ -194,6 +195,7 @@ function extractEventAppMeta(raw: unknown) {
       threads: Array.isArray(app.chat?.threads) ? (app.chat.threads as ChatThreadRecord[]) : [],
       messages: Array.isArray(app.chat?.messages) ? (app.chat.messages as ChatMessageRecord[]) : [],
     },
+    questions: Array.isArray(app.questions) ? (app.questions as EventSessionQuestion[]) : [],
     analytics: {
       sessionViews:
         app.analytics?.sessionViews && typeof app.analytics.sessionViews === "object"
@@ -231,6 +233,7 @@ function buildEventAppMetadata(
     meetings?: MeetingRecord[];
     chatThreads?: ChatThreadRecord[];
     chatMessages?: ChatMessageRecord[];
+    questions?: EventSessionQuestion[];
     analytics?: Record<string, Record<string, number>>;
   }
 ) {
@@ -248,6 +251,7 @@ function buildEventAppMetadata(
         threads: appPatch.chatThreads ?? meta.chat.threads,
         messages: appPatch.chatMessages ?? meta.chat.messages,
       },
+      questions: appPatch.questions ?? meta.questions,
       analytics: {
         sessionViews: appPatch.analytics?.sessionViews ?? meta.analytics.sessionViews,
         sessionSaves: appPatch.analytics?.sessionSaves ?? meta.analytics.sessionSaves,
@@ -341,6 +345,7 @@ function toSessionRecord(
     liveStreamUrl: extra.liveStreamUrl ?? "",
     liveStreamLabel: extra.liveStreamLabel ?? "",
     liveNow: Boolean(extra.liveNow),
+    speakerAccessCode: extra.speakerAccessCode ?? "",
     sortOrder: row.sort_order ?? 0,
     viewCount: analytics.sessionViews[row.id] ?? 0,
     saveCount: analytics.sessionSaves[row.id] ?? 0,
@@ -490,6 +495,7 @@ export async function upsertEventSession(
       liveStreamUrl: input.liveStreamUrl ?? "",
       liveStreamLabel: input.liveStreamLabel ?? "",
       liveNow: Boolean(input.liveNow),
+      speakerAccessCode: input.speakerAccessCode ?? "",
     },
   };
 
@@ -516,6 +522,51 @@ export async function deleteEventSession(eventId: string, companyId: string, ses
   }
 
   return { success: true };
+}
+
+export async function getConferenceQuestions(eventId: string, companyId?: string | null) {
+  const experience = await getEventExperience(eventId, companyId);
+  return extractEventAppMeta(experience.event.metadata).questions
+    .filter((question) => question.eventId === eventId)
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+}
+
+export async function createConferenceQuestion(input: {
+  eventId: string;
+  sessionId: string;
+  attendeeGuestId: string;
+  attendeeName: string;
+  body: string;
+}) {
+  const supabase = createSupabaseAdminClient();
+  const event = await getEventById(input.eventId);
+  if (!event) throw new Error("Event not found");
+
+  const body = input.body.trim();
+  if (!body) throw new Error("Question is required");
+  if (body.length > 600) throw new Error("Question must be 600 characters or fewer");
+
+  const meta = extractEventAppMeta(event.metadata);
+  const question: EventSessionQuestion = {
+    id: crypto.randomUUID(),
+    eventId: input.eventId,
+    sessionId: input.sessionId,
+    attendeeGuestId: input.attendeeGuestId,
+    attendeeName: input.attendeeName,
+    body,
+    createdAt: new Date().toISOString(),
+    status: "open",
+  };
+
+  const { error } = await supabase
+    .from("events")
+    .update({
+      metadata: buildEventAppMetadata(event.metadata, { questions: [...meta.questions, question] }),
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", input.eventId);
+  if (error) throw new Error(error.message);
+  return question;
 }
 
 export async function getVisitorGuestContext(token: string, eventId?: string | null) {
