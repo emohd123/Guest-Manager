@@ -22,6 +22,7 @@ type EventRow = {
   timezone: string | null;
   registration_enabled: boolean | null;
   settings: unknown;
+  event_type: "single" | "recurring" | "multi_day" | "session" | "conference";
 };
 
 type CompanyRow = { id: string; name: string; slug: string };
@@ -95,8 +96,9 @@ export async function GET(request: NextRequest) {
 
     const { data: eventsData, error: eventsError } = await supabase
       .from("events")
-      .select("id,company_id,category_id,venue_id,title,slug,short_description,description,cover_image_url,starts_at,ends_at,timezone,registration_enabled,settings")
+      .select("id,company_id,category_id,venue_id,title,slug,short_description,description,cover_image_url,starts_at,ends_at,timezone,registration_enabled,settings,event_type")
       .eq("status", "published")
+      .neq("event_type", "conference")
       .is("deleted_at", null)
       .or(`ends_at.gte.${now},and(ends_at.is.null,starts_at.gte.${now})`)
       .order("starts_at", { ascending: true })

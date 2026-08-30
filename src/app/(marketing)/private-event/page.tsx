@@ -1,13 +1,52 @@
 "use client";
 
-import { FormEvent, useState } from "react";
-import { ArrowRight, CalendarDays, KeyRound, ShieldCheck, UserRound } from "lucide-react";
+import { FormEvent, useEffect, useRef, useState } from "react";
+import { ArrowRight, CalendarDays, KeyRound, MapPin, ShieldCheck, UserRound } from "lucide-react";
+
+type PrivateConference = {
+  id: string;
+  title: string;
+  description: string;
+  coverImageUrl: string | null;
+  startsAt: string;
+  endsAt: string | null;
+  timezone: string | null;
+  accessConfigured: boolean;
+  venueName: string;
+};
+
+function formatConferenceDate(value: string) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "Date to be confirmed";
+  return new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(date);
+}
 
 export default function PrivateEventPage() {
   const [username, setUsername] = useState("");
   const [eventCode, setEventCode] = useState("");
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [conferences, setConferences] = useState<PrivateConference[]>([]);
+  const [selectedConference, setSelectedConference] = useState<string | null>(null);
+  const eventCodeInput = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    void fetch("/api/private-events/list", { signal: controller.signal })
+      .then(async (response) => {
+        if (!response.ok) return { conferences: [] as PrivateConference[] };
+        return (await response.json()) as { conferences?: PrivateConference[] };
+      })
+      .then((payload) => setConferences(payload.conferences ?? []))
+      .catch(() => undefined);
+    return () => controller.abort();
+  }, []);
+
+  function startConferenceAccess(conference: PrivateConference) {
+    setSelectedConference(conference.title);
+    eventCodeInput.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    window.setTimeout(() => eventCodeInput.current?.focus(), 300);
+  }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -58,6 +97,7 @@ export default function PrivateEventPage() {
         <section className="p-8 sm:p-12">
           <h2 className="text-2xl font-black">Enter private event</h2>
           <p className="mt-2 text-sm text-slate-400">Your details are used only to personalize this session on this device.</p>
+          {selectedConference && <p className="mt-4 rounded-xl border border-cyan-300/20 bg-cyan-300/10 px-3 py-2 text-sm font-bold text-cyan-100">Accessing: {selectedConference}</p>}
 
           <form className="mt-8 space-y-5" onSubmit={handleSubmit}>
             <label className="block">
@@ -66,7 +106,7 @@ export default function PrivateEventPage() {
             </label>
             <label className="block">
               <span className="mb-2 flex items-center gap-2 text-sm font-bold text-slate-200"><KeyRound className="h-4 w-4 text-cyan-300" /> Event code</span>
-              <input value={eventCode} onChange={(event) => setEventCode(event.target.value.toUpperCase())} placeholder="e.g. CONF2026" autoCapitalize="characters" autoComplete="off" required minLength={4} maxLength={10} className="h-12 w-full rounded-xl border border-white/10 bg-white/[0.06] px-4 font-mono tracking-[0.18em] text-white outline-none placeholder:font-sans placeholder:tracking-normal placeholder:text-slate-500 focus:border-cyan-300 focus:ring-2 focus:ring-cyan-300/20" />
+              <input ref={eventCodeInput} value={eventCode} onChange={(event) => setEventCode(event.target.value.toUpperCase())} placeholder="e.g. CONF2026" autoCapitalize="characters" autoComplete="off" required minLength={4} maxLength={10} className="h-12 w-full rounded-xl border border-white/10 bg-white/[0.06] px-4 font-mono tracking-[0.18em] text-white outline-none placeholder:font-sans placeholder:tracking-normal placeholder:text-slate-500 focus:border-cyan-300 focus:ring-2 focus:ring-cyan-300/20" />
             </label>
             {error && <p role="alert" className="rounded-xl border border-rose-400/25 bg-rose-400/10 px-4 py-3 text-sm font-medium text-rose-200">{error}</p>}
             <button type="submit" disabled={isSubmitting} className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-cyan-300 px-5 font-black text-slate-950 transition hover:bg-cyan-200 disabled:cursor-not-allowed disabled:opacity-60">
@@ -76,6 +116,40 @@ export default function PrivateEventPage() {
           <p className="mt-6 text-center text-xs text-slate-500">Need a code? Please contact your event organizer.</p>
         </section>
       </div>
+
+      <section className="mx-auto mt-12 max-w-5xl">
+        <div className="flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <p className="text-xs font-black uppercase tracking-[0.2em] text-cyan-300">Private events</p>
+            <h2 className="mt-2 text-3xl font-black tracking-tight">Available conferences</h2>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-400">Choose your conference, then enter the attendee name and access code supplied by its organiser.</p>
+          </div>
+          <span className="rounded-full border border-white/10 px-3 py-1.5 text-sm font-bold text-slate-300">{conferences.length} conference{conferences.length === 1 ? "" : "s"}</span>
+        </div>
+
+        {conferences.length > 0 ? (
+          <div className="mt-6 grid gap-5 md:grid-cols-2">
+            {conferences.map((conference) => (
+              <article key={conference.id} className="overflow-hidden rounded-3xl border border-white/10 bg-[#11131a] shadow-xl shadow-black/20">
+                <div className="h-44 bg-slate-900 bg-cover bg-center" style={conference.coverImageUrl ? { backgroundImage: `linear-gradient(180deg, rgba(8,8,8,0.04), rgba(8,8,8,0.55)), url(${conference.coverImageUrl})` } : undefined} />
+                <div className="p-6">
+                  <p className="flex items-center gap-2 text-sm font-bold text-cyan-200"><CalendarDays className="h-4 w-4" /> {formatConferenceDate(conference.startsAt)}</p>
+                  <h3 className="mt-3 text-xl font-black">{conference.title}</h3>
+                  <p className="mt-2 line-clamp-2 text-sm leading-6 text-slate-400">{conference.description}</p>
+                  <p className="mt-4 flex items-center gap-2 text-sm text-slate-300"><MapPin className="h-4 w-4 shrink-0 text-cyan-300" /> {conference.venueName}</p>
+                  {conference.accessConfigured ? (
+                    <button type="button" onClick={() => startConferenceAccess(conference)} className="mt-6 inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-cyan-300 px-4 text-sm font-black text-slate-950 transition hover:bg-cyan-200">Enter with access code <ArrowRight className="h-4 w-4" /></button>
+                  ) : (
+                    <p className="mt-6 inline-flex h-11 items-center rounded-xl border border-white/10 px-4 text-sm font-bold text-slate-400">Access code pending from organiser</p>
+                  )}
+                </div>
+              </article>
+            ))}
+          </div>
+        ) : (
+          <div className="mt-6 rounded-3xl border border-dashed border-white/15 bg-white/[0.03] px-6 py-10 text-center text-sm text-slate-400">No private conferences are available right now.</div>
+        )}
+      </section>
     </div>
   );
 }

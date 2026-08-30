@@ -422,7 +422,10 @@ export const eventsRouter = router({
           : {};
       const publicPageEnabled = settings.publicPage?.enabled;
 
-      if (ctx.companyId !== company.id && publicPageEnabled === false) {
+      if (
+        ctx.companyId !== company.id &&
+        (publicPageEnabled === false || data.event_type === "conference")
+      ) {
         return null;
       }
 
@@ -446,6 +449,7 @@ export const eventsRouter = router({
         .select("*")
         .eq("company_id", company.id)
         .eq("status", "published")
+        .neq("event_type", "conference")
         .neq("id", input.excludeEventId)
         .is("deleted_at", null)
         .order("starts_at", { ascending: true })
@@ -463,6 +467,7 @@ export const eventsRouter = router({
         .select("*")
         .eq("category_id", input.categoryId)
         .eq("status", "published")
+        .neq("event_type", "conference")
         .neq("id", input.excludeEventId)
         .is("deleted_at", null)
         .order("starts_at", { ascending: true })
