@@ -488,6 +488,8 @@ export default function PublicEventPage({
     ...extraGalleryImages,
     ...(videoUrl ? [videoUrl] : []),
   ].filter((item): item is string => Boolean(item))));
+  const visibleMediaItems = mediaItems.slice(0, 4);
+  const hiddenMediaCount = Math.max(0, mediaItems.length - visibleMediaItems.length);
   const activeMedia = mediaItems[activeMediaIndex] ?? event.coverImageUrl;
   const expandedMedia = expandedMediaIndex === null ? null : mediaItems[expandedMediaIndex];
   const isVideoMedia = (url: string) => /\.(mp4|webm|mov)(?:[?#].*)?$/i.test(url);
@@ -668,7 +670,7 @@ export default function PublicEventPage({
                   <span className="text-sm font-bold text-zinc-500">{mediaItems.length} items</span>
                 </div>
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                  {mediaItems.map((media, index) => (
+                  {visibleMediaItems.map((media, index) => (
                     <button key={`${media}-${index}`} type="button" onClick={() => { setActiveMediaIndex(index); setExpandedMediaIndex(index); }} className={`relative overflow-hidden rounded-xl border-2 text-left transition ${index === activeMediaIndex ? "border-cyan-500 ring-2 ring-cyan-100" : "border-zinc-200 hover:border-cyan-300"}`} aria-label={`Open media ${index + 1} full size`}>
                       {isVideoMedia(media) ? (
                         <video src={media} muted playsInline preload="metadata" className="aspect-[4/3] w-full object-cover" />
@@ -676,6 +678,12 @@ export default function PublicEventPage({
                         <img src={media} alt={`${event?.title ?? "Event"} media ${index + 1}`} className="aspect-[4/3] w-full object-cover" />
                       )}
                       {isVideoMedia(media) ? <span className="absolute bottom-2 left-2 rounded-full bg-black/75 px-2 py-1 text-[10px] font-bold text-white">Video</span> : null}
+                      {index === 3 && hiddenMediaCount > 0 ? (
+                        <span className="absolute inset-0 flex flex-col items-center justify-center bg-slate-950/70 text-center text-white backdrop-blur-[2px]">
+                          <span className="text-2xl font-black">+{hiddenMediaCount}</span>
+                          <span className="mt-1 text-xs font-black uppercase tracking-wider">Show more</span>
+                        </span>
+                      ) : null}
                     </button>
                   ))}
                 </div>
