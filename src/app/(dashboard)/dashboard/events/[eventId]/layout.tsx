@@ -16,6 +16,10 @@ export default function EventDashboardLayout({
   const pathname = usePathname();
   const router = useRouter();
   const { data: access } = trpc.settings.getAccess.useQuery();
+  const { data: event } = trpc.events.get.useQuery({ id: eventId });
+  useEffect(() => {
+    if (event?.eventType === "conference") router.replace(`/dashboard/private-events/${eventId}`);
+  }, [event?.eventType, eventId, router]);
   useEffect(() => {
     if (!access?.readOnly) return;
     const allowed = [
@@ -28,6 +32,8 @@ export default function EventDashboardLayout({
       router.replace(`/dashboard/events/${eventId}`);
     }
   }, [access?.readOnly, eventId, pathname, router]);
+
+  if (event?.eventType === "conference") return null;
 
   return (
     <div className="flex -mx-4 lg:-mx-8 -my-4 lg:-my-8 h-[calc(100vh-4rem)]">

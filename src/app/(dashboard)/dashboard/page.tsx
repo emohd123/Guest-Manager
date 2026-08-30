@@ -57,6 +57,7 @@ export default function DashboardPage() {
   const totalEvents = eventStats?.total ?? 0;
   const totalGuests = eventStats?.totalGuests ?? 0;
   const totalCheckIns = eventStats?.totalCheckIns ?? 0;
+  const upcomingPublicEvents = (upcomingEvents?.events ?? []).filter((event) => event.eventType !== "conference");
 
   const stats = [
     {
@@ -225,7 +226,7 @@ export default function DashboardPage() {
             totalEvents,
             totalGuests,
             checkIns: totalCheckIns,
-            upcomingEvents: upcomingEvents?.events?.length ?? 0,
+            upcomingEvents: upcomingPublicEvents.length,
           }}
         />
       </motion.div>
@@ -338,7 +339,7 @@ export default function DashboardPage() {
                     <Skeleton key={i} className="h-20 w-full rounded-2xl bg-muted dark:bg-white/5" />
                   ))}
                 </div>
-              ) : !upcomingEvents?.events?.length ? (
+              ) : !upcomingPublicEvents.length ? (
                 <div className="space-y-6 p-16 text-center">
                   <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-[32px] border border-border bg-muted text-muted-foreground/40 dark:border-white/10 dark:bg-white/5 dark:text-white/10">
                     <CalendarDays className="h-10 w-10" />
@@ -359,7 +360,7 @@ export default function DashboardPage() {
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {upcomingEvents.events.map((event) => (
+                  {upcomingPublicEvents.map((event) => (
                     <Link
                       key={event.id}
                       href={`/dashboard/events/${event.id}`}

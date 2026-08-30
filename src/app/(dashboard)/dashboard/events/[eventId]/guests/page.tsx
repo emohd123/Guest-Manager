@@ -1,6 +1,7 @@
 "use client";
 
 import { use, useMemo, useState } from "react";
+import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { ColumnDef } from "@tanstack/react-table";
 import { trpc } from "@/lib/trpc/client";
@@ -77,6 +78,10 @@ export default function EventGuestsPage({
   params: Promise<{ eventId: string }>;
 }) {
   const { eventId } = use(params);
+  const pathname = usePathname();
+  const workspaceHref = pathname.startsWith(`/dashboard/private-events/${eventId}`)
+    ? `/dashboard/private-events/${eventId}`
+    : `/dashboard/events/${eventId}`;
   const [importOpen, setImportOpen] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
   const [editGuest, setEditGuest] = useState<Guest | null>(null);
@@ -353,7 +358,7 @@ export default function EventGuestsPage({
       {/* Header section */}
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-8">
         <div className="flex items-center gap-6">
-          <Link href={`/dashboard/events/${eventId}`}>
+          <Link href={workspaceHref}>
             <Button variant="ghost" size="icon" className="h-14 w-14 rounded-2xl bg-white/5 border border-white/10 text-white/40 hover:text-white transition-all group">
               <ArrowLeft className="h-6 w-6 group-hover:-translate-x-1 transition-transform" />
             </Button>

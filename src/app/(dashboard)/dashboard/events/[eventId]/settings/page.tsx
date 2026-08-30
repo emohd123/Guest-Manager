@@ -1,7 +1,7 @@
 "use client";
 
 import { use, useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { trpc } from "@/lib/trpc/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -63,6 +63,8 @@ export default function EventSettingsPage({
 }) {
   const { eventId } = use(params);
   const router = useRouter();
+  const pathname = usePathname();
+  const isPrivateWorkspace = pathname.startsWith(`/dashboard/private-events/${eventId}`);
   const { data: event, isLoading, refetch } = trpc.events.get.useQuery({ id: eventId });
   const { data: customerCompanies } = trpc.customerCompanies.list.useQuery();
   const { data: experience, refetch: refetchExperience } = trpc.eventExperience.get.useQuery({ eventId });
@@ -185,7 +187,7 @@ export default function EventSettingsPage({
   const deleteEvent = trpc.events.delete.useMutation({
     onSuccess: () => {
       toast.success("Event deleted");
-      router.push("/dashboard/events");
+      router.push(isPrivateWorkspace ? "/dashboard/private-events" : "/dashboard/events");
     },
     onError: (err) => {
       toast.error(err.message);
@@ -195,7 +197,7 @@ export default function EventSettingsPage({
   const duplicateEvent = trpc.events.duplicate.useMutation({
     onSuccess: (newEvent) => {
       toast.success("Event duplicated");
-      router.push(`/dashboard/events/${newEvent.id}`);
+      router.push(newEvent.eventType === "conference" ? `/dashboard/private-events/${newEvent.id}` : `/dashboard/events/${newEvent.id}`);
     },
     onError: (err) => {
       toast.error(err.message);
@@ -405,7 +407,26 @@ export default function EventSettingsPage({
         </CardContent>
       </Card>
 
-      <Card>
+      {event.eventType === "conference" && <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2"><Smartphone className="h-5 w-5" />Private portal content</CardTitle>
+          <CardDescription>These notices, map link, and resources appear in the private attendee portal.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-5">
+          <div className="space-y-2">
+            <Label htmlFor="conference-announcements">Conference notices</Label>
+            <Textarea id="conference-announcements" rows={6} value={announcementsCsv} onChange={(e) => setAnnouncementsCsv(e.target.value)} placeholder="Opening Ceremony :: Doors open at 8:30 AM" />
+            <p className="text-xs text-muted-foreground">One notice per line using `Title :: Message`.</p>
+          </div>
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="space-y-2"><Label htmlFor="conference-map">Venue map URL</Label><Input id="conference-map" value={venueMapUrl} onChange={(e) => setVenueMapUrl(e.target.value)} placeholder="https://..." /></div>
+            <div className="space-y-2"><Label htmlFor="conference-resources">Conference resources</Label><Textarea id="conference-resources" rows={5} value={resourcesCsv} onChange={(e) => setResourcesCsv(e.target.value)} placeholder="Event programme | https://.../programme.pdf | PDF" /><p className="text-xs text-muted-foreground">One resource per line: Title | URL | PDF, PPTX, DOCX, or LINK.</p></div>
+          </div>
+          <div className="flex justify-end"><Button onClick={handleSaveExperience} disabled={updateExperience.isPending} className="gap-2"><Save className="h-4 w-4" />{updateExperience.isPending ? "Saving…" : "Save portal content"}</Button></div>
+        </CardContent>
+      </Card>}
+
+      {event.eventType !== "conference" && <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Building2 className="h-5 w-5" />
@@ -433,9 +454,9 @@ export default function EventSettingsPage({
             Save event changes after selecting a company. Customer accounts never receive access to other companies or unassigned events.
           </p>
         </CardContent>
-      </Card>
+      </Card>}
 
-      <Card>
+      {event.eventType !== "conference" && <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Smartphone className="h-5 w-5" />
@@ -492,7 +513,7 @@ export default function EventSettingsPage({
             </div>
           </div>
 
-          <div className="space-y-2">
+          {event.eventType !== "conference" && <div className="space-y-2">
             <Label htmlFor="networkingIntro">Networking Intro Text</Label>
             <Textarea
               id="networkingIntro"
@@ -501,7 +522,7 @@ export default function EventSettingsPage({
               rows={3}
               placeholder="Tell attendees how networking and smart matching work."
             />
-          </div>
+          </div>}
 
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
@@ -607,7 +628,7 @@ export default function EventSettingsPage({
             </Button>
           </div>
         </CardContent>
-      </Card>
+      </Card>}
 
       <Card>
         <CardHeader>
@@ -651,7 +672,7 @@ export default function EventSettingsPage({
             />
           </div>
 
-          <div className="space-y-2">
+          {event.eventType !== "conference" && <div className="space-y-2">
             <Label htmlFor="edit-category">Homepage Filter</Label>
             <Select value={categorySlug || "none"} onValueChange={(value) => setCategorySlug(value === "none" ? "" : value)}>
               <SelectTrigger id="edit-category">
@@ -669,11 +690,11 @@ export default function EventSettingsPage({
             <p className="text-xs text-muted-foreground">
               Choose the customer homepage filter where this event should appear.
             </p>
-          </div>
+          </div>}
 
           <div className="space-y-2">
             <Label htmlFor="edit-eventType">Event Type</Label>
-            <Select value={eventType} onValueChange={(v) => setEventType(v as typeof eventType)}>
+            {event.eventType === "conference" ? <div className="rounded-md border bg-muted/40 px-3 py-2 text-sm font-medium">Private conference</div> : <Select value={eventType} onValueChange={(v) => setEventType(v as typeof eventType)}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
@@ -684,10 +705,10 @@ export default function EventSettingsPage({
                 <SelectItem value="session">Session-Based</SelectItem>
                 <SelectItem value="conference">Conference</SelectItem>
               </SelectContent>
-            </Select>
+            </Select>}
           </div>
 
-          <div className="grid gap-4 md:grid-cols-2">
+          {event.eventType !== "conference" && <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="venueMapUrl">Venue Floor Plan / Map URL</Label>
               <Input id="venueMapUrl" value={venueMapUrl} onChange={(e) => setVenueMapUrl(e.target.value)} placeholder="https://..." />
@@ -698,7 +719,7 @@ export default function EventSettingsPage({
               <Textarea id="resourcesCsv" rows={4} value={resourcesCsv} onChange={(e) => setResourcesCsv(e.target.value)} placeholder="Event programme | https://.../programme.pdf | PDF" />
               <p className="text-xs text-muted-foreground">One per line: Title | URL | PDF, PPTX, DOCX, or LINK.</p>
             </div>
-          </div>
+          </div>}
 
           {eventType === "conference" && (
             <div className="space-y-2 rounded-lg border border-cyan-500/25 bg-cyan-500/5 p-4">
@@ -765,7 +786,7 @@ export default function EventSettingsPage({
             />
           </div>
 
-          <div className="flex items-center gap-3 rounded-lg border border-border p-4 bg-background/50">
+          {event.eventType !== "conference" && <div className="flex items-center gap-3 rounded-lg border border-border p-4 bg-background/50">
             <Checkbox
               id="edit-registrationEnabled"
               checked={registrationEnabled}
@@ -779,7 +800,7 @@ export default function EventSettingsPage({
                 Allow guests to register and purchase tickets online.
               </p>
             </div>
-          </div>
+          </div>}
 
           <div className="flex justify-end pt-2">
             <Button
