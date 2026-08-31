@@ -7,7 +7,10 @@ import { ColumnDef } from "@tanstack/react-table";
 import { trpc } from "@/lib/trpc/client";
 import { DataTable } from "@/components/shared/data-table";
 import { GuestImportDialog } from "@/components/guests/guest-import-dialog";
-import { GuestQrDialog, BulkQrPrintDialog } from "@/components/guests/guest-qr-dialog";
+import {
+  GuestQrDialog,
+  BulkQrPrintDialog,
+} from "@/components/guests/guest-qr-dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { GuestModal } from "@/components/guests/GuestModal";
@@ -45,7 +48,7 @@ import {
   Search,
   ChevronRight,
   Activity,
-  Zap
+  Zap,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -79,7 +82,10 @@ export default function EventGuestsPage({
 }) {
   const { eventId } = use(params);
   const pathname = usePathname();
-  const workspaceHref = pathname.startsWith(`/dashboard/private-events/${eventId}`)
+  const isPrivateConference = pathname.startsWith(
+    `/dashboard/private-events/${eventId}`,
+  );
+  const workspaceHref = isPrivateConference
     ? `/dashboard/private-events/${eventId}`
     : `/dashboard/events/${eventId}`;
   const [importOpen, setImportOpen] = useState(false);
@@ -89,16 +95,27 @@ export default function EventGuestsPage({
   const [bulkQrOpen, setBulkQrOpen] = useState(false);
   const [rowSelection, setRowSelection] = useState<Record<string, boolean>>({});
 
-  type GuestStatus = "invited" | "confirmed" | "declined" | "waitlisted" | "checked_in" | "no_show";
+  type GuestStatus =
+    | "invited"
+    | "confirmed"
+    | "declined"
+    | "waitlisted"
+    | "checked_in"
+    | "no_show";
   const [statusFilter, setStatusFilter] = useState<GuestStatus | "all">("all");
-  const [deliveryFilter, setDeliveryFilter] = useState<"all" | "sent" | "not_sent">("all");
+  const [deliveryFilter, setDeliveryFilter] = useState<
+    "all" | "sent" | "not_sent"
+  >("all");
 
   const { data, isLoading, refetch } = trpc.guests.list.useQuery({
     eventId,
+    limit: isPrivateConference ? 1000 : 500,
     ...(statusFilter !== "all" ? { status: statusFilter } : {}),
   });
 
-  const { data: stats, refetch: refetchStats } = trpc.guests.stats.useQuery({ eventId });
+  const { data: stats, refetch: refetchStats } = trpc.guests.stats.useQuery({
+    eventId,
+  });
   const { data: event } = trpc.events.get.useQuery({ id: eventId });
 
   const deleteGuest = trpc.guests.delete.useMutation({
@@ -129,6 +146,22 @@ export default function EventGuestsPage({
     },
   });
 
+  const bulkCreateConference =
+    trpc.guests.bulkCreateConferenceCredentials.useMutation({
+      onSuccess: (result) => {
+        const skipped = result.skipped
+          ? ` (${result.skipped} duplicate${result.skipped === 1 ? "" : "s"} skipped)`
+          : "";
+        toast.success(
+          `${result.imported} conference credential${result.imported === 1 ? "" : "s"} created${skipped}`,
+        );
+        setImportOpen(false);
+        refetch();
+        refetchStats();
+      },
+      onError: (err) => toast.error(err.message),
+    });
+
   const bulkUpdateStatus = trpc.guests.bulkUpdateStatus.useMutation({
     onSuccess: (data) => {
       toast.success(`Updated ${data.updated} guest profiles`);
@@ -156,14 +189,17 @@ export default function EventGuestsPage({
         return;
       }
       toast.error(err.message || "Send failed");
-    }
+    },
   });
 
   const guests = useMemo(() => {
     const rows = (data?.guests ?? []) as Guest[];
     if (deliveryFilter === "all") return rows;
     return rows.filter((guest) => {
-      const metadata = (guest as any).ticket?.metadata as Record<string, unknown> | null | undefined;
+      const metadata = (guest as any).ticket?.metadata as
+        | Record<string, unknown>
+        | null
+        | undefined;
       const sent = Boolean(metadata?.ticketEmailSentAt);
       return deliveryFilter === "sent" ? sent : !sent;
     });
@@ -171,18 +207,36 @@ export default function EventGuestsPage({
 
   const selectAllVisible = () => {
     const next: Record<string, boolean> = {};
-    guests.forEach((guest) => { next[guest.id] = true; });
+    guests.forEach((guest) => {
+      next[guest.id] = true;
+    });
     setRowSelection(next);
   };
 
   const sendSelectedEmails = async () => {
-    const selectedIds = Object.keys(rowSelection).filter((id) => rowSelection[id]);
-    const selectedGuests = guests.filter((guest) => selectedIds.includes(guest.id));
+    const selectedIds = Object.keys(rowSelection).filter(
+      (id) => rowSelection[id],
+    );
+    const selectedGuests = guests.filter((guest) =>
+      selectedIds.includes(guest.id),
+    );
     if (!selectedGuests.length) return;
-    const results = await Promise.allSettled(selectedGuests.map((guest) => sendEmail.mutateAsync({ guestId: guest.id })));
-    const failed = results.filter((result) => result.status === "rejected").length;
-    if (failed) toast.error(`${failed} ticket email${failed === 1 ? "" : "s"} failed to send`);
-    else toast.success(`Sent ${selectedGuests.length} ticket email${selectedGuests.length === 1 ? "" : "s"}`);
+    const results = await Promise.allSettled(
+      selectedGuests.map((guest) =>
+        sendEmail.mutateAsync({ guestId: guest.id }),
+      ),
+    );
+    const failed = results.filter(
+      (result) => result.status === "rejected",
+    ).length;
+    if (failed)
+      toast.error(
+        `${failed} ticket email${failed === 1 ? "" : "s"} failed to send`,
+      );
+    else
+      toast.success(
+        `Sent ${selectedGuests.length} ticket email${selectedGuests.length === 1 ? "" : "s"}`,
+      );
     setRowSelection({});
     await refetch();
   };
@@ -193,13 +247,41 @@ export default function EventGuestsPage({
       toast.error("Guest list is empty");
       return;
     }
-    const csvHeaders = ["Guest Name", "Current State", "Allocation", "Confirmation"];
-    const csvRows = guests.map((g) => [
-      `${g.firstName ?? ""} ${g.lastName ?? ""}`.trim() || "Guest",
-      g.status.replace("_", " "),
-      g.tableNumber ? `Table ${g.tableNumber}` : "General Admission",
-      getGuestConfirmationLabel(g.rsvpStatus),
-    ]);
+    const csvHeaders = isPrivateConference
+      ? [
+          "Name",
+          "Email",
+          "Mobile",
+          "Position",
+          "Company",
+          "Role",
+          "Username",
+          "Access Code",
+          "Ticket Barcode",
+          "Check-in Status",
+        ]
+      : ["Guest Name", "Current State", "Allocation", "Confirmation"];
+    const csvRows = guests.map((g) =>
+      isPrivateConference
+        ? [
+            `${g.firstName ?? ""} ${g.lastName ?? ""}`.trim() || "Guest",
+            g.email ?? "",
+            g.phone ?? "",
+            g.customData?.position ?? "",
+            g.customData?.organization ?? "",
+            g.customData?.conferenceRole ?? g.guestType ?? "guest",
+            g.customData?.accessUsername ?? "",
+            g.customData?.accessCode ?? "",
+            g.ticket?.barcode ?? "",
+            g.status.replace("_", " "),
+          ]
+        : [
+            `${g.firstName ?? ""} ${g.lastName ?? ""}`.trim() || "Guest",
+            g.status.replace("_", " "),
+            g.tableNumber ? `Table ${g.tableNumber}` : "General Admission",
+            getGuestConfirmationLabel(g.rsvpStatus),
+          ],
+    );
     const csv = [csvHeaders, ...csvRows]
       .map((row) => row.map((cell) => `"${cell}"`).join(","))
       .join("\n");
@@ -210,7 +292,7 @@ export default function EventGuestsPage({
     a.download = `guest-list-${eventId}.csv`;
     a.click();
     URL.revokeObjectURL(url);
-      toast.success("Guest list exported");
+    toast.success("Guest list exported");
   };
 
   const columns: ColumnDef<Guest>[] = [
@@ -218,7 +300,10 @@ export default function EventGuestsPage({
       id: "select",
       header: ({ table }) => (
         <Checkbox
-          checked={table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && "indeterminate")}
+          checked={
+            table.getIsAllPageRowsSelected() ||
+            (table.getIsSomePageRowsSelected() && "indeterminate")
+          }
           onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
           aria-label="Select all"
           className="border-white/20 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
@@ -238,10 +323,11 @@ export default function EventGuestsPage({
       header: "Guest Name",
       cell: ({ row }) => (
         <div className="flex items-center gap-3">
-           <div className="h-10 w-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center font-black italic text-xs text-white/40">
-              {row.original.firstName?.[0]}{row.original.lastName?.[0]}
-           </div>
-           <div>
+          <div className="h-10 w-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center font-black italic text-xs text-white/40">
+            {row.original.firstName?.[0]}
+            {row.original.lastName?.[0]}
+          </div>
+          <div>
             <p className="font-black italic text-white tracking-tight uppercase leading-none mb-1">
               {row.original.firstName} {row.original.lastName}
             </p>
@@ -256,18 +342,74 @@ export default function EventGuestsPage({
       accessorKey: "status",
       header: "Current State",
       cell: ({ row }) => (
-        <Badge className={cn("rounded-full px-3 py-0.5 font-black text-[9px] uppercase tracking-widest border italic shadow-sm", statusColors[row.original.status])}>
+        <Badge
+          className={cn(
+            "rounded-full px-3 py-0.5 font-black text-[9px] uppercase tracking-widest border italic shadow-sm",
+            statusColors[row.original.status],
+          )}
+        >
           {row.original.status.replace("_", " ")}
         </Badge>
       ),
     },
+    ...(isPrivateConference
+      ? ([
+          {
+            id: "contact",
+            header: "Contact",
+            cell: ({ row }: { row: { original: Guest } }) => (
+              <div className="space-y-1 text-[10px] font-bold">
+                <p className="text-white">{row.original.email || "No email"}</p>
+                <p className="text-white/40">
+                  {row.original.phone || "No mobile"}
+                </p>
+              </div>
+            ),
+          },
+          {
+            id: "conference_profile",
+            header: "Conference Profile",
+            cell: ({ row }: { row: { original: Guest } }) => (
+              <div className="space-y-1">
+                <Badge className="border-cyan-500/20 bg-cyan-500/10 text-[9px] uppercase text-cyan-300">
+                  {row.original.customData?.conferenceRole ||
+                    row.original.guestType ||
+                    "guest"}
+                </Badge>
+                <p className="text-[10px] font-bold text-white">
+                  {row.original.customData?.position || "No position"}
+                </p>
+                <p className="text-[9px] font-bold text-white/40">
+                  {row.original.customData?.organization || "No company"}
+                </p>
+              </div>
+            ),
+          },
+          {
+            id: "conference_credentials",
+            header: "Username & Code",
+            cell: ({ row }: { row: { original: Guest } }) => (
+              <div className="space-y-1 font-mono text-[10px]">
+                <p className="font-bold text-white">
+                  {row.original.customData?.accessUsername || "Not generated"}
+                </p>
+                <p className="font-black tracking-widest text-cyan-300">
+                  {row.original.customData?.accessCode || "—"}
+                </p>
+              </div>
+            ),
+          },
+        ] as ColumnDef<Guest>[])
+      : []),
     {
       id: "details",
       header: "Allocation",
       cell: ({ row }) => (
         <div className="space-y-1">
           <p className="text-[10px] font-black text-white italic tracking-tight uppercase leading-none">
-             {row.original.tableNumber ? `Table ${row.original.tableNumber}` : "General Admission"}
+            {row.original.tableNumber
+              ? `Table ${row.original.tableNumber}`
+              : "General Admission"}
           </p>
           <p className="text-[9px] font-bold text-white/10 uppercase tracking-widest flex items-center gap-2">
             <Zap className="h-2.5 w-2.5" />
@@ -288,13 +430,15 @@ export default function EventGuestsPage({
                 "rounded-full px-3 py-0.5 font-black text-[9px] uppercase tracking-widest border italic shadow-sm",
                 isConfirmed
                   ? "bg-emerald-500/10 text-emerald-300 border-emerald-500/20"
-                  : "bg-amber-500/10 text-amber-300 border-amber-500/20"
+                  : "bg-amber-500/10 text-amber-300 border-amber-500/20",
               )}
             >
               {getGuestConfirmationLabel(row.original.rsvpStatus)}
             </Badge>
             <p className="text-[9px] font-bold text-white/20 uppercase tracking-widest">
-              {row.original.rsvpAt ? new Date(row.original.rsvpAt).toLocaleString() : "Waiting for guest response"}
+              {row.original.rsvpAt
+                ? new Date(row.original.rsvpAt).toLocaleString()
+                : "Waiting for guest response"}
             </p>
           </div>
         );
@@ -310,7 +454,12 @@ export default function EventGuestsPage({
               size="sm"
               variant="outline"
               className="h-10 px-4 rounded-xl bg-primary/10 text-primary font-black italic uppercase tracking-widest text-[9px] hover:bg-primary hover:text-white border-primary/20 transition-all active:scale-95"
-              onClick={() => updateGuest.mutate({ id: row.original.id, status: "checked_in" })}
+              onClick={() =>
+                updateGuest.mutate({
+                  id: row.original.id,
+                  status: "checked_in",
+                })
+              }
             >
               Check In
             </Button>
@@ -319,31 +468,52 @@ export default function EventGuestsPage({
               size="sm"
               variant="outline"
               className="h-10 px-4 rounded-xl bg-white/5 text-white/40 font-black italic uppercase tracking-widest text-[9px] hover:bg-white/10 hover:text-white border-white/10 transition-all active:scale-95"
-              onClick={() => undoCheckIn.mutate({ eventId, guestId: row.original.id })}
+              onClick={() =>
+                undoCheckIn.mutate({ eventId, guestId: row.original.id })
+              }
             >
               Undo
             </Button>
           )}
-          
+
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl text-white/10 hover:text-white hover:bg-white/5 border border-white/5">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-10 w-10 rounded-xl text-white/10 hover:text-white hover:bg-white/5 border border-white/5"
+              >
                 <MoreHorizontal className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-[200px] p-2 bg-slate-950 border-white/10 rounded-2xl shadow-2xl backdrop-blur-xl">
-              <DropdownMenuItem onClick={() => setEditGuest(row.original)} className="rounded-xl font-black italic uppercase tracking-widest text-[9px] focus:bg-white/10 focus:text-white py-3 gap-3">
+            <DropdownMenuContent
+              align="end"
+              className="w-[200px] p-2 bg-slate-950 border-white/10 rounded-2xl shadow-2xl backdrop-blur-xl"
+            >
+              <DropdownMenuItem
+                onClick={() => setEditGuest(row.original)}
+                className="rounded-xl font-black italic uppercase tracking-widest text-[9px] focus:bg-white/10 focus:text-white py-3 gap-3"
+              >
                 <Edit className="h-3.5 w-3.5" /> Edit Profile
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setQrGuest(row.original)} className="rounded-xl font-black italic uppercase tracking-widest text-[9px] focus:bg-white/10 focus:text-white py-3 gap-3">
+              <DropdownMenuItem
+                onClick={() => setQrGuest(row.original)}
+                className="rounded-xl font-black italic uppercase tracking-widest text-[9px] focus:bg-white/10 focus:text-white py-3 gap-3"
+              >
                 <QrCode className="h-3.5 w-3.5" /> View QR Code
               </DropdownMenuItem>
               <DropdownMenuSeparator className="bg-white/5 mx-2 my-2" />
-              <DropdownMenuItem onClick={() => sendEmail.mutate({ guestId: row.original.id })} className="rounded-xl font-black italic uppercase tracking-widest text-[9px] focus:bg-white/10 focus:text-white py-3 gap-3">
+              <DropdownMenuItem
+                onClick={() => sendEmail.mutate({ guestId: row.original.id })}
+                className="rounded-xl font-black italic uppercase tracking-widest text-[9px] focus:bg-white/10 focus:text-white py-3 gap-3"
+              >
                 <Mail className="h-3.5 w-3.5" /> Send Email
               </DropdownMenuItem>
               <DropdownMenuSeparator className="bg-white/5 mx-2 my-2" />
-              <DropdownMenuItem onClick={() => deleteGuest.mutate({ id: row.original.id })} className="rounded-xl font-black italic uppercase tracking-widest text-[9px] text-red-500 focus:bg-red-500/10 focus:text-red-400 py-3 gap-3">
+              <DropdownMenuItem
+                onClick={() => deleteGuest.mutate({ id: row.original.id })}
+                className="rounded-xl font-black italic uppercase tracking-widest text-[9px] text-red-500 focus:bg-red-500/10 focus:text-red-400 py-3 gap-3"
+              >
                 <Trash2 className="h-3.5 w-3.5" /> Delete Guest
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -359,30 +529,58 @@ export default function EventGuestsPage({
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-8">
         <div className="flex items-center gap-6">
           <Link href={workspaceHref}>
-            <Button variant="ghost" size="icon" className="h-14 w-14 rounded-2xl bg-white/5 border border-white/10 text-white/40 hover:text-white transition-all group">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-14 w-14 rounded-2xl bg-white/5 border border-white/10 text-white/40 hover:text-white transition-all group"
+            >
               <ArrowLeft className="h-6 w-6 group-hover:-translate-x-1 transition-transform" />
             </Button>
           </Link>
-          <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
-            <h1 className="text-4xl font-black text-white italic tracking-tighter uppercase leading-none">Guests</h1>
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+          >
+            <h1 className="text-4xl font-black text-white italic tracking-tighter uppercase leading-none">
+              {isPrivateConference ? "Conference Attendees" : "Guests"}
+            </h1>
             <p className="text-white/40 font-bold uppercase tracking-[0.2em] text-[10px] mt-2 italic flex items-center gap-2">
-               <Users className="h-3 w-3 text-primary" />
-               {event?.title || "Event"} Guest List
+              <Users className="h-3 w-3 text-primary" />
+              {event?.title || "Event"} Guest List
             </p>
           </motion.div>
         </div>
-        
+
         <div className="flex flex-wrap gap-3">
-          <Button variant="outline" className="h-12 px-6 rounded-2xl bg-white/5 border-white/10 text-white/60 hover:text-white font-black italic uppercase tracking-widest text-[10px] transition-all flex gap-3" onClick={() => setBulkQrOpen(true)}>
+          <Button
+            variant="outline"
+            className="h-12 px-6 rounded-2xl bg-white/5 border-white/10 text-white/60 hover:text-white font-black italic uppercase tracking-widest text-[10px] transition-all flex gap-3"
+            onClick={() => setBulkQrOpen(true)}
+          >
             <Printer className="h-4 w-4" /> Print QR Codes
           </Button>
-          <Button variant="outline" className="h-12 px-6 rounded-2xl bg-white/5 border-white/10 text-white/60 hover:text-white font-black italic uppercase tracking-widest text-[10px] transition-all flex gap-3" onClick={handleExportCSV}>
+          <Button
+            variant="outline"
+            className="h-12 px-6 rounded-2xl bg-white/5 border-white/10 text-white/60 hover:text-white font-black italic uppercase tracking-widest text-[10px] transition-all flex gap-3"
+            onClick={handleExportCSV}
+          >
             <Download className="h-4 w-4" /> Export CSV
           </Button>
-          <Button variant="outline" className="h-12 px-6 rounded-2xl bg-white/5 border-white/10 text-white group hover:border-primary/50 transition-all font-black italic uppercase tracking-widest text-[10px] flex gap-3" onClick={() => setImportOpen(true)}>
-            <Upload className="h-4 w-4 group-hover:text-primary" /> Import Guests
+          <Button
+            variant="outline"
+            className="h-12 px-6 rounded-2xl bg-white/5 border-white/10 text-white group hover:border-primary/50 transition-all font-black italic uppercase tracking-widest text-[10px] flex gap-3"
+            onClick={() => setImportOpen(true)}
+          >
+            <Upload className="h-4 w-4 group-hover:text-primary" /> Import
+            Guests
           </Button>
-          <Button className="h-12 px-8 rounded-2xl bg-primary text-white shadow-2xl shadow-primary/20 font-black italic uppercase tracking-widest text-[10px] flex gap-3 transition-all hover:scale-105 active:scale-95" onClick={() => { setEditGuest(null); setAddOpen(true); }}>
+          <Button
+            className="h-12 px-8 rounded-2xl bg-primary text-white shadow-2xl shadow-primary/20 font-black italic uppercase tracking-widest text-[10px] flex gap-3 transition-all hover:scale-105 active:scale-95"
+            onClick={() => {
+              setEditGuest(null);
+              setAddOpen(true);
+            }}
+          >
             <Plus className="h-5 w-5" /> Add Guest
           </Button>
         </div>
@@ -390,43 +588,79 @@ export default function EventGuestsPage({
 
       {/* Analytics Feed */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="p-8 rounded-[32px] bg-white/5 border border-white/10 flex flex-col justify-center gap-4 relative overflow-hidden group">
-           <div className="relative z-10 flex flex-col gap-1">
-             <p className="text-[10px] font-black text-white/20 uppercase tracking-widest">Total Guests</p>
-             <h3 className="text-4xl font-black text-white italic tracking-tighter uppercase">{stats?.total ?? 0}</h3>
-             <p className="text-[9px] font-bold text-primary uppercase tracking-tighter mt-2">Guest Records</p>
-           </div>
-           <Users className="absolute -right-4 -bottom-4 h-24 w-24 text-white/5 rotate-12 group-hover:rotate-0 transition-transform duration-700" />
+        <motion.div
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          className="p-8 rounded-[32px] bg-white/5 border border-white/10 flex flex-col justify-center gap-4 relative overflow-hidden group"
+        >
+          <div className="relative z-10 flex flex-col gap-1">
+            <p className="text-[10px] font-black text-white/20 uppercase tracking-widest">
+              Total Guests
+            </p>
+            <h3 className="text-4xl font-black text-white italic tracking-tighter uppercase">
+              {stats?.total ?? 0}
+            </h3>
+            <p className="text-[9px] font-bold text-primary uppercase tracking-tighter mt-2">
+              Guest Records
+            </p>
+          </div>
+          <Users className="absolute -right-4 -bottom-4 h-24 w-24 text-white/5 rotate-12 group-hover:rotate-0 transition-transform duration-700" />
         </motion.div>
-        
-        <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.1 }} className="p-8 rounded-[32px] bg-white/5 border border-white/10 lg:col-span-3 flex flex-col justify-center relative overflow-hidden">
+
+        <motion.div
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.1 }}
+          className="p-8 rounded-[32px] bg-white/5 border border-white/10 lg:col-span-3 flex flex-col justify-center relative overflow-hidden"
+        >
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
-               <Activity className="h-5 w-5 text-primary animate-pulse" />
-               <h3 className="text-lg font-black text-white italic uppercase tracking-tighter">Check-in Progress</h3>
+              <Activity className="h-5 w-5 text-primary animate-pulse" />
+              <h3 className="text-lg font-black text-white italic uppercase tracking-tighter">
+                Check-in Progress
+              </h3>
             </div>
             <span className="font-black italic text-primary text-xl">
-               {stats?.checkedIn ?? 0} <span className="text-sm text-white/10">/ {stats?.total ?? 0}</span>
+              {stats?.checkedIn ?? 0}{" "}
+              <span className="text-sm text-white/10">
+                / {stats?.total ?? 0}
+              </span>
             </span>
           </div>
-          
+
           <div className="space-y-4">
             <div className="h-3 bg-white/5 rounded-full overflow-hidden border border-white/5 p-0.5">
-               <motion.div 
-                 initial={{ width: 0 }}
-                 animate={{ width: `${stats?.total ? Math.round(((stats?.checkedIn ?? 0) / stats.total) * 100) : 0}%` }}
-                 className="h-full bg-linear-to-r from-primary to-primary/40 rounded-full shadow-[0_0_15px_rgba(255,95,82,0.3)]"
-               />
+              <motion.div
+                initial={{ width: 0 }}
+                animate={{
+                  width: `${stats?.total ? Math.round(((stats?.checkedIn ?? 0) / stats.total) * 100) : 0}%`,
+                }}
+                className="h-full bg-linear-to-r from-primary to-primary/40 rounded-full shadow-[0_0_15px_rgba(255,95,82,0.3)]"
+              />
             </div>
             <div className="flex flex-wrap gap-x-8 gap-y-2">
               {[
-                { label: "Checked In", count: stats?.checked_in ?? 0, color: "bg-primary" },
-                { label: "Invited", count: stats?.invited ?? 0, color: "bg-blue-500" },
-                { label: "Confirmed", count: stats?.confirmed ?? 0, color: "bg-green-500" }
-              ].map(item => (
+                {
+                  label: "Checked In",
+                  count: stats?.checked_in ?? 0,
+                  color: "bg-primary",
+                },
+                {
+                  label: "Invited",
+                  count: stats?.invited ?? 0,
+                  color: "bg-blue-500",
+                },
+                {
+                  label: "Confirmed",
+                  count: stats?.confirmed ?? 0,
+                  color: "bg-green-500",
+                },
+              ].map((item) => (
                 <div key={item.label} className="flex items-center gap-2">
                   <div className={cn("w-2 h-2 rounded-full", item.color)} />
-                  <span className="text-[10px] font-black text-white/20 uppercase tracking-widest italic">{item.label} ({item.count})</span>
+                  <span className="text-[10px] font-black text-white/20 uppercase tracking-widest italic">
+                    {item.label} ({item.count})
+                  </span>
                 </div>
               ))}
             </div>
@@ -436,7 +670,11 @@ export default function EventGuestsPage({
       </div>
 
       {/* Main Roster Grid */}
-      <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.2 }}>
+      <motion.div
+        initial={{ y: 20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ delay: 0.2 }}
+      >
         <DataTable
           columns={columns}
           data={guests}
@@ -451,63 +689,146 @@ export default function EventGuestsPage({
               {Object.keys(rowSelection).length > 0 && (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="outline" className="h-12 px-6 rounded-2xl bg-primary/10 border-primary/30 text-primary font-black italic uppercase tracking-widest text-[10px] transition-all hover:bg-primary hover:text-white flex gap-3">
-                       Bulk Actions ({Object.keys(rowSelection).length})
+                    <Button
+                      variant="outline"
+                      className="h-12 px-6 rounded-2xl bg-primary/10 border-primary/30 text-primary font-black italic uppercase tracking-widest text-[10px] transition-all hover:bg-primary hover:text-white flex gap-3"
+                    >
+                      Bulk Actions ({Object.keys(rowSelection).length})
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent className="w-[200px] p-2 bg-slate-950 border-white/10 rounded-2xl shadow-2xl backdrop-blur-xl">
                     <DropdownMenuItem
                       onClick={() => {
-                        const selectedIds = Object.keys(rowSelection).filter(Boolean);
-                        if (selectedIds.length) bulkUpdateStatus.mutate({ ids: selectedIds, status: "checked_in" });
+                        const selectedIds =
+                          Object.keys(rowSelection).filter(Boolean);
+                        if (selectedIds.length)
+                          bulkUpdateStatus.mutate({
+                            ids: selectedIds,
+                            status: "checked_in",
+                          });
                       }}
                       className="rounded-xl font-black italic uppercase tracking-widest text-[9px] focus:bg-white/10 focus:text-white py-3 gap-3"
                     >
-                      <CheckCircle className="h-3.5 w-3.5 text-green-500" /> Check In Selected
+                      <CheckCircle className="h-3.5 w-3.5 text-green-500" />{" "}
+                      Check In Selected
                     </DropdownMenuItem>
                     <DropdownMenuItem
                       onClick={() => {
-                        const selectedIds = Object.keys(rowSelection).filter(Boolean);
-                        if (selectedIds.length) bulkUpdateStatus.mutate({ ids: selectedIds, status: "confirmed" });
+                        const selectedIds =
+                          Object.keys(rowSelection).filter(Boolean);
+                        if (selectedIds.length)
+                          bulkUpdateStatus.mutate({
+                            ids: selectedIds,
+                            status: "confirmed",
+                          });
                       }}
                       className="rounded-xl font-black italic uppercase tracking-widest text-[9px] focus:bg-white/10 focus:text-white py-3 gap-3"
                     >
-                      <Undo2 className="h-3.5 w-3.5 text-orange-500" /> Mark as Confirmed
+                      <Undo2 className="h-3.5 w-3.5 text-orange-500" /> Mark as
+                      Confirmed
                     </DropdownMenuItem>
                     <DropdownMenuItem
                       onClick={() => void sendSelectedEmails()}
                       className="rounded-xl font-black italic uppercase tracking-widest text-[9px] focus:bg-white/10 focus:text-white py-3 gap-3"
                     >
-                      <Mail className="h-3.5 w-3.5 text-cyan-400" /> Send tickets by email
+                      <Mail className="h-3.5 w-3.5 text-cyan-400" /> Send
+                      tickets by email
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               )}
-              <Button type="button" variant="outline" onClick={selectAllVisible} className="h-12 rounded-2xl border-white/10 bg-white/5 px-4 text-[10px] font-black uppercase tracking-widest text-white hover:bg-white/10">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={selectAllVisible}
+                className="h-12 rounded-2xl border-white/10 bg-white/5 px-4 text-[10px] font-black uppercase tracking-widest text-white hover:bg-white/10"
+              >
                 Select all visible
               </Button>
-              {Object.keys(rowSelection).length > 0 ? <Button type="button" variant="ghost" onClick={() => setRowSelection({})} className="h-12 text-[10px] font-black uppercase tracking-widest text-white/60 hover:text-white">Clear</Button> : null}
-              <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as GuestStatus | "all")}>
+              {Object.keys(rowSelection).length > 0 ? (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => setRowSelection({})}
+                  className="h-12 text-[10px] font-black uppercase tracking-widest text-white/60 hover:text-white"
+                >
+                  Clear
+                </Button>
+              ) : null}
+              <Select
+                value={statusFilter}
+                onValueChange={(v) => setStatusFilter(v as GuestStatus | "all")}
+              >
                 <SelectTrigger className="w-[180px] h-12 rounded-2xl bg-slate-950 border-white/20 text-white font-black italic uppercase tracking-widest text-[10px] focus:ring-primary focus:border-primary">
                   <SelectValue placeholder="All Statuses" />
                 </SelectTrigger>
                 <SelectContent className="bg-slate-950 border-white/20 rounded-2xl shadow-2xl text-white">
-                  <SelectItem value="all" className="rounded-xl font-black italic uppercase tracking-widest text-[9px] text-white focus:bg-cyan-500 focus:text-white">All Guests</SelectItem>
-                  <SelectItem value="invited" className="rounded-xl font-black italic uppercase tracking-widest text-[9px] text-white focus:bg-cyan-500 focus:text-white">Invited Only</SelectItem>
-                  <SelectItem value="confirmed" className="rounded-xl font-black italic uppercase tracking-widest text-[9px] text-white focus:bg-cyan-500 focus:text-white">Confirmed Only</SelectItem>
-                  <SelectItem value="checked_in" className="rounded-xl font-black italic uppercase tracking-widest text-[9px] text-white focus:bg-cyan-500 focus:text-white">Checked In</SelectItem>
-                  <SelectItem value="declined" className="rounded-xl font-black italic uppercase tracking-widest text-[9px] text-white focus:bg-cyan-500 focus:text-white">Declined Only</SelectItem>
-                  <SelectItem value="waitlisted" className="rounded-xl font-black italic uppercase tracking-widest text-[9px] text-white focus:bg-cyan-500 focus:text-white">Waitlisted</SelectItem>
+                  <SelectItem
+                    value="all"
+                    className="rounded-xl font-black italic uppercase tracking-widest text-[9px] text-white focus:bg-cyan-500 focus:text-white"
+                  >
+                    All Guests
+                  </SelectItem>
+                  <SelectItem
+                    value="invited"
+                    className="rounded-xl font-black italic uppercase tracking-widest text-[9px] text-white focus:bg-cyan-500 focus:text-white"
+                  >
+                    Invited Only
+                  </SelectItem>
+                  <SelectItem
+                    value="confirmed"
+                    className="rounded-xl font-black italic uppercase tracking-widest text-[9px] text-white focus:bg-cyan-500 focus:text-white"
+                  >
+                    Confirmed Only
+                  </SelectItem>
+                  <SelectItem
+                    value="checked_in"
+                    className="rounded-xl font-black italic uppercase tracking-widest text-[9px] text-white focus:bg-cyan-500 focus:text-white"
+                  >
+                    Checked In
+                  </SelectItem>
+                  <SelectItem
+                    value="declined"
+                    className="rounded-xl font-black italic uppercase tracking-widest text-[9px] text-white focus:bg-cyan-500 focus:text-white"
+                  >
+                    Declined Only
+                  </SelectItem>
+                  <SelectItem
+                    value="waitlisted"
+                    className="rounded-xl font-black italic uppercase tracking-widest text-[9px] text-white focus:bg-cyan-500 focus:text-white"
+                  >
+                    Waitlisted
+                  </SelectItem>
                 </SelectContent>
               </Select>
-              <Select value={deliveryFilter} onValueChange={(v) => setDeliveryFilter(v as typeof deliveryFilter)}>
+              <Select
+                value={deliveryFilter}
+                onValueChange={(v) =>
+                  setDeliveryFilter(v as typeof deliveryFilter)
+                }
+              >
                 <SelectTrigger className="w-[180px] h-12 rounded-2xl bg-slate-950 border-white/20 text-white font-black italic uppercase tracking-widest text-[10px] focus:ring-primary focus:border-primary">
                   <SelectValue placeholder="Ticket delivery" />
                 </SelectTrigger>
                 <SelectContent className="bg-slate-950 border-white/20 rounded-2xl shadow-2xl text-white">
-                  <SelectItem value="all" className="text-white focus:bg-cyan-500 focus:text-white">All ticket delivery</SelectItem>
-                  <SelectItem value="not_sent" className="text-white focus:bg-cyan-500 focus:text-white">Ticket email not sent</SelectItem>
-                  <SelectItem value="sent" className="text-white focus:bg-cyan-500 focus:text-white">Ticket email sent</SelectItem>
+                  <SelectItem
+                    value="all"
+                    className="text-white focus:bg-cyan-500 focus:text-white"
+                  >
+                    All ticket delivery
+                  </SelectItem>
+                  <SelectItem
+                    value="not_sent"
+                    className="text-white focus:bg-cyan-500 focus:text-white"
+                  >
+                    Ticket email not sent
+                  </SelectItem>
+                  <SelectItem
+                    value="sent"
+                    className="text-white focus:bg-cyan-500 focus:text-white"
+                  >
+                    Ticket email sent
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -519,21 +840,40 @@ export default function EventGuestsPage({
       <GuestImportDialog
         open={importOpen}
         onOpenChange={setImportOpen}
-        isImporting={bulkCreate.isPending}
-        onImport={(guests) => bulkCreate.mutate({ eventId, guests })}
+        conferenceMode={isPrivateConference}
+        isImporting={
+          isPrivateConference
+            ? bulkCreateConference.isPending
+            : bulkCreate.isPending
+        }
+        onImport={(guests) => {
+          if (isPrivateConference)
+            bulkCreateConference.mutate({ eventId, guests });
+          else bulkCreate.mutate({ eventId, guests });
+        }}
       />
 
       <GuestModal
         open={addOpen || !!editGuest}
-        onOpenChange={(open) => { if (!open) { setAddOpen(false); setEditGuest(null); } }}
+        onOpenChange={(open) => {
+          if (!open) {
+            setAddOpen(false);
+            setEditGuest(null);
+          }
+        }}
         eventId={eventId}
         guest={editGuest}
-        onSuccess={() => { refetch(); refetchStats(); }}
+        onSuccess={() => {
+          refetch();
+          refetchStats();
+        }}
       />
 
       <GuestQrDialog
         open={!!qrGuest}
-        onOpenChange={(open) => { if (!open) setQrGuest(null); }}
+        onOpenChange={(open) => {
+          if (!open) setQrGuest(null);
+        }}
         guest={qrGuest as NonNullable<Guest>}
       />
 
@@ -545,4 +885,3 @@ export default function EventGuestsPage({
     </div>
   );
 }
-

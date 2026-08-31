@@ -14,7 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { Download, Printer, QrCode } from "lucide-react";
 import { toast } from "sonner";
 import { Guest } from "@/types/guest";
-
+import { createTicketQrPayload } from "@/lib/ticket-qr";
 
 interface GuestQrDialogProps {
   open: boolean;
@@ -34,14 +34,19 @@ export function GuestQrDialog({
 
   useEffect(() => {
     if (open && guest) {
-      QRCode.toDataURL(guest.id, {
-        width: 300,
-        margin: 2,
-        color: { dark: "#000000", light: "#ffffff" },
-        errorCorrectionLevel: "M",
-      }).then(setQrDataUrl).catch(() => {
-        toast.error("Failed to generate QR code");
-      });
+      QRCode.toDataURL(
+        createTicketQrPayload(guest.ticket?.barcode || guest.id),
+        {
+          width: 300,
+          margin: 2,
+          color: { dark: "#000000", light: "#ffffff" },
+          errorCorrectionLevel: "M",
+        },
+      )
+        .then(setQrDataUrl)
+        .catch(() => {
+          toast.error("Failed to generate QR code");
+        });
     }
   }, [open, guest]);
 
@@ -145,7 +150,7 @@ export function GuestQrDialog({
 
           {/* Guest ID (small text) */}
           <p className="text-center font-mono text-xs text-muted-foreground">
-            {guest.id}
+            {guest.ticket?.barcode || guest.id}
           </p>
 
           {/* Actions */}
@@ -197,15 +202,23 @@ export function BulkQrPrintDialog({
     setProgress(0);
 
     try {
-      const badges: { name: string; type: string | null; table: string | null; qr: string }[] = [];
+      const badges: {
+        name: string;
+        type: string | null;
+        table: string | null;
+        qr: string;
+      }[] = [];
 
       for (let i = 0; i < guests.length; i++) {
         const g = guests[i];
-        const qr = await QRCode.toDataURL(g.id, {
-          width: 200,
-          margin: 2,
-          errorCorrectionLevel: "M",
-        });
+        const qr = await QRCode.toDataURL(
+          createTicketQrPayload(g.ticket?.barcode || g.id),
+          {
+            width: 200,
+            margin: 2,
+            errorCorrectionLevel: "M",
+          },
+        );
         badges.push({
           name: `${g.firstName ?? ""} ${g.lastName ?? ""}`.trim(),
           type: g.guestType,
@@ -231,7 +244,7 @@ export function BulkQrPrintDialog({
           <img src="${b.qr}" alt="QR" />
           ${b.table ? `<p class="table">Table ${b.table}</p>` : ""}
           ${eventName ? `<p class="event">${eventName}</p>` : ""}
-        </div>`
+        </div>`,
         )
         .join("");
 

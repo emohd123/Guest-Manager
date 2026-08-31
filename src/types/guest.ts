@@ -15,4 +15,18 @@ export interface Guest {
   rsvpAt?: string | null;
   checkedInAt: string | null;
   createdAt: string;
+  customData?: {
+    position?: string;
+    organization?: string;
+    conferenceRole?: "guest" | "speaker" | "staff";
+    accessUsername?: string;
+    accessCode?: string;
+    credentialsCreatedAt?: string;
+  } | null;
+  ticket?: {
+    id: string;
+    barcode: string;
+    status: string | null;
+    checkedIn: boolean;
+  } | null;
 }

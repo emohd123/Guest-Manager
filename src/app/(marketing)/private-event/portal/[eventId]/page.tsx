@@ -26,11 +26,12 @@ export default async function PrivateConferencePortal({
     redirect(`/private-event/access/${eventId}`);
 
   const experience = await getEventExperience(eventId);
+  const admin = createSupabaseAdminClient();
   const venueId = experience.event.venue_id;
   let venue: { name: string; address: string } | null = null;
 
   if (venueId) {
-    const { data } = await createSupabaseAdminClient()
+    const { data } = await admin
       .from("venues")
       .select("name,address")
       .eq("id", venueId)
@@ -60,11 +61,21 @@ export default async function PrivateConferencePortal({
   const venueName =
     venue?.name ?? publicPage.venueName ?? "Venue to be confirmed";
   const location = venue?.address || publicPage.locationText || venueName;
+  const { data: ticket } = await admin
+    .from("tickets")
+    .select("barcode")
+    .eq("event_id", eventId)
+    .eq("guest_id", access.guestId)
+    .eq("status", "valid")
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
 
   return (
     <ConferencePortalClient
       attendeeName={access.username}
       guestId={access.guestId}
+      ticketBarcode={ticket?.barcode ?? null}
       event={{
         id: experience.event.id,
         title: experience.event.title,

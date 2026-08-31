@@ -28,7 +28,14 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Upload, FileSpreadsheet, ClipboardPaste, ArrowRight, ArrowLeft, Check } from "lucide-react";
+import {
+  Upload,
+  FileSpreadsheet,
+  ClipboardPaste,
+  ArrowRight,
+  ArrowLeft,
+  Check,
+} from "lucide-react";
 
 type ParsedGuest = {
   firstName: string;
@@ -37,19 +44,33 @@ type ParsedGuest = {
   phone?: string;
   guestType?: string;
   tableNumber?: string;
+  position?: string;
+  organization?: string;
+  role?: "guest" | "speaker" | "staff";
 };
 
 type ColumnMapping = {
   [key: string]: string; // csv column -> guest field
 };
 
-const GUEST_FIELDS = [
+const GUEST_FIELDS: Array<{
+  value: string;
+  label: string;
+  conferenceOnly?: boolean;
+}> = [
   { value: "firstName", label: "First Name" },
   { value: "lastName", label: "Last Name" },
   { value: "email", label: "Email" },
   { value: "phone", label: "Phone" },
   { value: "guestType", label: "Guest Type" },
   { value: "tableNumber", label: "Table Number" },
+  { value: "position", label: "Position / Job Title", conferenceOnly: true },
+  {
+    value: "organization",
+    label: "Company / Organisation",
+    conferenceOnly: true,
+  },
+  { value: "role", label: "Conference Role", conferenceOnly: true },
   { value: "__skip", label: "-- Skip --" },
 ];
 
@@ -58,6 +79,7 @@ interface GuestImportDialogProps {
   onOpenChange: (open: boolean) => void;
   onImport: (guests: ParsedGuest[]) => void;
   isImporting?: boolean;
+  conferenceMode?: boolean;
 }
 
 export function GuestImportDialog({
@@ -65,6 +87,7 @@ export function GuestImportDialog({
   onOpenChange,
   onImport,
   isImporting = false,
+  conferenceMode = false,
 }: GuestImportDialogProps) {
   const [step, setStep] = useState<"source" | "mapping" | "preview">("source");
   const [rawData, setRawData] = useState<string[][]>([]);
@@ -153,6 +176,20 @@ export function GuestImportDialog({
         newMapping[col] = "guestType";
       } else if (lower.includes("table")) {
         newMapping[col] = "tableNumber";
+      } else if (
+        lower.includes("position") ||
+        lower.includes("jobtitle") ||
+        lower === "title"
+      ) {
+        newMapping[col] = "position";
+      } else if (
+        lower.includes("company") ||
+        lower.includes("organisation") ||
+        lower.includes("organization")
+      ) {
+        newMapping[col] = "organization";
+      } else if (lower === "role" || lower.includes("attendeetype")) {
+        newMapping[col] = "role";
       } else {
         newMapping[col] = "__skip";
       }
@@ -171,6 +208,15 @@ export function GuestImportDialog({
             guest[field] = row[i];
           }
         });
+        const normalizedRole = guest.role?.trim().toLowerCase();
+        if (normalizedRole) {
+          guest.role =
+            normalizedRole === "speaker" || normalizedRole === "staff"
+              ? normalizedRole
+              : "guest";
+        } else if (conferenceMode) {
+          guest.role = "guest";
+        }
         return guest as unknown as ParsedGuest;
       })
       .filter((g) => g.firstName);
@@ -187,7 +233,8 @@ export function GuestImportDialog({
         <DialogHeader>
           <DialogTitle>Import Guests</DialogTitle>
           <DialogDescription>
-            {step === "source" && "Upload a CSV file or paste data from a spreadsheet."}
+            {step === "source" &&
+              "Upload a CSV file or paste data from a spreadsheet."}
             {step === "mapping" && "Map your columns to guest fields."}
             {step === "preview" && "Review the data before importing."}
           </DialogDescription>
@@ -201,7 +248,9 @@ export function GuestImportDialog({
                 <Upload className="h-8 w-8 text-muted-foreground" />
                 <div className="text-center">
                   <p className="font-medium">Upload File</p>
-                  <p className="text-xs text-muted-foreground">CSV or TXT file</p>
+                  <p className="text-xs text-muted-foreground">
+                    CSV, TSV, or TXT file
+                  </p>
                 </div>
                 <Input
                   type="file"
@@ -250,10 +299,7 @@ export function GuestImportDialog({
 
             <div className="space-y-3">
               {headers.map((header) => (
-                <div
-                  key={header}
-                  className="flex items-center gap-4"
-                >
+                <div key={header} className="flex items-center gap-4">
                   <div className="w-1/3">
                     <Badge variant="outline">{header}</Badge>
                   </div>
@@ -268,7 +314,9 @@ export function GuestImportDialog({
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {GUEST_FIELDS.map((f) => (
+                      {GUEST_FIELDS.filter(
+                        (field) => !field.conferenceOnly || conferenceMode,
+                      ).map((f) => (
                         <SelectItem key={f.value} value={f.value}>
                           {f.label}
                         </SelectItem>
@@ -309,6 +357,9 @@ export function GuestImportDialog({
                           <TableHead>Last Name</TableHead>
                           <TableHead>Email</TableHead>
                           <TableHead>Phone</TableHead>
+                          {conferenceMode && <TableHead>Position</TableHead>}
+                          {conferenceMode && <TableHead>Company</TableHead>}
+                          {conferenceMode && <TableHead>Role</TableHead>}
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -318,12 +369,23 @@ export function GuestImportDialog({
                             <TableCell>{g.lastName ?? "-"}</TableCell>
                             <TableCell>{g.email ?? "-"}</TableCell>
                             <TableCell>{g.phone ?? "-"}</TableCell>
+                            {conferenceMode && (
+                              <TableCell>{g.position ?? "-"}</TableCell>
+                            )}
+                            {conferenceMode && (
+                              <TableCell>{g.organization ?? "-"}</TableCell>
+                            )}
+                            {conferenceMode && (
+                              <TableCell className="capitalize">
+                                {g.role ?? "guest"}
+                              </TableCell>
+                            )}
                           </TableRow>
                         ))}
                         {mapped.length > 20 && (
                           <TableRow>
                             <TableCell
-                              colSpan={4}
+                              colSpan={conferenceMode ? 7 : 4}
                               className="text-center text-muted-foreground"
                             >
                               ... and {mapped.length - 20} more

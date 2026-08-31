@@ -6,7 +6,13 @@ import crypto from "crypto";
 import { getAppUrl } from "@/lib/app-urls";
 import { scans } from "@/server/db/schema";
 
-type GuestStatus = "invited" | "confirmed" | "declined" | "waitlisted" | "checked_in" | "no_show";
+type GuestStatus =
+  | "invited"
+  | "confirmed"
+  | "declined"
+  | "waitlisted"
+  | "checked_in"
+  | "no_show";
 type TicketStatus = "valid" | "voided" | "expired" | "used";
 
 type GuestRow = {
@@ -137,16 +143,44 @@ function mapGuest(row: GuestRow, ticket?: TicketRow | null) {
   };
 }
 
-async function insertScan(ctx: { supabase: { from: (table: string) => any }; db?: any; companyId: string; userId: string }, payload: {
-  eventId: string;
-  ticketId?: string | null;
-  barcode?: string | null;
-  scanType: "check_in" | "checkout" | "invalid";
-  method: "scan" | "search" | "manual" | "walkup";
-  result?: string | null;
-  notes?: string | null;
-  deviceInfo?: Record<string, string>;
-}) {
+function createConferenceAccessCode() {
+  return crypto.randomBytes(5).toString("hex").toUpperCase();
+}
+
+function createConferenceUsername(
+  firstName: string,
+  lastName: string | undefined,
+  email: string | undefined,
+  code: string,
+) {
+  const emailName = email?.split("@")[0];
+  const base =
+    (emailName || `${firstName}.${lastName ?? ""}`)
+      .normalize("NFKD")
+      .replace(/[^a-zA-Z0-9._-]+/g, "")
+      .replace(/[._-]+$/g, "")
+      .slice(0, 32) || "attendee";
+  return `${base}-${code.slice(-4)}`;
+}
+
+async function insertScan(
+  ctx: {
+    supabase: { from: (table: string) => any };
+    db?: any;
+    companyId: string;
+    userId: string;
+  },
+  payload: {
+    eventId: string;
+    ticketId?: string | null;
+    barcode?: string | null;
+    scanType: "check_in" | "checkout" | "invalid";
+    method: "scan" | "search" | "manual" | "walkup";
+    result?: string | null;
+    notes?: string | null;
+    deviceInfo?: Record<string, string>;
+  },
+) {
   const deviceId = payload.deviceInfo?.deviceId;
   const deviceName = payload.deviceInfo?.deviceName;
   const deviceInfo = deviceId || deviceName ? payload.deviceInfo : undefined;
@@ -158,14 +192,19 @@ async function insertScan(ctx: { supabase: { from: (table: string) => any }; db?
     barcode: payload.barcode ?? null,
     scan_type: payload.scanType,
     method: payload.method,
-    result: payload.result ?? (payload.scanType === "invalid" ? "invalid" : "success"),
+    result:
+      payload.result ??
+      (payload.scanType === "invalid" ? "invalid" : "success"),
     notes: payload.notes ?? null,
     device_info: deviceInfo ?? {},
     scanned_by: ctx.userId,
   });
 
   if (error) {
-    console.error("[guests.insertScan] Supabase insert failed; trying direct database fallback", error.message);
+    console.error(
+      "[guests.insertScan] Supabase insert failed; trying direct database fallback",
+      error.message,
+    );
     if (ctx.db) {
       try {
         await ctx.db.insert(scans).values({
@@ -175,13 +214,18 @@ async function insertScan(ctx: { supabase: { from: (table: string) => any }; db?
           barcode: payload.barcode ?? undefined,
           scanType: payload.scanType,
           method: payload.method,
-          result: payload.result ?? (payload.scanType === "invalid" ? "invalid" : "success"),
+          result:
+            payload.result ??
+            (payload.scanType === "invalid" ? "invalid" : "success"),
           notes: payload.notes ?? undefined,
           deviceInfo: deviceInfo ?? {},
           scannedBy: ctx.userId,
         });
       } catch (fallbackError) {
-        console.error("[guests.insertScan] direct database fallback failed", fallbackError);
+        console.error(
+          "[guests.insertScan] direct database fallback failed",
+          fallbackError,
+        );
       }
     }
   }
@@ -193,10 +237,19 @@ export const guestsRouter = router({
       z.object({
         eventId: z.string().uuid(),
         search: z.string().optional(),
-        status: z.enum(["invited", "confirmed", "declined", "waitlisted", "checked_in", "no_show"]).optional(),
-        limit: z.number().min(1).max(500).default(100),
+        status: z
+          .enum([
+            "invited",
+            "confirmed",
+            "declined",
+            "waitlisted",
+            "checked_in",
+            "no_show",
+          ])
+          .optional(),
+        limit: z.number().min(1).max(2000).default(100),
         offset: z.number().min(0).default(0),
-      })
+      }),
     )
     .query(async ({ ctx, input }) => {
       let query = ctx.supabase
@@ -213,7 +266,9 @@ export const guestsRouter = router({
 
       if (input.search) {
         const search = input.search.trim();
-        query = query.or(`first_name.ilike.%${search}%,last_name.ilike.%${search}%,email.ilike.%${search}%`);
+        query = query.or(
+          `first_name.ilike.%${search}%,last_name.ilike.%${search}%,email.ilike.%${search}%`,
+        );
       }
 
       const { data, error, count } = await query;
@@ -231,11 +286,17 @@ export const guestsRouter = router({
           .in("guest_id", guestIds);
 
         if (ticketsError) throw new Error(ticketsError.message);
-        ticketMap = new Map(((ticketsData ?? []) as TicketRow[]).filter((ticket) => ticket.guest_id).map((ticket) => [ticket.guest_id as string, ticket]));
+        ticketMap = new Map(
+          ((ticketsData ?? []) as TicketRow[])
+            .filter((ticket) => ticket.guest_id)
+            .map((ticket) => [ticket.guest_id as string, ticket]),
+        );
       }
 
       return {
-        guests: guestRows.map((guest) => mapGuest(guest, ticketMap.get(guest.id) ?? null)),
+        guests: guestRows.map((guest) =>
+          mapGuest(guest, ticketMap.get(guest.id) ?? null),
+        ),
         total: count ?? 0,
       };
     }),
@@ -268,7 +329,7 @@ export const guestsRouter = router({
         seatNumber: z.string().max(50).optional(),
         notes: z.string().optional(),
         tags: z.array(z.string()).optional(),
-      })
+      }),
     )
     .mutation(async ({ ctx, input }) => {
       const { data, error } = await ctx.supabase
@@ -309,9 +370,9 @@ export const guestsRouter = router({
             seatNumber: z.string().optional(),
             notes: z.string().optional(),
             tags: z.array(z.string()).optional(),
-          })
+          }),
         ),
-      })
+      }),
     )
     .mutation(async ({ ctx, input }) => {
       const { error } = await ctx.supabase.from("guests").insert(
@@ -328,11 +389,179 @@ export const guestsRouter = router({
           notes: guest.notes ?? null,
           tags: guest.tags ?? null,
           source: "import",
-        }))
+        })),
       );
 
       if (error) throw new Error(error.message);
       return { imported: input.guests.length };
+    }),
+
+  bulkCreateConferenceCredentials: protectedProcedure
+    .input(
+      z.object({
+        eventId: z.string().uuid(),
+        guests: z
+          .array(
+            z.object({
+              firstName: z.string().trim().min(1).max(255),
+              lastName: z.string().trim().max(255).optional(),
+              email: z.string().trim().email().optional().or(z.literal("")),
+              phone: z.string().trim().max(50).optional(),
+              position: z.string().trim().max(160).optional(),
+              organization: z.string().trim().max(180).optional(),
+              role: z.enum(["guest", "speaker", "staff"]).default("guest"),
+            }),
+          )
+          .min(1)
+          .max(1000),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const { data: event, error: eventError } = await ctx.supabase
+        .from("events")
+        .select("id,event_type")
+        .eq("id", input.eventId)
+        .eq("company_id", ctx.companyId)
+        .is("deleted_at", null)
+        .maybeSingle();
+
+      if (eventError) throw new Error(eventError.message);
+      if (!event || event.event_type !== "conference")
+        throw new Error("Private conference not found.");
+
+      const emails = input.guests
+        .map((guest) => guest.email?.toLowerCase())
+        .filter((email): email is string => Boolean(email));
+      let existingEmails = new Set<string>();
+      if (emails.length > 0) {
+        const { data: existing, error: existingError } = await ctx.supabase
+          .from("guests")
+          .select("email")
+          .eq("event_id", input.eventId)
+          .eq("company_id", ctx.companyId)
+          .in("email", emails);
+        if (existingError) throw new Error(existingError.message);
+        existingEmails = new Set(
+          (existing ?? [])
+            .map((row) => String(row.email ?? "").toLowerCase())
+            .filter(Boolean),
+        );
+      }
+
+      const seenEmails = new Set(existingEmails);
+      const prepared = input.guests.flatMap((guest) => {
+        const email = guest.email?.toLowerCase() || undefined;
+        if (email && seenEmails.has(email)) return [];
+        if (email) seenEmails.add(email);
+        const accessCode = createConferenceAccessCode();
+        const id = crypto.randomUUID();
+        const username = createConferenceUsername(
+          guest.firstName,
+          guest.lastName,
+          email,
+          accessCode,
+        );
+        return [{ ...guest, id, email, accessCode, username }];
+      });
+
+      if (prepared.length === 0)
+        return { imported: 0, skipped: input.guests.length };
+
+      const { data: ticketTypes, error: ticketTypeLookupError } =
+        await ctx.supabase
+          .from("ticket_types")
+          .select("id")
+          .eq("event_id", input.eventId)
+          .eq("company_id", ctx.companyId)
+          .eq("name", "Conference Access")
+          .limit(1);
+      if (ticketTypeLookupError) throw new Error(ticketTypeLookupError.message);
+
+      let ticketTypeId = ticketTypes?.[0]?.id as string | undefined;
+      if (!ticketTypeId) {
+        const { data: ticketType, error: ticketTypeError } = await ctx.supabase
+          .from("ticket_types")
+          .insert({
+            event_id: input.eventId,
+            company_id: ctx.companyId,
+            name: "Conference Access",
+            description: "Private conference credential and QR entry pass",
+            price: 0,
+            currency: "BHD",
+            status: "active",
+          })
+          .select("id")
+          .single();
+        if (ticketTypeError) throw new Error(ticketTypeError.message);
+        ticketTypeId = ticketType.id as string;
+      }
+
+      const now = new Date().toISOString();
+      const guestRows = prepared.map((guest) => ({
+        id: guest.id,
+        event_id: input.eventId,
+        company_id: ctx.companyId,
+        first_name: guest.firstName,
+        last_name: guest.lastName ?? null,
+        email: guest.email ?? null,
+        phone: guest.phone ?? null,
+        guest_type: guest.role,
+        status: "confirmed",
+        rsvp_status: "accepted",
+        rsvp_at: now,
+        source: "conference_import",
+        custom_data: {
+          position: guest.position ?? "",
+          organization: guest.organization ?? "",
+          conferenceRole: guest.role,
+          accessUsername: guest.username,
+          accessCode: guest.accessCode,
+          credentialsCreatedAt: now,
+        },
+      }));
+
+      const { error: guestsError } = await ctx.supabase
+        .from("guests")
+        .insert(guestRows);
+      if (guestsError) throw new Error(guestsError.message);
+
+      const ticketRows = prepared.map((guest) => ({
+        company_id: ctx.companyId,
+        event_id: input.eventId,
+        ticket_type_id: ticketTypeId,
+        guest_id: guest.id,
+        barcode: `CONF-${crypto.randomBytes(8).toString("hex").toUpperCase()}`,
+        barcode_type: "qr",
+        status: "valid",
+        attendee_name: `${guest.firstName} ${guest.lastName ?? ""}`.trim(),
+        attendee_email: guest.email ?? null,
+        metadata: {
+          conferenceCredential: true,
+          conferenceRole: guest.role,
+          position: guest.position ?? "",
+          organization: guest.organization ?? "",
+        },
+      }));
+
+      const { error: ticketsError } = await ctx.supabase
+        .from("tickets")
+        .insert(ticketRows);
+      if (ticketsError) {
+        await ctx.supabase
+          .from("guests")
+          .delete()
+          .eq("company_id", ctx.companyId)
+          .in(
+            "id",
+            prepared.map((guest) => guest.id),
+          );
+        throw new Error(ticketsError.message);
+      }
+
+      return {
+        imported: prepared.length,
+        skipped: input.guests.length - prepared.length,
+      };
     }),
 
   update: protectedProcedure
@@ -343,24 +572,37 @@ export const guestsRouter = router({
         lastName: z.string().max(255).optional(),
         email: z.string().email().optional().or(z.literal("")),
         phone: z.string().max(50).optional(),
-        status: z.enum(["invited", "confirmed", "declined", "waitlisted", "checked_in", "no_show"]).optional(),
+        status: z
+          .enum([
+            "invited",
+            "confirmed",
+            "declined",
+            "waitlisted",
+            "checked_in",
+            "no_show",
+          ])
+          .optional(),
         guestType: z.string().max(100).optional(),
         tableNumber: z.string().max(50).optional(),
         seatNumber: z.string().max(50).optional(),
         notes: z.string().optional(),
         tags: z.array(z.string()).optional(),
-      })
+      }),
     )
     .mutation(async ({ ctx, input }) => {
-      const payload: Record<string, unknown> = { updated_at: new Date().toISOString() };
+      const payload: Record<string, unknown> = {
+        updated_at: new Date().toISOString(),
+      };
       if (input.firstName !== undefined) payload.first_name = input.firstName;
       if (input.lastName !== undefined) payload.last_name = input.lastName;
       if (input.email !== undefined) payload.email = input.email || null;
       if (input.phone !== undefined) payload.phone = input.phone;
       if (input.status !== undefined) payload.status = input.status;
       if (input.guestType !== undefined) payload.guest_type = input.guestType;
-      if (input.tableNumber !== undefined) payload.table_number = input.tableNumber;
-      if (input.seatNumber !== undefined) payload.seat_number = input.seatNumber;
+      if (input.tableNumber !== undefined)
+        payload.table_number = input.tableNumber;
+      if (input.seatNumber !== undefined)
+        payload.seat_number = input.seatNumber;
       if (input.notes !== undefined) payload.notes = input.notes;
       if (input.tags !== undefined) payload.tags = input.tags;
 
@@ -406,8 +648,15 @@ export const guestsRouter = router({
     .input(
       z.object({
         ids: z.array(z.string().uuid()),
-        status: z.enum(["invited", "confirmed", "declined", "waitlisted", "checked_in", "no_show"]),
-      })
+        status: z.enum([
+          "invited",
+          "confirmed",
+          "declined",
+          "waitlisted",
+          "checked_in",
+          "no_show",
+        ]),
+      }),
     )
     .mutation(async ({ ctx, input }) => {
       const payload: Record<string, unknown> = {
@@ -472,7 +721,7 @@ export const guestsRouter = router({
         eventId: z.string().uuid(),
         barcode: z.string().optional(),
         deviceInfo: z.record(z.string()).optional(),
-      })
+      }),
     )
     .mutation(async ({ ctx, input }) => {
       const { data: guestData, error: guestError } = await ctx.supabase
@@ -487,7 +736,10 @@ export const guestsRouter = router({
       if (!guestData) throw new Error("Guest not found for this event");
 
       if (guestData.status === "checked_in") {
-        return { guest: mapGuest(guestData as GuestRow), alreadyCheckedIn: true };
+        return {
+          guest: mapGuest(guestData as GuestRow),
+          alreadyCheckedIn: true,
+        };
       }
 
       const now = new Date().toISOString();
@@ -533,17 +785,27 @@ export const guestsRouter = router({
         if (ticketUpdateError) throw new Error(ticketUpdateError.message);
       }
 
-      await insertScan(ctx as { supabase: { from: (table: string) => any }; companyId: string; userId: string }, {
-        eventId: input.eventId,
-        ticketId: linkedTicket?.id ?? null,
-        barcode: input.barcode ?? linkedTicket?.barcode ?? null,
-        scanType: "check_in",
-        method: input.barcode ? "scan" : "manual",
-        deviceInfo: input.deviceInfo,
-      });
+      await insertScan(
+        ctx as {
+          supabase: { from: (table: string) => any };
+          companyId: string;
+          userId: string;
+        },
+        {
+          eventId: input.eventId,
+          ticketId: linkedTicket?.id ?? null,
+          barcode: input.barcode ?? linkedTicket?.barcode ?? null,
+          scanType: "check_in",
+          method: input.barcode ? "scan" : "manual",
+          deviceInfo: input.deviceInfo,
+        },
+      );
 
       return {
-        guest: mapGuest(updatedGuest as GuestRow, linkedTicket as TicketRow | null),
+        guest: mapGuest(
+          updatedGuest as GuestRow,
+          linkedTicket as TicketRow | null,
+        ),
         alreadyCheckedIn: false,
       };
     }),
@@ -553,7 +815,7 @@ export const guestsRouter = router({
       z.object({
         guestId: z.string().uuid(),
         eventId: z.string().uuid(),
-      })
+      }),
     )
     .mutation(async ({ ctx, input }) => {
       const now = new Date().toISOString();
@@ -599,15 +861,27 @@ export const guestsRouter = router({
         if (ticketUpdateError) throw new Error(ticketUpdateError.message);
       }
 
-      await insertScan(ctx as { supabase: { from: (table: string) => any }; companyId: string; userId: string }, {
-        eventId: input.eventId,
-        ticketId: linkedTicket?.id ?? null,
-        barcode: linkedTicket?.barcode ?? null,
-        scanType: "checkout",
-        method: "manual",
-      });
+      await insertScan(
+        ctx as {
+          supabase: { from: (table: string) => any };
+          companyId: string;
+          userId: string;
+        },
+        {
+          eventId: input.eventId,
+          ticketId: linkedTicket?.id ?? null,
+          barcode: linkedTicket?.barcode ?? null,
+          scanType: "checkout",
+          method: "manual",
+        },
+      );
 
-      return { guest: mapGuest(updatedGuest as GuestRow, linkedTicket as TicketRow | null) };
+      return {
+        guest: mapGuest(
+          updatedGuest as GuestRow,
+          linkedTicket as TicketRow | null,
+        ),
+      };
     }),
 
   sendTicketEmail: protectedProcedure
@@ -622,7 +896,8 @@ export const guestsRouter = router({
 
       if (guestError) throw new Error(guestError.message);
       if (!guestData) throw new Error("Guest not found");
-      if (!guestData.email) throw new Error("Guest does not have an email address.");
+      if (!guestData.email)
+        throw new Error("Guest does not have an email address.");
 
       const { data: eventData, error: eventError } = await ctx.supabase
         .from("events")
@@ -634,18 +909,20 @@ export const guestsRouter = router({
       if (eventError) throw new Error(eventError.message);
       if (!eventData) throw new Error("Event not found");
 
-      const { data: existingTicketRows, error: existingTicketError } = await ctx.supabase
-        .from("tickets")
-        .select("*")
-        .eq("guest_id", input.guestId)
-        .eq("event_id", guestData.event_id)
-        .eq("company_id", ctx.companyId)
-        .order("created_at", { ascending: false })
-        .limit(1);
+      const { data: existingTicketRows, error: existingTicketError } =
+        await ctx.supabase
+          .from("tickets")
+          .select("*")
+          .eq("guest_id", input.guestId)
+          .eq("event_id", guestData.event_id)
+          .eq("company_id", ctx.companyId)
+          .order("created_at", { ascending: false })
+          .limit(1);
 
       if (existingTicketError) throw new Error(existingTicketError.message);
 
-      let ticketData = (existingTicketRows?.[0] as TicketRow | undefined) ?? null;
+      let ticketData =
+        (existingTicketRows?.[0] as TicketRow | undefined) ?? null;
       let ticketTypeData: TicketTypeRow | null = null;
 
       if (ticketData?.ticket_type_id) {
@@ -659,66 +936,76 @@ export const guestsRouter = router({
       }
 
       if (!ticketData) {
-        const { data: activeTicketTypes, error: activeTicketTypesError } = await ctx.supabase
-          .from("ticket_types")
-          .select("id,name,description,price,currency,status,created_at")
-          .eq("event_id", guestData.event_id)
-          .eq("company_id", ctx.companyId)
-          .eq("status", "active")
-          .order("created_at", { ascending: false })
-          .limit(1);
-        if (activeTicketTypesError) throw new Error(activeTicketTypesError.message);
-
-        ticketTypeData = (activeTicketTypes?.[0] as TicketTypeRow | undefined) ?? null;
-
-        if (!ticketTypeData) {
-          const { data: anyTicketTypes, error: anyTicketTypesError } = await ctx.supabase
+        const { data: activeTicketTypes, error: activeTicketTypesError } =
+          await ctx.supabase
             .from("ticket_types")
             .select("id,name,description,price,currency,status,created_at")
             .eq("event_id", guestData.event_id)
             .eq("company_id", ctx.companyId)
+            .eq("status", "active")
             .order("created_at", { ascending: false })
             .limit(1);
+        if (activeTicketTypesError)
+          throw new Error(activeTicketTypesError.message);
+
+        ticketTypeData =
+          (activeTicketTypes?.[0] as TicketTypeRow | undefined) ?? null;
+
+        if (!ticketTypeData) {
+          const { data: anyTicketTypes, error: anyTicketTypesError } =
+            await ctx.supabase
+              .from("ticket_types")
+              .select("id,name,description,price,currency,status,created_at")
+              .eq("event_id", guestData.event_id)
+              .eq("company_id", ctx.companyId)
+              .order("created_at", { ascending: false })
+              .limit(1);
           if (anyTicketTypesError) throw new Error(anyTicketTypesError.message);
-          ticketTypeData = (anyTicketTypes?.[0] as TicketTypeRow | undefined) ?? null;
+          ticketTypeData =
+            (anyTicketTypes?.[0] as TicketTypeRow | undefined) ?? null;
         }
 
         if (!ticketTypeData) {
-          const { data: createdTicketType, error: createTicketTypeError } = await ctx.supabase
-            .from("ticket_types")
-            .insert({
-              event_id: guestData.event_id,
-              company_id: ctx.companyId,
-              name: "General Admission",
-              description: "Auto-created for guest ticket delivery",
-              price: 0,
-              currency: "BHD",
-              status: "active",
-            })
-            .select("id,name,description,price,currency,status,created_at")
-            .single();
+          const { data: createdTicketType, error: createTicketTypeError } =
+            await ctx.supabase
+              .from("ticket_types")
+              .insert({
+                event_id: guestData.event_id,
+                company_id: ctx.companyId,
+                name: "General Admission",
+                description: "Auto-created for guest ticket delivery",
+                price: 0,
+                currency: "BHD",
+                status: "active",
+              })
+              .select("id,name,description,price,currency,status,created_at")
+              .single();
 
-          if (createTicketTypeError) throw new Error(createTicketTypeError.message);
+          if (createTicketTypeError)
+            throw new Error(createTicketTypeError.message);
           ticketTypeData = createdTicketType as TicketTypeRow;
         }
 
         const barcode = `TKT-${crypto.randomBytes(6).toString("hex").toUpperCase()}`;
-        const attendeeName = `${guestData.first_name ?? ""} ${guestData.last_name ?? ""}`.trim() || "Guest";
+        const attendeeName =
+          `${guestData.first_name ?? ""} ${guestData.last_name ?? ""}`.trim() ||
+          "Guest";
 
-        const { data: createdTicket, error: createTicketError } = await ctx.supabase
-          .from("tickets")
-          .insert({
-            company_id: ctx.companyId,
-            event_id: guestData.event_id,
-            ticket_type_id: ticketTypeData.id,
-            guest_id: guestData.id,
-            barcode,
-            attendee_name: attendeeName,
-            attendee_email: guestData.email,
-            status: "valid",
-          })
-          .select("*")
-          .single();
+        const { data: createdTicket, error: createTicketError } =
+          await ctx.supabase
+            .from("tickets")
+            .insert({
+              company_id: ctx.companyId,
+              event_id: guestData.event_id,
+              ticket_type_id: ticketTypeData.id,
+              guest_id: guestData.id,
+              barcode,
+              attendee_name: attendeeName,
+              attendee_email: guestData.email,
+              status: "valid",
+            })
+            .select("*")
+            .single();
 
         if (createTicketError) throw new Error(createTicketError.message);
         ticketData = createdTicket as TicketRow;
@@ -728,12 +1015,21 @@ export const guestsRouter = router({
         throw new Error("Failed to create or find ticket for guest.");
       }
 
-      const settings = (eventData.settings as Record<string, unknown> | null) ?? {};
-      const emailDesign = settings.emailDesign as Parameters<typeof sendTicketEmail>[0]["emailDesign"];
-      const ticketDesign = settings.ticketDesign as Parameters<typeof sendTicketEmail>[0]["ticketDesign"];
+      const settings =
+        (eventData.settings as Record<string, unknown> | null) ?? {};
+      const emailDesign = settings.emailDesign as Parameters<
+        typeof sendTicketEmail
+      >[0]["emailDesign"];
+      const ticketDesign = settings.ticketDesign as Parameters<
+        typeof sendTicketEmail
+      >[0]["ticketDesign"];
 
-      const eventDate = eventData.starts_at ? format(new Date(eventData.starts_at), "MMM d, yyyy") : undefined;
-      const eventTime = eventData.starts_at ? format(new Date(eventData.starts_at), "h:mm a") : undefined;
+      const eventDate = eventData.starts_at
+        ? format(new Date(eventData.starts_at), "MMM d, yyyy")
+        : undefined;
+      const eventTime = eventData.starts_at
+        ? format(new Date(eventData.starts_at), "h:mm a")
+        : undefined;
       const baseUrl = getAppUrl();
       const ticketUrl = `${baseUrl}/api/tickets/${ticketData.id}/pdf`;
       const confirmAttendanceUrl = `${baseUrl}/rsvp/confirm?guestId=${guestData.id}&eventId=${guestData.event_id}`;
@@ -741,7 +1037,8 @@ export const guestsRouter = router({
       const result = await sendTicketEmail({
         toEmail: guestData.email,
         eventName: eventData.title || "Event",
-        attendeeName: `${guestData.first_name ?? ""} ${guestData.last_name ?? ""}`.trim(),
+        attendeeName:
+          `${guestData.first_name ?? ""} ${guestData.last_name ?? ""}`.trim(),
         ticketName: ticketTypeData?.name || "General Admission",
         orderNumber: ticketData.barcode,
         barcode: ticketData.barcode,
@@ -756,9 +1053,14 @@ export const guestsRouter = router({
 
       if (!result.success) {
         if (result.code === "EMAIL_NOT_CONFIGURED") {
-          throw new Error("Email service is not configured. Add RESEND_API_KEY to .env.local and restart the app.");
+          throw new Error(
+            "Email service is not configured. Add RESEND_API_KEY to .env.local and restart the app.",
+          );
         }
-        const detail = result.error instanceof Error ? result.error.message : String(result.error);
+        const detail =
+          result.error instanceof Error
+            ? result.error.message
+            : String(result.error);
         console.error("[sendTicketEmail] Resend error:", result.error);
         throw new Error(`Failed to send email: ${detail}`);
       }
@@ -767,17 +1069,24 @@ export const guestsRouter = router({
       // who still need their ticket email. This is intentionally best-effort:
       // a metadata write failure must not turn a successfully delivered email
       // into a false send failure.
-      const currentMetadata = (ticketData.metadata as Record<string, unknown> | null) ?? {};
+      const currentMetadata =
+        (ticketData.metadata as Record<string, unknown> | null) ?? {};
       const { error: deliveryMetadataError } = await ctx.supabase
         .from("tickets")
         .update({
-          metadata: { ...currentMetadata, ticketEmailSentAt: new Date().toISOString() },
+          metadata: {
+            ...currentMetadata,
+            ticketEmailSentAt: new Date().toISOString(),
+          },
           updated_at: new Date().toISOString(),
         })
         .eq("id", ticketData.id)
         .eq("company_id", ctx.companyId);
       if (deliveryMetadataError) {
-        console.warn("[sendTicketEmail] Could not persist ticket email delivery state:", deliveryMetadataError.message);
+        console.warn(
+          "[sendTicketEmail] Could not persist ticket email delivery state:",
+          deliveryMetadataError.message,
+        );
       }
 
       return result;

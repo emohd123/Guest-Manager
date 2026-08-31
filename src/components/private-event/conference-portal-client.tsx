@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import QRCode from "qrcode";
+import { createTicketQrPayload } from "@/lib/ticket-qr";
 import {
   ArrowLeft,
   Bell,
@@ -132,11 +133,13 @@ function QuestionBox({
 export function ConferencePortalClient({
   attendeeName,
   guestId,
+  ticketBarcode,
   event,
   sessions,
 }: {
   attendeeName: string;
   guestId: string;
+  ticketBarcode?: string | null;
   event: PortalEvent;
   sessions: EventSessionRecord[];
 }) {
@@ -155,13 +158,16 @@ export function ConferencePortalClient({
     [sessions],
   );
   useEffect(() => {
-    QRCode.toDataURL(`iticket:guest:${guestId}:event:${event.id}`, {
+    const qrValue = ticketBarcode
+      ? createTicketQrPayload(ticketBarcode, event.endsAt)
+      : `iticket:guest:${guestId}:event:${event.id}`;
+    QRCode.toDataURL(qrValue, {
       width: 260,
       margin: 1,
     })
       .then(setQr)
       .catch(() => setQr(""));
-  }, [event.id, guestId]);
+  }, [event.endsAt, event.id, guestId, ticketBarcode]);
   async function signOut() {
     await fetch("/api/private-events/signout", { method: "POST" });
     router.replace("/private-event");
@@ -291,7 +297,8 @@ export function ConferencePortalClient({
               </p>
             )}
             <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">
-              Show this at registration.
+              Show this at registration. It uses the same secure check-in flow
+              as an iTicket ticket.
             </p>
           </article>
         </section>
