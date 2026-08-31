@@ -61,7 +61,9 @@ export type EventResource = {
   id: string;
   title: string;
   url: string;
-  fileType?: "PDF" | "PPTX" | "DOCX" | "LINK";
+  fileType?: "PDF" | "PPTX" | "DOCX" | "XLSX" | "IMAGE" | "LINK";
+  uploadedBy?: string;
+  sessionId?: string;
 };
 
 export type EventSessionStatus = "upcoming" | "live" | "completed";

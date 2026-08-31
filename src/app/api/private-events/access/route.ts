@@ -5,10 +5,12 @@ import { z } from "zod";
 import { createSupabaseAdminClient } from "@/server/supabase/admin";
 import { isRateLimited, registerAttempt } from "@/server/services/checkin/rate-limit";
 import { createPrivateEventAccess, privateEventAccessCookie } from "@/server/services/private-event-access";
+import { getEventExperience } from "@/server/services/event-app";
 
 const bodySchema = z.object({
   username: z.string().trim().min(2).max(120),
   eventCode: z.string().trim().regex(/^[A-Za-z0-9-]{4,10}$/),
+  role: z.enum(["attendee", "speaker"]).optional().default("attendee"),
   // The browser can send the selected conference id as an extra safeguard.
   // Native clients only know the code, so the code itself is the authority.
   eventId: z.string().uuid().optional(),
@@ -37,14 +39,15 @@ export async function POST(request: NextRequest) {
     }
 
     const supabase = createSupabaseAdminClient();
-    const { data: event, error: eventError } = await supabase
+    const eventLookup = supabase
       .from("events")
       .select("id,company_id,slug,settings,ends_at")
-      .eq("visitor_code", eventCode)
       .eq("event_type", "conference")
       .eq("status", "published")
-      .is("deleted_at", null)
-      .maybeSingle();
+      .is("deleted_at", null);
+    const { data: event, error: eventError } = input.role === "speaker" && input.eventId
+      ? await eventLookup.eq("id", input.eventId).maybeSingle()
+      : await eventLookup.eq("visitor_code", eventCode).maybeSingle();
 
     if (eventError) throw new Error(eventError.message);
 
@@ -56,6 +59,37 @@ export async function POST(request: NextRequest) {
     if (!event || (input.eventId && event.id !== input.eventId) || !publicPageEnabled) {
       registerAttempt(rateLimitKey, false);
       return NextResponse.json({ error: "The username or event code is not valid." }, { status: 401 });
+    }
+
+    if (input.role === "speaker") {
+      const experience = await getEventExperience(event.id);
+      const speakerSessions = experience.sessions.filter((session) =>
+        normalizeUsername(session.speaker ?? "") === normalizeUsername(input.username)
+        && session.speakerAccessCode === eventCode
+      );
+      if (speakerSessions.length === 0) {
+        registerAttempt(rateLimitKey, false);
+        return NextResponse.json({ error: "The speaker name or access code is not valid." }, { status: 401 });
+      }
+      const speakerName = speakerSessions[0].speaker ?? input.username.trim();
+      const access = createPrivateEventAccess({
+        eventId: event.id,
+        guestId: speakerSessions[0].id,
+        username: input.username.trim(),
+        role: "speaker",
+        speakerName,
+      }, event.ends_at);
+      const response = NextResponse.json({
+        portalUrl: `/private-event/speaker-portal/${event.id}`,
+        accessToken: access.token,
+        expiresAt: new Date(access.maxAge * 1000 + Date.now()).toISOString(),
+        eventId: event.id,
+        username: input.username.trim(),
+        role: "speaker",
+      });
+      response.cookies.set(privateEventAccessCookie.name, access.token, { ...privateEventAccessCookie.options, maxAge: access.maxAge });
+      registerAttempt(rateLimitKey, true);
+      return response;
     }
 
     const { data: guests, error: guestError } = await supabase

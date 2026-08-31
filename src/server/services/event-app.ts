@@ -657,6 +657,59 @@ export async function updatePrivateConferenceAgenda(input: {
   return { savedSessionIds: profile.savedSessionIds };
 }
 
+export async function getPrivateConferenceSpeakerData(input: { eventId: string; speakerName: string }) {
+  const experience = await getEventExperience(input.eventId);
+  const speakerName = input.speakerName.trim().toLocaleLowerCase();
+  const sessions = experience.sessions.filter((session) => (session.speaker ?? "").trim().toLocaleLowerCase() === speakerName);
+  const sessionIds = new Set(sessions.map((session) => session.id));
+  const questions = (await getConferenceQuestions(input.eventId)).filter((question) => sessionIds.has(question.sessionId));
+  return {
+    conference: { id: experience.event.id, title: experience.event.title },
+    speakerName: input.speakerName,
+    sessions,
+    questions,
+    resources: experience.settings.resources ?? [],
+  };
+}
+
+export async function addPrivateConferenceSpeakerResource(input: {
+  eventId: string;
+  speakerName: string;
+  title: string;
+  url: string;
+  fileType: EventResource["fileType"];
+  sessionId?: string;
+}) {
+  const event = await getEventById(input.eventId);
+  if (!event) throw new Error("Conference not found");
+  const experience = await getEventExperience(input.eventId);
+  const speakerSessions = experience.sessions.filter((session) =>
+    (session.speaker ?? "").trim().toLocaleLowerCase() === input.speakerName.trim().toLocaleLowerCase()
+  );
+  if (!speakerSessions.length || (input.sessionId && !speakerSessions.some((session) => session.id === input.sessionId))) {
+    throw new Error("Speaker is not assigned to this session");
+  }
+  const nextSettings = normalizeEventAppSettings(event.settings);
+  nextSettings.resources = [
+    ...nextSettings.resources,
+    {
+      id: crypto.randomUUID(),
+      title: input.title.trim(),
+      url: input.url,
+      fileType: input.fileType,
+      uploadedBy: input.speakerName,
+      sessionId: input.sessionId,
+    },
+  ];
+  const supabase = createSupabaseAdminClient();
+  const { error } = await supabase
+    .from("events")
+    .update({ settings: mergeEventAppSettings(event.settings, nextSettings), updated_at: new Date().toISOString() })
+    .eq("id", input.eventId);
+  if (error) throw new Error(error.message);
+  return nextSettings.resources[nextSettings.resources.length - 1];
+}
+
 export async function getVisitorGuestContext(token: string, eventId?: string | null) {
   const supabase = createSupabaseAdminClient();
   const { data: userData, error: userError } = await supabase.auth.getUser(token);

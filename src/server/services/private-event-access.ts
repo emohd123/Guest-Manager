@@ -4,6 +4,8 @@ type PrivateEventAccess = {
   eventId: string;
   guestId: string;
   username: string;
+  role?: "attendee" | "speaker";
+  speakerName?: string;
   expiresAt: number;
 };
 
@@ -42,6 +44,7 @@ export function readPrivateEventAccess(token?: string): PrivateEventAccess | nul
   try {
     const payload = JSON.parse(Buffer.from(encoded, "base64url").toString("utf8")) as PrivateEventAccess;
     if (!payload.eventId || !payload.guestId || !payload.username || payload.expiresAt <= Date.now()) return null;
+    if (payload.role && payload.role !== "attendee" && payload.role !== "speaker") return null;
     return payload;
   } catch {
     return null;
