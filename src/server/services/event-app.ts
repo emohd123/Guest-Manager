@@ -12,6 +12,7 @@ import {
   type EventSessionQuestion,
   type EventSessionRecord,
   type EventSessionStatus,
+  type LineupArtist,
   type SponsorProfile,
 } from "@/types/event";
 
@@ -567,6 +568,93 @@ export async function createConferenceQuestion(input: {
     .eq("id", input.eventId);
   if (error) throw new Error(error.message);
   return question;
+}
+
+export async function getPrivateConferenceMobileData(input: {
+  eventId: string;
+  guestId: string;
+  attendeeName: string;
+}) {
+  const supabase = createSupabaseAdminClient();
+  const experience = await getEventExperience(input.eventId);
+  const { data: guestData, error: guestError } = await supabase
+    .from("guests")
+    .select("id,event_id,first_name,last_name,email,phone,guest_type,tags,custom_data,rsvp_status,attendance_state,created_at")
+    .eq("id", input.guestId)
+    .eq("event_id", input.eventId)
+    .maybeSingle();
+  if (guestError) throw new Error(guestError.message);
+  if (!guestData) throw new Error("Conference attendee not found");
+
+  const guest = guestData as GuestRow;
+  const settings = (experience.event.settings ?? {}) as Record<string, unknown>;
+  const publicPage = (settings.publicPage ?? {}) as { venueName?: string; locationText?: string; lineup?: LineupArtist[] };
+  let venue: { name: string | null; address: unknown } | null = null;
+  if (experience.event.venue_id) {
+    const { data, error } = await supabase
+      .from("venues")
+      .select("name,address")
+      .eq("id", experience.event.venue_id)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    venue = data;
+  }
+  const address = venue?.address && typeof venue.address === "object"
+    ? Object.values(venue.address as Record<string, unknown>).filter((value): value is string => typeof value === "string").join(", ")
+    : "";
+
+  return {
+    attendee: { id: guest.id, name: input.attendeeName, savedSessionIds: getGuestProfile(guest).savedSessionIds },
+    conference: {
+      id: experience.event.id,
+      title: experience.event.title,
+      description: experience.event.description ?? experience.event.short_description ?? "",
+      coverImageUrl: experience.event.cover_image_url ?? "",
+      startsAt: experience.event.starts_at,
+      endsAt: experience.event.ends_at,
+      venueName: venue?.name ?? publicPage.venueName ?? "Venue to be confirmed",
+      location: address || publicPage.locationText || venue?.name || publicPage.venueName || "Venue to be confirmed",
+    },
+    announcements: experience.settings.announcements,
+    sessions: experience.sessions,
+    speakers: Array.isArray(publicPage.lineup) ? publicPage.lineup : [],
+    resources: experience.settings.resources ?? [],
+    venueMapUrl: experience.settings.venueMapUrl ?? "",
+  };
+}
+
+export async function updatePrivateConferenceAgenda(input: {
+  eventId: string;
+  guestId: string;
+  sessionId: string;
+  saved: boolean;
+}) {
+  const supabase = createSupabaseAdminClient();
+  const experience = await getEventExperience(input.eventId);
+  if (!experience.sessions.some((session) => session.id === input.sessionId)) {
+    throw new Error("Session not found");
+  }
+  const { data, error } = await supabase
+    .from("guests")
+    .select("id,event_id,first_name,last_name,email,phone,guest_type,tags,custom_data,rsvp_status,attendance_state,created_at")
+    .eq("id", input.guestId)
+    .eq("event_id", input.eventId)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  if (!data) throw new Error("Conference attendee not found");
+
+  const guest = data as GuestRow;
+  const profile = getGuestProfile(guest);
+  profile.savedSessionIds = input.saved
+    ? dedupeStrings([...profile.savedSessionIds, input.sessionId])
+    : profile.savedSessionIds.filter((id) => id !== input.sessionId);
+  const { error: updateError } = await supabase
+    .from("guests")
+    .update({ custom_data: buildGuestCustomData(guest.custom_data, profile), updated_at: new Date().toISOString() })
+    .eq("id", guest.id)
+    .eq("event_id", input.eventId);
+  if (updateError) throw new Error(updateError.message);
+  return { savedSessionIds: profile.savedSessionIds };
 }
 
 export async function getVisitorGuestContext(token: string, eventId?: string | null) {

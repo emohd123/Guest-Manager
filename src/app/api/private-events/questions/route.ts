@@ -12,7 +12,8 @@ const inputSchema = z.object({
 export async function POST(request: NextRequest) {
   try {
     const input = inputSchema.parse(await request.json());
-    const access = readPrivateEventAccess(request.cookies.get(privateEventAccessCookie.name)?.value);
+    const bearer = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
+    const access = readPrivateEventAccess(bearer ?? request.cookies.get(privateEventAccessCookie.name)?.value);
     if (!access || access.eventId !== input.eventId) {
       return NextResponse.json({ error: "Your private event access has expired." }, { status: 401 });
     }

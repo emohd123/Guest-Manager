@@ -548,16 +548,48 @@ export async function fetchDiscoverEvents() {
   );
 }
 
-export async function accessPrivateEvent(username: string, eventCode: string) {
-  return apiRequest<{ portalUrl: string }>(
+export async function accessPrivateEvent(username: string, eventCode: string, eventId?: string) {
+  return apiRequest<{
+    portalUrl: string;
+    accessToken: string;
+    expiresAt: string;
+    eventId: string;
+    guestId: string;
+    username: string;
+  }>(
     "/api/private-events/access",
     {
       method: "POST",
       body: JSON.stringify({
         username: username.trim(),
         eventCode: eventCode.trim().toUpperCase(),
+        ...(eventId ? { eventId } : {}),
       }),
     }
+  );
+}
+
+export async function fetchPrivateConference(token: string) {
+  return apiRequest<import("../types").PrivateConferenceData>(
+    "/api/private-events/mobile",
+    { method: "GET" },
+    token
+  );
+}
+
+export async function updatePrivateConferenceAgenda(token: string, sessionId: string, saved: boolean) {
+  return apiRequest<{ savedSessionIds: string[] }>(
+    "/api/private-events/mobile",
+    { method: "POST", body: JSON.stringify({ sessionId, saved }) },
+    token
+  );
+}
+
+export async function submitPrivateConferenceQuestion(token: string, eventId: string, sessionId: string, body: string) {
+  return apiRequest<{ question: { id: string } }>(
+    "/api/private-events/questions",
+    { method: "POST", body: JSON.stringify({ eventId, sessionId, body }) },
+    token
   );
 }
 

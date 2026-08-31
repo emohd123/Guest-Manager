@@ -18,6 +18,35 @@ export type VisitorSession = {
   name: string;
 };
 
+/** A private-conference session is deliberately scoped to one attendee and
+ * one conference. It is not a Supabase user credential. */
+export type PrivateConferenceSession = {
+  token: string;
+  eventId: string;
+  guestId: string;
+  username: string;
+  expiresAt: string;
+};
+
+export type PrivateConferenceData = {
+  attendee: { id: string; name: string; savedSessionIds: string[] };
+  conference: {
+    id: string;
+    title: string;
+    description: string;
+    coverImageUrl: string;
+    startsAt: string;
+    endsAt: string | null;
+    venueName: string;
+    location: string;
+  };
+  announcements: Array<{ id: string; title: string; body: string; createdAt: string }>;
+  sessions: VisitorSessionItem[];
+  speakers: Array<{ id: string; name: string; role?: string | null; bio?: string | null; imageUrl?: string | null }>;
+  resources: Array<{ id: string; title: string; url: string; fileType?: "PDF" | "PPTX" | "DOCX" | "LINK" }>;
+  venueMapUrl: string;
+};
+
 export type VisitorHomeData = {
   event: {
     id: string;

@@ -513,7 +513,7 @@ export default function EventSettingsPage({
             </div>
           </div>
 
-          {event.eventType !== "conference" && <div className="space-y-2">
+          {!isPrivateWorkspace && <div className="space-y-2">
             <Label htmlFor="networkingIntro">Networking Intro Text</Label>
             <Textarea
               id="networkingIntro"

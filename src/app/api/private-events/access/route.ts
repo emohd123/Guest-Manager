@@ -9,7 +9,9 @@ import { createPrivateEventAccess, privateEventAccessCookie } from "@/server/ser
 const bodySchema = z.object({
   username: z.string().trim().min(2).max(120),
   eventCode: z.string().trim().regex(/^[A-Za-z0-9-]{4,10}$/),
-  eventId: z.string().uuid(),
+  // The browser can send the selected conference id as an extra safeguard.
+  // Native clients only know the code, so the code itself is the authority.
+  eventId: z.string().uuid().optional(),
 });
 
 function getRequestIp(request: NextRequest) {
@@ -51,7 +53,7 @@ export async function POST(request: NextRequest) {
         ? (event.settings as { publicPage?: { enabled?: boolean } }).publicPage?.enabled !== false
         : true;
 
-    if (!event || event.id !== input.eventId || !publicPageEnabled) {
+    if (!event || (input.eventId && event.id !== input.eventId) || !publicPageEnabled) {
       registerAttempt(rateLimitKey, false);
       return NextResponse.json({ error: "The username or event code is not valid." }, { status: 401 });
     }
@@ -78,7 +80,16 @@ export async function POST(request: NextRequest) {
       guestId: matchingGuest.id,
       username: input.username.trim(),
     }, event.ends_at);
-    const response = NextResponse.json({ portalUrl: `/private-event/portal/${event.id}` });
+    // The browser keeps this in an HttpOnly cookie. The native app must retain
+    // the same short-lived, event-scoped token in its platform secure storage.
+    const response = NextResponse.json({
+      portalUrl: `/private-event/portal/${event.id}`,
+      accessToken: access.token,
+      expiresAt: new Date(access.maxAge * 1000 + Date.now()).toISOString(),
+      eventId: event.id,
+      guestId: matchingGuest.id,
+      username: input.username.trim(),
+    });
     response.cookies.set(privateEventAccessCookie.name, access.token, { ...privateEventAccessCookie.options, maxAge: access.maxAge });
     registerAttempt(rateLimitKey, true);
     return response;
