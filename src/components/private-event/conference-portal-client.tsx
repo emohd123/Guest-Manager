@@ -3,44 +3,548 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import QRCode from "qrcode";
-import { ArrowLeft, Bell, CalendarDays, Download, ExternalLink, FileText, LogOut, MapPin, MessageCircleQuestion, QrCode, Send } from "lucide-react";
-import type { EventAnnouncement, EventResource, EventSessionRecord, LineupArtist } from "@/types/event";
+import {
+  ArrowLeft,
+  Bell,
+  CalendarDays,
+  Download,
+  ExternalLink,
+  FileText,
+  ListChecks,
+  LogOut,
+  MapPin,
+  MessageCircleQuestion,
+  QrCode,
+  Send,
+  Users,
+} from "lucide-react";
+import type {
+  EventAnnouncement,
+  EventResource,
+  EventSessionRecord,
+  LineupArtist,
+} from "@/types/event";
 
-type PortalEvent = { id: string; title: string; description: string; coverImageUrl: string; startsAt: string; endsAt: string | null; venueName: string; location: string; agendaUrl: string; announcements: EventAnnouncement[]; venueMapUrl: string; resources: EventResource[]; speakers: LineupArtist[] };
-const formatDate = (value: string) => new Intl.DateTimeFormat(undefined, { dateStyle: "full", timeStyle: "short" }).format(new Date(value));
-const formatTime = (value?: string | null) => value ? new Intl.DateTimeFormat(undefined, { hour: "numeric", minute: "2-digit" }).format(new Date(value)) : "TBA";
+type PortalEvent = {
+  id: string;
+  title: string;
+  description: string;
+  coverImageUrl: string;
+  startsAt: string;
+  endsAt: string | null;
+  venueName: string;
+  location: string;
+  agendaUrl: string;
+  announcements: EventAnnouncement[];
+  venueMapUrl: string;
+  resources: EventResource[];
+  speakers: LineupArtist[];
+};
+const formatDate = (value: string) =>
+  new Intl.DateTimeFormat(undefined, {
+    dateStyle: "full",
+    timeStyle: "short",
+  }).format(new Date(value));
+const formatTime = (value?: string | null) =>
+  value
+    ? new Intl.DateTimeFormat(undefined, {
+        hour: "numeric",
+        minute: "2-digit",
+      }).format(new Date(value))
+    : "TBA";
 
-function QuestionBox({ eventId, session }: { eventId: string; session: EventSessionRecord }) {
+function QuestionBox({
+  eventId,
+  session,
+}: {
+  eventId: string;
+  session: EventSessionRecord;
+}) {
   const [body, setBody] = useState("");
-  const [state, setState] = useState<"idle" | "sending" | "sent" | "error">("idle");
+  const [state, setState] = useState<"idle" | "sending" | "sent" | "error">(
+    "idle",
+  );
   async function send() {
     if (!body.trim()) return;
     setState("sending");
     try {
-      const response = await fetch("/api/private-events/questions", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ eventId, sessionId: session.id, body }) });
+      const response = await fetch("/api/private-events/questions", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ eventId, sessionId: session.id, body }),
+      });
       if (!response.ok) throw new Error();
-      setBody(""); setState("sent");
-    } catch { setState("error"); }
+      setBody("");
+      setState("sent");
+    } catch {
+      setState("error");
+    }
   }
-  return <div className="mt-4 rounded-xl border border-sky-200 bg-sky-50 p-3 dark:border-cyan-300/20 dark:bg-cyan-300/10"><label className="flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-white"><MessageCircleQuestion className="h-4 w-4 text-cyan-600 dark:text-cyan-300" />Ask the speaker</label><div className="mt-2 flex gap-2"><input value={body} onChange={(e) => { setBody(e.target.value); setState("idle"); }} maxLength={600} placeholder="Write your question" className="min-w-0 flex-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-cyan-500 dark:border-white/15 dark:bg-slate-950 dark:text-white" /><button onClick={send} disabled={state === "sending" || !body.trim()} className="inline-flex items-center gap-1 rounded-lg bg-cyan-600 px-3 text-sm font-bold text-white disabled:opacity-50"><Send className="h-4 w-4" />Send</button></div>{state === "sent" && <p className="mt-2 text-xs font-semibold text-emerald-700 dark:text-emerald-300">Your question was sent with your name.</p>}{state === "error" && <p className="mt-2 text-xs font-semibold text-red-700 dark:text-red-300">Could not send the question. Please try again.</p>}</div>;
+  return (
+    <div className="mt-4 rounded-xl border border-sky-200 bg-sky-50 p-3 dark:border-cyan-300/20 dark:bg-cyan-300/10">
+      <label className="flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-white">
+        <MessageCircleQuestion className="h-4 w-4 text-cyan-600 dark:text-cyan-300" />
+        Ask the speaker
+      </label>
+      <div className="mt-2 flex flex-col gap-2 sm:flex-row">
+        <textarea
+          value={body}
+          onChange={(e) => {
+            setBody(e.target.value);
+            setState("idle");
+          }}
+          maxLength={600}
+          rows={2}
+          placeholder="Write your question"
+          className="min-w-0 flex-1 resize-none rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-cyan-500 dark:border-white/15 dark:bg-slate-950 dark:text-white"
+        />
+        <button
+          onClick={send}
+          disabled={state === "sending" || !body.trim()}
+          className="inline-flex min-h-10 items-center justify-center gap-1 rounded-lg bg-cyan-600 px-4 text-sm font-bold text-white disabled:opacity-50"
+        >
+          <Send className="h-4 w-4" />
+          {state === "sending" ? "Sending…" : "Send"}
+        </button>
+      </div>
+      <div className="mt-2 flex items-center justify-between gap-3">
+        <span className="text-[11px] text-slate-500 dark:text-slate-400">
+          Your name will be shown to the speaker.
+        </span>
+        <span className="text-[11px] tabular-nums text-slate-500 dark:text-slate-400">
+          {body.length}/600
+        </span>
+      </div>
+      {state === "sent" && (
+        <p className="mt-2 text-xs font-semibold text-emerald-700 dark:text-emerald-300">
+          Your question was sent with your name.
+        </p>
+      )}
+      {state === "error" && (
+        <p className="mt-2 text-xs font-semibold text-red-700 dark:text-red-300">
+          Could not send the question. Please try again.
+        </p>
+      )}
+    </div>
+  );
 }
 
-export function ConferencePortalClient({ attendeeName, guestId, event, sessions }: { attendeeName: string; guestId: string; event: PortalEvent; sessions: EventSessionRecord[] }) {
+export function ConferencePortalClient({
+  attendeeName,
+  guestId,
+  event,
+  sessions,
+}: {
+  attendeeName: string;
+  guestId: string;
+  event: PortalEvent;
+  sessions: EventSessionRecord[];
+}) {
   const router = useRouter();
   const [qr, setQr] = useState("");
-  const days = useMemo(() => [...new Set(sessions.map((item) => item.startsAt ? new Date(item.startsAt).toDateString() : "Full programme"))], [sessions]);
-  useEffect(() => { QRCode.toDataURL(`iticket:guest:${guestId}:event:${event.id}`, { width: 260, margin: 1 }).then(setQr).catch(() => setQr("")); }, [event.id, guestId]);
-  async function signOut() { await fetch("/api/private-events/signout", { method: "POST" }); router.replace("/private-event"); router.refresh(); }
-  return <div className="min-h-screen bg-slate-50 pb-28 text-slate-900 transition-colors dark:bg-[#080b12] dark:text-white">
-    <header className="sticky top-0 z-50 border-b border-slate-200 bg-white/95 shadow-sm backdrop-blur dark:border-white/10 dark:bg-slate-950/95"><div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-3 px-5 sm:px-8"><button onClick={() => router.push("/private-event?browse=1")} className="inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-black hover:bg-slate-100 dark:hover:bg-white/10"><ArrowLeft className="h-4 w-4" />Back</button><p className="truncate text-sm font-black text-slate-700 dark:text-slate-200">{event.title}</p><button onClick={signOut} className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-2 text-sm font-black text-slate-800 hover:border-rose-300 hover:text-rose-700 dark:border-white/15 dark:text-slate-100"><LogOut className="h-4 w-4" />Sign out</button></div></header>
-    <section className="relative isolate overflow-hidden border-b border-slate-200 bg-slate-950 text-white dark:border-white/10">{event.coverImageUrl && <img src={event.coverImageUrl} alt="" className="absolute inset-0 -z-20 h-full w-full object-cover opacity-35" />}<div className="absolute inset-0 -z-10 bg-[linear-gradient(110deg,rgba(5,10,20,.96),rgba(5,10,20,.62))]" /><div className="mx-auto max-w-6xl px-5 py-12 sm:px-8 sm:py-16"><p className="text-xs font-black uppercase tracking-[0.24em] text-cyan-200">Private conference portal</p><h1 className="mt-3 max-w-3xl text-4xl font-black tracking-tight sm:text-6xl">{event.title}</h1><p className="mt-4 max-w-2xl text-slate-200">Welcome, {attendeeName}. Your complete conference programme is ready.</p><div className="mt-7 flex flex-wrap gap-3 text-sm font-bold"><span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-black/25 px-4 py-2"><CalendarDays className="h-4 w-4 text-cyan-200" />{formatDate(event.startsAt)}</span><a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(event.location)}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-black/25 px-4 py-2 hover:border-cyan-200"><MapPin className="h-4 w-4 text-cyan-200" />{event.venueName}</a></div></div></section>
-    <main className="mx-auto max-w-6xl space-y-10 px-5 py-10 sm:px-8">
-      <section className="grid gap-5 lg:grid-cols-[1fr_300px]"><article className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-[#121722]"><h2 className="text-2xl font-black">Conference overview</h2><p className="mt-3 leading-7 text-slate-600 dark:text-slate-300">{event.description || "Your organiser will share the latest conference information here."}</p></article><article className="rounded-3xl border border-slate-200 bg-white p-6 text-center shadow-sm dark:border-white/10 dark:bg-[#121722]"><h2 className="flex items-center justify-center gap-2 text-lg font-black"><QrCode className="h-5 w-5 text-cyan-600 dark:text-cyan-300" />Digital access pass</h2>{qr ? <img src={qr} alt="Your event check-in QR code" className="mx-auto mt-4 h-40 w-40 rounded-xl bg-white p-2" /> : <p className="mt-4 text-sm text-slate-500">Preparing your QR pass…</p>}<p className="mt-3 text-xs text-slate-500 dark:text-slate-400">Show this at registration.</p></article></section>
-      {event.announcements.length > 0 && <section><div className="mb-4 flex items-center gap-2"><Bell className="h-6 w-6 text-cyan-600 dark:text-cyan-300" /><div><p className="text-xs font-black uppercase tracking-[0.2em] text-cyan-700 dark:text-cyan-300">Latest updates</p><h2 className="text-2xl font-black">Conference notices</h2></div></div><div className="grid gap-3 md:grid-cols-2">{event.announcements.map((item) => <article key={item.id} className="rounded-2xl border border-cyan-200 bg-cyan-50 p-5 dark:border-cyan-300/20 dark:bg-cyan-300/10"><h3 className="font-black text-slate-950 dark:text-white">{item.title}</h3><p className="mt-2 text-sm leading-6 text-slate-700 dark:text-slate-200">{item.body}</p></article>)}</div></section>}
-      {event.speakers.length > 0 && <section><div className="mb-5"><p className="text-xs font-black uppercase tracking-[0.22em] text-cyan-700 dark:text-cyan-300">Conference speakers</p><h2 className="mt-1 text-3xl font-black">Meet the speakers</h2></div><div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{event.speakers.map((speaker) => <article key={speaker.id} className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-white/10 dark:bg-[#121722]"><div className="aspect-[4/3] bg-slate-100 dark:bg-white/5">{speaker.imageUrl ? <img src={speaker.imageUrl} alt={speaker.name} className="h-full w-full object-contain object-center" /> : <div className="flex h-full items-center justify-center text-4xl font-black text-cyan-700 dark:text-cyan-200">{speaker.name.slice(0, 1)}</div>}</div><div className="p-5"><h3 className="text-lg font-black">{speaker.name}</h3>{speaker.role && <p className="mt-1 text-sm font-bold text-cyan-700 dark:text-cyan-200">{speaker.role}</p>}{speaker.bio && <p className="mt-3 text-sm leading-6 text-slate-600 dark:text-slate-300">{speaker.bio}</p>}</div></article>)}</div></section>}
-      <section><div className="mb-5"><p className="text-xs font-black uppercase tracking-[0.22em] text-cyan-700 dark:text-cyan-300">Full programme</p><h2 className="mt-1 text-3xl font-black">Schedule</h2><p className="mt-2 text-sm text-slate-600 dark:text-slate-300">Everything happening at the conference, arranged by day. Ask a live question during any session.</p></div>{sessions.length === 0 ? <p className="rounded-2xl border border-slate-200 bg-white p-6 text-slate-600 dark:border-white/10 dark:bg-[#121722] dark:text-slate-300">The full schedule will appear here once published by the organiser.</p> : <div className="space-y-7">{days.map((day) => <div key={day}><h3 className="mb-3 text-lg font-black text-cyan-800 dark:text-cyan-200">{day}</h3><div className="space-y-3">{sessions.filter((item) => (item.startsAt ? new Date(item.startsAt).toDateString() : "Full programme") === day).map((session) => <article key={session.id} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-[#121722]"><div className="grid gap-4 md:grid-cols-[150px_1fr]"><div className="text-sm font-black text-cyan-700 dark:text-cyan-200">{formatTime(session.startsAt)}<span className="mt-1 block font-normal text-slate-500 dark:text-slate-400">{session.location || "Room TBA"}</span></div><div><div className="flex flex-wrap items-start justify-between gap-2"><div><h4 className="text-lg font-black">{session.title}</h4>{session.speaker && <p className="mt-1 text-sm font-bold text-cyan-700 dark:text-cyan-200">{session.speaker}{session.speakerTitle ? ` · ${session.speakerTitle}` : ""}</p>}</div>{session.liveNow && <span className="rounded-full bg-red-100 px-3 py-1 text-xs font-black text-red-700 dark:bg-red-500/15 dark:text-red-300">LIVE NOW</span>}</div>{session.description && <p className="mt-3 text-sm leading-6 text-slate-600 dark:text-slate-300">{session.description}</p>}{session.liveStreamUrl && <a href={session.liveStreamUrl} target="_blank" rel="noreferrer" className="mt-4 inline-flex items-center gap-2 text-sm font-black text-cyan-700 hover:text-cyan-900 dark:text-cyan-200"><ExternalLink className="h-4 w-4" />{session.liveStreamLabel || "Open live session"}</a>}<QuestionBox eventId={event.id} session={session} /></div></div></article>)}</div></div>)}</div>}</section>
-      <section className="grid gap-5 md:grid-cols-2"><article className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-[#121722]"><h2 className="flex items-center gap-2 text-xl font-black"><MapPin className="h-5 w-5 text-cyan-600 dark:text-cyan-300" />Venue & navigation</h2><p className="mt-3 text-slate-600 dark:text-slate-300">{event.location}</p><a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(event.location)}`} target="_blank" rel="noreferrer" className="mt-5 inline-flex items-center gap-2 rounded-xl bg-cyan-600 px-4 py-2.5 text-sm font-black text-white">Get directions <ExternalLink className="h-4 w-4" /></a></article><article className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-[#121722]"><h2 className="flex items-center gap-2 text-xl font-black"><FileText className="h-5 w-5 text-cyan-600 dark:text-cyan-300" />Resources</h2><div className="mt-4 space-y-2">{event.agendaUrl && <a href={event.agendaUrl} target="_blank" rel="noreferrer" className="flex items-center justify-between rounded-xl border border-slate-200 px-4 py-3 text-sm font-bold dark:border-white/10"><span>Schedule PDF</span><Download className="h-4 w-4 text-cyan-600 dark:text-cyan-300" /></a>}{event.resources.map((item) => <a key={item.id} href={item.url} target="_blank" rel="noreferrer" className="flex items-center justify-between rounded-xl border border-slate-200 px-4 py-3 text-sm font-bold dark:border-white/10"><span>{item.title}</span><Download className="h-4 w-4 text-cyan-600 dark:text-cyan-300" /></a>)}{!event.agendaUrl && event.resources.length === 0 && <p className="text-sm text-slate-500">No documents have been shared yet.</p>}</div></article></section>
-      <footer className="flex justify-center border-t border-slate-200 pt-8 dark:border-white/10"><button onClick={signOut} className="inline-flex items-center gap-2 rounded-xl border border-rose-200 px-4 py-3 text-sm font-black text-rose-700 hover:bg-rose-50 dark:border-rose-400/30 dark:text-rose-300 dark:hover:bg-rose-500/10"><LogOut className="h-4 w-4" />Sign out of conference</button></footer>
-    </main>
-  </div>;
+  const days = useMemo(
+    () => [
+      ...new Set(
+        sessions.map((item) =>
+          item.startsAt
+            ? new Date(item.startsAt).toDateString()
+            : "Full programme",
+        ),
+      ),
+    ],
+    [sessions],
+  );
+  useEffect(() => {
+    QRCode.toDataURL(`iticket:guest:${guestId}:event:${event.id}`, {
+      width: 260,
+      margin: 1,
+    })
+      .then(setQr)
+      .catch(() => setQr(""));
+  }, [event.id, guestId]);
+  async function signOut() {
+    await fetch("/api/private-events/signout", { method: "POST" });
+    router.replace("/private-event");
+    router.refresh();
+  }
+  return (
+    <div className="min-h-screen bg-slate-50 pb-28 text-slate-900 transition-colors dark:bg-[#080b12] dark:text-white">
+      <header className="sticky top-0 z-50 border-b border-slate-200 bg-white/95 shadow-sm backdrop-blur dark:border-white/10 dark:bg-slate-950/95">
+        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-3 px-5 sm:px-8">
+          <button
+            onClick={() => router.push("/private-event?browse=1")}
+            className="inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-black hover:bg-slate-100 dark:hover:bg-white/10"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back
+          </button>
+          <p className="truncate text-sm font-black text-slate-700 dark:text-slate-200">
+            {event.title}
+          </p>
+          <button
+            onClick={signOut}
+            className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-2 text-sm font-black text-slate-800 hover:border-rose-300 hover:text-rose-700 dark:border-white/15 dark:text-slate-100"
+          >
+            <LogOut className="h-4 w-4" />
+            Sign out
+          </button>
+        </div>
+      </header>
+      <section className="relative isolate overflow-hidden border-b border-slate-200 bg-slate-950 text-white dark:border-white/10">
+        {event.coverImageUrl && (
+          <img
+            src={event.coverImageUrl}
+            alt=""
+            className="absolute inset-0 -z-20 h-full w-full object-cover opacity-35"
+          />
+        )}
+        <div className="absolute inset-0 -z-10 bg-[linear-gradient(110deg,rgba(5,10,20,.96),rgba(5,10,20,.62))]" />
+        <div className="mx-auto max-w-6xl px-5 py-12 sm:px-8 sm:py-16">
+          <p className="text-xs font-black uppercase tracking-[0.24em] text-cyan-200">
+            Private conference portal
+          </p>
+          <h1 className="mt-3 max-w-3xl text-4xl font-black tracking-tight sm:text-6xl">
+            {event.title}
+          </h1>
+          <p className="mt-4 max-w-2xl text-slate-200">
+            Welcome, {attendeeName}. Your complete conference programme is
+            ready.
+          </p>
+          <div className="mt-7 flex flex-wrap gap-3 text-sm font-bold">
+            <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-black/25 px-4 py-2">
+              <CalendarDays className="h-4 w-4 text-cyan-200" />
+              {formatDate(event.startsAt)}
+            </span>
+            <a
+              href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(event.location)}`}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-black/25 px-4 py-2 hover:border-cyan-200"
+            >
+              <MapPin className="h-4 w-4 text-cyan-200" />
+              {event.venueName}
+            </a>
+          </div>
+        </div>
+      </section>
+      <main className="mx-auto max-w-6xl space-y-10 px-5 py-8 sm:px-8 sm:py-10">
+        <nav
+          aria-label="Conference sections"
+          className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        >
+          <a
+            href="#overview"
+            className="inline-flex shrink-0 items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-black shadow-sm dark:border-white/10 dark:bg-[#121722]"
+          >
+            <QrCode className="h-4 w-4 text-cyan-600 dark:text-cyan-300" />
+            Overview
+          </a>
+          {event.speakers.length > 0 && (
+            <a
+              href="#speakers"
+              className="inline-flex shrink-0 items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-black shadow-sm dark:border-white/10 dark:bg-[#121722]"
+            >
+              <Users className="h-4 w-4 text-cyan-600 dark:text-cyan-300" />
+              Speakers
+            </a>
+          )}
+          <a
+            href="#schedule"
+            className="inline-flex shrink-0 items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-black shadow-sm dark:border-white/10 dark:bg-[#121722]"
+          >
+            <ListChecks className="h-4 w-4 text-cyan-600 dark:text-cyan-300" />
+            Schedule
+          </a>
+          <a
+            href="#resources"
+            className="inline-flex shrink-0 items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-black shadow-sm dark:border-white/10 dark:bg-[#121722]"
+          >
+            <FileText className="h-4 w-4 text-cyan-600 dark:text-cyan-300" />
+            Resources
+          </a>
+        </nav>
+        <section
+          id="overview"
+          className="scroll-mt-24 grid gap-5 lg:grid-cols-[1fr_300px]"
+        >
+          <article className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-[#121722]">
+            <h2 className="text-2xl font-black">Conference overview</h2>
+            <p className="mt-3 leading-7 text-slate-600 dark:text-slate-300">
+              {event.description ||
+                "Your organiser will share the latest conference information here."}
+            </p>
+          </article>
+          <article className="rounded-3xl border border-slate-200 bg-white p-6 text-center shadow-sm dark:border-white/10 dark:bg-[#121722]">
+            <h2 className="flex items-center justify-center gap-2 text-lg font-black">
+              <QrCode className="h-5 w-5 text-cyan-600 dark:text-cyan-300" />
+              Digital access pass
+            </h2>
+            {qr ? (
+              <img
+                src={qr}
+                alt="Your event check-in QR code"
+                className="mx-auto mt-4 h-40 w-40 rounded-xl bg-white p-2"
+              />
+            ) : (
+              <p className="mt-4 text-sm text-slate-500">
+                Preparing your QR pass…
+              </p>
+            )}
+            <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">
+              Show this at registration.
+            </p>
+          </article>
+        </section>
+        {event.announcements.length > 0 && (
+          <section>
+            <div className="mb-4 flex items-center gap-2">
+              <Bell className="h-6 w-6 text-cyan-600 dark:text-cyan-300" />
+              <div>
+                <p className="text-xs font-black uppercase tracking-[0.2em] text-cyan-700 dark:text-cyan-300">
+                  Latest updates
+                </p>
+                <h2 className="text-2xl font-black">Conference notices</h2>
+              </div>
+            </div>
+            <div className="grid gap-3 md:grid-cols-2">
+              {event.announcements.map((item) => (
+                <article
+                  key={item.id}
+                  className="rounded-2xl border border-cyan-200 bg-cyan-50 p-5 dark:border-cyan-300/20 dark:bg-cyan-300/10"
+                >
+                  <h3 className="font-black text-slate-950 dark:text-white">
+                    {item.title}
+                  </h3>
+                  <p className="mt-2 text-sm leading-6 text-slate-700 dark:text-slate-200">
+                    {item.body}
+                  </p>
+                </article>
+              ))}
+            </div>
+          </section>
+        )}
+        {event.speakers.length > 0 && (
+          <section id="speakers" className="scroll-mt-24">
+            <div className="mb-5">
+              <p className="text-xs font-black uppercase tracking-[0.22em] text-cyan-700 dark:text-cyan-300">
+                Conference speakers
+              </p>
+              <h2 className="mt-1 text-3xl font-black">Meet the speakers</h2>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {event.speakers.map((speaker) => (
+                <article
+                  key={speaker.id}
+                  className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-white/10 dark:bg-[#121722]"
+                >
+                  <div className="aspect-[4/3] bg-slate-100 dark:bg-white/5">
+                    {speaker.imageUrl ? (
+                      <img
+                        src={speaker.imageUrl}
+                        alt={speaker.name}
+                        className="h-full w-full object-contain object-center"
+                      />
+                    ) : (
+                      <div className="flex h-full items-center justify-center text-4xl font-black text-cyan-700 dark:text-cyan-200">
+                        {speaker.name.slice(0, 1)}
+                      </div>
+                    )}
+                  </div>
+                  <div className="p-5">
+                    <h3 className="text-lg font-black">{speaker.name}</h3>
+                    {speaker.role && (
+                      <p className="mt-1 text-sm font-bold text-cyan-700 dark:text-cyan-200">
+                        {speaker.role}
+                      </p>
+                    )}
+                    {speaker.bio && (
+                      <p className="mt-3 text-sm leading-6 text-slate-600 dark:text-slate-300">
+                        {speaker.bio}
+                      </p>
+                    )}
+                  </div>
+                </article>
+              ))}
+            </div>
+          </section>
+        )}
+        <section id="schedule" className="scroll-mt-24">
+          <div className="mb-5">
+            <p className="text-xs font-black uppercase tracking-[0.22em] text-cyan-700 dark:text-cyan-300">
+              Full programme
+            </p>
+            <h2 className="mt-1 text-3xl font-black">Schedule</h2>
+            <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
+              Everything happening at the conference, arranged by day. Ask a
+              live question during any session.
+            </p>
+          </div>
+          {sessions.length === 0 ? (
+            <p className="rounded-2xl border border-slate-200 bg-white p-6 text-slate-600 dark:border-white/10 dark:bg-[#121722] dark:text-slate-300">
+              The full schedule will appear here once published by the
+              organiser.
+            </p>
+          ) : (
+            <div className="space-y-7">
+              {days.map((day) => (
+                <div key={day}>
+                  <h3 className="mb-3 text-lg font-black text-cyan-800 dark:text-cyan-200">
+                    {day}
+                  </h3>
+                  <div className="space-y-3">
+                    {sessions
+                      .filter(
+                        (item) =>
+                          (item.startsAt
+                            ? new Date(item.startsAt).toDateString()
+                            : "Full programme") === day,
+                      )
+                      .map((session) => (
+                        <article
+                          key={session.id}
+                          className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-[#121722]"
+                        >
+                          <div className="grid gap-4 md:grid-cols-[150px_1fr]">
+                            <div className="text-sm font-black text-cyan-700 dark:text-cyan-200">
+                              {formatTime(session.startsAt)}
+                              <span className="mt-1 block font-normal text-slate-500 dark:text-slate-400">
+                                {session.location || "Room TBA"}
+                              </span>
+                            </div>
+                            <div>
+                              <div className="flex flex-wrap items-start justify-between gap-2">
+                                <div>
+                                  <h4 className="text-lg font-black">
+                                    {session.title}
+                                  </h4>
+                                  {session.speaker && (
+                                    <p className="mt-1 text-sm font-bold text-cyan-700 dark:text-cyan-200">
+                                      {session.speaker}
+                                      {session.speakerTitle
+                                        ? ` · ${session.speakerTitle}`
+                                        : ""}
+                                    </p>
+                                  )}
+                                </div>
+                                {session.liveNow && (
+                                  <span className="rounded-full bg-red-100 px-3 py-1 text-xs font-black text-red-700 dark:bg-red-500/15 dark:text-red-300">
+                                    LIVE NOW
+                                  </span>
+                                )}
+                              </div>
+                              {session.description && (
+                                <p className="mt-3 text-sm leading-6 text-slate-600 dark:text-slate-300">
+                                  {session.description}
+                                </p>
+                              )}
+                              {session.liveStreamUrl && (
+                                <a
+                                  href={session.liveStreamUrl}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="mt-4 inline-flex items-center gap-2 text-sm font-black text-cyan-700 hover:text-cyan-900 dark:text-cyan-200"
+                                >
+                                  <ExternalLink className="h-4 w-4" />
+                                  {session.liveStreamLabel ||
+                                    "Open live session"}
+                                </a>
+                              )}
+                              {session.speaker && (
+                                <QuestionBox
+                                  eventId={event.id}
+                                  session={session}
+                                />
+                              )}
+                            </div>
+                          </div>
+                        </article>
+                      ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+        <section
+          id="resources"
+          className="scroll-mt-24 grid gap-5 md:grid-cols-2"
+        >
+          <article className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-[#121722]">
+            <h2 className="flex items-center gap-2 text-xl font-black">
+              <MapPin className="h-5 w-5 text-cyan-600 dark:text-cyan-300" />
+              Venue & navigation
+            </h2>
+            <p className="mt-3 text-slate-600 dark:text-slate-300">
+              {event.location}
+            </p>
+            <a
+              href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(event.location)}`}
+              target="_blank"
+              rel="noreferrer"
+              className="mt-5 inline-flex items-center gap-2 rounded-xl bg-cyan-600 px-4 py-2.5 text-sm font-black text-white"
+            >
+              Get directions <ExternalLink className="h-4 w-4" />
+            </a>
+          </article>
+          <article className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-[#121722]">
+            <h2 className="flex items-center gap-2 text-xl font-black">
+              <FileText className="h-5 w-5 text-cyan-600 dark:text-cyan-300" />
+              Resources
+            </h2>
+            <div className="mt-4 space-y-2">
+              {event.agendaUrl && (
+                <a
+                  href={event.agendaUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center justify-between rounded-xl border border-slate-200 px-4 py-3 text-sm font-bold dark:border-white/10"
+                >
+                  <span>Schedule PDF</span>
+                  <Download className="h-4 w-4 text-cyan-600 dark:text-cyan-300" />
+                </a>
+              )}
+              {event.resources.map((item) => (
+                <a
+                  key={item.id}
+                  href={item.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center justify-between rounded-xl border border-slate-200 px-4 py-3 text-sm font-bold dark:border-white/10"
+                >
+                  <span>
+                    <span className="block">{item.title}</span>
+                    {(item.uploadedBy || item.fileType) && (
+                      <span className="mt-0.5 block text-xs font-medium text-slate-500 dark:text-slate-400">
+                        {[
+                          item.fileType,
+                          item.uploadedBy ? `Shared by ${item.uploadedBy}` : "",
+                        ]
+                          .filter(Boolean)
+                          .join(" · ")}
+                      </span>
+                    )}
+                  </span>
+                  <Download className="h-4 w-4 text-cyan-600 dark:text-cyan-300" />
+                </a>
+              ))}
+              {!event.agendaUrl && event.resources.length === 0 && (
+                <p className="text-sm text-slate-500">
+                  No documents have been shared yet.
+                </p>
+              )}
+            </div>
+          </article>
+        </section>
+        <footer className="flex justify-center border-t border-slate-200 pt-8 dark:border-white/10">
+          <button
+            onClick={signOut}
+            className="inline-flex items-center gap-2 rounded-xl border border-rose-200 px-4 py-3 text-sm font-black text-rose-700 hover:bg-rose-50 dark:border-rose-400/30 dark:text-rose-300 dark:hover:bg-rose-500/10"
+          >
+            <LogOut className="h-4 w-4" />
+            Sign out of conference
+          </button>
+        </footer>
+      </main>
+    </div>
+  );
 }

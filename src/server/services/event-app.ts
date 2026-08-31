@@ -105,7 +105,10 @@ function defaultFeatureFlags(): EventFeatureFlags {
 }
 
 export function normalizeEventAppSettings(raw: unknown): EventAppSettings {
-  const data = (raw && typeof raw === "object" ? raw : {}) as Record<string, any>;
+  const data = (raw && typeof raw === "object" ? raw : {}) as Record<
+    string,
+    any
+  >;
   const app = (data.eventApp ?? {}) as Record<string, any>;
   const features = (app.features ?? {}) as Record<string, any>;
   const liveStream = (app.liveStream ?? {}) as Record<string, any>;
@@ -115,7 +118,9 @@ export function normalizeEventAppSettings(raw: unknown): EventAppSettings {
   const sponsors = (app.sponsors ?? {}) as Record<string, any>;
 
   return {
-    welcomeMessage: app.welcomeMessage ?? "Everything you need for this event lives in the app.",
+    welcomeMessage:
+      app.welcomeMessage ??
+      "Everything you need for this event lives in the app.",
     homeHeadline: app.homeHeadline ?? "Your live event companion",
     features: {
       ...defaultFeatureFlags(),
@@ -132,9 +137,15 @@ export function normalizeEventAppSettings(raw: unknown): EventAppSettings {
         networking.introText ??
         "Opt in to discover relevant attendees, request introductions, and schedule meetings.",
       taxonomy: {
-        interests: Array.isArray(taxonomy.interests) ? taxonomy.interests.filter(Boolean) : [],
-        goals: Array.isArray(taxonomy.goals) ? taxonomy.goals.filter(Boolean) : [],
-        industries: Array.isArray(taxonomy.industries) ? taxonomy.industries.filter(Boolean) : [],
+        interests: Array.isArray(taxonomy.interests)
+          ? taxonomy.interests.filter(Boolean)
+          : [],
+        goals: Array.isArray(taxonomy.goals)
+          ? taxonomy.goals.filter(Boolean)
+          : [],
+        industries: Array.isArray(taxonomy.industries)
+          ? taxonomy.industries.filter(Boolean)
+          : [],
       },
       directory: {
         privacyDescription:
@@ -153,24 +164,37 @@ export function normalizeEventAppSettings(raw: unknown): EventAppSettings {
         ? (sponsors.featuredProfiles as SponsorProfile[])
         : [],
     },
-    announcements: Array.isArray(app.announcements) ? (app.announcements as EventAnnouncement[]) : [],
+    announcements: Array.isArray(app.announcements)
+      ? (app.announcements as EventAnnouncement[])
+      : [],
     venueMapUrl: typeof app.venueMapUrl === "string" ? app.venueMapUrl : "",
     resources: Array.isArray(app.resources)
-      ? (app.resources as EventResource[]).filter((resource) => resource?.title && resource?.url)
+      ? (app.resources as EventResource[]).filter(
+          (resource) => resource?.title && resource?.url,
+        )
       : [],
     sessionDetails:
-      app.sessionDetails && typeof app.sessionDetails === "object" ? app.sessionDetails : {},
+      app.sessionDetails && typeof app.sessionDetails === "object"
+        ? app.sessionDetails
+        : {},
     push: {
       reminderLeadMinutes:
-        typeof app.push?.reminderLeadMinutes === "number" ? app.push.reminderLeadMinutes : 15,
+        typeof app.push?.reminderLeadMinutes === "number"
+          ? app.push.reminderLeadMinutes
+          : 15,
     },
   };
 }
 
-function mergeEventAppSettings(existingSettings: unknown, nextApp: EventAppSettings) {
-  const current = (existingSettings && typeof existingSettings === "object"
-    ? existingSettings
-    : {}) as Record<string, any>;
+function mergeEventAppSettings(
+  existingSettings: unknown,
+  nextApp: EventAppSettings,
+) {
+  const current = (
+    existingSettings && typeof existingSettings === "object"
+      ? existingSettings
+      : {}
+  ) as Record<string, any>;
   return {
     ...current,
     eventApp: nextApp,
@@ -178,12 +202,17 @@ function mergeEventAppSettings(existingSettings: unknown, nextApp: EventAppSetti
 }
 
 function extractEventAppMeta(raw: unknown) {
-  const metadata = (raw && typeof raw === "object" ? raw : {}) as Record<string, any>;
+  const metadata = (raw && typeof raw === "object" ? raw : {}) as Record<
+    string,
+    any
+  >;
   const app = (metadata.eventApp ?? {}) as Record<string, any>;
   return {
     raw: metadata,
     app,
-    pushDevices: Array.isArray(app.pushDevices) ? (app.pushDevices as ExpoPushRegistration[]) : [],
+    pushDevices: Array.isArray(app.pushDevices)
+      ? (app.pushDevices as ExpoPushRegistration[])
+      : [],
     networking: {
       requests: Array.isArray(app.networking?.requests)
         ? (app.networking.requests as NetworkingRequestRecord[])
@@ -193,21 +222,30 @@ function extractEventAppMeta(raw: unknown) {
         : [],
     },
     chat: {
-      threads: Array.isArray(app.chat?.threads) ? (app.chat.threads as ChatThreadRecord[]) : [],
-      messages: Array.isArray(app.chat?.messages) ? (app.chat.messages as ChatMessageRecord[]) : [],
+      threads: Array.isArray(app.chat?.threads)
+        ? (app.chat.threads as ChatThreadRecord[])
+        : [],
+      messages: Array.isArray(app.chat?.messages)
+        ? (app.chat.messages as ChatMessageRecord[])
+        : [],
     },
-    questions: Array.isArray(app.questions) ? (app.questions as EventSessionQuestion[]) : [],
+    questions: Array.isArray(app.questions)
+      ? (app.questions as EventSessionQuestion[])
+      : [],
     analytics: {
       sessionViews:
-        app.analytics?.sessionViews && typeof app.analytics.sessionViews === "object"
+        app.analytics?.sessionViews &&
+        typeof app.analytics.sessionViews === "object"
           ? (app.analytics.sessionViews as Record<string, number>)
           : {},
       sessionSaves:
-        app.analytics?.sessionSaves && typeof app.analytics.sessionSaves === "object"
+        app.analytics?.sessionSaves &&
+        typeof app.analytics.sessionSaves === "object"
           ? (app.analytics.sessionSaves as Record<string, number>)
           : {},
       sessionPlans:
-        app.analytics?.sessionPlans && typeof app.analytics.sessionPlans === "object"
+        app.analytics?.sessionPlans &&
+        typeof app.analytics.sessionPlans === "object"
           ? (app.analytics.sessionPlans as Record<string, number>)
           : {},
       liveOpens:
@@ -215,11 +253,13 @@ function extractEventAppMeta(raw: unknown) {
           ? (app.analytics.liveOpens as Record<string, number>)
           : {},
       chatStarts:
-        app.analytics?.chatStarts && typeof app.analytics.chatStarts === "object"
+        app.analytics?.chatStarts &&
+        typeof app.analytics.chatStarts === "object"
           ? (app.analytics.chatStarts as Record<string, number>)
           : {},
       sponsorClicks:
-        app.analytics?.sponsorClicks && typeof app.analytics.sponsorClicks === "object"
+        app.analytics?.sponsorClicks &&
+        typeof app.analytics.sponsorClicks === "object"
           ? (app.analytics.sponsorClicks as Record<string, number>)
           : {},
     },
@@ -236,7 +276,7 @@ function buildEventAppMetadata(
     chatMessages?: ChatMessageRecord[];
     questions?: EventSessionQuestion[];
     analytics?: Record<string, Record<string, number>>;
-  }
+  },
 ) {
   const meta = extractEventAppMeta(existingMetadata);
   return {
@@ -254,19 +294,26 @@ function buildEventAppMetadata(
       },
       questions: appPatch.questions ?? meta.questions,
       analytics: {
-        sessionViews: appPatch.analytics?.sessionViews ?? meta.analytics.sessionViews,
-        sessionSaves: appPatch.analytics?.sessionSaves ?? meta.analytics.sessionSaves,
-        sessionPlans: appPatch.analytics?.sessionPlans ?? meta.analytics.sessionPlans,
+        sessionViews:
+          appPatch.analytics?.sessionViews ?? meta.analytics.sessionViews,
+        sessionSaves:
+          appPatch.analytics?.sessionSaves ?? meta.analytics.sessionSaves,
+        sessionPlans:
+          appPatch.analytics?.sessionPlans ?? meta.analytics.sessionPlans,
         liveOpens: appPatch.analytics?.liveOpens ?? meta.analytics.liveOpens,
         chatStarts: appPatch.analytics?.chatStarts ?? meta.analytics.chatStarts,
-        sponsorClicks: appPatch.analytics?.sponsorClicks ?? meta.analytics.sponsorClicks,
+        sponsorClicks:
+          appPatch.analytics?.sponsorClicks ?? meta.analytics.sponsorClicks,
       },
     },
   };
 }
 
 function normalizeNetworkingProfile(raw: unknown): AttendeeNetworkingProfile {
-  const data = (raw && typeof raw === "object" ? raw : {}) as Record<string, any>;
+  const data = (raw && typeof raw === "object" ? raw : {}) as Record<
+    string,
+    any
+  >;
   return {
     optedIn: Boolean(data.optedIn),
     visible: Boolean(data.visible),
@@ -274,24 +321,39 @@ function normalizeNetworkingProfile(raw: unknown): AttendeeNetworkingProfile {
     company: typeof data.company === "string" ? data.company : "",
     role: typeof data.role === "string" ? data.role : "",
     bio: typeof data.bio === "string" ? data.bio : "",
-    profileImageUrl: typeof data.profileImageUrl === "string" ? data.profileImageUrl : "",
-    interests: Array.isArray(data.interests) ? data.interests.filter(Boolean) : [],
+    profileImageUrl:
+      typeof data.profileImageUrl === "string" ? data.profileImageUrl : "",
+    interests: Array.isArray(data.interests)
+      ? data.interests.filter(Boolean)
+      : [],
     goals: Array.isArray(data.goals) ? data.goals.filter(Boolean) : [],
-    industries: Array.isArray(data.industries) ? data.industries.filter(Boolean) : [],
-    availability: typeof data.availability === "string" ? data.availability : "",
+    industries: Array.isArray(data.industries)
+      ? data.industries.filter(Boolean)
+      : [],
+    availability:
+      typeof data.availability === "string" ? data.availability : "",
     contactSharing: {
       email: data.contactSharing?.email !== false,
       phone: Boolean(data.contactSharing?.phone),
     },
-    savedSessionIds: Array.isArray(data.savedSessionIds) ? data.savedSessionIds.filter(Boolean) : [],
-    plannedSessionIds: Array.isArray(data.plannedSessionIds) ? data.plannedSessionIds.filter(Boolean) : [],
+    savedSessionIds: Array.isArray(data.savedSessionIds)
+      ? data.savedSessionIds.filter(Boolean)
+      : [],
+    plannedSessionIds: Array.isArray(data.plannedSessionIds)
+      ? data.plannedSessionIds.filter(Boolean)
+      : [],
   };
 }
 
-function buildGuestCustomData(currentCustomData: unknown, profile: AttendeeNetworkingProfile) {
-  const current = (currentCustomData && typeof currentCustomData === "object"
-    ? currentCustomData
-    : {}) as Record<string, any>;
+function buildGuestCustomData(
+  currentCustomData: unknown,
+  profile: AttendeeNetworkingProfile,
+) {
+  const current = (
+    currentCustomData && typeof currentCustomData === "object"
+      ? currentCustomData
+      : {}
+  ) as Record<string, any>;
   return {
     ...current,
     eventApp: {
@@ -302,11 +364,15 @@ function buildGuestCustomData(currentCustomData: unknown, profile: AttendeeNetwo
 }
 
 function getGuestProfile(guest: GuestRow) {
-  return normalizeNetworkingProfile(guest.custom_data?.eventApp?.networkingProfile);
+  return normalizeNetworkingProfile(
+    guest.custom_data?.eventApp?.networkingProfile,
+  );
 }
 
 function getGuestDisplayName(guest: GuestRow) {
-  return `${guest.first_name ?? ""} ${guest.last_name ?? ""}`.trim() || "Attendee";
+  return (
+    `${guest.first_name ?? ""} ${guest.last_name ?? ""}`.trim() || "Attendee"
+  );
 }
 
 function normalizeSponsorProfiles(raw: SponsorProfile[] | undefined) {
@@ -325,7 +391,7 @@ function dedupeStrings(values: string[]) {
 function toSessionRecord(
   row: EventSessionRow,
   settings: EventAppSettings,
-  analytics: ReturnType<typeof extractEventAppMeta>["analytics"]
+  analytics: ReturnType<typeof extractEventAppMeta>["analytics"],
 ): EventSessionRecord {
   const extra = settings.sessionDetails?.[row.id] ?? {};
   return {
@@ -359,7 +425,9 @@ async function getEventById(eventId: string, companyId?: string | null) {
   const supabase = createSupabaseAdminClient();
   let query = supabase
     .from("events")
-    .select("id,company_id,title,description,short_description,cover_image_url,starts_at,ends_at,visitor_code,settings,metadata,venue_id")
+    .select(
+      "id,company_id,title,description,short_description,cover_image_url,starts_at,ends_at,visitor_code,settings,metadata,venue_id",
+    )
     .eq("id", eventId);
 
   if (companyId) {
@@ -371,7 +439,10 @@ async function getEventById(eventId: string, companyId?: string | null) {
   return (data as EventRow | null) ?? null;
 }
 
-export async function getEventExperience(eventId: string, companyId?: string | null) {
+export async function getEventExperience(
+  eventId: string,
+  companyId?: string | null,
+) {
   const supabase = createSupabaseAdminClient();
   const event = await getEventById(eventId, companyId);
   if (!event) throw new Error("Event not found");
@@ -390,7 +461,9 @@ export async function getEventExperience(eventId: string, companyId?: string | n
 
   const { data: guestsData, error: guestsError } = await supabase
     .from("guests")
-    .select("id,event_id,first_name,last_name,email,phone,guest_type,tags,custom_data,rsvp_status,attendance_state,created_at")
+    .select(
+      "id,event_id,first_name,last_name,email,phone,guest_type,tags,custom_data,rsvp_status,attendance_state,created_at",
+    )
     .eq("event_id", eventId);
 
   if (guestsError) throw new Error(guestsError.message);
@@ -402,7 +475,7 @@ export async function getEventExperience(eventId: string, companyId?: string | n
   }
 
   const sessions = ((sessionRows ?? []) as EventSessionRow[]).map((row) =>
-    toSessionRecord(row, settings, meta.analytics)
+    toSessionRecord(row, settings, meta.analytics),
   );
 
   return {
@@ -420,7 +493,7 @@ export async function getEventExperience(eventId: string, companyId?: string | n
 export async function updateEventExperienceSettings(
   eventId: string,
   companyId: string,
-  nextSettings: EventAppSettings
+  nextSettings: EventAppSettings,
 ) {
   const supabase = createSupabaseAdminClient();
   const event = await getEventById(eventId, companyId);
@@ -444,7 +517,10 @@ export async function updateEventExperienceSettings(
 export async function upsertEventSession(
   eventId: string,
   companyId: string,
-  input: Omit<EventSessionRecord, "eventId" | "viewCount" | "saveCount" | "planCount" | "liveOpenCount">
+  input: Omit<
+    EventSessionRecord,
+    "eventId" | "viewCount" | "saveCount" | "planCount" | "liveOpenCount"
+  >,
 ) {
   const supabase = createSupabaseAdminClient();
   const experience = await getEventExperience(eventId, companyId);
@@ -460,7 +536,9 @@ export async function upsertEventSession(
     sort_order: input.sortOrder ?? 0,
   };
 
-  const existingSession = experience.sessions.find((session) => session.id === sessionId);
+  const existingSession = experience.sessions.find(
+    (session) => session.id === sessionId,
+  );
   let sessionRow: EventSessionRow;
   if (existingSession) {
     const { data, error } = await supabase
@@ -468,7 +546,9 @@ export async function upsertEventSession(
       .update(payload)
       .eq("id", sessionId)
       .eq("event_id", eventId)
-      .select("id,event_id,title,starts_at,ends_at,location,capacity,sort_order")
+      .select(
+        "id,event_id,title,starts_at,ends_at,location,capacity,sort_order",
+      )
       .single();
     if (error) throw new Error(error.message);
     sessionRow = data as EventSessionRow;
@@ -476,7 +556,9 @@ export async function upsertEventSession(
     const { data, error } = await supabase
       .from("event_sessions")
       .insert(payload)
-      .select("id,event_id,title,starts_at,ends_at,location,capacity,sort_order")
+      .select(
+        "id,event_id,title,starts_at,ends_at,location,capacity,sort_order",
+      )
       .single();
     if (error) throw new Error(error.message);
     sessionRow = data as EventSessionRow;
@@ -501,10 +583,18 @@ export async function upsertEventSession(
   };
 
   await updateEventExperienceSettings(eventId, companyId, nextSettings);
-  return toSessionRecord(sessionRow, nextSettings, extractEventAppMeta(experience.event.metadata).analytics);
+  return toSessionRecord(
+    sessionRow,
+    nextSettings,
+    extractEventAppMeta(experience.event.metadata).analytics,
+  );
 }
 
-export async function deleteEventSession(eventId: string, companyId: string, sessionId: string) {
+export async function deleteEventSession(
+  eventId: string,
+  companyId: string,
+  sessionId: string,
+) {
   const supabase = createSupabaseAdminClient();
   const experience = await getEventExperience(eventId, companyId);
 
@@ -525,11 +615,51 @@ export async function deleteEventSession(eventId: string, companyId: string, ses
   return { success: true };
 }
 
-export async function getConferenceQuestions(eventId: string, companyId?: string | null) {
+export async function getConferenceQuestions(
+  eventId: string,
+  companyId?: string | null,
+) {
   const experience = await getEventExperience(eventId, companyId);
-  return extractEventAppMeta(experience.event.metadata).questions
-    .filter((question) => question.eventId === eventId)
+  return extractEventAppMeta(experience.event.metadata)
+    .questions.filter((question) => question.eventId === eventId)
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+}
+
+export async function updateSpeakerConferenceQuestion(input: {
+  eventId: string;
+  speakerName: string;
+  questionId: string;
+  status: "open" | "answered";
+}) {
+  const supabase = createSupabaseAdminClient();
+  const experience = await getEventExperience(input.eventId);
+  const assignedSessionIds = new Set(
+    experience.sessions
+      .filter(
+        (session) =>
+          (session.speaker ?? "").trim().toLocaleLowerCase() ===
+          input.speakerName.trim().toLocaleLowerCase(),
+      )
+      .map((session) => session.id),
+  );
+  const meta = extractEventAppMeta(experience.event.metadata);
+  const question = meta.questions.find(
+    (item) =>
+      item.id === input.questionId && assignedSessionIds.has(item.sessionId),
+  );
+  if (!question) throw new Error("Question not found for this speaker");
+  const questions = meta.questions.map((item) =>
+    item.id === question.id ? { ...item, status: input.status } : item,
+  );
+  const { error } = await supabase
+    .from("events")
+    .update({
+      metadata: buildEventAppMetadata(experience.event.metadata, { questions }),
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", input.eventId);
+  if (error) throw new Error(error.message);
+  return { ...question, status: input.status };
 }
 
 export async function createConferenceQuestion(input: {
@@ -545,7 +675,8 @@ export async function createConferenceQuestion(input: {
 
   const body = input.body.trim();
   if (!body) throw new Error("Question is required");
-  if (body.length > 600) throw new Error("Question must be 600 characters or fewer");
+  if (body.length > 600)
+    throw new Error("Question must be 600 characters or fewer");
 
   const meta = extractEventAppMeta(event.metadata);
   const question: EventSessionQuestion = {
@@ -562,7 +693,9 @@ export async function createConferenceQuestion(input: {
   const { error } = await supabase
     .from("events")
     .update({
-      metadata: buildEventAppMetadata(event.metadata, { questions: [...meta.questions, question] }),
+      metadata: buildEventAppMetadata(event.metadata, {
+        questions: [...meta.questions, question],
+      }),
       updated_at: new Date().toISOString(),
     })
     .eq("id", input.eventId);
@@ -579,7 +712,9 @@ export async function getPrivateConferenceMobileData(input: {
   const experience = await getEventExperience(input.eventId);
   const { data: guestData, error: guestError } = await supabase
     .from("guests")
-    .select("id,event_id,first_name,last_name,email,phone,guest_type,tags,custom_data,rsvp_status,attendance_state,created_at")
+    .select(
+      "id,event_id,first_name,last_name,email,phone,guest_type,tags,custom_data,rsvp_status,attendance_state,created_at",
+    )
     .eq("id", input.guestId)
     .eq("event_id", input.eventId)
     .maybeSingle();
@@ -588,7 +723,11 @@ export async function getPrivateConferenceMobileData(input: {
 
   const guest = guestData as GuestRow;
   const settings = (experience.event.settings ?? {}) as Record<string, unknown>;
-  const publicPage = (settings.publicPage ?? {}) as { venueName?: string; locationText?: string; lineup?: LineupArtist[] };
+  const publicPage = (settings.publicPage ?? {}) as {
+    venueName?: string;
+    locationText?: string;
+    lineup?: LineupArtist[];
+  };
   let venue: { name: string | null; address: unknown } | null = null;
   if (experience.event.venue_id) {
     const { data, error } = await supabase
@@ -599,21 +738,36 @@ export async function getPrivateConferenceMobileData(input: {
     if (error) throw new Error(error.message);
     venue = data;
   }
-  const address = venue?.address && typeof venue.address === "object"
-    ? Object.values(venue.address as Record<string, unknown>).filter((value): value is string => typeof value === "string").join(", ")
-    : "";
+  const address =
+    venue?.address && typeof venue.address === "object"
+      ? Object.values(venue.address as Record<string, unknown>)
+          .filter((value): value is string => typeof value === "string")
+          .join(", ")
+      : "";
 
   return {
-    attendee: { id: guest.id, name: input.attendeeName, savedSessionIds: getGuestProfile(guest).savedSessionIds },
+    attendee: {
+      id: guest.id,
+      name: input.attendeeName,
+      savedSessionIds: getGuestProfile(guest).savedSessionIds,
+    },
     conference: {
       id: experience.event.id,
       title: experience.event.title,
-      description: experience.event.description ?? experience.event.short_description ?? "",
+      description:
+        experience.event.description ??
+        experience.event.short_description ??
+        "",
       coverImageUrl: experience.event.cover_image_url ?? "",
       startsAt: experience.event.starts_at,
       endsAt: experience.event.ends_at,
       venueName: venue?.name ?? publicPage.venueName ?? "Venue to be confirmed",
-      location: address || publicPage.locationText || venue?.name || publicPage.venueName || "Venue to be confirmed",
+      location:
+        address ||
+        publicPage.locationText ||
+        venue?.name ||
+        publicPage.venueName ||
+        "Venue to be confirmed",
     },
     announcements: experience.settings.announcements,
     sessions: experience.sessions,
@@ -636,7 +790,9 @@ export async function updatePrivateConferenceAgenda(input: {
   }
   const { data, error } = await supabase
     .from("guests")
-    .select("id,event_id,first_name,last_name,email,phone,guest_type,tags,custom_data,rsvp_status,attendance_state,created_at")
+    .select(
+      "id,event_id,first_name,last_name,email,phone,guest_type,tags,custom_data,rsvp_status,attendance_state,created_at",
+    )
     .eq("id", input.guestId)
     .eq("event_id", input.eventId)
     .maybeSingle();
@@ -650,19 +806,30 @@ export async function updatePrivateConferenceAgenda(input: {
     : profile.savedSessionIds.filter((id) => id !== input.sessionId);
   const { error: updateError } = await supabase
     .from("guests")
-    .update({ custom_data: buildGuestCustomData(guest.custom_data, profile), updated_at: new Date().toISOString() })
+    .update({
+      custom_data: buildGuestCustomData(guest.custom_data, profile),
+      updated_at: new Date().toISOString(),
+    })
     .eq("id", guest.id)
     .eq("event_id", input.eventId);
   if (updateError) throw new Error(updateError.message);
   return { savedSessionIds: profile.savedSessionIds };
 }
 
-export async function getPrivateConferenceSpeakerData(input: { eventId: string; speakerName: string }) {
+export async function getPrivateConferenceSpeakerData(input: {
+  eventId: string;
+  speakerName: string;
+}) {
   const experience = await getEventExperience(input.eventId);
   const speakerName = input.speakerName.trim().toLocaleLowerCase();
-  const sessions = experience.sessions.filter((session) => (session.speaker ?? "").trim().toLocaleLowerCase() === speakerName);
+  const sessions = experience.sessions.filter(
+    (session) =>
+      (session.speaker ?? "").trim().toLocaleLowerCase() === speakerName,
+  );
   const sessionIds = new Set(sessions.map((session) => session.id));
-  const questions = (await getConferenceQuestions(input.eventId)).filter((question) => sessionIds.has(question.sessionId));
+  const questions = (await getConferenceQuestions(input.eventId)).filter(
+    (question) => sessionIds.has(question.sessionId),
+  );
   return {
     conference: { id: experience.event.id, title: experience.event.title },
     speakerName: input.speakerName,
@@ -683,10 +850,16 @@ export async function addPrivateConferenceSpeakerResource(input: {
   const event = await getEventById(input.eventId);
   if (!event) throw new Error("Conference not found");
   const experience = await getEventExperience(input.eventId);
-  const speakerSessions = experience.sessions.filter((session) =>
-    (session.speaker ?? "").trim().toLocaleLowerCase() === input.speakerName.trim().toLocaleLowerCase()
+  const speakerSessions = experience.sessions.filter(
+    (session) =>
+      (session.speaker ?? "").trim().toLocaleLowerCase() ===
+      input.speakerName.trim().toLocaleLowerCase(),
   );
-  if (!speakerSessions.length || (input.sessionId && !speakerSessions.some((session) => session.id === input.sessionId))) {
+  if (
+    !speakerSessions.length ||
+    (input.sessionId &&
+      !speakerSessions.some((session) => session.id === input.sessionId))
+  ) {
     throw new Error("Speaker is not assigned to this session");
   }
   const nextSettings = normalizeEventAppSettings(event.settings);
@@ -704,15 +877,22 @@ export async function addPrivateConferenceSpeakerResource(input: {
   const supabase = createSupabaseAdminClient();
   const { error } = await supabase
     .from("events")
-    .update({ settings: mergeEventAppSettings(event.settings, nextSettings), updated_at: new Date().toISOString() })
+    .update({
+      settings: mergeEventAppSettings(event.settings, nextSettings),
+      updated_at: new Date().toISOString(),
+    })
     .eq("id", input.eventId);
   if (error) throw new Error(error.message);
   return nextSettings.resources[nextSettings.resources.length - 1];
 }
 
-export async function getVisitorGuestContext(token: string, eventId?: string | null) {
+export async function getVisitorGuestContext(
+  token: string,
+  eventId?: string | null,
+) {
   const supabase = createSupabaseAdminClient();
-  const { data: userData, error: userError } = await supabase.auth.getUser(token);
+  const { data: userData, error: userError } =
+    await supabase.auth.getUser(token);
   if (userError || !userData.user?.email) {
     throw new Error("Invalid or expired token");
   }
@@ -720,7 +900,9 @@ export async function getVisitorGuestContext(token: string, eventId?: string | n
   const email = userData.user.email;
   let query = supabase
     .from("guests")
-    .select("id,event_id,first_name,last_name,email,phone,guest_type,tags,custom_data,rsvp_status,attendance_state,created_at")
+    .select(
+      "id,event_id,first_name,last_name,email,phone,guest_type,tags,custom_data,rsvp_status,attendance_state,created_at",
+    )
     .eq("email", email)
     .order("created_at", { ascending: false });
 
@@ -749,7 +931,7 @@ export async function getVisitorGuestContext(token: string, eventId?: string | n
 export async function updateVisitorNetworkingProfile(
   token: string,
   eventId: string,
-  patch: Partial<AttendeeNetworkingProfile>
+  patch: Partial<AttendeeNetworkingProfile>,
 ) {
   const supabase = createSupabaseAdminClient();
   const ctx = await getVisitorGuestContext(token, eventId);
@@ -775,7 +957,9 @@ export async function updateVisitorNetworkingProfile(
       updated_at: new Date().toISOString(),
     })
     .eq("id", ctx.guest.id)
-    .select("id,event_id,first_name,last_name,email,phone,guest_type,tags,custom_data,rsvp_status,attendance_state,created_at")
+    .select(
+      "id,event_id,first_name,last_name,email,phone,guest_type,tags,custom_data,rsvp_status,attendance_state,created_at",
+    )
     .single();
 
   if (error) throw new Error(error.message);
@@ -785,30 +969,42 @@ export async function updateVisitorNetworkingProfile(
 function scoreRecommendation(
   viewer: AttendeeNetworkingProfile,
   candidate: AttendeeNetworkingProfile,
-  guest: GuestRow
+  guest: GuestRow,
 ) {
   let score = 0;
   const reasons: string[] = [];
 
-  const sharedInterests = viewer.interests.filter((item) => candidate.interests.includes(item));
+  const sharedInterests = viewer.interests.filter((item) =>
+    candidate.interests.includes(item),
+  );
   if (sharedInterests.length) {
     score += sharedInterests.length * 3;
     reasons.push(`Shared interests: ${sharedInterests.slice(0, 2).join(", ")}`);
   }
 
-  const sharedGoals = viewer.goals.filter((item) => candidate.goals.includes(item));
+  const sharedGoals = viewer.goals.filter((item) =>
+    candidate.goals.includes(item),
+  );
   if (sharedGoals.length) {
     score += sharedGoals.length * 4;
     reasons.push(`Aligned goals: ${sharedGoals.slice(0, 2).join(", ")}`);
   }
 
-  const sharedIndustries = viewer.industries.filter((item) => candidate.industries.includes(item));
+  const sharedIndustries = viewer.industries.filter((item) =>
+    candidate.industries.includes(item),
+  );
   if (sharedIndustries.length) {
     score += sharedIndustries.length * 2;
-    reasons.push(`Shared industries: ${sharedIndustries.slice(0, 2).join(", ")}`);
+    reasons.push(
+      `Shared industries: ${sharedIndustries.slice(0, 2).join(", ")}`,
+    );
   }
 
-  if (viewer.company && candidate.company && viewer.company !== candidate.company) {
+  if (
+    viewer.company &&
+    candidate.company &&
+    viewer.company !== candidate.company
+  ) {
     score += 1;
     reasons.push("Cross-company connection");
   }
@@ -827,7 +1023,9 @@ export async function getVisitorNetworkingData(token: string, eventId: string) {
 
   const { data: guestsData, error: guestsError } = await supabase
     .from("guests")
-    .select("id,event_id,first_name,last_name,email,phone,guest_type,tags,custom_data,rsvp_status,attendance_state,created_at")
+    .select(
+      "id,event_id,first_name,last_name,email,phone,guest_type,tags,custom_data,rsvp_status,attendance_state,created_at",
+    )
     .eq("event_id", eventId)
     .order("created_at", { ascending: false });
 
@@ -842,7 +1040,9 @@ export async function getVisitorNetworkingData(token: string, eventId: string) {
       const scored = scoreRecommendation(viewerProfile, profile, guest);
       return {
         guestId: guest.id,
-        name: `${guest.first_name ?? ""} ${guest.last_name ?? ""}`.trim() || "Attendee",
+        name:
+          `${guest.first_name ?? ""} ${guest.last_name ?? ""}`.trim() ||
+          "Attendee",
         headline: profile.headline,
         company: profile.company,
         role: profile.role,
@@ -859,7 +1059,9 @@ export async function getVisitorNetworkingData(token: string, eventId: string) {
     .filter((item): item is NonNullable<typeof item> => Boolean(item))
     .sort((a, b) => b.score - a.score);
 
-  const featuredSponsors = normalizeSponsorProfiles(ctx.settings.sponsors?.featuredProfiles).map((profile) => ({
+  const featuredSponsors = normalizeSponsorProfiles(
+    ctx.settings.sponsors?.featuredProfiles,
+  ).map((profile) => ({
     guestId: profile.guestId ?? profile.id,
     name: profile.name,
     headline: profile.headline,
@@ -871,7 +1073,9 @@ export async function getVisitorNetworkingData(token: string, eventId: string) {
     goals: [],
     industries: [],
     score: 100 + (profile.boost ?? 0),
-    reasons: [profile.kind === "exhibitor" ? "Featured exhibitor" : "Featured sponsor"],
+    reasons: [
+      profile.kind === "exhibitor" ? "Featured exhibitor" : "Featured sponsor",
+    ],
     isSponsor: true,
     booth: profile.booth,
     ctaLabel: profile.ctaLabel,
@@ -884,10 +1088,14 @@ export async function getVisitorNetworkingData(token: string, eventId: string) {
     .slice(0, 20);
 
   const requests = ctx.meta.networking.requests.filter(
-    (request) => request.fromGuestId === ctx.guest.id || request.toGuestId === ctx.guest.id
+    (request) =>
+      request.fromGuestId === ctx.guest.id ||
+      request.toGuestId === ctx.guest.id,
   );
   const meetings = ctx.meta.networking.meetings.filter(
-    (meeting) => meeting.hostGuestId === ctx.guest.id || meeting.guestGuestId === ctx.guest.id
+    (meeting) =>
+      meeting.hostGuestId === ctx.guest.id ||
+      meeting.guestGuestId === ctx.guest.id,
   );
 
   return {
@@ -909,7 +1117,7 @@ export async function updateVisitorSessionState(
   token: string,
   eventId: string,
   sessionId: string,
-  action: "save" | "unsave" | "plan" | "unplan" | "view" | "live_open"
+  action: "save" | "unsave" | "plan" | "unplan" | "view" | "live_open",
 ) {
   const supabase = createSupabaseAdminClient();
   const ctx = await getVisitorGuestContext(token, eventId);
@@ -919,13 +1127,17 @@ export async function updateVisitorSessionState(
     profile.savedSessionIds = [...profile.savedSessionIds, sessionId];
   }
   if (action === "unsave") {
-    profile.savedSessionIds = profile.savedSessionIds.filter((id) => id !== sessionId);
+    profile.savedSessionIds = profile.savedSessionIds.filter(
+      (id) => id !== sessionId,
+    );
   }
   if (action === "plan" && !profile.plannedSessionIds.includes(sessionId)) {
     profile.plannedSessionIds = [...profile.plannedSessionIds, sessionId];
   }
   if (action === "unplan") {
-    profile.plannedSessionIds = profile.plannedSessionIds.filter((id) => id !== sessionId);
+    profile.plannedSessionIds = profile.plannedSessionIds.filter(
+      (id) => id !== sessionId,
+    );
   }
 
   if (["save", "unsave", "plan", "unplan"].includes(action)) {
@@ -944,16 +1156,20 @@ export async function updateVisitorSessionState(
   };
 
   if (action === "view") {
-    nextAnalytics.sessionViews[sessionId] = (nextAnalytics.sessionViews[sessionId] ?? 0) + 1;
+    nextAnalytics.sessionViews[sessionId] =
+      (nextAnalytics.sessionViews[sessionId] ?? 0) + 1;
   }
   if (action === "save") {
-    nextAnalytics.sessionSaves[sessionId] = (nextAnalytics.sessionSaves[sessionId] ?? 0) + 1;
+    nextAnalytics.sessionSaves[sessionId] =
+      (nextAnalytics.sessionSaves[sessionId] ?? 0) + 1;
   }
   if (action === "plan") {
-    nextAnalytics.sessionPlans[sessionId] = (nextAnalytics.sessionPlans[sessionId] ?? 0) + 1;
+    nextAnalytics.sessionPlans[sessionId] =
+      (nextAnalytics.sessionPlans[sessionId] ?? 0) + 1;
   }
   if (action === "live_open") {
-    nextAnalytics.liveOpens[sessionId] = (nextAnalytics.liveOpens[sessionId] ?? 0) + 1;
+    nextAnalytics.liveOpens[sessionId] =
+      (nextAnalytics.liveOpens[sessionId] ?? 0) + 1;
   }
 
   const { error } = await supabase
@@ -978,12 +1194,14 @@ export async function registerVisitorPushToken(
   token: string,
   eventId: string,
   pushToken: string,
-  platform: string
+  platform: string,
 ) {
   const supabase = createSupabaseAdminClient();
   const ctx = await getVisitorGuestContext(token, eventId);
 
-  const deduped = ctx.meta.pushDevices.filter((item) => item.token !== pushToken);
+  const deduped = ctx.meta.pushDevices.filter(
+    (item) => item.token !== pushToken,
+  );
   deduped.push({
     email: ctx.email,
     token: pushToken,
@@ -1010,7 +1228,7 @@ export async function createNetworkingRequest(
   token: string,
   eventId: string,
   targetGuestId: string,
-  message?: string
+  message?: string,
 ) {
   const supabase = createSupabaseAdminClient();
   const ctx = await getVisitorGuestContext(token, eventId);
@@ -1047,13 +1265,13 @@ export async function respondToNetworkingRequest(
   status: "accepted" | "declined",
   scheduledFor?: string,
   location?: string,
-  notes?: string
+  notes?: string,
 ) {
   const supabase = createSupabaseAdminClient();
   const ctx = await getVisitorGuestContext(token, eventId);
   const now = new Date().toISOString();
   const requests = ctx.meta.networking.requests.map((request) =>
-    request.id === requestId ? { ...request, status, updatedAt: now } : request
+    request.id === requestId ? { ...request, status, updatedAt: now } : request,
   );
   const target = requests.find((request) => request.id === requestId);
   if (!target) throw new Error("Request not found");
@@ -1096,20 +1314,24 @@ function canGuestsChat(
   guestId: string,
   targetGuestId: string,
   requests: NetworkingRequestRecord[],
-  meetings: MeetingRecord[]
+  meetings: MeetingRecord[],
 ) {
   const hasAcceptedRequest = requests.some(
     (request) =>
       request.status === "accepted" &&
-      ((request.fromGuestId === guestId && request.toGuestId === targetGuestId) ||
-        (request.fromGuestId === targetGuestId && request.toGuestId === guestId))
+      ((request.fromGuestId === guestId &&
+        request.toGuestId === targetGuestId) ||
+        (request.fromGuestId === targetGuestId &&
+          request.toGuestId === guestId)),
   );
 
   const hasAcceptedMeeting = meetings.some(
     (meeting) =>
       meeting.status === "accepted" &&
-      ((meeting.hostGuestId === guestId && meeting.guestGuestId === targetGuestId) ||
-        (meeting.hostGuestId === targetGuestId && meeting.guestGuestId === guestId))
+      ((meeting.hostGuestId === guestId &&
+        meeting.guestGuestId === targetGuestId) ||
+        (meeting.hostGuestId === targetGuestId &&
+          meeting.guestGuestId === guestId)),
   );
 
   return hasAcceptedRequest || hasAcceptedMeeting;
@@ -1120,7 +1342,9 @@ export async function getVisitorChatData(token: string, eventId: string) {
   const ctx = await getVisitorGuestContext(token, eventId);
   const { data: guestsData, error: guestsError } = await supabase
     .from("guests")
-    .select("id,event_id,first_name,last_name,email,phone,guest_type,tags,custom_data,rsvp_status,attendance_state,created_at")
+    .select(
+      "id,event_id,first_name,last_name,email,phone,guest_type,tags,custom_data,rsvp_status,attendance_state,created_at",
+    )
     .eq("event_id", eventId);
 
   if (guestsError) throw new Error(guestsError.message);
@@ -1130,7 +1354,9 @@ export async function getVisitorChatData(token: string, eventId: string) {
   const threads = ctx.meta.chat.threads
     .filter((thread) => thread.participantGuestIds.includes(ctx.guest.id))
     .map((thread) => {
-      const peerIds = thread.participantGuestIds.filter((id) => id !== ctx.guest.id);
+      const peerIds = thread.participantGuestIds.filter(
+        (id) => id !== ctx.guest.id,
+      );
       const peers = peerIds
         .map((id) => guestMap.get(id))
         .filter((guest): guest is GuestRow => Boolean(guest))
@@ -1149,7 +1375,11 @@ export async function getVisitorChatData(token: string, eventId: string) {
           .sort((a, b) => a.createdAt.localeCompare(b.createdAt)),
       };
     })
-    .sort((a, b) => (b.lastMessageAt ?? b.updatedAt).localeCompare(a.lastMessageAt ?? a.updatedAt));
+    .sort((a, b) =>
+      (b.lastMessageAt ?? b.updatedAt).localeCompare(
+        a.lastMessageAt ?? a.updatedAt,
+      ),
+    );
 
   return {
     viewerGuestId: ctx.guest.id,
@@ -1161,7 +1391,7 @@ export async function sendVisitorChatMessage(
   token: string,
   eventId: string,
   body: string,
-  options?: { threadId?: string; targetGuestId?: string }
+  options?: { threadId?: string; targetGuestId?: string },
 ) {
   const supabase = createSupabaseAdminClient();
   const ctx = await getVisitorGuestContext(token, eventId);
@@ -1171,7 +1401,9 @@ export async function sendVisitorChatMessage(
 
   let threads = [...ctx.meta.chat.threads];
   let messages = [...ctx.meta.chat.messages];
-  let thread = options?.threadId ? threads.find((item) => item.id === options.threadId) : null;
+  let thread = options?.threadId
+    ? threads.find((item) => item.id === options.threadId)
+    : null;
 
   if (!thread) {
     if (!options?.targetGuestId) throw new Error("targetGuestId is required");
@@ -1180,10 +1412,12 @@ export async function sendVisitorChatMessage(
         ctx.guest.id,
         options.targetGuestId,
         ctx.meta.networking.requests,
-        ctx.meta.networking.meetings
+        ctx.meta.networking.meetings,
       )
     ) {
-      throw new Error("Attendee chat unlocks after a confirmed connection or meeting");
+      throw new Error(
+        "Attendee chat unlocks after a confirmed connection or meeting",
+      );
     }
 
     thread =
@@ -1191,7 +1425,7 @@ export async function sendVisitorChatMessage(
         (item) =>
           item.participantGuestIds.length === 2 &&
           item.participantGuestIds.includes(ctx.guest.id) &&
-          item.participantGuestIds.includes(options.targetGuestId as string)
+          item.participantGuestIds.includes(options.targetGuestId as string),
       ) ?? null;
 
     if (!thread) {
@@ -1224,7 +1458,9 @@ export async function sendVisitorChatMessage(
 
   messages = [...messages, message];
   threads = threads.map((item) =>
-    item.id === thread?.id ? { ...item, updatedAt: now, lastMessageAt: now } : item
+    item.id === thread?.id
+      ? { ...item, updatedAt: now, lastMessageAt: now }
+      : item,
   );
 
   const nextAnalytics = {
@@ -1237,7 +1473,8 @@ export async function sendVisitorChatMessage(
     sponsorClicks: { ...ctx.meta.analytics.sponsorClicks },
   };
 
-  nextAnalytics.chatStarts[thread.id] = (nextAnalytics.chatStarts[thread.id] ?? 0) + 1;
+  nextAnalytics.chatStarts[thread.id] =
+    (nextAnalytics.chatStarts[thread.id] ?? 0) + 1;
 
   const { error } = await supabase
     .from("events")
@@ -1255,13 +1492,17 @@ export async function sendVisitorChatMessage(
 
   const { data: guestsData, error: guestsError } = await supabase
     .from("guests")
-    .select("id,event_id,first_name,last_name,email,phone,guest_type,tags,custom_data,rsvp_status,attendance_state,created_at")
+    .select(
+      "id,event_id,first_name,last_name,email,phone,guest_type,tags,custom_data,rsvp_status,attendance_state,created_at",
+    )
     .eq("event_id", eventId);
   if (guestsError) throw new Error(guestsError.message);
   const guests = (guestsData ?? []) as GuestRow[];
   const guestMap = new Map(guests.map((guest) => [guest.id, guest]));
 
-  const targetGuestId = thread.participantGuestIds.find((id) => id !== ctx.guest.id);
+  const targetGuestId = thread.participantGuestIds.find(
+    (id) => id !== ctx.guest.id,
+  );
   const targetGuest = targetGuestId ? guestMap.get(targetGuestId) : null;
   if (targetGuest?.email) {
     await createEventNotifications({
