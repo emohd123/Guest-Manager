@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, use, useEffect, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, ArrowRight, CalendarDays, KeyRound, MapPin, ShieldCheck, UserRound } from "lucide-react";
 
@@ -11,7 +11,8 @@ function formatConferenceDate(value: string) {
   return Number.isNaN(date.getTime()) ? "Date to be confirmed" : new Intl.DateTimeFormat(undefined, { dateStyle: "full", timeStyle: "short" }).format(date);
 }
 
-export default function ConferenceAccessPage({ params }: { params: { eventId: string } }) {
+export default function ConferenceAccessPage({ params }: { params: Promise<{ eventId: string }> }) {
+  const { eventId } = use(params);
   const [conference, setConference] = useState<Conference | null | undefined>(undefined);
   const [username, setUsername] = useState("");
   const [eventCode, setEventCode] = useState("");
@@ -20,17 +21,17 @@ export default function ConferenceAccessPage({ params }: { params: { eventId: st
 
   useEffect(() => {
     const controller = new AbortController();
-    void fetch("/api/private-events/list", { signal: controller.signal })
+    void fetch("/api/private-events/list", { signal: controller.signal, cache: "no-store" })
       .then(async (response) => response.ok ? (await response.json()) as { conferences?: Conference[] } : { conferences: [] })
-      .then((payload) => setConference((payload.conferences ?? []).find((item) => item.id === params.eventId) ?? null))
+      .then((payload) => setConference((payload.conferences ?? []).find((item) => item.id === eventId) ?? null))
       .catch(() => setConference(null));
     return () => controller.abort();
-  }, [params.eventId]);
+  }, [eventId]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault(); setError(""); setIsSubmitting(true);
     try {
-      const response = await fetch("/api/private-events/access", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ username, eventCode, eventId: params.eventId }) });
+      const response = await fetch("/api/private-events/access", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ username, eventCode, eventId }) });
       const payload = (await response.json()) as { portalUrl?: string; error?: string };
       if (!response.ok || !payload.portalUrl) { setError(payload.error ?? "We could not open this private event."); return; }
       window.location.assign(payload.portalUrl);
