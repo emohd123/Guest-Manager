@@ -1,4 +1,5 @@
-const DEFAULT_APP_URL = "https://events-hub-vert.vercel.app";
+const DEFAULT_APP_URL = "https://www.iticket.info";
+const LEGACY_APP_URL = "https://events-hub-vert.vercel.app";
 
 function trimTrailingSlash(value: string) {
   return value.replace(/\/+$/, "");
@@ -11,7 +12,8 @@ function normalizeUrl(value?: string | null) {
 }
 
 export function getAppUrl() {
-  return normalizeUrl(process.env.NEXT_PUBLIC_APP_URL) || DEFAULT_APP_URL;
+  const configuredUrl = normalizeUrl(process.env.NEXT_PUBLIC_APP_URL);
+  return !configuredUrl || configuredUrl === LEGACY_APP_URL ? DEFAULT_APP_URL : configuredUrl;
 }
 
 export function getAppUrlObject() {

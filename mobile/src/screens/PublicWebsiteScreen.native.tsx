@@ -4,7 +4,7 @@ import { WebView } from "react-native-webview";
 import Constants from "expo-constants";
 import type { VisitorSession } from "../types";
 
-const deployedUrl = "https://events-hub-vert.vercel.app/";
+const deployedUrl = "https://www.iticket.info/";
 
 function getWebsiteUrl() {
   const configured = process.env.EXPO_PUBLIC_WEB_URL?.trim();

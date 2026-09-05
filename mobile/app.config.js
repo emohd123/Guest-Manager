@@ -8,7 +8,7 @@ function normalizeUrl(value) {
 const apiBaseUrl =
   normalizeUrl(process.env.EXPO_PUBLIC_API_URL) ||
   normalizeUrl(base.expo?.extra?.apiBaseUrl) ||
-  "https://events-hub-vert.vercel.app";
+  "https://www.iticket.info";
 
 module.exports = {
   ...base,

@@ -44,7 +44,7 @@ src/
 
 ## Production Deploy
 
-- Production web URL: `https://events-hub-vert.vercel.app`
+- Production web URL: `https://www.iticket.info`
 - Privacy policy: `/privacy-policy`
 - Terms of service: `/terms-of-service`
 - Support/contact: `/contact`

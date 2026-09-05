@@ -39,11 +39,11 @@
     },
     "web": {},
     "extra": {
-      "apiBaseUrl": "https://events-hub-vert.vercel.app",
-      "appUrl": "https://events-hub-vert.vercel.app",
-      "supportUrl": "https://events-hub-vert.vercel.app/contact",
-      "privacyPolicyUrl": "https://events-hub-vert.vercel.app/privacy-policy",
-      "termsOfServiceUrl": "https://events-hub-vert.vercel.app/terms-of-service",
+      "apiBaseUrl": "https://www.iticket.info",
+      "appUrl": "https://www.iticket.info",
+      "supportUrl": "https://www.iticket.info/contact",
+      "privacyPolicyUrl": "https://www.iticket.info/privacy-policy",
+      "termsOfServiceUrl": "https://www.iticket.info/terms-of-service",
       "appVersion": "0.3.0",
       "eas": {
         "projectId": "7c69d004-775a-4522-afb7-570888702e61"

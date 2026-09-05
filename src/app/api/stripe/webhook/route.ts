@@ -9,6 +9,7 @@ import { eq, inArray, and, sql } from "drizzle-orm";
 import { sendRegistrationConfirmation } from "@/lib/resend";
 import { generateAndSendTicket } from "@/server/actions/generateAndSendTicket";
 import { format } from "date-fns";
+import { getAppUrl } from "@/lib/app-urls";
 
 function generateOrderNumber(): string {
   const timestamp = Date.now().toString(36).toUpperCase();
@@ -318,7 +319,7 @@ export async function POST(request: NextRequest) {
           barcode: task.barcode,
           eventName: eventRow?.title ?? metadata.eventTitle ?? "Event",
           eventStartsAt: eventRow?.startsAt ?? new Date(),
-          appBaseUrl: process.env.NEXT_PUBLIC_APP_URL ?? request.nextUrl.origin,
+          appBaseUrl: getAppUrl(),
           eventSettings: eventRow?.settings,
         }).catch((emailErr) => {
           console.error("Failed to generate/send paid ticket email:", emailErr);

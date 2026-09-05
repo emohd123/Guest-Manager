@@ -5,7 +5,7 @@ import { createClient } from "@supabase/supabase-js";
 
 config({ path: ".env.local", quiet: true });
 
-const baseUrl = (process.env.RELEASE_BASE_URL || "https://events-hub-vert.vercel.app").replace(/\/$/, "");
+const baseUrl = (process.env.RELEASE_BASE_URL || "https://www.iticket.info").replace(/\/$/, "");
 const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
