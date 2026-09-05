@@ -61,6 +61,8 @@ mobile/.npm-cache/
 mobile/builds/
 mobile/*.log
 mobile/android/local.properties
+mobile/android/keystore.properties
+mobile/android/app/*.jks
 mobile/android/.kotlin/
 *.out.log
 *.err.log

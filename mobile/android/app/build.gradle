@@ -3,6 +3,11 @@ apply plugin: "org.jetbrains.kotlin.android"
 apply plugin: "com.facebook.react"
 
 def projectRoot = rootDir.getAbsoluteFile().getParentFile().getAbsolutePath()
+def uploadKeystorePropertiesFile = rootProject.file("keystore.properties")
+def uploadKeystoreProperties = new Properties()
+if (uploadKeystorePropertiesFile.exists()) {
+    uploadKeystoreProperties.load(new FileInputStream(uploadKeystorePropertiesFile))
+}
 
 /**
  * This is the configuration block to customize your React Native Android app.
@@ -94,8 +99,8 @@ android {
         applicationId 'com.eventshub.app'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 2
-        versionName "0.2.0"
+        versionCode 3
+        versionName "0.3.0"
     }
     signingConfigs {
         debug {
@@ -104,15 +109,24 @@ android {
             keyAlias 'androiddebugkey'
             keyPassword 'android'
         }
+        release {
+            if (uploadKeystorePropertiesFile.exists()) {
+                storeFile file(uploadKeystoreProperties['storeFile'])
+                storePassword uploadKeystoreProperties['storePassword']
+                keyAlias uploadKeystoreProperties['keyAlias']
+                keyPassword uploadKeystoreProperties['keyPassword']
+            }
+        }
     }
     buildTypes {
         debug {
             signingConfig signingConfigs.debug
         }
         release {
-            // Caution! In production, you need to generate your own keystore file.
-            // see https://reactnative.dev/docs/signed-apk-android.
-            signingConfig signingConfigs.debug
+            if (!uploadKeystorePropertiesFile.exists()) {
+                throw new GradleException("Missing android/keystore.properties for the Google Play release build")
+            }
+            signingConfig signingConfigs.release
             shrinkResources (findProperty('android.enableShrinkResourcesInReleaseBuilds')?.toBoolean() ?: false)
             minifyEnabled enableProguardInReleaseBuilds
             proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
