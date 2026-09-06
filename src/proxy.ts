@@ -2,6 +2,13 @@ import { updateSession } from "@/lib/supabase/middleware";
 import { type NextRequest, NextResponse } from "next/server";
 
 export default async function proxy(request: NextRequest) {
+  if (request.nextUrl.hostname.toLowerCase() === "events-hub-vert.vercel.app") {
+    const destination = request.nextUrl.clone();
+    destination.protocol = "https";
+    destination.host = "www.iticket.info";
+    return NextResponse.redirect(destination, 308);
+  }
+
   // Handle CORS for mobile API
   if (request.nextUrl.pathname.startsWith("/api/mobile/")) {
     if (request.method === "OPTIONS") {
