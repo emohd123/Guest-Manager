@@ -1,6 +1,5 @@
 "use server";
 
-import { createClient } from "@supabase/supabase-js";
 import { createSupabaseAdminClient } from "@/server/supabase/admin";
 
 export type NotificationType =
@@ -22,29 +21,14 @@ interface CreateNotificationsOptions {
   recipientEmail?: string;
 }
 
-function getSupabaseRestClient() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-  if (!url || !anonKey) {
-    throw new Error("Supabase environment variables are not configured");
-  }
-
-  return createClient(url, anonKey, {
-    auth: {
-      persistSession: false,
-      autoRefreshToken: false,
-    },
-  });
-}
-
 export async function createEventNotifications(opts: CreateNotificationsOptions) {
   const { eventId, title, body, type, recipientEmail } = opts;
 
   try {
-    const supabase = getSupabaseRestClient();
-    const adminSupabase = createSupabaseAdminClient();
-    const { data: eventRow } = await adminSupabase
+    // These notifications can contain attendee data and are always created by
+    // trusted server actions. Never rely on an anonymous Data API client.
+    const supabase = createSupabaseAdminClient();
+    const { data: eventRow } = await supabase
       .from("events")
       .select("metadata")
       .eq("id", eventId)

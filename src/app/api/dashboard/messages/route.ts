@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic";
 
 import { createClient } from "@/lib/supabase/server";
 import { ensureAppUserForAuthUser } from "@/server/auth/app-user";
+import { createSupabaseAdminClient } from "@/server/supabase/admin";
 
 /**
  * GET /api/dashboard/messages
@@ -23,7 +24,12 @@ export async function GET() {
       return Response.json({ messages: [], unreadCount: 0 });
     }
 
-    const { data: events, error: eventsError } = await supabase
+    // The browser session proves who is asking; data is then read through the
+    // server-only client so visitor correspondence never needs direct RLS
+    // access from dashboard browsers.
+    const admin = createSupabaseAdminClient();
+
+    const { data: events, error: eventsError } = await admin
       .from("events")
       .select("id,title")
       .eq("company_id", dbUser.companyId);
@@ -37,7 +43,7 @@ export async function GET() {
       return Response.json({ messages: [], unreadCount: 0 });
     }
 
-    const { data: rows, error: messagesError } = await supabase
+    const { data: rows, error: messagesError } = await admin
       .from("visitor_messages")
       .select("id,event_id,guest_email,guest_name,subject,body,is_read,admin_reply,replied_at,created_at")
       .in("event_id", eventIds)

@@ -5,6 +5,7 @@ import { NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { ensureAppUserForAuthUser } from "@/server/auth/app-user";
 import { createEventNotifications } from "@/server/actions/createEventNotifications";
+import { createSupabaseAdminClient } from "@/server/supabase/admin";
 
 interface RouteParams {
   params: Promise<{ messageId: string }>;
@@ -25,6 +26,13 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     if (!dbUser?.companyId) {
       return Response.json({ error: "Unauthorized" }, { status: 403 });
     }
+    if (
+      dbUser.dashboardAccess !== "full" &&
+      dbUser.role !== "owner" &&
+      dbUser.role !== "admin"
+    ) {
+      return Response.json({ error: "Read-only dashboard access" }, { status: 403 });
+    }
 
     const { reply } = (await request.json()) as { reply?: string };
     if (!reply?.trim()) {
@@ -32,8 +40,9 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     }
 
     const { messageId } = await params;
+    const admin = createSupabaseAdminClient();
 
-    const { data: message, error: messageError } = await supabase
+    const { data: message, error: messageError } = await admin
       .from("visitor_messages")
       .select("id,event_id,guest_email,guest_name,subject")
       .eq("id", messageId)
@@ -47,7 +56,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       return Response.json({ error: "Message not found" }, { status: 404 });
     }
 
-    const { data: event, error: eventError } = await supabase
+    const { data: event, error: eventError } = await admin
       .from("events")
       .select("id")
       .eq("id", message.event_id)
@@ -62,7 +71,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       return Response.json({ error: "Message not found" }, { status: 404 });
     }
 
-    const { error: updateError } = await supabase
+    const { error: updateError } = await admin
       .from("visitor_messages")
       .update({
         admin_reply: reply.trim(),
