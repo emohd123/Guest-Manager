@@ -1,5 +1,6 @@
 import { initTRPC, TRPCError } from "@trpc/server";
 import { createClient } from "@/lib/supabase/server";
+import { createSupabaseAdminClient } from "@/server/supabase/admin";
 import { getDb } from "@/server/db";
 import { ensureAppUserForAuthUser } from "@/server/auth/app-user";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -73,6 +74,11 @@ export const protectedProcedure = t.procedure.use(async ({ ctx, next, path, inpu
     });
   }
 
+  // All dashboard mutations and reads run server-side after the caller has
+  // been verified above. This keeps the service key off the client while
+  // allowing the database to deny every direct browser-table request via RLS.
+  const privilegedSupabase = createSupabaseAdminClient();
+
   if (ctx.dashboardAccess === "limited" && input && typeof input === "object") {
     const candidate = input as Record<string, unknown>;
     const eventId = typeof candidate.eventId === "string"
@@ -84,7 +90,7 @@ export const protectedProcedure = t.procedure.use(async ({ ctx, next, path, inpu
           : null;
     if (eventId) {
       try {
-        await assertEventAccess({ ...ctx, userId: ctx.userId, companyId: ctx.companyId }, eventId);
+        await assertEventAccess({ ...ctx, supabase: privilegedSupabase, userId: ctx.userId, companyId: ctx.companyId }, eventId);
       } catch (error) {
         await recordAudit({
           companyId: ctx.companyId,
@@ -110,6 +116,7 @@ export const protectedProcedure = t.procedure.use(async ({ ctx, next, path, inpu
   const result = await next({
     ctx: {
       ...ctx,
+      supabase: privilegedSupabase,
       userId: ctx.userId,
       companyId: ctx.companyId,
     },

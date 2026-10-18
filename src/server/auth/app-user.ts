@@ -14,6 +14,16 @@ export async function ensureAppUserForAuthUser(
   supabase: SupabaseClient,
   authUser: SupabaseUser
 ) {
+  // Linking is initiated only from trusted server routes after Supabase Auth
+  // verifies the caller. Use the server-only client for these writes so users
+  // never need direct write permissions on the application-users table.
+  let systemSupabase = supabase;
+  try {
+    systemSupabase = createSupabaseAdminClient() as SupabaseClient;
+  } catch {
+    // Local development can run without a service key. The existing client
+    // remains usable for already-provisioned accounts.
+  }
   let { data, error } = await supabase
     .from("users")
     .select("id, company_id, role, dashboard_access, dashboard_permissions, customer_company_id")
@@ -39,7 +49,7 @@ export async function ensureAppUserForAuthUser(
     const match = await supabase.from("customer_companies").select("id").eq("owner_company_id", appUser.company_id).ilike("email", verifiedEmail).is("deleted_at", null).maybeSingle();
     if (match.data?.id) {
       customerCompanyId = match.data.id;
-      await supabase.from("users").update({ customer_company_id: customerCompanyId, dashboard_access: "limited" }).eq("id", authUser.id);
+      await systemSupabase.from("users").update({ customer_company_id: customerCompanyId, dashboard_access: "limited" }).eq("id", authUser.id);
     }
   }
   // A customer account may not have an application-user row yet. Match its
@@ -63,7 +73,7 @@ export async function ensureAppUserForAuthUser(
       .maybeSingle();
     if (match.data?.id && match.data.owner_company_id) {
       if (appUser) {
-        const linked = await supabase
+        const linked = await systemSupabase
           .from("users")
           .update({ customer_company_id: match.data.id, dashboard_access: "limited" })
           .eq("id", appUser.id)
@@ -74,7 +84,7 @@ export async function ensureAppUserForAuthUser(
           customerCompanyId = match.data.id;
         }
       } else {
-        const created = await supabase.from("users").upsert({
+        const created = await systemSupabase.from("users").upsert({
           id: authUser.id,
           email: authUser.email,
           name: authUser.user_metadata?.full_name ?? authUser.user_metadata?.name ?? authUser.email,
