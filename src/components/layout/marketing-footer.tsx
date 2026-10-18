@@ -41,7 +41,7 @@ export function MarketingFooter() {
               />
             </Link>
             <p className="mt-6 text-sm leading-relaxed text-slate-600 dark:text-slate-300">
-              Egypt event discovery, ticketing, check-in, and managed event operations.
+              Bahrain event discovery, ticketing, check-in, and managed event operations.
               Built by the iTicket team for public and corporate experiences.
             </p>
           </div>

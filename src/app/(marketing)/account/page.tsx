@@ -313,14 +313,14 @@ export function TicketRow({ ticket }: { ticket: Record<string, any> }) {
   const publicPage = event?.settings?.publicPage ?? {};
   const eventImage = event?.cover_image_url || publicPage.coverImage || publicPage.heroImage || "";
   const venueName = publicPage.venueName || publicPage.locationText || "Venue TBA";
-  const location = publicPage.locationText || "Cairo, Egypt";
+  const location = publicPage.locationText || "Bahrain";
   const metadata = ticket.metadata ?? {};
   const ticketLabel = typeof metadata.ticketTypeName === "string" && metadata.ticketTypeName.trim()
     ? metadata.ticketTypeName.trim()
     : ticketType?.name ?? "General Admission";
   const isPaidEvent = event?.settings?.publicPage?.isPaidEvent !== false;
   const ticketPrice = isPaidEvent ? (metadata.seat?.price ?? metadata.price ?? ticketType?.price ?? 0) : 0;
-  const ticketCurrency = metadata.currency ?? ticketType?.currency ?? "EGP";
+  const ticketCurrency = metadata.currency ?? ticketType?.currency ?? "BHD";
   const checkedIn = ticket.checked_in || ticket.status === "checked_in";
   const used = checkedIn || ticket.status === "used";
   const expiresAt = event?.ends_at || event?.starts_at || null;

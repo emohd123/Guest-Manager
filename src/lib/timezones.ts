@@ -24,8 +24,8 @@ export const TIMEZONE_OPTIONS = [
     label: "(UTC+01:00) Amsterdam, Berlin, Paris, Rome",
   },
   {
-    value: "Asia/Riyadh",
-    label: "(UTC+03:00) Kuwait, Riyadh",
+    value: "Asia/Bahrain",
+    label: "(UTC+03:00) Bahrain",
   },
   {
     value: "Asia/Tokyo",

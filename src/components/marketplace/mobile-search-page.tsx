@@ -23,7 +23,7 @@ function eventHref(event: MarketplaceEvent, locale: "en" | "ar") {
 }
 
 function eventDate(startsAt: string, locale: "en" | "ar") {
-  return new Intl.DateTimeFormat(locale === "ar" ? "ar-EG" : "en-GB", {
+  return new Intl.DateTimeFormat(locale === "ar" ? "ar-BH" : "en-BH", {
     weekday: "short",
     day: "numeric",
     month: "short",
@@ -33,7 +33,7 @@ function eventDate(startsAt: string, locale: "en" | "ar") {
 function eventPrice(event: MarketplaceEvent, locale: "en" | "ar") {
   if (!event.hasTickets || event.availableTicketCount <= 0) return locale === "ar" ? "نفدت التذاكر" : "Sold out";
   if (event.minPrice === null || event.minPrice <= 0) return locale === "ar" ? "مجاني" : "Free";
-  return formatMoney(event.minPrice, event.currency || "EGP", locale);
+  return formatMoney(event.minPrice, event.currency || "BHD", locale);
 }
 
 export function MobileSearchPage({ initialEvents, locale, mode = "search", initialQuery = "" }: Props) {

@@ -9,7 +9,7 @@ function Content() {
   const p = useSearchParams(); const router = useRouter();
   const eventId = p.get("event") || ""; const companySlug = p.get("company") || ""; const eventSlug = p.get("eventSlug") || ""; const returnTo = p.get("returnTo"); const [storedReturnTo, setStoredReturnTo] = useState<string | null>(null); const seats = (p.get("seats") || "").split(",").filter(Boolean);
   useEffect(() => { if (!returnTo) { try { setStoredReturnTo(window.sessionStorage.getItem("iticket.seatReturnTo")); } catch {} } }, [returnTo]);
-  const subtotal = Number(p.get("subtotal") || 0); const fee = subtotal > 0 ? subtotal * 0.1 : 0; const total = subtotal + fee; const currency = p.get("currency") || "EGP";
+  const subtotal = Number(p.get("subtotal") || 0); const fee = subtotal > 0 ? subtotal * 0.1 : 0; const total = subtotal + fee; const currency = p.get("currency") || "BHD";
   const [submitting, setSubmitting] = useState(false);
   const submit = async () => {
     if (!eventId || !seats.length) return toast.error("Choose at least one seat.");

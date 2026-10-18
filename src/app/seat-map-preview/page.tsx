@@ -84,12 +84,12 @@ export default function SeatMapPreviewPage() {
             <p className="text-xs font-black uppercase tracking-[.2em] text-cyan-300">
               iTicket safe local preview
             </p>
-            <h1 className="mt-1 text-3xl font-black">Cairo Egypt Demo Event</h1>
+            <h1 className="mt-1 text-3xl font-black">Bahrain Demo Event</h1>
             <p className="mt-2 text-sm text-slate-400">
               Demonstration inventory only. No holds, orders, or production data are changed.
             </p>
           </div>
-          <Link className="rounded-full border border-white/15 px-4 py-2 text-sm font-bold" href="/e/demo-events-co/cairo-egypt-demo-event">
+          <Link className="rounded-full border border-white/15 px-4 py-2 text-sm font-bold" href="/">
             Open event page
           </Link>
         </div>
@@ -97,13 +97,13 @@ export default function SeatMapPreviewPage() {
           plan={plan}
           selectedSeatIds={selectedSeatIds}
           onChange={setSelectedSeatIds}
-          currency="EGP"
+          currency="BHD"
           locale="en"
           eventContext={{
-            title: "Cairo Egypt Demo Event — map preview",
+            title: "Bahrain Demo Event — map preview",
             date: "October 19, 2026",
             time: "9:23 AM",
-            location: "Cairo International Convention Centre, Egypt",
+            location: "Exhibition World Bahrain, Sakhir",
           }}
           startFullScreen
         />

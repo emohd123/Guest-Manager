@@ -184,7 +184,7 @@ export async function GET(
     const rawTicketPrice = isPaidEvent ? (resolvedMetadata.seat?.price ?? resolvedMetadata.price ?? ticketType?.price ?? 0) : 0;
     const ticketCurrency = typeof resolvedMetadata.currency === "string" && metadata.currency.trim()
       ? resolvedMetadata.currency.trim().toUpperCase()
-      : ticketType?.currency ?? "EGP";
+      : ticketType?.currency ?? "BHD";
     const formattedTicketPrice = rawTicketPrice == null
       ? undefined
       : formatMoney(Number(rawTicketPrice), ticketCurrency);

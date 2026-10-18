@@ -52,13 +52,13 @@ function TicketCheckout() {
         ticketTypeId: "",
         name: "Reserved seating",
         price: 0,
-        currency: "EGP",
+        currency: "BHD",
         quantity: selectedSeatIds.length,
       }];
   const seatsIo = searchParams.get("seatsIo") === "1";
   const seatHoldToken = searchParams.get("hold") ?? undefined;
   const subtotal = cartItems.reduce((total, item) => total + Number(item.price || 0) * item.quantity, 0);
-  const currency = cartItems[0]?.currency ?? "EGP";
+  const currency = cartItems[0]?.currency ?? "BHD";
   const discountAmount = appliedPromo ? subtotal * (appliedPromo.percentage / 100) : 0;
   const discountedSubtotal = Math.max(0, subtotal - discountAmount);
   const serviceFee = discountedSubtotal > 0 ? discountedSubtotal * 0.1 : 0;

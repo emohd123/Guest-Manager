@@ -104,7 +104,7 @@ export async function POST(request: NextRequest) {
         .limit(1);
       const type = fallbackTicketType[0];
       if (!type) return NextResponse.json({ error: "No active ticket type is configured for this event." }, { status: 400 });
-      cartItems = [{ ticketTypeId: type.id, name: type.name, price: type.price ?? 0, currency: type.currency ?? "EGP", quantity: selectedSeatIds.length }];
+      cartItems = [{ ticketTypeId: type.id, name: type.name, price: type.price ?? 0, currency: type.currency ?? "BHD", quantity: selectedSeatIds.length }];
     }
 
     if ((!companySlug || !eventSlug) && !requestedEventId) {
@@ -171,7 +171,7 @@ export async function POST(request: NextRequest) {
         ticketTypeId: type.id,
         name: type.name,
         price,
-        currency: type.currency ?? "EGP",
+        currency: type.currency ?? "BHD",
         quantity,
       }));
     }

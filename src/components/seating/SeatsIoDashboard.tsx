@@ -344,7 +344,7 @@ export function SeatsIoDashboard({ eventId }: { eventId: string }) {
                         </div>
                       </div>
                       <label className="text-xs font-black text-slate-500">
-                        EGP
+                        BHD
                         <input
                           type="number"
                           min="0"

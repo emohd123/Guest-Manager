@@ -345,7 +345,7 @@ export default function PublicEventPage({
           ticketTypeId,
           name: ticketType.name,
           price: publicPage.isPaidEvent ? (ticketType.price ?? 0) : 0,
-          currency: ticketType.currency ?? "EGP",
+          currency: ticketType.currency ?? "BHD",
           quantity,
         };
       })
@@ -441,7 +441,7 @@ export default function PublicEventPage({
   const lowestPrice =
     pricedTickets.map((ticket) => ticket.price ?? 0).sort((a, b) => a - b)[0] ??
     0;
-  const currency = tickets[0]?.currency ?? "EGP";
+  const currency = tickets[0]?.currency ?? "BHD";
   const seatingPlan = publicSeating.plan;
   const reservedSeatCount =
     seatingPlan?.sections?.reduce(
@@ -746,7 +746,7 @@ export default function PublicEventPage({
                       </span>
                       <span className="font-semibold text-zinc-600">
                         {publicPage.isPaidEvent
-                          ? `from ${formatMoney(ticket.price ?? 0, ticket.currency ?? "EGP", locale)}`
+                          ? `from ${formatMoney(ticket.price ?? 0, ticket.currency ?? "BHD", locale)}`
                           : t.freeEvent}
                       </span>
                     </div>

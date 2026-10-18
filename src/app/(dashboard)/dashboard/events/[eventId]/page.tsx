@@ -9,6 +9,7 @@ import { ExternalLink, ExternalLinkIcon, Plus, Zap, Users, Ticket, Activity, Tre
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { formatMoney } from "@/lib/marketplace";
 
 const MODY_COLORS = ["#22c55e", "#f97316", "#3b82f6", "#ef4444", "#eab308", "#14b8a6"];
 
@@ -225,7 +226,7 @@ export default function EventOverviewPage({
                    <div className="grid grid-cols-2 gap-4">
                       <div className="rounded-3xl border border-border bg-muted/40 p-4 dark:border-white/5 dark:bg-white/3">
                          <p className="text-[8px] font-black text-muted-foreground/70 dark:text-white/20 uppercase tracking-widest mb-1">Net Revenue</p>
-                         <p className="text-xl font-black text-primary">EGP {(orderStats?.revenue ?? 0).toFixed(2)}</p>
+                         <p className="text-xl font-black text-primary">{formatMoney(orderStats?.revenue ?? 0, "BHD")}</p>
                       </div>
                       <div className="rounded-3xl border border-border bg-muted/40 p-4 dark:border-white/5 dark:bg-white/3">
                          <p className="text-[8px] font-black text-muted-foreground/70 dark:text-white/20 uppercase tracking-widest mb-1">Check-in Rate</p>

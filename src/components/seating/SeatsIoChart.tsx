@@ -25,7 +25,7 @@ export function SeatsIoChart({
   workspaceKey,
   chartKey,
   basePrice = 0,
-  currency = "EGP",
+  currency = "BHD",
   ticketTypeId,
   ticketTypeName = "Reserved seat",
   autoOpen = false,
@@ -127,7 +127,7 @@ export function SeatsIoChart({
               const configuredPrice = pricing.find(
                 (item) => String(item.category) === String(rawCategory),
               )?.price;
-              // Category prices are entered in major currency units (e.g. EGP 100),
+              // Category prices are entered in major currency units (e.g. BHD 10),
               // while checkout and orders use hundredths (10000).
               const categoryPrice = configuredPrice == null
                 ? basePrice
