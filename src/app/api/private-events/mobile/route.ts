@@ -6,12 +6,12 @@ import {
 } from "@/server/services/event-app";
 import {
   privateEventAccessCookie,
-  readPrivateEventAccess,
 } from "@/server/services/private-event-access";
+import { readVerifiedPrivateEventAccess } from "@/server/services/verified-private-event-access";
 
 function getAccess(request: NextRequest) {
   const bearer = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
-  return readPrivateEventAccess(bearer ?? request.cookies.get(privateEventAccessCookie.name)?.value);
+  return readVerifiedPrivateEventAccess(bearer ?? request.cookies.get(privateEventAccessCookie.name)?.value);
 }
 
 const agendaSchema = z.object({
@@ -21,7 +21,7 @@ const agendaSchema = z.object({
 
 export async function GET(request: NextRequest) {
   try {
-    const access = getAccess(request);
+    const access = await getAccess(request);
     if (!access) return NextResponse.json({ error: "Your conference access has expired." }, { status: 401 });
     const data = await getPrivateConferenceMobileData({
       eventId: access.eventId,
@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const access = getAccess(request);
+    const access = await getAccess(request);
     if (!access) return NextResponse.json({ error: "Your conference access has expired." }, { status: 401 });
     const input = agendaSchema.parse(await request.json());
     const result = await updatePrivateConferenceAgenda({

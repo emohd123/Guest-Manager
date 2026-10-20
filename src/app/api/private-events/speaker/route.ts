@@ -6,21 +6,21 @@ import {
 } from "@/server/services/event-app";
 import {
   privateEventAccessCookie,
-  readPrivateEventAccess,
 } from "@/server/services/private-event-access";
+import { readVerifiedPrivateEventAccess } from "@/server/services/verified-private-event-access";
 
-function speakerAccess(request: NextRequest) {
+async function speakerAccess(request: NextRequest) {
   const bearer = request.headers
     .get("authorization")
     ?.replace(/^Bearer\s+/i, "");
-  const access = readPrivateEventAccess(
+  const access = await readVerifiedPrivateEventAccess(
     bearer ?? request.cookies.get(privateEventAccessCookie.name)?.value,
   );
   return access?.role === "speaker" ? access : null;
 }
 
 export async function GET(request: NextRequest) {
-  const access = speakerAccess(request);
+  const access = await speakerAccess(request);
   if (!access?.speakerName)
     return NextResponse.json(
       { error: "Speaker access is required." },
@@ -47,7 +47,7 @@ const questionSchema = z.object({
 });
 
 export async function PATCH(request: NextRequest) {
-  const access = speakerAccess(request);
+  const access = await speakerAccess(request);
   if (!access?.speakerName)
     return NextResponse.json(
       { error: "Speaker access is required." },

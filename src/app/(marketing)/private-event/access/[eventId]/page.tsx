@@ -20,6 +20,7 @@ type Conference = {
   startsAt: string;
   venueName: string;
   accessConfigured: boolean;
+  hasEnded?: boolean;
 };
 
 function formatConferenceDate(value: string) {
@@ -51,22 +52,30 @@ export default function ConferenceAccessPage({
 
   useEffect(() => {
     const controller = new AbortController();
-    void fetch(
-      `/api/private-events/list?eventId=${encodeURIComponent(eventId)}`,
-      { signal: controller.signal, cache: "no-store" },
-    )
-      .then(async (response) =>
-        response.ok
-          ? ((await response.json()) as { conferences?: Conference[] })
-          : { conferences: [] },
-      )
-      .then((payload) =>
+    void Promise.all([
+      fetch(`/api/private-events/list?eventId=${encodeURIComponent(eventId)}`, {
+        signal: controller.signal, cache: "no-store",
+      }).then(async (response) => response.ok
+        ? (await response.json()) as { conferences?: Conference[] }
+        : { conferences: [] }),
+      fetch("/api/private-events/current", {
+        signal: controller.signal, cache: "no-store",
+      }).then(async (response) => response.ok
+        ? (await response.json()) as { eventId?: string; portalUrl?: string }
+        : null),
+    ])
+      .then(([payload, current]) => {
+        if (controller.signal.aborted) return;
+        if (current?.eventId === eventId && current.portalUrl) {
+          window.location.replace(current.portalUrl);
+          return;
+        }
         setConference(
           (payload.conferences ?? []).find((item) => item.id === eventId) ??
             null,
-        ),
-      )
-      .catch(() => setConference(null));
+        );
+      })
+      .catch(() => { if (!controller.signal.aborted) setConference(null); });
     return () => controller.abort();
   }, [eventId]);
 
@@ -107,16 +116,17 @@ export default function ConferenceAccessPage({
         <div className="mx-auto h-80 max-w-4xl animate-pulse rounded-[2rem] bg-slate-200 dark:bg-white/10" />
       </main>
     );
-  if (conference === null)
+  if (conference === null || conference.hasEnded)
     return (
       <main className="min-h-screen bg-slate-50 px-4 py-24 dark:bg-[#080b12]">
         <div className="mx-auto max-w-xl rounded-3xl border border-slate-200 bg-white p-8 text-center shadow-xl dark:border-white/10 dark:bg-[#11131a]">
           <h1 className="text-xl font-black text-slate-900 dark:text-white">
-            Conference unavailable
+            {conference?.hasEnded ? "Conference ended" : "Conference unavailable"}
           </h1>
           <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
-            This private conference is not available, or its access has not been
-            configured yet.
+            {conference?.hasEnded
+              ? "Access to this conference has closed. Please contact the organiser for further information."
+              : "This private conference is not available, or its access has not been configured yet."}
           </p>
           <Link
             href="/private-event"

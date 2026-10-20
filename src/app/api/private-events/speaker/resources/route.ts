@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { addPrivateConferenceSpeakerResource } from "@/server/services/event-app";
 import { createSupabaseAdminClient } from "@/server/supabase/admin";
-import { privateEventAccessCookie, readPrivateEventAccess } from "@/server/services/private-event-access";
+import { privateEventAccessCookie } from "@/server/services/private-event-access";
+import { readVerifiedPrivateEventAccess } from "@/server/services/verified-private-event-access";
 
 const MAX_FILE_SIZE = 25 * 1024 * 1024;
 const allowedTypes: Record<string, "PDF" | "PPTX" | "DOCX" | "XLSX" | "IMAGE"> = {
@@ -14,7 +15,8 @@ const allowedTypes: Record<string, "PDF" | "PPTX" | "DOCX" | "XLSX" | "IMAGE"> =
 };
 
 export async function POST(request: NextRequest) {
-  const access = readPrivateEventAccess(request.cookies.get(privateEventAccessCookie.name)?.value);
+  const bearer = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
+  const access = await readVerifiedPrivateEventAccess(bearer ?? request.cookies.get(privateEventAccessCookie.name)?.value);
   if (!access || access.role !== "speaker" || !access.speakerName) {
     return NextResponse.json({ error: "Speaker access is required." }, { status: 401 });
   }

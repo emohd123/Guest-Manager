@@ -3,8 +3,8 @@ import { z } from "zod";
 import { createConferenceQuestion } from "@/server/services/event-app";
 import {
   privateEventAccessCookie,
-  readPrivateEventAccess,
 } from "@/server/services/private-event-access";
+import { readVerifiedPrivateEventAccess } from "@/server/services/verified-private-event-access";
 
 const inputSchema = z.object({
   eventId: z.string().uuid(),
@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
     const bearer = request.headers
       .get("authorization")
       ?.replace(/^Bearer\s+/i, "");
-    const access = readPrivateEventAccess(
+    const access = await readVerifiedPrivateEventAccess(
       bearer ?? request.cookies.get(privateEventAccessCookie.name)?.value,
     );
     if (

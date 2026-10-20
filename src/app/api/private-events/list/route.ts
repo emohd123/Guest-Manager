@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseAdminClient } from "@/server/supabase/admin";
+import { conferenceHasEnded } from "@/server/services/private-event-access";
 
 export const revalidate = 30;
 
@@ -79,6 +80,7 @@ export async function GET(request: NextRequest) {
           startsAt: event.starts_at,
           endsAt: event.ends_at,
           timezone: event.timezone,
+          hasEnded: conferenceHasEnded(event.ends_at),
           accessConfigured: Boolean(event.visitor_code),
           venueName:
             (typeof publicPage.venueName === "string" &&

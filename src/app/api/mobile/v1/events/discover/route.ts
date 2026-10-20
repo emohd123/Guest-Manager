@@ -78,6 +78,7 @@ export async function GET() {
         "id,company_id,category_id,venue_id,title,slug,short_description,description,cover_image_url,starts_at,ends_at,timezone,registration_enabled,max_capacity,settings,metadata"
       )
       .eq("status", "published")
+      .neq("event_type", "conference")
       .is("deleted_at", null)
       .or(`ends_at.gte.${now},and(ends_at.is.null,starts_at.gte.${now})`)
       .order("starts_at", { ascending: true })
@@ -160,7 +161,7 @@ export async function GET() {
         const category = event.category_id ? categoryMap.get(event.category_id) : undefined;
         const venue = event.venue_id ? venueMap.get(event.venue_id) : undefined;
         const tickets = ticketsByEvent.get(event.id) ?? [];
-        const prices = tickets.map((ticket) => ticket.price ?? 0);
+        const prices = tickets.map((ticket) => publicPage.isPaidEvent === false ? 0 : (ticket.price ?? 0));
         const minPrice = prices.length > 0 ? Math.min(...prices) : null;
         const currency = tickets.find((ticket) => ticket.currency)?.currency ?? "BHD";
         const availableTicketCount = tickets.filter((ticket) => {
@@ -205,7 +206,7 @@ export async function GET() {
             id: ticket.id,
             name: ticket.name,
             description: ticket.description,
-            price: ticket.price ?? 0,
+            price: publicPage.isPaidEvent === false ? 0 : (ticket.price ?? 0),
             currency: ticket.currency ?? currency,
             quantityTotal: ticket.quantity_total,
             quantitySold: ticket.quantity_sold,

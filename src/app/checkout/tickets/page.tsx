@@ -35,6 +35,7 @@ function TicketCheckout() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [submitting, setSubmitting] = useState(false);
+  const [checkoutError, setCheckoutError] = useState<string | null>(null);
   const [promoCode, setPromoCode] = useState("");
   const [appliedPromo, setAppliedPromo] = useState<{ code: string; percentage: number } | null>(null);
   const [promoLoading, setPromoLoading] = useState(false);
@@ -96,14 +97,16 @@ function TicketCheckout() {
       toast.error("Your ticket selection has expired. Please choose tickets again.");
       return;
     }
-    const supabase = createClient();
-    const { data } = await supabase.auth.getUser();
-    if (!data.user) {
-      window.location.assign(`/account/login?redirectTo=${encodeURIComponent(window.location.pathname + window.location.search)}`);
-      return;
-    }
+    if (submitting) return;
+    setCheckoutError(null);
     setSubmitting(true);
     try {
+      const supabase = createClient();
+      const { data, error: authError } = await supabase.auth.getUser();
+      if (authError || !data.user) {
+        window.location.assign(`/account/login?redirectTo=${encodeURIComponent(window.location.pathname + window.location.search)}`);
+        return;
+      }
       const { data: sessionData } = await supabase.auth.getSession();
       const response = await fetch("/api/orders", {
         method: "POST",
@@ -123,7 +126,9 @@ function TicketCheckout() {
       }
       throw new Error("Checkout could not be started.");
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Checkout failed");
+      const message = error instanceof Error ? error.message : "Checkout failed";
+      setCheckoutError(message);
+      toast.error(message);
     } finally {
       setSubmitting(false);
     }
@@ -154,6 +159,7 @@ function TicketCheckout() {
           {appliedPromo && <p className="mt-2 text-sm font-bold text-emerald-700">{appliedPromo.percentage}% discount applied.</p>}
         </div>
         {subtotal === 0 && <p className="mt-5 flex items-center gap-2 rounded-xl bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800"><CheckCircle2 className="h-5 w-5 shrink-0" /> Free tickets are added directly to your account.</p>}
+        {checkoutError && <p role="alert" className="mt-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-800">{checkoutError}</p>}
         <button type="button" disabled={submitting} onClick={submit} className="mt-6 flex h-14 w-full items-center justify-center gap-2 rounded-xl bg-cyan-600 px-5 font-black text-white shadow-lg shadow-cyan-500/20 transition hover:bg-cyan-700 disabled:cursor-not-allowed disabled:opacity-60"><CreditCard className="h-5 w-5" />{submitting ? "Processing…" : total === 0 ? "Get free tickets" : "Continue to secure payment"}</button>
       </section>
     </main>

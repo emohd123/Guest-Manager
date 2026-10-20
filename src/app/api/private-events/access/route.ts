@@ -9,9 +9,11 @@ import {
 } from "@/server/services/checkin/rate-limit";
 import {
   createPrivateEventAccess,
+  conferenceHasEnded,
   privateEventAccessCookie,
 } from "@/server/services/private-event-access";
 import { getEventExperience } from "@/server/services/event-app";
+import { isAssignedConferenceSpeaker } from "@/lib/conference-speaker";
 
 const bodySchema = z.object({
   username: z.string().trim().min(2).max(120),
@@ -128,6 +130,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    if (conferenceHasEnded(event.ends_at)) {
+      return NextResponse.json(
+        { error: "This conference has ended. Please contact the organiser." },
+        { status: 410 },
+      );
+    }
+
     if (!credentialGuest) {
       const { data: credentialCandidates, error: credentialLookupError } =
         await supabase
@@ -177,8 +186,7 @@ export async function POST(request: NextRequest) {
       const experience = await getEventExperience(event.id);
       const speakerSessions = experience.sessions.filter(
         (session) =>
-          normalizeUsername(session.speaker ?? "") ===
-            normalizeUsername(input.username) &&
+          isAssignedConferenceSpeaker(session.speaker, input.username) &&
           session.speakerAccessCode === eventCode,
       );
       if (speakerSessions.length === 0) {

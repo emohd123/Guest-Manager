@@ -1,4 +1,5 @@
 import crypto from "crypto";
+import { isAssignedConferenceSpeaker, withoutSpeakerCredentials } from "@/lib/conference-speaker";
 import { createSupabaseAdminClient } from "@/server/supabase/admin";
 import { createEventNotifications } from "@/server/actions/createEventNotifications";
 import {
@@ -637,8 +638,7 @@ export async function updateSpeakerConferenceQuestion(input: {
     experience.sessions
       .filter(
         (session) =>
-          (session.speaker ?? "").trim().toLocaleLowerCase() ===
-          input.speakerName.trim().toLocaleLowerCase(),
+          isAssignedConferenceSpeaker(session.speaker, input.speakerName),
       )
       .map((session) => session.id),
   );
@@ -770,7 +770,7 @@ export async function getPrivateConferenceMobileData(input: {
         "Venue to be confirmed",
     },
     announcements: experience.settings.announcements,
-    sessions: experience.sessions,
+    sessions: withoutSpeakerCredentials(experience.sessions),
     speakers: Array.isArray(publicPage.lineup) ? publicPage.lineup : [],
     resources: experience.settings.resources ?? [],
     venueMapUrl: experience.settings.venueMapUrl ?? "",
@@ -821,10 +821,9 @@ export async function getPrivateConferenceSpeakerData(input: {
   speakerName: string;
 }) {
   const experience = await getEventExperience(input.eventId);
-  const speakerName = input.speakerName.trim().toLocaleLowerCase();
   const sessions = experience.sessions.filter(
     (session) =>
-      (session.speaker ?? "").trim().toLocaleLowerCase() === speakerName,
+      isAssignedConferenceSpeaker(session.speaker, input.speakerName),
   );
   const sessionIds = new Set(sessions.map((session) => session.id));
   const questions = (await getConferenceQuestions(input.eventId)).filter(
@@ -852,8 +851,7 @@ export async function addPrivateConferenceSpeakerResource(input: {
   const experience = await getEventExperience(input.eventId);
   const speakerSessions = experience.sessions.filter(
     (session) =>
-      (session.speaker ?? "").trim().toLocaleLowerCase() ===
-      input.speakerName.trim().toLocaleLowerCase(),
+      isAssignedConferenceSpeaker(session.speaker, input.speakerName),
   );
   if (
     !speakerSessions.length ||

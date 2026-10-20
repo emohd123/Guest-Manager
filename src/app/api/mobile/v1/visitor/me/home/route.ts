@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { getEventExperience, getVisitorGuestContext, getVisitorNetworkingData } from "@/server/services/event-app";
 import { jsonError } from "../../../utils";
+import { attendeeConferenceSettings, withoutSpeakerCredentials } from "@/lib/conference-speaker";
 
 function getBearerToken(req: NextRequest) {
   const auth = req.headers.get("authorization") ?? "";
@@ -19,7 +20,7 @@ export async function GET(request: NextRequest) {
     const experience = await getEventExperience(ctx.event.id);
     const networking = await getVisitorNetworkingData(token, ctx.event.id);
     const now = Date.now();
-    const sessions = experience.sessions;
+    const sessions = withoutSpeakerCredentials(experience.sessions);
     const nextSession =
       sessions.find((session) => session.startsAt && new Date(session.startsAt).getTime() >= now) ?? null;
     const liveSession =
@@ -36,7 +37,7 @@ export async function GET(request: NextRequest) {
         endsAt: ctx.event.ends_at,
         visitorCode: ctx.event.visitor_code,
       },
-      settings: experience.settings,
+      settings: attendeeConferenceSettings(experience.settings),
       nextSession,
       liveSession,
       announcements: experience.settings.announcements,

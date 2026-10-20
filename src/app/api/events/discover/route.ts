@@ -173,7 +173,7 @@ export async function GET(request: NextRequest) {
           category?.slug ??
           null;
         const tickets = ticketsByEvent.get(event.id) ?? [];
-        const prices = tickets.map((ticket) => ticket.price ?? 0);
+        const prices = tickets.map((ticket) => publicPage.isPaidEvent === false ? 0 : (ticket.price ?? 0));
         const minPrice = prices.length > 0 ? Math.min(...prices) : null;
         const currency = tickets.find((ticket) => ticket.currency)?.currency ?? "BHD";
         const availableTickets = tickets.filter((ticket) => {
@@ -215,7 +215,7 @@ export async function GET(request: NextRequest) {
             id: ticket.id,
             name: ticket.name,
             description: ticket.description,
-            price: ticket.price ?? 0,
+            price: publicPage.isPaidEvent === false ? 0 : (ticket.price ?? 0),
             currency: ticket.currency ?? currency,
             quantityTotal: ticket.quantity_total,
             quantitySold: ticket.quantity_sold,

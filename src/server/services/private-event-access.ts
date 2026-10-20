@@ -12,6 +12,11 @@ type PrivateEventAccess = {
 const COOKIE_NAME = "iticket_private_event_access";
 const DEFAULT_MAX_AGE_SECONDS = 60 * 60 * 12;
 
+export function conferenceHasEnded(endsAt?: string | null) {
+  const endTime = endsAt ? new Date(endsAt).getTime() : Number.NaN;
+  return Number.isFinite(endTime) && endTime <= Date.now();
+}
+
 function signingKey() {
   const key = process.env.PRIVATE_EVENT_ACCESS_SECRET ?? process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!key) throw new Error("Private event access is not configured.");
@@ -24,18 +29,21 @@ function signature(value: string) {
 
 export function createPrivateEventAccess(input: Omit<PrivateEventAccess, "expiresAt">, eventEndsAt?: string | null) {
   const endTime = eventEndsAt ? new Date(eventEndsAt).getTime() : Number.NaN;
-  const expiresAt = Number.isFinite(endTime) && endTime > Date.now()
+  if (conferenceHasEnded(eventEndsAt)) {
+    throw new Error("This conference has ended.");
+  }
+  const expiresAt = Number.isFinite(endTime)
     ? endTime
     : Date.now() + DEFAULT_MAX_AGE_SECONDS * 1000;
   const payload: PrivateEventAccess = { ...input, expiresAt };
   const encoded = Buffer.from(JSON.stringify(payload)).toString("base64url");
-  return { token: `${encoded}.${signature(encoded)}`, maxAge: Math.max(60, Math.floor((expiresAt - Date.now()) / 1000)) };
+  return { token: `${encoded}.${signature(encoded)}`, maxAge: Math.max(1, Math.floor((expiresAt - Date.now()) / 1000)) };
 }
 
 export function readPrivateEventAccess(token?: string): PrivateEventAccess | null {
   if (!token) return null;
   const [encoded, receivedSignature, ...rest] = token.split(".");
-  if (!encoded || !receivedSignature || rest.length) return null;
+  if (!encoded || !receivedSignature || rest.length || !/^[A-Za-z0-9_-]+$/.test(receivedSignature)) return null;
 
   const expectedSignature = signature(encoded);
   if (receivedSignature.length !== expectedSignature.length) return null;
@@ -43,7 +51,10 @@ export function readPrivateEventAccess(token?: string): PrivateEventAccess | nul
 
   try {
     const payload = JSON.parse(Buffer.from(encoded, "base64url").toString("utf8")) as PrivateEventAccess;
-    if (!payload.eventId || !payload.guestId || !payload.username || payload.expiresAt <= Date.now()) return null;
+    if (typeof payload.eventId !== "string" || !payload.eventId ||
+        typeof payload.guestId !== "string" || !payload.guestId ||
+        typeof payload.username !== "string" || !payload.username ||
+        !Number.isFinite(payload.expiresAt) || payload.expiresAt <= Date.now()) return null;
     if (payload.role && payload.role !== "attendee" && payload.role !== "speaker") return null;
     return payload;
   } catch {

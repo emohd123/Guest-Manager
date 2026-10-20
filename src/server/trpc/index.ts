@@ -66,7 +66,7 @@ const t = initTRPC.context<Context>().create();
 export const router = t.router;
 export const publicProcedure = t.procedure;
 
-export const protectedProcedure = t.procedure.use(async ({ ctx, next, path, input }) => {
+export const protectedProcedure = t.procedure.use(async ({ ctx, next, path, input, type }) => {
   if (!ctx.userId || !ctx.companyId) {
     throw new TRPCError({
       code: "UNAUTHORIZED",
@@ -106,7 +106,10 @@ export const protectedProcedure = t.procedure.use(async ({ ctx, next, path, inpu
     }
   }
 
-  if (ctx.dashboardAccess === "limited" && /\.(create|update|delete|duplicate|archive|remove|send|publish|cancel|upsert|add|revoke|assign|generate|import|export|checkin|scan|pair|invite)$/i.test(path)) {
+  // Check the operation type rather than its name: bulk imports and custom
+  // mutation names must obey the same read-only rule. Event scanning uses its
+  // separately authorised check-in API.
+  if (ctx.dashboardAccess === "limited" && type === "mutation") {
     throw new TRPCError({
       code: "FORBIDDEN",
       message: "This customer account has read-only access",

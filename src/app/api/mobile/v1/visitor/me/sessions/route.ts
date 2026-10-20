@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { getEventExperience, getVisitorGuestContext } from "@/server/services/event-app";
 import { jsonError } from "../../../utils";
+import { attendeeConferenceSettings, withoutSpeakerCredentials } from "@/lib/conference-speaker";
 
 function getBearerToken(req: NextRequest) {
   const auth = req.headers.get("authorization") ?? "";
@@ -20,13 +21,13 @@ export async function GET(request: NextRequest) {
     const experience = await getEventExperience(ctx.event.id);
     const profile = ctx.guest.custom_data?.eventApp?.networkingProfile ?? {};
 
-    const sessions = experience.sessions.map((session) => ({
+    const sessions = withoutSpeakerCredentials(experience.sessions).map((session) => ({
       ...session,
       isSaved: Array.isArray(profile.savedSessionIds) ? profile.savedSessionIds.includes(session.id) : false,
       isPlanned: Array.isArray(profile.plannedSessionIds) ? profile.plannedSessionIds.includes(session.id) : false,
     }));
 
-    return NextResponse.json({ sessions, settings: experience.settings });
+    return NextResponse.json({ sessions, settings: attendeeConferenceSettings(experience.settings) });
   } catch (error) {
     return jsonError(error instanceof Error ? error.message : "Failed to load sessions", 500, "fetch_failed");
   }

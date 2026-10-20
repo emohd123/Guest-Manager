@@ -4,10 +4,11 @@ import { createSupabaseAdminClient } from "@/server/supabase/admin";
 import { getEventExperience } from "@/server/services/event-app";
 import {
   privateEventAccessCookie,
-  readPrivateEventAccess,
 } from "@/server/services/private-event-access";
+import { readVerifiedPrivateEventAccess } from "@/server/services/verified-private-event-access";
 import { ConferencePortalClient } from "@/components/private-event/conference-portal-client";
 import type { LineupArtist } from "@/types/event";
+import { withoutSpeakerCredentials } from "@/lib/conference-speaker";
 
 export const dynamic = "force-dynamic";
 
@@ -18,7 +19,7 @@ export default async function PrivateConferencePortal({
 }) {
   const { eventId } = await params;
   const cookieStore = await cookies();
-  const access = readPrivateEventAccess(
+  const access = await readVerifiedPrivateEventAccess(
     cookieStore.get(privateEventAccessCookie.name)?.value,
   );
 
@@ -94,7 +95,7 @@ export default async function PrivateConferencePortal({
         resources: experience.settings.resources ?? [],
         speakers: Array.isArray(publicPage.lineup) ? publicPage.lineup : [],
       }}
-      sessions={experience.sessions}
+      sessions={withoutSpeakerCredentials(experience.sessions)}
     />
   );
 }
