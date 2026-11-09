@@ -108,7 +108,7 @@ export function TicketWidget({
                   <div className="flex items-center gap-2">
                     <h3 className="text-base font-black tracking-tight text-zinc-950 dark:text-white">{ticket.name}</h3>
                     {isSoldOut && (
-                      <span className="px-2 py-0.5 rounded-full bg-zinc-100 text-[10px] font-black uppercase text-zinc-500">Sold Out</span>
+                      <span className="px-2 py-0.5 rounded-full bg-zinc-100 text-[10px] font-black uppercase text-zinc-500">{locale === "ar" ? "نفدت التذاكر" : "Sold Out"}</span>
                     )}
                   </div>
                   {ticket.description && (
@@ -116,11 +116,11 @@ export function TicketWidget({
                   )}
                   <div className="flex items-center gap-3 pt-1">
                     <span className="text-lg font-black text-zinc-950 dark:text-white">
-                      {freeEvent ? "FREE" : formatMoney(ticket.price ?? 0, ticket.currency ?? "BHD", locale)}
+                      {freeEvent ? (locale === "ar" ? "مجاني" : "FREE") : formatMoney(ticket.price ?? 0, ticket.currency ?? "BHD", locale)}
                     </span>
                     {ticket.quantityTotal && (
                       <span className="rounded-md bg-zinc-100 px-2 py-1 text-[10px] font-black uppercase tracking-widest text-zinc-500 dark:bg-slate-800 dark:text-slate-200">
-                        {Math.max(0, ticket.quantityTotal - (ticket.quantitySold ?? 0))} Left
+                        {Math.max(0, ticket.quantityTotal - (ticket.quantitySold ?? 0))} {locale === "ar" ? "متبقية" : "Left"}
                       </span>
                     )}
                   </div>
@@ -130,7 +130,7 @@ export function TicketWidget({
                   <Button
                     variant="ghost"
                     size="icon"
-                    aria-label={`Decrease ${ticket.name} quantity`}
+                    aria-label={locale === "ar" ? `تقليل عدد ${ticket.name}` : `Decrease ${ticket.name} quantity`}
                     onClick={() =>
                       updateQuantity(
                         ticket.id,
@@ -150,7 +150,7 @@ export function TicketWidget({
                   <Button
                     variant="ghost"
                     size="icon"
-                    aria-label={`Increase ${ticket.name} quantity`}
+                    aria-label={locale === "ar" ? `زيادة عدد ${ticket.name}` : `Increase ${ticket.name} quantity`}
                     onClick={() =>
                       updateQuantity(
                         ticket.id,
@@ -175,13 +175,13 @@ export function TicketWidget({
         <div className="flex items-center justify-between gap-3">
           <div className="flex flex-col">
             <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">
-              {amountLabel ?? "Total Amount"}
+              {amountLabel ?? (locale === "ar" ? "الإجمالي" : "Total Amount")}
             </span>
             <span className="text-xl font-black tracking-tight text-zinc-950 dark:text-white">
               {totalItems === 0
                 ? zeroTotal
                 : freeEvent
-                  ? "FREE"
+                  ? (locale === "ar" ? "مجاني" : "FREE")
                   : formatMoney(totalPrice, totalCurrency, locale)}
             </span>
           </div>
@@ -197,7 +197,7 @@ export function TicketWidget({
             ) : (
               <ShoppingCart className="h-4 w-4" />
             )}
-            {checkoutLabel ?? "Proceed to Checkout"}
+            {checkoutLabel ?? (locale === "ar" ? "المتابعة للدفع" : "Proceed to Checkout")}
           </Button>
         </div>
       </div>

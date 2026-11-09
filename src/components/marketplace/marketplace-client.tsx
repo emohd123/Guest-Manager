@@ -3,12 +3,13 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { format } from "date-fns";
+import { arSA } from "date-fns/locale";
 import { BadgeCheck, CalendarDays, ChevronLeft, ChevronRight, Headphones, Heart, Home, MapPin, Search, ShieldCheck, Sparkles, Ticket, User, UsersRound, X, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Dock from "@/components/ui/dock";
 import { AiConcierge } from "@/components/marketplace/ai-concierge";
 import { Reveal, Spotlight } from "@/components/visual/reactbits";
-import { eventCategories, formatMoney, normalizeLocale, type LocaleCode } from "@/lib/marketplace";
+import { eventCategories, formatMoney, normalizeLocale, withPublicLocale, type LocaleCode } from "@/lib/marketplace";
 import type { MarketplaceDiscoveryResponse, MarketplaceEvent } from "@/types/marketplace";
 import { cn } from "@/lib/utils";
 
@@ -222,7 +223,7 @@ export function MarketplaceClient({
           <div className="hidden mb-6 flex-col justify-between gap-4 md:flex-row md:items-center">
             <h1 className="text-3xl font-black tracking-[-0.04em] sm:text-4xl">
               {locale === "ar" ? "أشياء يمكن القيام بها في " : "Things to do in "}
-              <span className="text-blue-600">Bahrain</span>
+              <span className="text-blue-600">{locale === "ar" ? "البحرين" : "Bahrain"}</span>
             </h1>
             <div className="flex flex-wrap gap-2">
               {dateOptions.map((option) => (
@@ -268,7 +269,7 @@ export function MarketplaceClient({
                     ))}
                   </select>
                   <Button asChild className="min-h-12 rounded-xl bg-blue-600 px-7 font-black text-white hover:bg-blue-700">
-                    <Link href={`/?${new URLSearchParams({ q: query, category, date: dateFilter }).toString()}`}>
+                    <Link href={`/?${new URLSearchParams({ q: query, category, date: dateFilter, locale }).toString()}`}>
                       {copy.explore}
                     </Link>
                   </Button>
@@ -317,7 +318,7 @@ export function MarketplaceClient({
                             </span>
                           ) : (
                             <span className="absolute left-3 top-3 rounded-full bg-black/50 px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-white backdrop-blur">
-                              {format(new Date(event.startsAt), "EEE, MMM d")}
+                              {format(new Date(event.startsAt), "EEE, MMM d", { locale: locale === "ar" ? arSA : undefined })}
                             </span>
                           )}
                           <span className="absolute right-3 top-3 rounded-full border border-white/25 bg-black/55 px-3 py-1 text-xs font-black text-white backdrop-blur">
@@ -325,12 +326,12 @@ export function MarketplaceClient({
                           </span>
                           <div className="absolute inset-x-3 bottom-3">
                             <h3 className="line-clamp-1 text-base font-black text-white">{event.title}</h3>
-                            <p className="text-xs font-bold text-white/75">{event.venueName || event.locationText || "Bahrain"}</p>
+                            <p className="text-xs font-bold text-white/75">{event.venueName || event.locationText || (locale === "ar" ? "البحرين" : "Bahrain")}</p>
                           </div>
                         </div>
                         <div className="flex items-center gap-2 p-3">
                           <Button asChild className={`h-10 flex-1 rounded-full text-sm font-black ${fast ? "bg-rose-500 text-white hover:bg-rose-400" : "bg-gradient-to-r from-blue-600 to-violet-600 text-white hover:opacity-95"}`}>
-                            <Link href={event.buyUrl}>{fast ? (locale === "ar" ? "شراء سريع" : "Fast buy") : (locale === "ar" ? "شراء" : "Buy tickets")}</Link>
+                            <Link href={withPublicLocale(event.buyUrl, locale)}>{fast ? (locale === "ar" ? "شراء سريع" : "Fast buy") : (locale === "ar" ? "شراء" : "Buy tickets")}</Link>
                           </Button>
                           <Button
                             type="button"
@@ -528,14 +529,14 @@ export function MarketplaceClient({
             <h2 className="mt-3 text-3xl font-black tracking-tight sm:text-5xl">{copy.servicesTitle}</h2>
             <p className="mt-5 max-w-xl text-base leading-7 text-slate-600">{copy.servicesBody}</p>
             <Button asChild className="mt-8 rounded-full bg-cyan-300 px-7 font-black text-black hover:bg-cyan-200">
-              <Link href="/contact">{copy.workWithUs}</Link>
+              <Link href={withPublicLocale("/contact", locale)}>{copy.workWithUs}</Link>
             </Button>
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
             {serviceCategories.map((item) => (
               <Link
                 key={item.slug}
-                href={`/contact?service=${item.slug}`}
+                href={withPublicLocale(`/contact?service=${item.slug}`, locale)}
                 className="group relative overflow-hidden rounded-2xl border border-slate-200 p-5 transition hover:border-cyan-200/40"
               >
                 <img
@@ -720,20 +721,20 @@ function HeroFeature({
         ) : null}
         <div className="absolute inset-x-4 bottom-4 sm:inset-x-5 sm:bottom-5">
           <p className="text-[10px] font-black uppercase tracking-[0.14em] text-cyan-200 sm:text-xs sm:tracking-[0.18em]">
-            {format(new Date(event.startsAt), "EEE, MMM d")}
+            {format(new Date(event.startsAt), "EEE, MMM d", { locale: locale === "ar" ? arSA : undefined })}
           </p>
           <h3 className="mt-1 line-clamp-2 text-xl font-black leading-tight text-white sm:mt-2 sm:text-3xl">{title}</h3>
           <p className="mt-1 flex items-center gap-1.5 text-xs text-white/75 sm:gap-2 sm:text-sm">
             <MapPin className="h-3.5 w-3.5 shrink-0 text-cyan-300 sm:h-4 sm:w-4" />
-            {event.venueName || event.locationText || "Bahrain"}
+            {event.venueName || event.locationText || (locale === "ar" ? "البحرين" : "Bahrain")}
           </p>
           <div className="mt-3 flex flex-wrap items-center gap-2 sm:mt-5 sm:gap-3">
             <Button asChild className="h-10 rounded-full bg-gradient-to-r from-blue-600 to-violet-600 px-4 text-sm font-black text-white hover:opacity-95 sm:px-6">
-              <Link href={event.buyUrl}>{buy}</Link>
+              <Link href={withPublicLocale(event.buyUrl, locale)}>{buy}</Link>
             </Button>
             <Button
               type="button"
-              onClick={() => { window.location.href = event.publicUrl; }}
+              onClick={() => { window.location.href = withPublicLocale(event.publicUrl, locale); }}
               className="h-10 rounded-full border border-white/30 bg-white/15 px-4 text-sm font-black text-white backdrop-blur hover:bg-white/25 sm:px-5"
             >
               {locale === "ar" ? "تفاصيل" : "Details"}
@@ -759,14 +760,14 @@ export function eventToModalCard(event: MarketplaceEvent, locale: LocaleCode) {
     id: event.id,
     image,
     title,
-    subtitle: `${format(new Date(event.startsAt), "EEE, MMM d · h:mm a")}${event.venueName ? ` · ${event.venueName}` : ""}`,
+    subtitle: `${format(new Date(event.startsAt), "EEE, MMM d · h:mm a", { locale: locale === "ar" ? arSA : undefined })}${event.venueName ? ` · ${event.venueName}` : ""}`,
     badge: formatMoney(event.minPrice, event.currency, locale),
     content: (
       <div className="space-y-4">
         <div className="flex flex-wrap gap-2">
           <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-800">
             <CalendarDays className="h-3.5 w-3.5 text-blue-600" />
-            {format(new Date(event.startsAt), "EEEE, MMMM d, yyyy · h:mm a")}
+            {format(new Date(event.startsAt), "EEEE, MMMM d, yyyy · h:mm a", { locale: locale === "ar" ? arSA : undefined })}
           </span>
           {event.venueName ? (
             <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-800">
@@ -795,10 +796,10 @@ export function eventToModalCard(event: MarketplaceEvent, locale: LocaleCode) {
         </p>
         <div className="flex gap-3">
           <Button asChild variant="outline" className="rounded-full border-slate-300 bg-transparent font-black text-slate-900 hover:bg-slate-100 hover:text-slate-900">
-            <Link href={event.publicUrl}>{ar ? "التفاصيل" : "Details"}</Link>
+            <Link href={withPublicLocale(event.publicUrl, locale)}>{ar ? "التفاصيل" : "Details"}</Link>
           </Button>
           <Button asChild className="rounded-full bg-cyan-300 px-6 font-black text-black hover:bg-cyan-200">
-            <Link href={event.buyUrl}>
+            <Link href={withPublicLocale(event.buyUrl, locale)}>
               {event.hasTickets ? (ar ? "شراء التذاكر" : "Buy tickets") : ar ? "عرض الفعالية" : "View event"}
             </Link>
           </Button>
@@ -845,7 +846,7 @@ function EventCard({
   return (
     <Spotlight className="rounded-[1.6rem]">
     <article className="group overflow-hidden rounded-[1.6rem] border border-slate-200 bg-white text-slate-900 shadow-[0_16px_50px_rgba(15,23,42,0.10)] backdrop-blur transition duration-300 hover:-translate-y-1 hover:border-blue-300 hover:bg-slate-50">
-      <button type="button" onClick={() => { window.location.href = event.publicUrl; }} className="block w-full text-left">
+      <button type="button" onClick={() => { window.location.href = withPublicLocale(event.publicUrl, locale); }} className="block w-full text-left">
         <div className="relative aspect-[16/11] overflow-hidden bg-slate-900">
           {event.coverImageUrl ? (
             <img src={event.coverImageUrl} alt="" className="h-full w-full object-cover transition duration-500 group-hover:scale-105" />
@@ -867,7 +868,7 @@ function EventCard({
           </div>
           <div className="absolute bottom-4 left-4 right-4">
             <p className="text-xs font-black uppercase tracking-[0.18em] text-cyan-200">
-              {format(new Date(event.startsAt), "EEE, MMM d")}
+              {format(new Date(event.startsAt), "EEE, MMM d", { locale: locale === "ar" ? arSA : undefined })}
             </p>
             <h3 className="mt-2 line-clamp-2 text-2xl font-black leading-[1.05] text-white">{title}</h3>
           </div>
@@ -893,11 +894,11 @@ function EventCard({
         <div className="grid gap-2 text-sm font-medium text-slate-700">
           <span className="flex items-center gap-2">
             <CalendarDays className="h-4 w-4 shrink-0 text-blue-600" />
-            {format(new Date(event.startsAt), "EEE, MMM d - h:mm a")}
+            {format(new Date(event.startsAt), "EEE, MMM d - h:mm a", { locale: locale === "ar" ? arSA : undefined })}
           </span>
           <span className="flex items-center gap-2">
             <MapPin className="h-4 w-4 shrink-0 text-blue-600" />
-            {event.venueName || event.locationText || "Bahrain"}
+            {event.venueName || event.locationText || (locale === "ar" ? "البحرين" : "Bahrain")}
           </span>
           <span className="flex items-center gap-2">
             <UsersRound className="h-4 w-4 shrink-0 text-blue-600" />
@@ -906,11 +907,11 @@ function EventCard({
         </div>
         <div className="grid grid-cols-[1fr_auto] gap-2">
           <Button asChild className="rounded-full bg-gradient-to-r from-blue-600 to-violet-600 font-black text-white hover:opacity-95">
-            <Link href={event.buyUrl}>{viewLabel}</Link>
+            <Link href={withPublicLocale(event.buyUrl, locale)}>{viewLabel}</Link>
           </Button>
           <Button
             type="button"
-            onClick={() => { window.location.href = event.publicUrl; }}
+            onClick={() => { window.location.href = withPublicLocale(event.publicUrl, locale); }}
             className="rounded-full border border-slate-300 bg-slate-100 px-5 font-black text-slate-900 hover:bg-slate-200"
           >
             {locale === "ar" ? "\u062a\u0641\u0627\u0635\u064a\u0644" : "Details"}
@@ -933,7 +934,7 @@ function EventQuickView({
 }) {
   const title = locale === "ar" && event.titleAr ? event.titleAr : event.title;
   const description = locale === "ar" && event.shortDescriptionAr ? event.shortDescriptionAr : event.shortDescription;
-  const location = event.venueName || event.locationText || "Bahrain";
+  const location = event.venueName || event.locationText || (locale === "ar" ? "البحرين" : "Bahrain");
   const buyLabel = event.hasTickets
     ? locale === "ar"
       ? "\u0634\u0631\u0627\u0621 \u0627\u0644\u062a\u0630\u0627\u0643\u0631"
@@ -984,7 +985,7 @@ function EventQuickView({
             {description ? <p className="mt-5 text-base leading-7 text-slate-600">{description}</p> : null}
 
             <div className="mt-7 grid gap-3">
-              <DetailRow icon={CalendarDays} label={locale === "ar" ? "\u0627\u0644\u062a\u0627\u0631\u064a\u062e" : "Date"} value={format(new Date(event.startsAt), "EEE, MMM d - h:mm a")} />
+              <DetailRow icon={CalendarDays} label={locale === "ar" ? "\u0627\u0644\u062a\u0627\u0631\u064a\u062e" : "Date"} value={format(new Date(event.startsAt), "EEE, MMM d - h:mm a", { locale: locale === "ar" ? arSA : undefined })} />
               <DetailRow icon={MapPin} label={locale === "ar" ? "\u0627\u0644\u0645\u0648\u0642\u0639" : "Location"} value={location} />
               <DetailRow icon={UsersRound} label={locale === "ar" ? "\u0627\u0644\u0645\u0646\u0638\u0645" : "Hosted by"} value={event.organizerName} />
               <DetailRow icon={Ticket} label={locale === "ar" ? "\u0627\u0644\u062a\u0630\u0627\u0643\u0631" : "Tickets"} value={`${formatMoney(event.minPrice, event.currency, locale)} | ${event.availableTicketCount} ${locale === "ar" ? "\u0646\u0648\u0639" : "available"}`} />
@@ -992,10 +993,10 @@ function EventQuickView({
 
             <div className="mt-8 grid gap-3 sm:grid-cols-2">
               <Button asChild className="rounded-full bg-gradient-to-r from-blue-600 to-violet-600 py-6 font-black text-white hover:opacity-95">
-                <Link href={event.buyUrl}>{buyLabel}</Link>
+                <Link href={withPublicLocale(event.buyUrl, locale)}>{buyLabel}</Link>
               </Button>
               <Button asChild variant="outline" className="rounded-full border-slate-300 bg-white py-6 font-black text-slate-900 hover:bg-slate-50">
-                <Link href={event.publicUrl}>{locale === "ar" ? "\u0641\u062a\u062d \u0635\u0641\u062d\u0629 \u0627\u0644\u0641\u0639\u0627\u0644\u064a\u0629" : "Open full event page"}</Link>
+                <Link href={withPublicLocale(event.publicUrl, locale)}>{locale === "ar" ? "\u0641\u062a\u062d \u0635\u0641\u062d\u0629 \u0627\u0644\u0641\u0639\u0627\u0644\u064a\u0629" : "Open full event page"}</Link>
               </Button>
               <Button
                 type="button"
@@ -1101,7 +1102,7 @@ function CompactEventCard({
   return (
     <button
       type="button"
-      onClick={() => { window.location.href = event.publicUrl; }}
+      onClick={() => { window.location.href = withPublicLocale(event.publicUrl, locale); }}
       className="group min-w-[260px] overflow-hidden rounded-2xl border border-slate-200 bg-white text-left text-slate-950 transition hover:border-blue-300 hover:bg-slate-50"
     >
       <div className="relative aspect-[16/10] bg-slate-900">
@@ -1118,8 +1119,8 @@ function CompactEventCard({
       </div>
       <div className="space-y-2 p-4">
         <h3 className="line-clamp-2 min-h-[3rem] text-base font-black leading-6 text-slate-950">{title}</h3>
-        <p className="text-xs font-bold text-slate-700">{format(new Date(event.startsAt), "EEE, MMM d")}</p>
-        <p className="line-clamp-1 text-xs font-medium text-slate-700">{event.venueName || event.locationText || "Bahrain"}</p>
+        <p className="text-xs font-bold text-slate-700">{format(new Date(event.startsAt), "EEE, MMM d", { locale: locale === "ar" ? arSA : undefined })}</p>
+        <p className="line-clamp-1 text-xs font-medium text-slate-700">{event.venueName || event.locationText || (locale === "ar" ? "البحرين" : "Bahrain")}</p>
       </div>
     </button>
   );

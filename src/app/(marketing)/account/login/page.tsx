@@ -1,5 +1,7 @@
 "use client";
 
+import { usePublicCopy } from "@/lib/use-public-copy";
+
 import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
@@ -11,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 function BuyerLoginPageContent() {
+  const tr = usePublicCopy();
   const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -21,7 +24,7 @@ function BuyerLoginPageContent() {
   const [mode, setMode] = useState<"login" | "signup">("login");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
-  const postLoginRedirect = searchParams.get("redirectTo") || "/account";
+  const postLoginRedirect = tr.href(searchParams.get("redirectTo") || "/account");
 
   useEffect(() => {
     createClient().auth.getUser().then(({ data }) => {
@@ -110,7 +113,7 @@ function BuyerLoginPageContent() {
   return (
     <div className="min-h-screen bg-white px-4 py-28 text-slate-900">
       <div className="mx-auto max-w-md rounded-[2rem] border border-slate-200 bg-white p-7 shadow-2xl">
-        <Link href="/" className="mb-8 flex justify-center">
+        <Link href={tr.href("/")} className="mb-8 flex justify-center">
           <BrandWordmark
             className="gap-3"
             markClassName="h-12 w-12"
@@ -118,11 +121,10 @@ function BuyerLoginPageContent() {
           />
         </Link>
         <h1 className="text-center text-3xl font-black">
-          {mode === "login" ? "Open your tickets" : "Create buyer account"}
+          {mode === "login" ? tr("Open your tickets") : tr("Create buyer account")}
         </h1>
         <p className="mt-3 text-center text-sm leading-6 text-slate-600">
-          Use the same email you used at checkout to see your orders, QR tickets, favorites, and event updates.
-        </p>
+           {tr("Use the same email you used at checkout to see your orders, QR tickets, favorites, and event updates.")} </p>
 
         <Button
           type="button"
@@ -131,8 +133,7 @@ function BuyerLoginPageContent() {
           onClick={handleGoogle}
           disabled={loading}
         >
-          Continue with Google
-        </Button>
+           {tr("Continue with Google")} </Button>
         <Button
           type="button"
           variant="outline"
@@ -140,44 +141,40 @@ function BuyerLoginPageContent() {
           onClick={handleFacebook}
           disabled={loading}
         >
-          Continue with Facebook
-        </Button>
+           {tr("Continue with Facebook")} </Button>
 
         <Link
-          href="/staff-access"
+          href={tr.href("/staff-access")}
           className="mt-5 flex min-h-12 w-full items-center justify-center rounded-2xl border border-cyan-200 bg-cyan-50 px-4 text-sm font-black text-cyan-900 transition-colors hover:bg-cyan-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500 focus-visible:ring-offset-2"
         >
-          Staff Access / Check-in
-        </Link>
+           {tr("Staff Access / Check-in")} </Link>
         <p className="mt-2 text-center text-xs text-slate-500">
-          For event staff. Use the access code and PIN shared by the organiser.
-        </p>
+           {tr("For event staff. Use the access code and PIN shared by the organiser.")} </p>
 
         <div className="my-6 flex items-center gap-3 text-xs font-bold uppercase tracking-widest text-slate-500">
           <span className="h-px flex-1 bg-slate-100" />
-          or
-          <span className="h-px flex-1 bg-slate-100" />
+           {tr("or")} <span className="h-px flex-1 bg-slate-100" />
         </div>
 
         <form onSubmit={handleEmailAuth} className="space-y-4">
           {mode === "signup" ? (
             <>
               <div className="space-y-2">
-                <Label htmlFor="name">Full name</Label>
+                <Label htmlFor="name">{tr("Full name")}</Label>
                 <Input id="name" value={name} onChange={(event) => setName(event.target.value)} required className="h-12 rounded-2xl border-slate-200 bg-slate-50 text-slate-900" />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="phone">Mobile number</Label>
-                <Input id="phone" type="tel" value={phone} onChange={(event) => setPhone(event.target.value)} required placeholder="+20..." className="h-12 rounded-2xl border-slate-200 bg-slate-50 text-slate-900" />
+                <Label htmlFor="phone">{tr("Mobile number")}</Label>
+                <Input id="phone" type="tel" value={phone} onChange={(event) => setPhone(event.target.value)} required placeholder="+973..." className="h-12 rounded-2xl border-slate-200 bg-slate-50 text-slate-900" />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="nationality">Nationality</Label>
+                <Label htmlFor="nationality">{tr("Nationality")}</Label>
                 <Input id="nationality" value={nationality} onChange={(event) => setNationality(event.target.value)} required className="h-12 rounded-2xl border-slate-200 bg-slate-50 text-slate-900" />
               </div>
             </>
           ) : null}
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email">{tr("Email")}</Label>
             <Input
               id="email"
               type="email"
@@ -188,7 +185,7 @@ function BuyerLoginPageContent() {
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
+            <Label htmlFor="password">{tr("Password")}</Label>
             <div className="relative">
               <Input
                 id="password"
@@ -202,7 +199,7 @@ function BuyerLoginPageContent() {
               <button
                 type="button"
                 onClick={() => setShowPassword((value) => !value)}
-                aria-label={showPassword ? "Hide password" : "Show password"}
+                aria-label={showPassword ? tr("Hide password") : tr("Show password")}
                 aria-pressed={showPassword}
                 className="absolute inset-y-0 right-0 flex w-12 items-center justify-center text-slate-600 transition-colors hover:text-slate-900"
               >
@@ -216,7 +213,7 @@ function BuyerLoginPageContent() {
             className="h-12 w-full rounded-2xl bg-gradient-to-r from-blue-600 to-violet-600 font-black text-slate-900 hover:opacity-95"
             disabled={loading}
           >
-            {loading ? "Please wait..." : mode === "login" ? "Sign in" : "Create account"}
+            {loading ? tr("Please wait...") : mode === "login" ? tr("Sign in") : tr("Create account")}
           </Button>
         </form>
 
@@ -225,7 +222,7 @@ function BuyerLoginPageContent() {
           className="mt-6 w-full text-center text-sm font-bold text-blue-600"
           onClick={() => setMode(mode === "login" ? "signup" : "login")}
         >
-          {mode === "login" ? "New buyer? Create an account" : "Already have an account? Sign in"}
+          {mode === "login" ? tr("New buyer? Create an account") : tr("Already have an account? Sign in")}
         </button>
       </div>
     </div>

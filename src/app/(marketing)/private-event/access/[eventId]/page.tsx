@@ -1,5 +1,7 @@
 "use client";
 
+import { usePublicCopy } from "@/lib/use-public-copy";
+
 import { FormEvent, use, useEffect, useState } from "react";
 import Link from "next/link";
 import {
@@ -23,11 +25,11 @@ type Conference = {
   hasEnded?: boolean;
 };
 
-function formatConferenceDate(value: string) {
+function formatConferenceDate(value: string, locale = "en") {
   const date = new Date(value);
   return Number.isNaN(date.getTime())
-    ? "Date to be confirmed"
-    : new Intl.DateTimeFormat(undefined, {
+    ? (locale === "ar" ? "يحدد التاريخ لاحقاً" : "Date to be confirmed")
+    : new Intl.DateTimeFormat(locale === "ar" ? "ar-BH" : "en-BH", {
         dateStyle: "full",
         timeStyle: "short",
       }).format(date);
@@ -38,6 +40,7 @@ export default function ConferenceAccessPage({
 }: {
   params: Promise<{ eventId: string }>;
 }) {
+  const tr = usePublicCopy();
   const { eventId } = use(params);
   const [conference, setConference] = useState<Conference | null | undefined>(
     undefined,
@@ -67,7 +70,7 @@ export default function ConferenceAccessPage({
       .then(([payload, current]) => {
         if (controller.signal.aborted) return;
         if (current?.eventId === eventId && current.portalUrl) {
-          window.location.replace(current.portalUrl);
+          window.location.replace(tr.href(current.portalUrl));
           return;
         }
         setConference(
@@ -77,7 +80,7 @@ export default function ConferenceAccessPage({
       })
       .catch(() => { if (!controller.signal.aborted) setConference(null); });
     return () => controller.abort();
-  }, [eventId]);
+  }, [eventId, tr]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -102,7 +105,7 @@ export default function ConferenceAccessPage({
         setError(payload.error ?? "We could not open this private event.");
         return;
       }
-      window.location.assign(payload.portalUrl);
+      window.location.assign(tr.href(payload.portalUrl));
     } catch {
       setError("We could not connect right now. Please try again.");
     } finally {
@@ -121,19 +124,18 @@ export default function ConferenceAccessPage({
       <main className="min-h-screen bg-slate-50 px-4 py-24 dark:bg-[#080b12]">
         <div className="mx-auto max-w-xl rounded-3xl border border-slate-200 bg-white p-8 text-center shadow-xl dark:border-white/10 dark:bg-[#11131a]">
           <h1 className="text-xl font-black text-slate-900 dark:text-white">
-            {conference?.hasEnded ? "Conference ended" : "Conference unavailable"}
+            {conference?.hasEnded ? tr("Conference ended") : tr("Conference unavailable")}
           </h1>
           <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
             {conference?.hasEnded
-              ? "Access to this conference has closed. Please contact the organiser for further information."
-              : "This private conference is not available, or its access has not been configured yet."}
+              ? tr("Access to this conference has closed. Please contact the organiser for further information.")
+              : tr("This private conference is not available, or its access has not been configured yet.")}
           </p>
           <Link
-            href="/private-event"
+            href={tr.href("/private-event")}
             className="mt-6 inline-flex items-center gap-2 text-sm font-black text-cyan-700 dark:text-cyan-300"
           >
-            <ArrowLeft className="h-4 w-4" /> Back to conferences
-          </Link>
+            <ArrowLeft className="h-4 w-4" />  {tr("Back to conferences")} </Link>
         </div>
       </main>
     );
@@ -142,11 +144,10 @@ export default function ConferenceAccessPage({
     <main className="min-h-screen bg-slate-50 px-4 py-12 text-slate-900 dark:bg-[#080b12] dark:text-white sm:py-20">
       <div className="mx-auto max-w-4xl">
         <Link
-          href="/private-event"
+          href={tr.href("/private-event")}
           className="mb-5 inline-flex items-center gap-2 text-sm font-black text-slate-700 hover:text-cyan-700 dark:text-slate-200 dark:hover:text-cyan-200"
         >
-          <ArrowLeft className="h-4 w-4" /> All private conferences
-        </Link>
+          <ArrowLeft className="h-4 w-4" />  {tr("All private conferences")} </Link>
         <div className="overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-2xl dark:border-white/10 dark:bg-[#11131a] md:grid md:grid-cols-[0.9fr_1.1fr]">
           <section
             className="relative min-h-72 bg-slate-900 bg-cover bg-center p-7 text-white sm:p-9"
@@ -159,15 +160,14 @@ export default function ConferenceAccessPage({
             }
           >
             <span className="inline-flex items-center gap-2 rounded-full border border-cyan-200/30 bg-cyan-300/10 px-3 py-1.5 text-xs font-black uppercase tracking-[0.16em] text-cyan-100">
-              <ShieldCheck className="h-4 w-4" /> Private access
-            </span>
+              <ShieldCheck className="h-4 w-4" />  {tr("Private access")} </span>
             <div className="absolute inset-x-7 bottom-8">
               <h1 className="text-3xl font-black leading-tight">
                 {conference.title}
               </h1>
               <p className="mt-4 flex items-start gap-2 text-sm text-slate-200">
                 <CalendarDays className="mt-0.5 h-4 w-4 shrink-0 text-cyan-200" />{" "}
-                {formatConferenceDate(conference.startsAt)}
+                {formatConferenceDate(conference.startsAt, tr.locale)}
               </p>
               <p className="mt-2 flex items-start gap-2 text-sm text-slate-200">
                 <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-cyan-200" />{" "}
@@ -176,9 +176,9 @@ export default function ConferenceAccessPage({
             </div>
           </section>
           <section className="p-7 sm:p-9">
-            <h2 className="text-2xl font-black">Enter this conference</h2>
+            <h2 className="text-2xl font-black">{tr("Enter this conference")}</h2>
             <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">
-              Use your assigned name and code for{" "}
+               {tr("Use your assigned name and code for")}{" "}
               <span className="font-bold text-slate-900 dark:text-white">
                 {conference.title}
               </span>
@@ -190,29 +190,27 @@ export default function ConferenceAccessPage({
                 onClick={() => setAccessRole("attendee")}
                 className={`rounded-lg px-3 py-2 text-sm font-black ${accessRole === "attendee" ? "bg-white shadow-sm text-slate-950 dark:bg-[#1d2636] dark:text-white" : "text-slate-500 dark:text-slate-300"}`}
               >
-                Attendee
-              </button>
+                 {tr("Attendee")} </button>
               <button
                 type="button"
                 onClick={() => setAccessRole("speaker")}
                 className={`rounded-lg px-3 py-2 text-sm font-black ${accessRole === "speaker" ? "bg-white shadow-sm text-slate-950 dark:bg-[#1d2636] dark:text-white" : "text-slate-500 dark:text-slate-300"}`}
               >
-                Speaker
-              </button>
+                 {tr("Speaker")} </button>
             </div>
             <form className="mt-5 space-y-5" onSubmit={handleSubmit}>
               <label className="block">
                 <span className="mb-2 flex items-center gap-2 text-sm font-bold text-slate-800 dark:text-slate-200">
                   <UserRound className="h-4 w-4 text-cyan-600 dark:text-cyan-300" />{" "}
-                  {accessRole === "speaker" ? "Speaker name" : "Attendee name"}
+                  {accessRole === "speaker" ? tr("Speaker name") : tr("Attendee name")}
                 </span>
                 <input
                   value={username}
                   onChange={(event) => setUsername(event.target.value)}
                   placeholder={
                     accessRole === "speaker"
-                      ? "Name set in the speaker profile"
-                      : "Name on your registration"
+                      ? tr("Name set in the speaker profile")
+                      : tr("Name on your registration")
                   }
                   autoComplete="name"
                   required
@@ -224,8 +222,8 @@ export default function ConferenceAccessPage({
                 <span className="mb-2 flex items-center gap-2 text-sm font-bold text-slate-800 dark:text-slate-200">
                   <KeyRound className="h-4 w-4 text-cyan-600 dark:text-cyan-300" />{" "}
                   {accessRole === "speaker"
-                    ? "Speaker access code"
-                    : "Event access code"}
+                    ? tr("Speaker access code")
+                    : tr("Event access code")}
                 </span>
                 <input
                   value={eventCode}
@@ -234,8 +232,8 @@ export default function ConferenceAccessPage({
                   }
                   placeholder={
                     accessRole === "speaker"
-                      ? "Code supplied for your session"
-                      : "e.g. CONF2026"
+                      ? tr("Code supplied for your session")
+                      : tr("e.g. CONF2026")
                   }
                   autoCapitalize="characters"
                   autoComplete="off"
@@ -259,16 +257,15 @@ export default function ConferenceAccessPage({
                 className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-cyan-300 px-5 font-black text-slate-950 transition hover:bg-cyan-200 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {isSubmitting
-                  ? "Verifying access..."
+                  ? tr("Verifying access...")
                   : accessRole === "speaker"
-                    ? "Open speaker workspace"
-                    : "Open conference"}
+                    ? tr("Open speaker workspace")
+                    : tr("Open conference")}
                 <ArrowRight className="h-4 w-4" />
               </button>
             </form>
             <p className="mt-5 text-center text-xs text-slate-500 dark:text-slate-400">
-              Need a code? Please contact this conference organiser.
-            </p>
+               {tr("Need a code? Please contact this conference organiser.")} </p>
           </section>
         </div>
       </div>

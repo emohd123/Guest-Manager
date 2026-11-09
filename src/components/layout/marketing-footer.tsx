@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { BrandWordmark } from "@/components/brand/brand-wordmark";
 
 const footerLinks = {
@@ -28,13 +31,27 @@ const footerLinks = {
 };
 
 export function MarketingFooter() {
+  const ar = useSearchParams().get("locale") === "ar";
+  const translations: Record<string, string> = {
+    Marketplace: "الفعاليات والتذاكر", Services: "الخدمات", Company: "الشركة", Legal: "المعلومات القانونية",
+    "Browse Events": "تصفح الفعاليات", "My Tickets": "تذاكري", "Buyer Login": "تسجيل دخول العملاء", "Our Services": "خدماتنا",
+    "Corporate Events": "فعاليات الشركات", Exhibitions: "المعارض", "Ticketing Services": "خدمات التذاكر", Staffing: "توفير طواقم العمل",
+    "About iTicket": "عن iTicket", "OneStone Network": "شبكة ون ستون", "Contact Us": "تواصل معنا",
+    "Privacy Policy": "سياسة الخصوصية", "Terms of Service": "الشروط والأحكام", "Refund Policy": "سياسة الاسترداد", "Cookie Policy": "سياسة ملفات تعريف الارتباط",
+  };
+  const href = (path: string) => {
+    if (!path.startsWith("/")) return path;
+    const url = new URL(path, "https://www.iticket.info");
+    url.searchParams.set("locale", ar ? "ar" : "en");
+    return `${url.pathname}${url.search}${url.hash}`;
+  };
   return (
     <footer className="relative z-20 border-t border-slate-200 bg-white text-slate-900 backdrop-blur-xl dark:border-slate-800 dark:bg-slate-950 dark:text-white">
       <div className="mx-auto max-w-none px-4 py-16 sm:px-8 lg:px-12 2xl:px-20">
         <div className="grid gap-12 md:grid-cols-2 lg:grid-cols-6">
           {/* Brand */}
           <div dir="ltr" className="lg:col-span-2">
-            <Link href="/" aria-label="iTicket home">
+            <Link href={href("/")} aria-label={ar ? "الرئيسية" : "iTicket home"}>
               <BrandWordmark
                 className="gap-3.5"
                 markClassName="h-16 w-16 sm:h-18 sm:w-18"
@@ -42,23 +59,22 @@ export function MarketingFooter() {
               />
             </Link>
             <p className="mt-6 text-sm leading-relaxed text-slate-600 dark:text-slate-300">
-              Bahrain event discovery, ticketing, check-in, and managed event operations.
-              Built by the iTicket team for public and corporate experiences.
+              {ar ? "اكتشف فعاليات البحرين واحجز التذاكر واستفد من خدمات تسجيل الدخول وإدارة الفعاليات. يقدمها فريق iTicket للفعاليات العامة وفعاليات الشركات." : "Bahrain event discovery, ticketing, check-in, and managed event operations. Built by the iTicket team for public and corporate experiences."}
             </p>
           </div>
 
           {/* Link columns */}
           {Object.entries(footerLinks).map(([category, links]) => (
             <div key={category}>
-              <h4 className="mb-3 text-sm font-semibold text-slate-950 dark:text-white">{category}</h4>
+              <h4 className="mb-3 text-sm font-semibold text-slate-950 dark:text-white">{ar ? translations[category] : category}</h4>
               <ul className="space-y-2">
                 {links.map((link) => (
                   <li key={link.name}>
                     <Link
-                      href={link.href}
+                      href={href(link.href)}
                       className="text-sm text-slate-600 transition-colors hover:text-cyan-700 dark:text-slate-300 dark:hover:text-cyan-300"
                     >
-                      {link.name}
+                      {ar ? translations[link.name] : link.name}
                     </Link>
                   </li>
                 ))}
@@ -69,7 +85,7 @@ export function MarketingFooter() {
 
         <div className="mt-12 flex flex-col items-center justify-between border-t border-slate-200 pt-8 dark:border-slate-800 md:flex-row">
           <p className="text-sm text-slate-600 dark:text-slate-300">
-            &copy; {new Date().getFullYear()} iTicket. All rights reserved. Powered by{" "}
+            &copy; {new Date().getFullYear()} iTicket. {ar ? "جميع الحقوق محفوظة. بدعم من" : "All rights reserved. Powered by"}{" "}
             <a
               href="https://onestoneads.com/"
               target="_blank"
@@ -81,28 +97,28 @@ export function MarketingFooter() {
           </p>
           <div className="mt-4 flex gap-6 md:mt-0">
             <Link
-              href="/contact"
+              href={href("/contact")}
               className="text-sm text-slate-600 hover:text-cyan-700 dark:text-slate-300 dark:hover:text-cyan-300"
             >
-              Support
+              {ar ? "الدعم" : "Support"}
             </Link>
             <Link
-              href="/privacy-policy"
+              href={href("/privacy-policy")}
               className="text-sm text-slate-600 hover:text-cyan-700 dark:text-slate-300 dark:hover:text-cyan-300"
             >
-              Privacy
+              {ar ? "الخصوصية" : "Privacy"}
             </Link>
             <Link
-              href="/terms-of-service"
+              href={href("/terms-of-service")}
               className="text-sm text-slate-600 hover:text-cyan-700 dark:text-slate-300 dark:hover:text-cyan-300"
             >
-              Terms
+              {ar ? "الشروط" : "Terms"}
             </Link>
             <Link
-              href="/refund-policy"
+              href={href("/refund-policy")}
               className="text-sm text-slate-600 hover:text-cyan-700 dark:text-slate-300 dark:hover:text-cyan-300"
             >
-              Refunds
+              {ar ? "الاسترداد" : "Refunds"}
             </Link>
           </div>
         </div>

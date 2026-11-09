@@ -49,6 +49,8 @@ import {
 import { toast } from "sonner";
 import { TIMEZONE_OPTIONS } from "@/lib/timezones";
 import { eventCategories } from "@/lib/marketplace";
+import { BilingualEventFields } from "@/components/dashboard/bilingual-event-fields";
+import { bilingualEventDetailsSchema, readBilingualEventDetails, type EventDetailKey } from "@/lib/event-details";
 
 function formatDateTimeLocal(dateStr: string): string {
   const d = new Date(dateStr);
@@ -73,6 +75,10 @@ export default function EventSettingsPage({
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [shortDescription, setShortDescription] = useState("");
+  const [titleAr, setTitleAr] = useState("");
+  const [shortDescriptionAr, setShortDescriptionAr] = useState("");
+  const [descriptionAr, setDescriptionAr] = useState("");
+  const [detailsErrors, setDetailsErrors] = useState<Partial<Record<EventDetailKey, string>>>({});
   const [eventType, setEventType] = useState<"single" | "recurring" | "multi_day" | "session" | "conference">("single");
   const [startsAt, setStartsAt] = useState("");
   const [endsAt, setEndsAt] = useState("");
@@ -110,6 +116,11 @@ export default function EventSettingsPage({
 
   useEffect(() => {
     if (!event) return;
+    const bilingual = readBilingualEventDetails(event);
+    setTitleAr(bilingual.titleAr);
+    setShortDescriptionAr(bilingual.shortDescriptionAr);
+    setDescriptionAr(bilingual.descriptionAr);
+    setDetailsErrors({});
     setTitle(event.title);
     setDescription(event.description ?? "");
     setShortDescription(event.shortDescription ?? "");
@@ -225,7 +236,16 @@ export default function EventSettingsPage({
   });
 
   const handleSave = () => {
+    const details = bilingualEventDetailsSchema.safeParse({ title, titleAr, description, descriptionAr, shortDescription, shortDescriptionAr });
+    if (!details.success) {
+      setDetailsErrors(Object.fromEntries(details.error.issues.map((issue) => [issue.path[0], issue.message])));
+      toast.error("Complete all event details in English and Arabic before saving.");
+      document.getElementById(`edit-event-${details.error.issues[0]?.path[0]}`)?.focus();
+      return;
+    }
+    setDetailsErrors({});
     updateEvent.mutate({
+      bilingualDetails: details.data,
       id: eventId,
       title,
       description: description || undefined,
@@ -641,36 +661,11 @@ export default function EventSettingsPage({
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="edit-title">Event Title</Label>
-            <Input
-              id="edit-title"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="Event title"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="edit-shortDescription">Short Description</Label>
-            <Input
-              id="edit-shortDescription"
-              value={shortDescription}
-              onChange={(e) => setShortDescription(e.target.value)}
-              placeholder="Brief summary shown in listings"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="edit-description">Full Description</Label>
-            <Textarea
-              id="edit-description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Detailed event description..."
-              rows={5}
-            />
-          </div>
+          <BilingualEventFields idPrefix="edit-event" value={{ title, titleAr, shortDescription, shortDescriptionAr, description, descriptionAr }} errors={detailsErrors} onChange={(key, value) => {
+            const setters = { title: setTitle, titleAr: setTitleAr, shortDescription: setShortDescription, shortDescriptionAr: setShortDescriptionAr, description: setDescription, descriptionAr: setDescriptionAr };
+            setters[key](value);
+            setDetailsErrors((current) => ({ ...current, [key]: undefined }));
+          }} />
 
           {event.eventType !== "conference" && <div className="space-y-2">
             <Label htmlFor="edit-category">Homepage Filter</Label>

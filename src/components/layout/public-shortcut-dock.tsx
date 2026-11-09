@@ -57,7 +57,7 @@ export function PublicShortcutDock() {
     { id: "search", icon: <Search className="h-5 w-5" />, label: isArabic ? "بحث" : "Search", onClick: focusSearch },
     { id: "favourite", icon: <Heart className="h-5 w-5" />, label: isArabic ? "المفضلة" : "Favourite", onClick: () => { setActiveShortcut("favourite"); router.push(localeHref("/account/favorites")); } },
     { id: "private", icon: <CalendarDays className="h-5 w-5" />, label: isArabic ? "فعالية خاصة" : "Private Event", onClick: () => { setActiveShortcut("private"); router.push(localeHref("/private-event")); } },
-    { id: "tickets", icon: <Ticket className="h-5 w-5" />, label: isArabic ? "My Tickets" : "My Tickets", onClick: () => { setActiveShortcut("tickets"); router.push(localeHref("/account/tickets")); } },
+    { id: "tickets", icon: <Ticket className="h-5 w-5" />, label: isArabic ? "تذاكري" : "My Tickets", onClick: () => { setActiveShortcut("tickets"); router.push(localeHref("/account/tickets")); } },
   ];
 
   return (

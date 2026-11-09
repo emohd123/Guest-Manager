@@ -1,5 +1,7 @@
 "use client";
 
+import { usePublicCopy } from "@/lib/use-public-copy";
+
 import {
   ChangeEvent,
   FormEvent,
@@ -47,6 +49,7 @@ type SpeakerData = {
 };
 
 export function SpeakerPortalClient() {
+  const tr = usePublicCopy();
   const [data, setData] = useState<SpeakerData | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
@@ -118,7 +121,7 @@ export function SpeakerPortalClient() {
 
   async function signOut() {
     await fetch("/api/private-events/signout", { method: "POST" });
-    window.location.assign("/private-event");
+    window.location.assign(tr.href("/private-event"));
   }
   async function setQuestionStatus(
     questionId: string,
@@ -165,9 +168,9 @@ export function SpeakerPortalClient() {
     return (
       <main className="grid min-h-screen place-items-center bg-slate-50 px-5 text-center text-slate-900 dark:bg-[#080b12] dark:text-white">
         <div>
-          <h1 className="text-2xl font-black">Speaker portal unavailable</h1>
+          <h1 className="text-2xl font-black">{tr("Speaker portal unavailable")}</h1>
           <p className="mt-2 text-slate-600 dark:text-slate-300">
-            {error || "Please sign in with your speaker details."}
+            {error || tr("Please sign in with your speaker details.")}
           </p>
         </div>
       </main>
@@ -179,8 +182,7 @@ export function SpeakerPortalClient() {
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-3">
           <div className="min-w-0">
             <p className="text-[10px] font-black uppercase tracking-[.18em] text-cyan-700 dark:text-cyan-300">
-              Speaker workspace
-            </p>
+               {tr("Speaker workspace")} </p>
             <h1 className="mt-1 truncate text-sm font-black sm:text-lg">
               {data.conference.title}
             </h1>
@@ -190,26 +192,22 @@ export function SpeakerPortalClient() {
             className="inline-flex shrink-0 items-center gap-2 rounded-xl border border-slate-300 px-3 py-2 text-sm font-black dark:border-white/15"
           >
             <LogOut className="h-4 w-4" />
-            <span className="hidden sm:inline">Sign out</span>
+            <span className="hidden sm:inline">{tr("Sign out")}</span>
           </button>
         </div>
       </header>
       <div className="mx-auto max-w-6xl space-y-8 px-4 py-6 sm:px-5 sm:py-8">
         <section className="rounded-3xl bg-slate-950 p-6 text-white sm:p-7">
           <p className="text-sm font-bold text-cyan-200">
-            Welcome, {data.speakerName}
+             {tr("Welcome,")} {data.speakerName}
           </p>
           <h2 className="mt-2 text-2xl font-black sm:text-3xl">
-            Your speaker workspace
-          </h2>
+             {tr("Your speaker workspace")} </h2>
           <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-200 sm:text-base">
-            Review attendee questions for your sessions and share presentation
-            files directly with conference attendees.
-          </p>
+             {tr("Review attendee questions for your sessions and share presentation files directly with conference attendees.")} </p>
           <div className="mt-5 flex flex-wrap gap-2">
             <span className="rounded-full bg-white/10 px-3 py-1.5 text-xs font-black">
-              {data.sessions.length} session
-              {data.sessions.length === 1 ? "" : "s"}
+              {data.sessions.length}  {tr("session")} {data.sessions.length === 1 || tr.locale === "ar" ? "" : "s"}
             </span>
             <span className="rounded-full bg-cyan-300/15 px-3 py-1.5 text-xs font-black text-cyan-100">
               {
@@ -217,8 +215,7 @@ export function SpeakerPortalClient() {
                   (question) => question.status !== "answered",
                 ).length
               }{" "}
-              open question
-              {data.questions.filter(
+               {tr("open question")} {data.questions.filter(
                 (question) => question.status !== "answered",
               ).length === 1
                 ? ""
@@ -236,17 +233,15 @@ export function SpeakerPortalClient() {
             <div className="flex items-center justify-between gap-3">
               <div>
                 <p className="text-xs font-black uppercase tracking-[.18em] text-cyan-700 dark:text-cyan-300">
-                  Live engagement
-                </p>
-                <h2 className="mt-1 text-2xl font-black">Attendee questions</h2>
+                   {tr("Live engagement")} </p>
+                <h2 className="mt-1 text-2xl font-black">{tr("Attendee questions")}</h2>
                 <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                  Updates automatically every five seconds.
-                </p>
+                   {tr("Updates automatically every five seconds.")} </p>
               </div>
               <button
                 onClick={() => void load()}
                 className="shrink-0 rounded-xl border border-slate-300 p-2 dark:border-white/15"
-                aria-label="Refresh questions"
+                aria-label={tr("Refresh questions")}
               >
                 <RefreshCw className="h-4 w-4" />
               </button>
@@ -254,8 +249,7 @@ export function SpeakerPortalClient() {
             <div className="mt-5 space-y-3">
               {data.questions.length === 0 ? (
                 <p className="rounded-2xl border border-dashed border-slate-300 p-6 text-sm text-slate-500 dark:border-white/15 dark:text-slate-300">
-                  No questions yet. Keep this page open during your session.
-                </p>
+                   {tr("No questions yet. Keep this page open during your session.")} </p>
               ) : (
                 data.questions.map((question) => (
                   <article
@@ -270,15 +264,15 @@ export function SpeakerPortalClient() {
                       <span
                         className={`rounded-full px-2 py-1 text-[10px] font-black uppercase ${question.status === "answered" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-400/15 dark:text-emerald-300" : "bg-amber-100 text-amber-700 dark:bg-amber-400/15 dark:text-amber-200"}`}
                       >
-                        {question.status === "answered" ? "Answered" : "Open"}
+                        {question.status === "answered" ? tr("Answered") : tr("Open")}
                       </span>
                     </div>
                     <p className="mt-3 leading-6">{question.body}</p>
                     <p className="mt-3 text-xs text-slate-500">
                       {data.sessions.find(
                         (session) => session.id === question.sessionId,
-                      )?.title ?? "Your session"}{" "}
-                      · {new Date(question.createdAt).toLocaleString()}
+                      )?.title ?? tr("Your session")}{" "}
+                      · {new Date(question.createdAt).toLocaleString(tr.locale === "ar" ? "ar-BH" : "en-BH")}
                     </p>
                     <button
                       disabled={updatingQuestion === question.id}
@@ -291,10 +285,10 @@ export function SpeakerPortalClient() {
                       className="mt-3 rounded-lg border border-slate-300 px-3 py-2 text-xs font-black hover:border-cyan-500 disabled:opacity-50 dark:border-white/15"
                     >
                       {updatingQuestion === question.id
-                        ? "Updating…"
+                        ? tr("Updating…")
                         : question.status === "answered"
-                          ? "Reopen question"
-                          : "Mark answered"}
+                          ? tr("Reopen question")
+                          : tr("Mark answered")}
                     </button>
                   </article>
                 ))
@@ -303,9 +297,8 @@ export function SpeakerPortalClient() {
           </article>
           <article className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-[#121722] sm:p-6">
             <p className="text-xs font-black uppercase tracking-[.18em] text-cyan-700 dark:text-cyan-300">
-              Your sessions
-            </p>
-            <h2 className="mt-1 text-2xl font-black">Programme</h2>
+               {tr("Your sessions")} </p>
+            <h2 className="mt-1 text-2xl font-black">{tr("Programme")}</h2>
             <div className="mt-5 space-y-3">
               {data.sessions.map((session) => (
                 <div
@@ -316,7 +309,7 @@ export function SpeakerPortalClient() {
                   <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
                     {session.startsAt
                       ? new Date(session.startsAt).toLocaleString()
-                      : "Time to be confirmed"}
+                      : tr("Time to be confirmed")}
                     {session.location ? ` · ${session.location}` : ""}
                   </p>
                 </div>
@@ -328,18 +321,16 @@ export function SpeakerPortalClient() {
           <article className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-[#121722] sm:p-6">
             <div className="flex items-center gap-2">
               <FileUp className="h-5 w-5 text-cyan-600 dark:text-cyan-300" />
-              <h2 className="text-xl font-black">Share a resource</h2>
+              <h2 className="text-xl font-black">{tr("Share a resource")}</h2>
             </div>
             <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">
-              Upload PDFs, PowerPoint, Word, Excel, JPG, or PNG files (up to 25
-              MB). They appear in attendee resources immediately.
-            </p>
+               {tr("Upload PDFs, PowerPoint, Word, Excel, JPG, or PNG files (up to 25 MB). They appear in attendee resources immediately.")} </p>
             <form onSubmit={upload} className="mt-5 space-y-3">
               <input
                 value={title}
                 onChange={(event) => setTitle(event.target.value)}
                 required
-                placeholder="Resource title"
+                placeholder={tr("Resource title")}
                 className="h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm dark:border-white/15 dark:bg-white/5"
               />
               <select
@@ -347,7 +338,7 @@ export function SpeakerPortalClient() {
                 onChange={(event) => setSessionId(event.target.value)}
                 className="h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm dark:border-white/15 dark:bg-white/5"
               >
-                <option value="">Available to all attendees</option>
+                <option value="">{tr("Available to all attendees")}</option>
                 {data.sessions.map((session) => (
                   <option key={session.id} value={session.id}>
                     {session.title}
@@ -369,20 +360,18 @@ export function SpeakerPortalClient() {
                 className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-cyan-300 font-black text-slate-950 disabled:opacity-60"
               >
                 <Upload className="h-4 w-4" />
-                {uploading ? "Uploading…" : "Publish resource"}
+                {uploading ? tr("Uploading…") : tr("Publish resource")}
               </button>
             </form>
           </article>
           <article className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-[#121722] sm:p-6">
             <p className="text-xs font-black uppercase tracking-[.18em] text-cyan-700 dark:text-cyan-300">
-              Resource centre
-            </p>
-            <h2 className="mt-1 text-2xl font-black">Shared with attendees</h2>
+               {tr("Resource centre")} </p>
+            <h2 className="mt-1 text-2xl font-black">{tr("Shared with attendees")}</h2>
             <div className="mt-5 space-y-2">
               {data.resources.length === 0 ? (
                 <p className="text-sm text-slate-500">
-                  No resources have been published yet.
-                </p>
+                   {tr("No resources have been published yet.")} </p>
               ) : (
                 data.resources.map((resource) => (
                   <a
@@ -396,7 +385,7 @@ export function SpeakerPortalClient() {
                       {resource.title}
                       {resource.uploadedBy ? (
                         <span className="ml-2 text-xs font-normal text-slate-500">
-                          by {resource.uploadedBy}
+                           {tr("by")} {resource.uploadedBy}
                         </span>
                       ) : null}
                     </span>

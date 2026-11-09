@@ -1,5 +1,7 @@
 "use client";
 
+import { usePublicCopy } from "@/lib/use-public-copy";
+
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { format } from "date-fns";
@@ -28,6 +30,7 @@ type AccountSummary = {
 };
 
 export default function AccountPage() {
+  const tr = usePublicCopy();
   const [summary, setSummary] = useState<AccountSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -59,19 +62,19 @@ export default function AccountPage() {
 
   async function signOut() {
     await createClient().auth.signOut();
-    window.location.assign("/");
+    window.location.assign(tr.href("/"));
   }
 
   if (loading) {
-    return <AccountShell title="Loading your tickets..." />;
+    return <AccountShell title={tr("Loading your tickets...")} />;
   }
 
   if (error) {
     return (
-      <AccountShell title="Your tickets and orders">
+      <AccountShell title={tr("Your tickets and orders")}>
         <p className="mx-auto mt-4 max-w-xl text-slate-600">{error}</p>
         <Button asChild className="mt-8 rounded-full bg-white px-8 font-black text-black hover:bg-white/90">
-          <Link href="/account/login">Sign in or create buyer account</Link>
+          <Link href={tr.href("/account/login")}>{tr("Sign in or create buyer account")}</Link>
         </Button>
       </AccountShell>
     );
@@ -83,7 +86,7 @@ export default function AccountPage() {
         <div className="flex flex-col justify-between gap-6 border-b border-slate-200 pb-8 md:flex-row md:items-end">
           <div>
             <p className="text-xs font-black uppercase tracking-[0.28em] text-blue-600">
-              {summary?.adminAccess ? "Admin and buyer account" : "Buyer account"}
+              {summary?.adminAccess ? tr("Admin and buyer account") : tr("Buyer account")}
             </p>
             <h1 className="mt-3 text-4xl font-black tracking-tight sm:text-6xl">
               {summary?.profile.name}
@@ -94,46 +97,45 @@ export default function AccountPage() {
             {summary?.adminAccess ? (
               <div className="flex flex-wrap gap-3">
                 <Button asChild className="rounded-full bg-cyan-200 px-6 font-black text-black hover:bg-cyan-100">
-                  <Link href="/dashboard">
+                  <Link href={tr.href("/dashboard")}>
                     <LayoutDashboard className="mr-2 h-4 w-4" />
-                    {summary.adminAccess.readOnly ? "Open company dashboard" : "Open admin dashboard"}
+                    {summary.adminAccess.readOnly ? tr("Open company dashboard") : tr("Open admin dashboard")}
                   </Link>
                 </Button>
                 <Button
                   asChild
                   variant="outline"
                   className="rounded-full border-cyan-300 bg-white px-4 text-slate-900 hover:bg-cyan-50"
-                  title="Scan tickets for your assigned events"
+                  title={tr("Scan tickets for your assigned events")}
                 >
-                  <Link href="/checkin/scanner" aria-label="Open event ticket scanner">
+                  <Link href={tr.href("/checkin/scanner")} aria-label={tr("Open event ticket scanner")}>
                     <QrCode className="h-5 w-5 text-cyan-700" />
-                    <span className="sr-only">Open event ticket scanner</span>
+                    <span className="sr-only">{tr("Open event ticket scanner")}</span>
                   </Link>
                 </Button>
               </div>
             ) : null}
             <Button asChild variant="outline" className="rounded-full border-slate-200 bg-white text-slate-900 hover:bg-slate-100">
-              <Link href="/events">Browse events</Link>
+              <Link href={tr.href("/events")}>{tr("Browse events")}</Link>
             </Button>
             <Button onClick={signOut} variant="outline" className="rounded-full border-slate-200 bg-white text-slate-900 hover:bg-slate-100">
               <LogOut className="mr-2 h-4 w-4" />
-              Sign out
-            </Button>
+               {tr("Sign out")} </Button>
           </div>
         </div>
 
         <div className="mt-10 grid gap-5 md:grid-cols-3">
-          <Stat icon={Ticket} label="Tickets" value={summary?.tickets.length ?? 0} />
-          <Stat icon={ReceiptText} label="Orders" value={summary?.orders.length ?? 0} />
-          <Stat icon={Bell} label="Unread updates" value={summary?.unreadCount ?? 0} />
+          <Stat icon={Ticket} label={tr("Tickets")} value={summary?.tickets.length ?? 0} />
+          <Stat icon={ReceiptText} label={tr("Orders")} value={summary?.orders.length ?? 0} />
+          <Stat icon={Bell} label={tr("Unread updates")} value={summary?.unreadCount ?? 0} />
         </div>
 
         <section className="mt-10 grid gap-4 md:grid-cols-5">
-          <AccountTool href="/account/tickets" icon={Ticket} title="Tickets" body="Open QR tickets linked to your email." />
-          <AccountTool href="/account/orders" icon={ReceiptText} title="Orders" body="Review registration and checkout history." />
-          <AccountTool href="/account/favorites" icon={Heart} title="Favorites" body="Saved events from this browser." />
-          <AccountTool href="/account/notifications" icon={Bell} title="Updates" body="Event updates and ticket notices." />
-          <AccountTool href="/account/messages" icon={MessageSquare} title="Messages" body="Support conversations with iTicket." />
+          <AccountTool href={tr.href("/account/tickets")} icon={Ticket} title={tr("Tickets")} body={tr("Open QR tickets linked to your email.")} />
+          <AccountTool href={tr.href("/account/orders")} icon={ReceiptText} title={tr("Orders")} body={tr("Review registration and checkout history.")} />
+          <AccountTool href={tr.href("/account/favorites")} icon={Heart} title={tr("Favorites")} body={tr("Saved events from this browser.")} />
+          <AccountTool href={tr.href("/account/notifications")} icon={Bell} title={tr("Updates")} body={tr("Event updates and ticket notices.")} />
+          <AccountTool href={tr.href("/account/messages")} icon={MessageSquare} title={tr("Messages")} body={tr("Support conversations with iTicket.")} />
         </section>
 
         {summary?.adminAccess ? (
@@ -141,26 +143,25 @@ export default function AccountPage() {
             <div className="flex flex-col justify-between gap-5 md:flex-row md:items-center">
               <div>
                 <p className="text-xs font-black uppercase tracking-[0.24em] text-blue-600">
-                  {summary.adminAccess.readOnly ? "Company access" : "Internal access"}
+                  {summary.adminAccess.readOnly ? tr("Company access") : tr("Internal access")}
                 </p>
                 <h2 className="mt-2 text-2xl font-black">
-                  {summary.adminAccess.readOnly ? "Your company dashboard is enabled" : "iTicket admin dashboard is enabled"}
+                  {summary.adminAccess.readOnly ? tr("Your company dashboard is enabled") : tr("iTicket admin dashboard is enabled")}
                 </h2>
                 <p className="mt-2 text-sm text-slate-600">
                   {summary.adminAccess.readOnly
-                    ? "View the events assigned to your company. Editing and management actions are disabled."
-                    : "Manage company-created events, tickets, guests, orders, scans, reports, and messages."}
+                    ? tr("View the events assigned to your company. Editing and management actions are disabled.")
+                    : tr("Manage company-created events, tickets, guests, orders, scans, reports, and messages.")}
                 </p>
               </div>
               <div className="flex flex-wrap gap-3">
                 <Button asChild className="rounded-full bg-cyan-200 px-7 font-black text-black hover:bg-cyan-100">
-                  <Link href="/dashboard">{summary.adminAccess.readOnly ? "Open company dashboard" : "Open dashboard"}</Link>
+                  <Link href={tr.href("/dashboard")}>{summary.adminAccess.readOnly ? tr("Open company dashboard") : tr("Open dashboard")}</Link>
                 </Button>
-                <Button asChild variant="outline" className="rounded-full border-cyan-300 bg-white text-slate-900 hover:bg-cyan-50" title="Scan tickets for your assigned events">
-                  <Link href="/checkin/scanner" aria-label="Open event ticket scanner">
+                <Button asChild variant="outline" className="rounded-full border-cyan-300 bg-white text-slate-900 hover:bg-cyan-50" title={tr("Scan tickets for your assigned events")}>
+                  <Link href={tr.href("/checkin/scanner")} aria-label={tr("Open event ticket scanner")}>
                     <QrCode className="mr-2 h-4 w-4 text-cyan-700" />
-                    Scan tickets
-                  </Link>
+                     {tr("Scan tickets")} </Link>
                 </Button>
               </div>
             </div>
@@ -171,11 +172,10 @@ export default function AccountPage() {
           <div className="rounded-[1.5rem] border border-slate-200 bg-white p-6">
             <div className="flex items-center gap-3">
               <UserRound className="h-5 w-5 text-blue-600" />
-              <h2 className="text-2xl font-black">Profile</h2>
+              <h2 className="text-2xl font-black">{tr("Profile")}</h2>
             </div>
             <p className="mt-4 text-sm leading-6 text-slate-600">
-              Buyer profiles are linked by email. Use the same email at checkout and your tickets and orders will appear here automatically.
-            </p>
+               {tr("Buyer profiles are linked by email. Use the same email at checkout and your tickets and orders will appear here automatically.")} </p>
             <div className="mt-5 rounded-2xl bg-slate-50 p-4 text-sm text-slate-600">
               <p className="font-black text-slate-900">{summary?.profile.name}</p>
               <p>{summary?.profile.email}</p>
@@ -184,7 +184,7 @@ export default function AccountPage() {
           <div className="rounded-[1.5rem] border border-slate-200 bg-white p-6">
             <div className="flex items-center gap-3">
               <Heart className="h-5 w-5 text-pink-300" />
-              <h2 className="text-2xl font-black">Saved favorites</h2>
+              <h2 className="text-2xl font-black">{tr("Saved favorites")}</h2>
             </div>
             {favorites.length > 0 ? (
               <div className="mt-5 flex flex-wrap gap-2">
@@ -196,40 +196,39 @@ export default function AccountPage() {
               </div>
             ) : (
               <p className="mt-4 text-sm leading-6 text-slate-600">
-                Save events from the marketplace and they will appear here on this device.
-              </p>
+                 {tr("Save events from the marketplace and they will appear here on this device.")} </p>
             )}
             <Button asChild variant="outline" className="mt-5 rounded-full border-slate-200 bg-white text-slate-900 hover:bg-slate-100">
-              <Link href="/events">Browse events</Link>
+              <Link href={tr.href("/events")}>{tr("Browse events")}</Link>
             </Button>
           </div>
         </section>
 
         <section className="mt-12">
-          <h2 className="text-2xl font-black">Upcoming tickets</h2>
+          <h2 className="text-2xl font-black">{tr("Upcoming tickets")}</h2>
           <div className="mt-5 grid gap-4 lg:grid-cols-2">
             {upcomingTickets.length > 0 ? (
               upcomingTickets.map((ticket) => <TicketRow key={ticket.id} ticket={ticket} />)
             ) : (
-              <EmptyPanel icon={Ticket} title="No upcoming tickets" body="Buy or register for an event and tickets linked to this email will appear here." />
+              <EmptyPanel icon={Ticket} title={tr("No upcoming tickets")} body={tr("Buy or register for an event and tickets linked to this email will appear here.")} />
             )}
           </div>
         </section>
 
         <section className="mt-12">
-          <h2 className="text-2xl font-black">Order history</h2>
+          <h2 className="text-2xl font-black">{tr("Order history")}</h2>
           <div className="mt-5 space-y-3">
             {(summary?.orders ?? []).length > 0 ? (
               summary?.orders.map((order) => <OrderRow key={order.id} order={order} />)
             ) : (
-              <EmptyPanel icon={ReceiptText} title="No orders yet" body="Completed registrations and paid checkout orders will show here." />
+              <EmptyPanel icon={ReceiptText} title={tr("No orders yet")} body={tr("Completed registrations and paid checkout orders will show here.")} />
             )}
           </div>
         </section>
 
-        <section className="mt-12 grid gap-4 lg:grid-cols-2">
+        <section id="notifications" className="mt-12 scroll-mt-24 grid gap-4 lg:grid-cols-2">
           <div>
-            <h2 className="text-2xl font-black">Notifications</h2>
+            <h2 className="text-2xl font-black">{tr("Notifications")}</h2>
             <div className="mt-5 space-y-3">
               {(summary?.notifications ?? []).length > 0 ? (
                 summary?.notifications.map((notification) => (
@@ -238,22 +237,22 @@ export default function AccountPage() {
               ) : (
                 <EmptyPanel
                   icon={Bell}
-                  title="No notifications yet"
-                  body="Event reminders, schedule changes, and ticket updates linked to your email will appear here."
+                  title={tr("No notifications yet")}
+                  body={tr("Event reminders, schedule changes, and ticket updates linked to your email will appear here.")}
                 />
               )}
             </div>
           </div>
           <div>
-            <h2 className="text-2xl font-black">Messages</h2>
+            <h2 className="text-2xl font-black">{tr("Messages")}</h2>
             <div className="mt-5 space-y-3">
               {(summary?.messages ?? []).length > 0 ? (
                 summary?.messages.map((message) => <MessageRow key={message.id} message={message} />)
               ) : (
                 <EmptyPanel
                   icon={MessageSquare}
-                  title="No messages yet"
-                  body="Messages with the iTicket team linked to your attendee email will appear here."
+                  title={tr("No messages yet")}
+                  body={tr("Messages with the iTicket team linked to your attendee email will appear here.")}
                 />
               )}
             </div>
@@ -307,6 +306,7 @@ function AccountTool({
 }
 
 export function TicketRow({ ticket }: { ticket: Record<string, any> }) {
+  const tr = usePublicCopy();
   const event = ticket.events;
   const ticketType = ticket.ticket_types;
   const url = event?.companies?.slug && event?.slug ? `/e/${event.companies.slug}/${event.slug}` : "/events";
@@ -342,15 +342,15 @@ export function TicketRow({ ticket }: { ticket: Record<string, any> }) {
               </div>
             )}
             <div className="min-w-0">
-              <p className={`text-xs font-black uppercase tracking-[0.24em] ${used || expired ? "text-amber-300" : "text-emerald-300"}`}>{used ? "Used ticket" : expired ? "Expired ticket" : "Available ticket"}</p>
-              <h3 className="mt-2 truncate text-xl font-black">{event?.title ?? "Event"}</h3>
+              <p className={`text-xs font-black uppercase tracking-[0.24em] ${used || expired ? "text-amber-300" : "text-emerald-300"}`}>{used ? tr("Used ticket") : expired ? tr("Expired ticket") : tr("Available ticket")}</p>
+              <h3 className="mt-2 truncate text-xl font-black">{event?.title ?? tr("Event")}</h3>
               <p className="mt-1 truncate text-sm text-slate-300">{venueName}</p>
               <p className="mt-1 truncate text-xs text-slate-400">{location}</p>
             </div>
           </div>
           {used || expired ? (
             <span className="inline-flex shrink-0 items-center gap-2 rounded-full bg-white/15 px-3 py-2 text-xs font-black text-amber-200">
-              {used ? "Used" : "Expired"}
+              {used ? tr("Used") : tr("Expired")}
             </span>
           ) : (
             <a
@@ -358,7 +358,7 @@ export function TicketRow({ ticket }: { ticket: Record<string, any> }) {
               className="inline-flex shrink-0 items-center gap-2 rounded-full bg-white px-3 py-2 text-xs font-black text-slate-950 transition hover:bg-cyan-100"
             >
               <Download className="h-4 w-4" />
-              <span className="hidden sm:inline">Download PDF</span>
+              <span className="hidden sm:inline">{tr("Download PDF")}</span>
             </a>
           )}
         </div>
@@ -374,19 +374,19 @@ export function TicketRow({ ticket }: { ticket: Record<string, any> }) {
             </p>
           ) : null}
           <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
-            <div><p className="text-slate-500">Ticket type</p><p className="font-black">{ticketLabel}</p></div>
-            <div><p className="text-slate-500">Status</p><p className="font-black">{expired ? "Expired" : used ? "Used" : "Available"}</p></div>
-            <div><p className="text-slate-500">Price</p><p className="font-black">{formatMoney(Number(ticketPrice), ticketCurrency)}</p></div>
-            <div><p className="text-slate-500">Ticket number</p><p className="truncate font-mono text-xs font-black">{ticket.barcode}</p></div>
-            {expiresAt ? <div><p className="text-slate-500">Valid until</p><p className="font-black">{format(new Date(expiresAt), "MMM d, yyyy - h:mm a")}</p></div> : null}
+            <div><p className="text-slate-500">{tr("Ticket type")}</p><p className="font-black">{ticketLabel}</p></div>
+            <div><p className="text-slate-500">{tr("Status")}</p><p className="font-black">{expired ? tr("Expired") : used ? tr("Used") : tr("Available")}</p></div>
+            <div><p className="text-slate-500">{tr("Price")}</p><p className="font-black">{formatMoney(Number(ticketPrice), ticketCurrency)}</p></div>
+            <div><p className="text-slate-500">{tr("Ticket number")}</p><p className="truncate font-mono text-xs font-black">{ticket.barcode}</p></div>
+            {expiresAt ? <div><p className="text-slate-500">{tr("Valid until")}</p><p className="font-black">{format(new Date(expiresAt), "MMM d, yyyy - h:mm a")}</p></div> : null}
           </div>
         </div>
         </div>
-        <TicketQr value={createTicketQrPayload(ticket.barcode, expiresAt)} disabled={used || expired} label={used ? "Used" : "Expired"} />
+        <TicketQr value={createTicketQrPayload(ticket.barcode, expiresAt)} disabled={used || expired} label={used ? tr("Used") : tr("Expired")} />
       </div>
       <div className="border-t border-slate-200 px-5 py-4">
       <Button asChild className="w-full rounded-full bg-slate-950 font-black text-white hover:bg-slate-800">
-        <Link href={url}>Open event</Link>
+        <Link href={url}>{tr("Open event")}</Link>
       </Button>
       </div>
     </div>
@@ -423,11 +423,12 @@ function TicketQr({ value, disabled = false, label = "Used" }: { value: string; 
 }
 
 function OrderRow({ order }: { order: Record<string, any> }) {
+  const tr = usePublicCopy();
   return (
     <div className="flex flex-col justify-between gap-3 rounded-[1.25rem] border border-slate-200 bg-white p-4 sm:flex-row sm:items-center">
       <div>
         <p className="font-black">{order.order_number}</p>
-        <p className="text-sm text-slate-600">{order.events?.title ?? "Event"} · {order.status}</p>
+        <p className="text-sm text-slate-600">{order.events?.title ?? tr("Event")} · {order.status}</p>
       </div>
       <p className="font-black">{formatMoney(order.total ?? 0, order.currency ?? "BHD")}</p>
     </div>
@@ -435,6 +436,7 @@ function OrderRow({ order }: { order: Record<string, any> }) {
 }
 
 function NotificationRow({ notification }: { notification: Record<string, any> }) {
+  const tr = usePublicCopy();
   const event = notification.events;
   const eventUrl = event?.companies?.slug && event?.slug ? `/e/${event.companies.slug}/${event.slug}` : "/events";
 
@@ -443,9 +445,9 @@ function NotificationRow({ notification }: { notification: Record<string, any> }
       <div className="flex items-start justify-between gap-4">
         <div>
           <p className="text-xs font-black uppercase tracking-[0.22em] text-blue-600">
-            {notification.is_read ? "Update" : "New update"}
+            {notification.is_read ? tr("Update") : tr("New update")}
           </p>
-          <h3 className="mt-2 font-black">{notification.title ?? "Event update"}</h3>
+          <h3 className="mt-2 font-black">{notification.title ?? tr("Event update")}</h3>
           {notification.body ? <p className="mt-2 text-sm leading-6 text-slate-600">{notification.body}</p> : null}
         </div>
         <Bell className={notification.is_read ? "h-5 w-5 text-slate-500" : "h-5 w-5 text-blue-600"} />
@@ -453,35 +455,34 @@ function NotificationRow({ notification }: { notification: Record<string, any> }
       <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-500">
         <span>{[event?.title, formatOptionalDate(notification.created_at)].filter(Boolean).join(" - ")}</span>
         <Link href={eventUrl} className="font-black text-blue-600">
-          Open event
-        </Link>
+           {tr("Open event")} </Link>
       </div>
     </div>
   );
 }
 
 function MessageRow({ message }: { message: Record<string, any> }) {
+  const tr = usePublicCopy();
   const event = message.events;
   const eventUrl = event?.companies?.slug && event?.slug ? `/e/${event.companies.slug}/${event.slug}` : "/events";
 
   return (
     <div className="rounded-[1.25rem] border border-slate-200 bg-white p-4">
       <p className="text-xs font-black uppercase tracking-[0.22em] text-blue-600">
-        {message.admin_reply ? "iTicket replied" : "Awaiting iTicket reply"}
+        {message.admin_reply ? tr("iTicket replied") : tr("Awaiting iTicket reply")}
       </p>
-      <h3 className="mt-2 font-black">{message.subject ?? "Message"}</h3>
+      <h3 className="mt-2 font-black">{message.subject ?? tr("Message")}</h3>
       <p className="mt-2 text-sm leading-6 text-slate-600">{message.body}</p>
       {message.admin_reply ? (
         <div className="mt-4 rounded-2xl bg-slate-50 p-4">
-          <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-500">Reply</p>
+          <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-500">{tr("Reply")}</p>
           <p className="mt-2 text-sm leading-6 text-slate-600">{message.admin_reply}</p>
         </div>
       ) : null}
       <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-500">
         <span>{[event?.title, formatOptionalDate(message.created_at)].filter(Boolean).join(" - ")}</span>
         <Link href={eventUrl} className="font-black text-blue-600">
-          Open event
-        </Link>
+           {tr("Open event")} </Link>
       </div>
     </div>
   );

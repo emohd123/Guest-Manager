@@ -5,6 +5,7 @@ import { createSupabaseAdminClient } from "@/server/supabase/admin";
 import { handleEventPublished } from "@/server/services/discover-push";
 import { applyEventOwnership, isFullDashboardAccess } from "@/server/auth/event-access";
 import { recordAudit } from "@/server/audit";
+import { bilingualEventDetailsSchema, readBilingualEventDetails, withBilingualEventDetails } from "@/lib/event-details";
 
 type EventRow = {
   id: string;
@@ -143,10 +144,7 @@ export const eventsRouter = router({
 
   create: protectedProcedure
     .input(
-      z.object({
-        title: z.string().min(1).max(255),
-        description: z.string().optional(),
-        shortDescription: z.string().optional(),
+      bilingualEventDetailsSchema.extend({
         eventType: z.enum(["single", "recurring", "multi_day", "session", "conference"]).default("single"),
         startsAt: z.string().datetime(),
         endsAt: z.string().datetime().optional(),
@@ -180,6 +178,7 @@ export const eventsRouter = router({
           category_id: input.categoryId ?? null,
           max_capacity: input.maxCapacity ?? null,
           registration_enabled: input.registrationEnabled,
+          settings: withBilingualEventDetails(input),
       };
       let { data, error } = await ctx.supabase
         .from("events")
@@ -192,6 +191,7 @@ export const eventsRouter = router({
       const legacyPayload = { ...insertPayload };
       for (let attempt = 0; error?.message.includes("schema cache") && attempt < 8; attempt += 1) {
         const missingColumn = error.message.match(/Could not find the '([^']+)' column/i)?.[1];
+        if (missingColumn === "settings") throw new Error("The database must support bilingual event details before an event can be created.");
         if (!missingColumn || !(missingColumn in legacyPayload)) break;
         delete legacyPayload[missingColumn as keyof typeof legacyPayload];
         ({ data, error } = await ctx.supabase
@@ -226,6 +226,7 @@ export const eventsRouter = router({
         coverImageUrl: z.string().url().optional(),
         visitorCode: z.string().trim().regex(/^[A-Za-z0-9-]{4,10}$/).optional(),
         settings: z.any().optional(),
+        bilingualDetails: bilingualEventDetailsSchema.optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -251,6 +252,20 @@ export const eventsRouter = router({
       if (input.title !== undefined) payload.title = input.title;
       if (input.description !== undefined) payload.description = input.description;
       if (input.shortDescription !== undefined) payload.short_description = input.shortDescription;
+      if (input.bilingualDetails) {
+        let settingsQuery = ctx.supabase.from("events").select("settings").eq("id", input.id).eq("company_id", ctx.companyId).maybeSingle();
+        settingsQuery = applyEventOwnership(settingsQuery, ctx);
+        const { data: current, error: settingsError } = await settingsQuery;
+        if (settingsError) throw new Error(settingsError.message);
+        if (!current) throw new Error("Event not found");
+        payload.title = input.bilingualDetails.title;
+        payload.description = input.bilingualDetails.description;
+        payload.short_description = input.bilingualDetails.shortDescription;
+        payload.settings = withBilingualEventDetails(input.bilingualDetails, {
+          ...(current.settings && typeof current.settings === "object" ? current.settings : {}),
+          ...(input.settings && typeof input.settings === "object" ? input.settings : {}),
+        });
+      }
       if (input.eventType !== undefined) payload.event_type = input.eventType;
       if (input.status !== undefined) payload.status = input.status;
       if (input.startsAt !== undefined) payload.starts_at = input.startsAt;
@@ -270,7 +285,7 @@ export const eventsRouter = router({
       }
       if (input.coverImageUrl !== undefined) payload.cover_image_url = input.coverImageUrl;
       if (input.visitorCode !== undefined) payload.visitor_code = input.visitorCode.toUpperCase();
-      if (input.settings !== undefined) payload.settings = input.settings;
+      if (input.settings !== undefined && !input.bilingualDetails) payload.settings = input.settings;
 
       let updateQuery = ctx.supabase
         .from("events")
@@ -333,7 +348,9 @@ export const eventsRouter = router({
       if (originalError) throw new Error(originalError.message);
       if (!original) throw new Error("Event not found");
 
-      const duplicateTitle = `${original.title} (Copy)`;
+      const originalDetails = bilingualEventDetailsSchema.safeParse(readBilingualEventDetails({ title: original.title, description: original.description, shortDescription: original.short_description, settings: original.settings }));
+      if (!originalDetails.success) throw new Error("Complete the event name, summary and description in English and Arabic in Event Settings before duplicating this event.");
+      const duplicateTitle = `${originalDetails.data.title.slice(0, 248)} (Copy)`;
       const { data, error } = await ctx.supabase
         .from("events")
         .insert({
@@ -356,7 +373,7 @@ export const eventsRouter = router({
           registration_opens_at: original.registration_opens_at,
           registration_closes_at: original.registration_closes_at,
           max_capacity: original.max_capacity,
-          settings: original.settings,
+          settings: withBilingualEventDetails({ ...originalDetails.data, title: duplicateTitle, titleAr: `${originalDetails.data.titleAr.slice(0, 248)} (نسخة)` }, original.settings),
           custom_fields: original.custom_fields,
           metadata: original.metadata,
         })

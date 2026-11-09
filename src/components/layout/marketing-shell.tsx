@@ -11,7 +11,7 @@ export function MarketingShell({ children }: { children: ReactNode }) {
   const isConferencePortal = pathname.startsWith("/private-event/portal/");
   return <>
     {!isConferencePortal && <Suspense fallback={<div className="h-16 border-b border-border bg-white" />}><MarketingNavbar /></Suspense>}
-    <main className="flex-1">{children}</main>
-    {!isConferencePortal && <><MarketingFooter /><Suspense fallback={null}><PublicShortcutDock /></Suspense></>}
+    <main className="flex-1"><Suspense fallback={<div className="min-h-[60vh] animate-pulse bg-slate-50" />}>{children}</Suspense></main>
+    {!isConferencePortal && <><Suspense fallback={null}><MarketingFooter /></Suspense><Suspense fallback={null}><PublicShortcutDock /></Suspense></>}
   </>;
 }

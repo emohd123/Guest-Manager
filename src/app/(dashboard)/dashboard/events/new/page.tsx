@@ -24,11 +24,10 @@ import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { TIMEZONE_OPTIONS } from "@/lib/timezones";
+import { bilingualEventDetailsSchema } from "@/lib/event-details";
+import { BilingualEventFields } from "@/components/dashboard/bilingual-event-fields";
 
-const eventSchema = z.object({
-  title: z.string().min(1, "Event title is required").max(255),
-  description: z.string().optional(),
-  shortDescription: z.string().optional(),
+const eventSchema = bilingualEventDetailsSchema.extend({
   eventType: z.enum(["single", "recurring", "multi_day", "session", "conference"]),
   startsAt: z.string().min(1, "Start date is required"),
   endsAt: z.string().optional(),
@@ -76,6 +75,7 @@ export default function NewEventPage() {
   } = useForm<EventFormData>({
     resolver: zodResolver(eventSchema),
     defaultValues: {
+      title: "", titleAr: "", shortDescription: "", shortDescriptionAr: "", description: "", descriptionAr: "",
       eventType: "single",
       registrationEnabled: false,
     },
@@ -100,6 +100,9 @@ export default function NewEventPage() {
   const onSubmit = (data: EventFormData) => {
     createEvent.mutate({
       title: data.title,
+      titleAr: data.titleAr,
+      shortDescriptionAr: data.shortDescriptionAr,
+      descriptionAr: data.descriptionAr,
       description: data.description,
       shortDescription: data.shortDescription,
       eventType: data.eventType,
@@ -114,7 +117,7 @@ export default function NewEventPage() {
 
   const nextStep = async () => {
     let fieldsToValidate: (keyof EventFormData)[] = [];
-    if (step === 0) fieldsToValidate = ["title", "shortDescription", "description"];
+    if (step === 0) fieldsToValidate = ["title", "titleAr", "shortDescription", "shortDescriptionAr", "description", "descriptionAr"];
     else if (step === 1) fieldsToValidate = ["eventType", "startsAt", "endsAt", "timezone"];
     
     const isValid = await trigger(fieldsToValidate);
@@ -128,7 +131,7 @@ export default function NewEventPage() {
   const labelClasses = "theme-label mb-3 block";
 
   return (
-    <div className="mx-auto max-w-2xl pb-20 px-2 space-y-12">
+    <div className="mx-auto max-w-4xl pb-20 px-2 space-y-12">
       <div className="flex items-center gap-6">
         <Link href={isPrivateConference ? "/dashboard/private-events" : "/dashboard/events"}>
           <Button variant="ghost" size="icon" className="theme-ghost-surface h-14 w-14 rounded-2xl border transition-all group">
@@ -173,7 +176,11 @@ export default function NewEventPage() {
         ))}
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="relative">
+      <form onSubmit={handleSubmit(onSubmit, (invalid) => {
+        if (["title", "titleAr", "shortDescription", "shortDescriptionAr", "description", "descriptionAr"].some((field) => field in invalid)) setStep(0);
+        else if (invalid.startsAt || invalid.endsAt || invalid.eventType) setStep(1);
+        toast.error("Please complete all required fields in English and Arabic and check the event schedule.");
+      })} className="relative">
         <AnimatePresence mode="wait">
           <motion.div
             key={step}
@@ -190,33 +197,11 @@ export default function NewEventPage() {
             {/* Step 1: Details */}
             {step === 0 && (
               <div className="space-y-8">
-                <div className="space-y-2">
-                  <Label className={labelClasses}>Event Name *</Label>
-                  <Input
-                    className={inputClasses}
-                    placeholder="Summer Gala 2026"
-                    {...register("title")}
-                  />
-                  {errors.title && (
-                    <p className="text-[10px] font-bold text-red-500 uppercase tracking-widest mt-2">{errors.title.message}</p>
-                  )}
-                </div>
-                <div className="space-y-2">
-                  <Label className={labelClasses}>Short Description</Label>
-                  <Input
-                    className={inputClasses}
-                    placeholder="A short summary shown in listings and previews"
-                    {...register("shortDescription")}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label className={labelClasses}>Event Description</Label>
-                  <Textarea
-                    className={cn(inputClasses, "min-h-[160px] p-6")}
-                    placeholder="Add the event overview, purpose, speakers, agenda, or attendee details"
-                    {...register("description")}
-                  />
-                </div>
+                <BilingualEventFields idPrefix="new-event" registerField={(key) => register(key)} errors={{
+                  title: errors.title?.message, titleAr: errors.titleAr?.message,
+                  shortDescription: errors.shortDescription?.message, shortDescriptionAr: errors.shortDescriptionAr?.message,
+                  description: errors.description?.message, descriptionAr: errors.descriptionAr?.message,
+                }} />
                 <div className="flex justify-end pt-4">
                   <Button type="button" onClick={nextStep} className="h-14 px-10 rounded-2xl bg-primary text-white font-black uppercase tracking-widest transition-all hover:scale-105 active:scale-95 flex gap-3 shadow-2xl shadow-primary/20">
                     Continue <ArrowRight className="h-5 w-5" />

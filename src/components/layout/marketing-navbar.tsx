@@ -77,7 +77,7 @@ export function MarketingNavbar() {
     <header dir="ltr" className="fixed top-0 z-50 w-full border-b border-slate-200/90 bg-white/95 text-slate-950 shadow-sm backdrop-blur-xl dark:border-slate-700 dark:bg-slate-950/95 dark:text-white">
       <div className="mx-auto flex h-14 max-w-[1600px] items-center justify-between gap-2 px-3 sm:h-16 sm:px-8 lg:px-12">
         <div dir="ltr" className="flex shrink-0 items-center">
-          <Link href="/" aria-label="iTicket home">
+          <Link href={`/?locale=${lang}`} aria-label="iTicket home">
             <BrandWordmark
               className="gap-x-2 sm:gap-x-4"
               markClassName="h-9 w-9 sm:h-12 sm:w-12"
@@ -96,7 +96,7 @@ export function MarketingNavbar() {
             placeholder={lang === "ar" ? "ابحث عن فعاليات..." : "Search events..."}
             className="h-10 w-full bg-transparent px-3 text-sm text-slate-900 outline-none placeholder:text-slate-400 dark:text-white dark:placeholder:text-slate-500"
           />
-          <button type="submit" aria-label="Search events" className="rounded-full p-1 text-slate-500 transition hover:text-cyan-700 dark:text-slate-400 dark:hover:text-cyan-300">
+          <button type="submit" aria-label={lang === "ar" ? "البحث عن فعاليات" : "Search events"} className="rounded-full p-1 text-slate-500 transition hover:text-cyan-700 dark:text-slate-400 dark:hover:text-cyan-300">
             <Search className="h-4 w-4" />
           </button>
         </form>
@@ -105,17 +105,17 @@ export function MarketingNavbar() {
           <button
             type="button"
             onClick={() => setTheme(darkModeActive ? "light" : "dark")}
-            aria-label={darkModeActive ? "Switch to light mode" : "Switch to dark mode"}
-            title={darkModeActive ? "Light mode" : "Dark mode"}
+            aria-label={lang === "ar" ? (darkModeActive ? "التبديل إلى الوضع الفاتح" : "التبديل إلى الوضع الداكن") : (darkModeActive ? "Switch to light mode" : "Switch to dark mode")}
+            title={lang === "ar" ? (darkModeActive ? "الوضع الفاتح" : "الوضع الداكن") : (darkModeActive ? "Light mode" : "Dark mode")}
             className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 transition hover:border-cyan-300 hover:bg-cyan-50 hover:text-cyan-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800 dark:hover:text-cyan-300 sm:h-10 sm:w-10"
           >
             {darkModeActive ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
           </button>
           {account ? (
             <Link
-              href="/account"
-              aria-label="Open my profile and tickets"
-              title="My profile and tickets"
+              href={`/account?locale=${lang}`}
+              aria-label={lang === "ar" ? "فتح ملفي وتذاكري" : "Open my profile and tickets"}
+              title={lang === "ar" ? "ملفي وتذاكري" : "My profile and tickets"}
               className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border border-cyan-300 bg-cyan-50 text-cyan-800 transition hover:scale-105 hover:border-cyan-500 dark:bg-cyan-400/10 dark:text-cyan-200"
             >
               {account.avatarUrl ? (
@@ -126,7 +126,7 @@ export function MarketingNavbar() {
             </Link>
           ) : (
             <Link
-              href="/account/login"
+              href={`/account/login?locale=${lang}`}
               className="inline-flex h-9 items-center gap-1.5 rounded-full bg-cyan-600 px-3 text-xs font-black text-white transition hover:bg-cyan-700 sm:h-10 sm:gap-2 sm:px-4 sm:text-sm"
             >
               <UserRound className="h-4 w-4" />
@@ -137,7 +137,8 @@ export function MarketingNavbar() {
             href={languageHref}
             onClick={(event) => {
               event.preventDefault();
-              window.location.assign(languageHref);
+              try { localStorage.setItem("iticket-locale", nextLang); } catch {}
+              window.location.assign(`${languageHref}${window.location.hash}`);
             }}
             className="inline-flex h-9 items-center rounded-full border border-slate-200 px-3 text-xs font-bold text-slate-700 transition hover:border-cyan-300 hover:bg-cyan-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800 sm:h-10 sm:px-4 sm:text-sm"
           >

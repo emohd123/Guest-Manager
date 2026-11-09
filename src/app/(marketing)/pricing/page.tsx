@@ -1,5 +1,7 @@
 "use client";
 
+import { usePublicCopy } from "@/lib/use-public-copy";
+
 import { useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -113,6 +115,7 @@ const faqs = [
 ];
 
 export default function PricingPage() {
+  const tr = usePublicCopy();
   const [sliderValue, setSliderValue] = useState([1000]);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
 
@@ -131,17 +134,14 @@ export default function PricingPage() {
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_70%_60%_at_50%_0%,rgba(124,58,237,0.12),transparent_70%)] pointer-events-none" />
         <div className="relative">
           <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-1.5 text-[10px] font-black uppercase tracking-[0.25em] text-slate-600 backdrop-blur-md">
-            14-day free trial on all plans
-          </div>
+             {tr("14-day free trial on all plans")} </div>
           <h1 className="mx-auto max-w-3xl text-5xl font-black tracking-tighter text-slate-900 sm:text-6xl uppercase">
-            Simple,{" "}
+             {tr("Simple,")}{" "}
             <span className="bg-[linear-gradient(110deg,#2563eb,45%,#7c3aed,55%,#db2777)] bg-[length:200%_100%] bg-clip-text text-transparent animate-[shine_6s_linear_infinite]">
-              Transparent Pricing
-            </span>
+               {tr("Transparent Pricing")} </span>
           </h1>
           <p className="mx-auto mt-6 max-w-2xl text-lg text-slate-600 font-medium">
-            Start free. Scale as you grow. Only pay for the check-ins you use.
-          </p>
+             {tr("Start free. Scale as you grow. Only pay for the check-ins you use.")} </p>
         </div>
       </section>
 
@@ -150,7 +150,7 @@ export default function PricingPage() {
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           {plans.map((plan) => (
             <div
-              key={plan.name}
+              key={tr(plan.name)}
               className={`relative flex flex-col rounded-2xl border p-6 ${
                 plan.popular
                   ? "border-purple-500/40 bg-purple-500/5 shadow-[0_0_40px_rgba(124,58,237,0.12)]"
@@ -160,27 +160,25 @@ export default function PricingPage() {
               {plan.popular && (
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2">
                   <span className="rounded-full bg-[linear-gradient(135deg,#7c3aed,#db2777)] px-4 py-1 text-[10px] font-black uppercase tracking-wider text-slate-900">
-                    Most Popular
-                  </span>
+                     {tr("Most Popular")} </span>
                 </div>
               )}
               <div className="mb-4">
-                <h3 className="text-lg font-bold text-slate-900">{plan.name}</h3>
-                <p className="text-sm text-slate-600 mt-1">{plan.description}</p>
+                <h3 className="text-lg font-bold text-slate-900">{tr(plan.name)}</h3>
+                <p className="text-sm text-slate-600 mt-1">{tr(plan.description)}</p>
                 <div className="mt-4 flex items-baseline gap-1">
                   <span className="text-4xl font-black text-slate-900">${plan.price}</span>
-                  <span className="text-slate-500 text-sm">/month</span>
+                  <span className="text-slate-500 text-sm">{tr("/month")}</span>
                 </div>
                 <p className="text-xs text-slate-500 mt-1">
-                  {plan.credits.toLocaleString()} credits included
-                </p>
+                  {plan.credits.toLocaleString()}  {tr("credits included")} </p>
               </div>
               <hr className="border-white/5 my-4" />
               <ul className="space-y-2.5 flex-1">
                 {plan.features.map((feature) => (
-                  <li key={feature} className="flex items-start gap-2 text-sm text-slate-600">
+                  <li key={tr(feature)} className="flex items-start gap-2 text-sm text-slate-600">
                     <Check className="mt-0.5 h-4 w-4 shrink-0 text-green-400" />
-                    {feature}
+                    {tr(feature)}
                   </li>
                 ))}
               </ul>
@@ -192,7 +190,7 @@ export default function PricingPage() {
                     : "bg-white hover:bg-slate-100 text-slate-900"
                 }`}
               >
-                <Link href={plan.cta === "Contact Sales" ? "/contact" : "/signup"}>{plan.cta}</Link>
+                <Link href={tr.href(plan.cta === "Contact Sales" ? "/contact" : "/signup")}>{tr(plan.cta)}</Link>
               </Button>
             </div>
           ))}
@@ -200,16 +198,15 @@ export default function PricingPage() {
 
         {/* Enterprise */}
         <div className="mt-6 rounded-2xl border border-white/5 bg-white p-8 text-center">
-          <h3 className="text-xl font-bold text-slate-900">Enterprise</h3>
+          <h3 className="text-xl font-bold text-slate-900">{tr("Enterprise")}</h3>
           <p className="mt-2 text-slate-600">
-            Need a custom solution for large-scale events or multi-venue operations?
-          </p>
+             {tr("Need a custom solution for large-scale events or multi-venue operations?")} </p>
           <Button
             asChild
             className="mt-4 gap-2 bg-[linear-gradient(135deg,#2563eb,#7c3aed,#db2777)] text-slate-900 border-0 font-bold rounded-full px-8 shadow-[0_4px_24px_rgba(124,77,255,0.3)] hover:opacity-95"
           >
-            <Link href="/contact">
-              Contact Sales <ArrowRight className="h-4 w-4" />
+            <Link href={tr.href("/contact")}>
+               {tr("Contact Sales")} <ArrowRight className="h-4 w-4" />
             </Link>
           </Button>
         </div>
@@ -220,15 +217,14 @@ export default function PricingPage() {
         <div className="mx-auto max-w-2xl text-center">
           <div className="mb-2 flex items-center justify-center gap-2">
             <Zap className="h-5 w-5 text-yellow-400" />
-            <h2 className="text-3xl font-black uppercase tracking-tighter text-slate-900">Credit Calculator</h2>
+            <h2 className="text-3xl font-black uppercase tracking-tighter text-slate-900">{tr("Credit Calculator")}</h2>
           </div>
-          <p className="text-slate-600 mt-2">Estimate which plan fits your needs.</p>
+          <p className="text-slate-600 mt-2">{tr("Estimate which plan fits your needs.")}</p>
 
           <div className="mt-8 space-y-6">
             <div>
               <p className="mb-4 text-sm text-slate-600">
-                How many guests do you check in per month?
-              </p>
+                 {tr("How many guests do you check in per month?")} </p>
               <Slider
                 value={sliderValue}
                 onValueChange={setSliderValue}
@@ -240,14 +236,12 @@ export default function PricingPage() {
               <p className="mt-4 text-4xl font-black text-slate-900">
                 {sliderValue[0].toLocaleString()}{" "}
                 <span className="text-base font-medium text-slate-500">
-                  guests/month
-                </span>
+                   {tr("guests/month")} </span>
               </p>
             </div>
             <div className="rounded-2xl border border-slate-200 bg-white p-6">
               <p className="text-xs text-slate-600 font-bold uppercase tracking-wider mb-2">
-                Recommended plan
-              </p>
+                 {tr("Recommended plan")} </p>
               <p className="text-3xl font-black text-purple-400">
                 {estimatedCost === 0
                   ? "Free"
@@ -257,7 +251,7 @@ export default function PricingPage() {
                   ? "Professional"
                   : "Concierge"}
               </p>
-              <p className="text-slate-500 mt-1">${estimatedCost}/month</p>
+              <p className="text-slate-500 mt-1">${estimatedCost}{tr("/month")}</p>
             </div>
           </div>
         </div>
@@ -266,26 +260,25 @@ export default function PricingPage() {
       {/* Credit Packages */}
       <section className="mx-auto max-w-4xl px-4 py-20 sm:px-6 lg:px-8">
         <h2 className="mb-2 text-center text-3xl font-black uppercase tracking-tighter text-slate-900">
-          On-Demand{" "}
-          <span className="text-blue-400">Credit Packages</span>
+           {tr("On-Demand")}{" "}
+          <span className="text-blue-400">{tr("Credit Packages")}</span>
         </h2>
         <p className="mb-8 text-center text-slate-600">
-          Need more credits? Buy additional packages anytime.
-        </p>
+           {tr("Need more credits? Buy additional packages anytime.")} </p>
         <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white">
           <table className="w-full text-left">
             <thead>
               <tr className="border-b border-white/5">
-                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-wider text-slate-500">Credits</th>
+                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-wider text-slate-500">{tr("Credits")}</th>
                 <th className="px-6 py-4 text-[10px] font-black uppercase tracking-wider text-slate-500">Price</th>
-                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-wider text-slate-500">Per Credit</th>
-                <th className="px-6 py-4 text-right text-[10px] font-black uppercase tracking-wider text-slate-500">Action</th>
+                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-wider text-slate-500">{tr("Per Credit")}</th>
+                <th className="px-6 py-4 text-right text-[10px] font-black uppercase tracking-wider text-slate-500">{tr("Action")}</th>
               </tr>
             </thead>
             <tbody>
               {creditPackages.map((pkg) => (
                 <tr key={pkg.credits} className="border-b border-white/5 hover:bg-white transition-colors">
-                  <td className="px-6 py-4 font-bold text-slate-900">{pkg.credits.toLocaleString()} credits</td>
+                  <td className="px-6 py-4 font-bold text-slate-900">{pkg.credits.toLocaleString()}  {tr("credits")}</td>
                   <td className="px-6 py-4 text-slate-600">${pkg.price}</td>
                   <td className="px-6 py-4 text-slate-600">${pkg.perCredit}</td>
                   <td className="px-6 py-4 text-right">
@@ -294,7 +287,7 @@ export default function PricingPage() {
                       size="sm"
                       className="bg-purple-500/20 border border-purple-500/30 text-purple-300 hover:bg-purple-500/30 hover:text-slate-900 rounded-lg font-bold"
                     >
-                      <Link href="/signup">Buy</Link>
+                      <Link href={tr.href("/signup")}>{tr("Buy")}</Link>
                     </Button>
                   </td>
                 </tr>
@@ -308,7 +301,7 @@ export default function PricingPage() {
       <section className="border-t border-white/5 bg-white px-4 py-20">
         <div className="mx-auto max-w-2xl">
           <h2 className="mb-10 text-center text-3xl font-black uppercase tracking-tighter text-slate-900">
-            Frequently Asked <span className="text-purple-400">Questions</span>
+             {tr("Frequently Asked")} <span className="text-purple-400">{tr("Questions")}</span>
           </h2>
           <div className="space-y-2">
             {faqs.map((faq, i) => (
@@ -317,7 +310,7 @@ export default function PricingPage() {
                   className="flex w-full items-center justify-between p-5 text-left"
                   onClick={() => setOpenFaq(openFaq === i ? null : i)}
                 >
-                  <span className="font-bold text-slate-900">{faq.q}</span>
+                  <span className="font-bold text-slate-900">{tr(faq.q)}</span>
                   <HelpCircle
                     className={`h-4 w-4 text-slate-500 transition-transform shrink-0 ml-4 ${
                       openFaq === i ? "rotate-180 text-purple-400" : ""
@@ -326,7 +319,7 @@ export default function PricingPage() {
                 </button>
                 {openFaq === i && (
                   <div className="border-t border-white/5 px-5 pb-5 pt-4">
-                    <p className="text-sm text-slate-600 leading-relaxed">{faq.a}</p>
+                    <p className="text-sm text-slate-600 leading-relaxed">{tr(faq.a)}</p>
                   </div>
                 )}
               </div>
@@ -340,19 +333,18 @@ export default function PricingPage() {
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_80%_at_50%_50%,rgba(124,77,255,0.08),transparent_80%)] pointer-events-none" />
         <div className="relative max-w-2xl mx-auto">
           <h2 className="text-4xl font-black uppercase tracking-tighter text-slate-900">
-            Ready to{" "}
+             {tr("Ready to")}{" "}
             <span className="bg-[linear-gradient(110deg,#2563eb,#7c3aed,#db2777)] bg-clip-text text-transparent">
-              Get Started?
-            </span>
+               {tr("Get Started?")} </span>
           </h2>
-          <p className="mt-4 text-slate-600 text-lg">Start for free. No credit card required.</p>
+          <p className="mt-4 text-slate-600 text-lg">{tr("Start for free. No credit card required.")}</p>
           <div className="mt-8 flex flex-wrap justify-center gap-4">
             <Button
               asChild
               size="lg"
               className="gap-2 shadow-[0_4px_24px_0_rgba(124,77,255,0.4)] bg-[linear-gradient(135deg,#2563eb,#7c3aed,#db2777)] hover:opacity-95 text-slate-900 border-0 font-bold rounded-full px-8"
             >
-              <Link href="/signup">Start Free Trial</Link>
+              <Link href={tr.href("/signup")}>{tr("Start Free Trial")}</Link>
             </Button>
             <Button
               asChild
@@ -360,7 +352,7 @@ export default function PricingPage() {
               variant="outline"
               className="border-slate-300 bg-white text-slate-900 backdrop-blur-md hover:bg-slate-100 hover:text-slate-900 rounded-full font-bold px-8"
             >
-              <Link href="/contact">Contact Sales</Link>
+              <Link href={tr.href("/contact")}>{tr("Contact Sales")}</Link>
             </Button>
           </div>
         </div>

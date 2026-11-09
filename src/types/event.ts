@@ -1,4 +1,9 @@
 export interface DesignSettings {
+  localized?: {
+    title?: { en: string; ar: string };
+    shortDescription?: { en: string; ar: string };
+    description?: { en: string; ar: string };
+  };
   logoUrl?: string;
   primaryColor?: string;
   backgroundColor?: string;

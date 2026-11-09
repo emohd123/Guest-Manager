@@ -1,8 +1,11 @@
 "use client";
 
+import { usePublicCopy } from "@/lib/use-public-copy";
+
 import { use, useEffect, useState } from "react";
 import { trpc } from "@/lib/trpc/client";
 import { format } from "date-fns";
+import { arSA } from "date-fns/locale";
 import {
   Calendar,
   MapPin,
@@ -177,7 +180,13 @@ function getPublicPageSettings(
     mapUrl: typeof (publicPage as any).mapUrl === "string" ? (publicPage as any).mapUrl : "",
     ctaLabel: localizedValue(publicPage.ctaLabel, locale),
     highlights: publicPage.highlights ?? [],
-    terms: (Array.isArray((publicPage as any).terms) && (publicPage as any).terms.length ? (publicPage as any).terms : CUSTOMER_TERMS) as string[],
+    terms: (Array.isArray((publicPage as any).terms) && (publicPage as any).terms.length ? (publicPage as any).terms : (locale === "ar" ? [
+      "تذاكر QR صالحة للاستخدام مرة واحدة للفعالية والتاريخ المحددين.",
+      "يخضع الدخول لقواعد السلامة الخاصة بالمكان والمنظم.",
+      "يحظر إعادة البيع أو نسخ التذاكر دون تصريح.",
+      "قد تتغير المواعيد والفنانون عند الضرورة.",
+      "تخضع طلبات الاسترداد ونقل التذاكر لسياسة المنظم والقانون المعمول به.",
+    ] : CUSTOMER_TERMS)) as string[],
     lineup: (Array.isArray(publicPage.lineup) ? publicPage.lineup : []).filter((artist): artist is LineupArtist => Boolean(artist && typeof artist.id === "string" && typeof artist.name === "string" && artist.name.trim())),
     showAgenda: publicPage.showAgenda !== false,
     showSponsors: publicPage.showSponsors !== false,
@@ -190,6 +199,7 @@ export default function PublicEventPage({
 }: {
   params: Promise<{ companySlug: string; eventSlug: string }>;
 }) {
+  const tr = usePublicCopy();
   const { companySlug, eventSlug } = use(params);
   const searchParams = useSearchParams();
   const locale = normalizeLocale(searchParams.get("locale"));
@@ -267,7 +277,7 @@ export default function PublicEventPage({
           </p>
         </div>
         <Button asChild className="rounded-2xl h-12 px-8 font-bold">
-          <Link href="/">{t.returnHome}</Link>
+          <Link href={`/?locale=${locale}`}>{t.returnHome}</Link>
         </Button>
       </div>
     );
@@ -278,9 +288,10 @@ export default function PublicEventPage({
     (ticket) => (ticket.price ?? 0) > 0,
   );
   const publicPage = getPublicPageSettings(settings, hasPaidTickets, locale);
-  const eventTitle = publicPage.headline || event.title;
+  const localized = (settings as DesignSettings & { localized?: Record<string, unknown> }).localized ?? {};
+  const eventTitle = (locale === "ar" ? getLocalizedText(localized.title, "ar", "") : "") || publicPage.headline || event.title;
   const eventDescription = localizedValue(
-    (settings.publicPage as any)?.description,
+    (locale === "ar" ? getLocalizedText(localized.description, "ar", "") : "") || (settings.publicPage as any)?.description,
     locale,
     event.description || t.fallbackDescription,
   );
@@ -314,7 +325,7 @@ export default function PublicEventPage({
           <h1 className="text-3xl font-black tracking-tight">{t.notPublic}</h1>
           <p className="text-muted-foreground">{t.notPublicBody}</p>
           <Button asChild className="rounded-2xl h-12 px-8 font-bold">
-            <Link href="/">{t.returnHome}</Link>
+            <Link href={`/?locale=${locale}`}>{t.returnHome}</Link>
           </Button>
         </div>
       </div>
@@ -384,6 +395,7 @@ export default function PublicEventPage({
     setCheckoutLoading(true);
     const checkoutParams = new URLSearchParams({
       company: companySlug,
+      locale,
       event: eventSlug,
       items: JSON.stringify(cartItems),
     });
@@ -466,8 +478,8 @@ export default function PublicEventPage({
   const priceFrom = publicPage.isPaidEvent
     ? formatMoney(lowestPrice, currency, locale)
     : t.freeEvent;
-  const eventDate = format(new Date(event.startsAt), "MMMM d, yyyy");
-  const eventTime = format(new Date(event.startsAt), "h:mm a");
+  const eventDate = format(new Date(event.startsAt), "MMMM d, yyyy", { locale: locale === "ar" ? arSA : undefined });
+  const eventTime = format(new Date(event.startsAt), "h:mm a", { locale: locale === "ar" ? arSA : undefined });
   const venueLabel =
     publicPage.venueName || publicPage.locationText || t.locationFallback;
   const publicMedia = settings.publicPage as
@@ -497,30 +509,30 @@ export default function PublicEventPage({
   const importantItems = publicPage.highlights.length
     ? publicPage.highlights.slice(0, 5)
     : [
-        "Digital tickets are issued immediately after successful confirmation.",
-        "Please bring a valid QR ticket and matching registration email.",
-        "Entry timing and venue rules may be updated by the iTicket team.",
+        locale === "ar" ? "تصدر التذاكر الرقمية فور تأكيد الحجز بنجاح." : "Digital tickets are issued immediately after successful confirmation.",
+        locale === "ar" ? "يرجى إحضار تذكرة QR سارية والبريد الإلكتروني المستخدم للتسجيل." : "Please bring a valid QR ticket and matching registration email.",
+        locale === "ar" ? "قد يحدث فريق iTicket مواعيد الدخول وقواعد المكان." : "Entry timing and venue rules may be updated by the iTicket team.",
       ];
   const supportItems = [
     {
       icon: ShieldCheck,
-      title: "Secure Checkout",
-      body: "Protected payment and verified order flow.",
+      title: locale === "ar" ? "دفع آمن" : "Secure Checkout",
+      body: locale === "ar" ? "دفع محمي وخطوات حجز موثوقة." : "Protected payment and verified order flow.",
     },
     {
       icon: CheckCircle2,
-      title: "Instant confirmation",
-      body: "Tickets are delivered to your email.",
+      title: locale === "ar" ? "تأكيد فوري" : "Instant confirmation",
+      body: locale === "ar" ? "ترسل التذاكر إلى بريدك الإلكتروني." : "Tickets are delivered to your email.",
     },
     {
       icon: Ticket,
-      title: "Official ticketing",
-      body: "Managed directly by iTicket.",
+      title: locale === "ar" ? "تذاكر رسمية" : "Official ticketing",
+      body: locale === "ar" ? "بإدارة مباشرة من iTicket." : "Managed directly by iTicket.",
     },
     {
       icon: Headphones,
-      title: "Customer support",
-      body: "Help before and after your booking.",
+      title: locale === "ar" ? "دعم العملاء" : "Customer support",
+      body: locale === "ar" ? "مساعدة قبل الحجز وبعده." : "Help before and after your booking.",
     },
   ];
 
@@ -534,12 +546,12 @@ export default function PublicEventPage({
       <main className="mx-auto max-w-7xl px-3 pb-24 pt-20 sm:px-6 sm:pb-28 sm:pt-24 lg:px-8">
         <div className="mb-4 flex flex-col gap-3 text-sm md:mb-5 md:flex-row md:items-center md:justify-between md:gap-4">
           <div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-zinc-500">
-            <Link href="/" className="hover:text-zinc-950">
-              Home
+            <Link href={`/?locale=${locale}`} className="hover:text-zinc-950">
+              {locale === "ar" ? "الرئيسية" : tr("Home")}
             </Link>
             <ChevronRight className="h-3.5 w-3.5" />
-            <Link href="/" className="hover:text-zinc-950">
-              Events
+            <Link href={`/?locale=${locale}`} className="hover:text-zinc-950">
+              {locale === "ar" ? "الفعاليات" : tr("Events")}
             </Link>
             <ChevronRight className="h-3.5 w-3.5" />
             <span className="max-w-[280px] truncate text-zinc-900">
@@ -571,7 +583,7 @@ export default function PublicEventPage({
               className="h-9 rounded-full gap-2 text-zinc-700"
             >
               <Heart className="h-4 w-4" />
-              Add to favourites
+              {locale === "ar" ? "إضافة إلى المفضلة" : "Add to favourites"}
             </Button>
           </div>
         </div>
@@ -616,7 +628,7 @@ export default function PublicEventPage({
         <div className="mt-5 flex flex-col gap-7 sm:mt-8 sm:gap-9 lg:grid lg:grid-cols-[minmax(0,1fr)_380px] lg:items-start">
           <article className="contents lg:block lg:space-y-9">
             <section id="details" className="order-[10] scroll-mt-20 space-y-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_10px_28px_rgba(15,23,42,0.07)] sm:scroll-mt-24 sm:space-y-5 sm:rounded-[28px] sm:p-8 sm:shadow-[0_12px_40px_rgba(15,23,42,0.08)]">
-              <p className="text-xs font-black uppercase tracking-[0.2em] text-cyan-700">iTicket event</p>
+              <p className="text-xs font-black uppercase tracking-[0.2em] text-cyan-700">{locale === "ar" ? "فعالية iTicket" : "iTicket event"}</p>
               <h1 className="max-w-3xl text-2xl font-black leading-tight tracking-tight text-zinc-950 sm:text-4xl md:text-5xl">
                 {eventTitle}
               </h1>
@@ -647,8 +659,7 @@ export default function PublicEventPage({
             <section className="order-[20] border-t border-zinc-200 pt-7">
               <div className="mb-4 flex items-center justify-between">
                 <h2 className="text-xl font-black tracking-tight sm:text-2xl">
-                  Important Information
-                </h2>
+                   {tr("Important Information")} </h2>
                 <Info className="h-5 w-5 text-zinc-400" />
               </div>
               <ul className="space-y-2 text-sm leading-6 text-zinc-700">
@@ -665,9 +676,8 @@ export default function PublicEventPage({
               <section className="order-[40] border-t border-zinc-200 pt-7">
                 <div className="mb-4 flex items-center justify-between">
                   <h2 className="text-xl font-black tracking-tight sm:text-2xl">
-                    Event media
-                  </h2>
-                  <span className="text-sm font-bold text-zinc-500">{mediaItems.length} items</span>
+                     {tr("Event media")} </h2>
+                  <span className="text-sm font-bold text-zinc-500">{mediaItems.length} {locale === "ar" ? "عنصر" : "items"}</span>
                 </div>
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                   {visibleMediaItems.map((media, index) => (
@@ -675,13 +685,13 @@ export default function PublicEventPage({
                       {isVideoMedia(media) ? (
                         <video src={media} muted playsInline preload="metadata" className="aspect-[4/3] w-full object-cover" />
                       ) : (
-                        <img src={media} alt={`${event?.title ?? "Event"} media ${index + 1}`} className="aspect-[4/3] w-full object-cover" />
+                        <img src={media} alt={`${event?.title ?? tr("Event")} media ${index + 1}`} className="aspect-[4/3] w-full object-cover" />
                       )}
-                      {isVideoMedia(media) ? <span className="absolute bottom-2 left-2 rounded-full bg-black/75 px-2 py-1 text-[10px] font-bold text-white">Video</span> : null}
+                      {isVideoMedia(media) ? <span className="absolute bottom-2 left-2 rounded-full bg-black/75 px-2 py-1 text-[10px] font-bold text-white">{locale === "ar" ? "فيديو" : "Video"}</span> : null}
                       {index === 3 && hiddenMediaCount > 0 ? (
                         <span className="absolute inset-0 flex flex-col items-center justify-center bg-slate-950/70 text-center text-white backdrop-blur-[2px]">
                           <span className="text-2xl font-black">+{hiddenMediaCount}</span>
-                          <span className="mt-1 text-xs font-black uppercase tracking-wider">Show more</span>
+                          <span className="mt-1 text-xs font-black uppercase tracking-wider">{locale === "ar" ? "عرض المزيد" : "Show more"}</span>
                         </span>
                       ) : null}
                     </button>
@@ -717,7 +727,7 @@ export default function PublicEventPage({
                     <span className="flex h-12 w-12 items-center justify-center rounded-full bg-violet-600 text-white shadow-lg">
                       <MapPin className="h-6 w-6" />
                     </span>
-                    {mapHref ? <span className="rounded-full bg-white px-4 py-2 text-xs font-black text-zinc-950 shadow">Open in Google Maps</span> : null}
+                    {mapHref ? <span className="rounded-full bg-white px-4 py-2 text-xs font-black text-zinc-950 shadow">{locale === "ar" ? "فتح في خرائط Google" : "Open in Google Maps"}</span> : null}
                   </div>
                 </div></div>
               </a>
@@ -725,14 +735,14 @@ export default function PublicEventPage({
 
             {false && <section id="terms" className="scroll-mt-24 border-t border-zinc-200 pt-7">
               <details className="group overflow-hidden rounded-2xl border border-cyan-300/30 bg-[#0b151d] text-white">
-                <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-5 py-4 font-black marker:content-none"><span className="flex items-center gap-2"><ShieldCheck className="h-5 w-5 text-cyan-300" />Terms &amp; Conditions</span><ChevronRight className="h-4 w-4 text-cyan-300 transition-transform group-open:rotate-90" /></summary>
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-5 py-4 font-black marker:content-none"><span className="flex items-center gap-2"><ShieldCheck className="h-5 w-5 text-cyan-300" />{locale === "ar" ? "الشروط والأحكام" : "Terms & Conditions"}</span><ChevronRight className="h-4 w-4 text-cyan-300 transition-transform group-open:rotate-90" /></summary>
                 <ul className="space-y-2 border-t border-white/10 px-5 py-4 text-sm leading-6 text-slate-300">{publicPage.terms.map((term) => <li key={term} className="flex gap-2"><span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-cyan-300" />{term}</li>)}</ul>
               </details>
             </section>}
 
             {false && <section className="border-t border-zinc-200 pt-7">
               <h2 className="mb-4 text-2xl font-black tracking-tight">
-                {event?.title ?? "Event"} ticket prices
+                {event?.title ?? tr("Event")} ticket prices
               </h2>
               <div className="divide-y divide-zinc-200 rounded-2xl border border-zinc-200 bg-white">
                 {tickets.length ? (
@@ -762,15 +772,14 @@ export default function PublicEventPage({
             {(publicPage.lineup.length || (publicPage.showAgenda && experience?.sessions?.length)) ? (
               <section id="lineup" className="order-[60] scroll-mt-24 border-t border-zinc-200 pt-7">
                 <h2 className="mb-4 text-xl font-black tracking-tight sm:text-2xl">
-                  Lineup &amp; schedule
-                </h2>
+                   {tr("Lineup & schedule")} </h2>
                 {publicPage.lineup.length ? <div className="mb-6 grid gap-3 sm:grid-cols-2">
                   {publicPage.lineup.map((artist, index) => (
                     <article key={artist.id} className="flex min-w-0 gap-4 rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
                       <div className="h-16 w-16 shrink-0 overflow-hidden rounded-2xl bg-gradient-to-br from-violet-100 to-cyan-100">
                         {artist.imageUrl ? <img src={artist.imageUrl} alt={artist.name} className="h-full w-full object-cover" /> : <div className="grid h-full w-full place-items-center text-violet-700"><Music2 className="h-7 w-7" /></div>}
                       </div>
-                      <div className="min-w-0"><p className="text-[10px] font-black uppercase tracking-[.18em] text-violet-700">{artist.role || (index === 0 ? "Headliner" : "Lineup artist")}</p><h3 className="mt-1 truncate text-base font-black text-zinc-950">{artist.name}</h3>{artist.bio ? <p className="mt-1 line-clamp-2 text-xs leading-5 text-zinc-600">{artist.bio}</p> : null}</div>
+                      <div className="min-w-0"><p className="text-[10px] font-black uppercase tracking-[.18em] text-violet-700">{artist.role || (locale === "ar" ? (index === 0 ? "الفنان الرئيسي" : "فنان مشارك") : (index === 0 ? "Headliner" : "Lineup artist"))}</p><h3 className="mt-1 truncate text-base font-black text-zinc-950">{artist.name}</h3>{artist.bio ? <p className="mt-1 line-clamp-2 text-xs leading-5 text-zinc-600">{artist.bio}</p> : null}</div>
                     </article>
                   ))}
                 </div> : null}
@@ -786,9 +795,9 @@ export default function PublicEventPage({
                           {session.startsAt
                             ? format(
                                 new Date(session.startsAt),
-                                "MMM d, h:mm a",
+                                "MMM d, h:mm a", { locale: locale === "ar" ? arSA : undefined },
                               )
-                            : "Time TBD"}
+                            : (locale === "ar" ? "يحدد الوقت لاحقاً" : "Time TBD")}
                         </span>
                       </div>
                       {session.description ? (
@@ -805,14 +814,14 @@ export default function PublicEventPage({
             {organiserEvents?.length ? (
               <section id="organiser" className="order-[90] scroll-mt-24 border-t border-zinc-200 pt-7">
                 <div className="mb-4 flex items-center justify-between gap-4">
-                  <div><p className="text-xs font-black uppercase tracking-[.18em] text-cyan-600">More to explore</p><h2 className="mt-1 text-xl font-black tracking-tight sm:text-2xl">More from this organiser</h2></div>
-                  <Link href="/" className="text-sm font-black text-cyan-700 hover:underline">View all events</Link>
+                  <div><p className="text-xs font-black uppercase tracking-[.18em] text-cyan-600">{locale === "ar" ? "اكتشف المزيد" : "More to explore"}</p><h2 className="mt-1 text-xl font-black tracking-tight sm:text-2xl">{locale === "ar" ? "المزيد من هذا المنظم" : "More from this organiser"}</h2></div>
+                  <Link href={`/?locale=${locale}`} className="text-sm font-black text-cyan-700 hover:underline">{locale === "ar" ? "عرض جميع الفعاليات" : "View all events"}</Link>
                 </div>
                 <div className="grid gap-4 sm:grid-cols-3">
                   {organiserEvents?.map((related) => (
                     <Link key={related.id} href={`/e/${companySlug}/${related.slug}`} className="group overflow-hidden rounded-2xl border border-zinc-200 bg-white transition hover:-translate-y-0.5 hover:border-cyan-300 hover:shadow-lg">
                       <div className="aspect-[4/3] bg-zinc-100">{related.coverImageUrl ? <img src={related.coverImageUrl} alt="" className="h-full w-full object-cover transition group-hover:scale-105" /> : <div className="grid h-full place-items-center bg-slate-900 text-white"><Ticket className="h-6 w-6" /></div>}</div>
-                      <div className="p-4"><p className="text-xs font-bold text-cyan-700">{format(new Date(related.startsAt), "MMM d, yyyy")}</p><h3 className="mt-1 line-clamp-2 font-black text-zinc-950">{related.title}</h3></div>
+                      <div className="p-4"><p className="text-xs font-bold text-cyan-700">{format(new Date(related.startsAt), "MMM d, yyyy", { locale: locale === "ar" ? arSA : undefined })}</p><h3 className="mt-1 line-clamp-2 font-black text-zinc-950">{related.title}</h3></div>
                     </Link>
                   ))}
                 </div>
@@ -822,14 +831,14 @@ export default function PublicEventPage({
             {categoryEvents?.length ? (
               <section className="order-[70] border-t border-zinc-200 pt-7">
                 <div className="mb-4">
-                  <p className="text-xs font-black uppercase tracking-[.18em] text-cyan-600">Discover more</p>
-                  <h2 className="mt-1 text-xl font-black tracking-tight sm:text-2xl">You might also like</h2>
+                  <p className="text-xs font-black uppercase tracking-[.18em] text-cyan-600">{locale === "ar" ? "استكشف المزيد" : "Discover more"}</p>
+                  <h2 className="mt-1 text-xl font-black tracking-tight sm:text-2xl">{locale === "ar" ? "قد يعجبك أيضاً" : "You might also like"}</h2>
                 </div>
                 <div className="grid gap-4 sm:grid-cols-3">
                   {categoryEvents.map((related) => (
                     <Link key={related.id} href={`/e/${related.companySlug ?? companySlug}/${related.slug}`} className="group overflow-hidden rounded-2xl border border-zinc-200 bg-white transition hover:-translate-y-0.5 hover:border-cyan-300 hover:shadow-lg">
                       <div className="aspect-[4/3] bg-zinc-100">{related.coverImageUrl ? <img src={related.coverImageUrl} alt="" className="h-full w-full object-cover transition group-hover:scale-105" /> : <div className="grid h-full place-items-center bg-slate-900 text-white"><Ticket className="h-6 w-6" /></div>}</div>
-                      <div className="p-4"><p className="text-xs font-bold text-cyan-700">{format(new Date(related.startsAt), "MMM d, yyyy")}</p><h3 className="mt-1 line-clamp-2 font-black text-zinc-950">{related.title}</h3></div>
+                      <div className="p-4"><p className="text-xs font-bold text-cyan-700">{format(new Date(related.startsAt), "MMM d, yyyy", { locale: locale === "ar" ? arSA : undefined })}</p><h3 className="mt-1 line-clamp-2 font-black text-zinc-950">{related.title}</h3></div>
                     </Link>
                   ))}
                 </div>
@@ -845,7 +854,7 @@ export default function PublicEventPage({
                   4.8
                 </span>
                 <div>
-                  <p className="font-black">Excellent</p>
+                  <p className="font-black">{locale === "ar" ? "ممتاز" : "Excellent"}</p>
                   <p className="text-sm text-zinc-500">
                     Reviews and attendee feedback will appear here as orders are
                     completed.
@@ -857,7 +866,7 @@ export default function PublicEventPage({
 
           <aside className="contents lg:block lg:space-y-4 lg:sticky lg:top-20">
             {false && <section className="rounded-2xl border border-zinc-300 bg-white p-5 shadow-sm">
-              <p className="text-xs font-semibold text-zinc-500">Price from:</p>
+              <p className="text-xs font-semibold text-zinc-500">{locale === "ar" ? "السعر يبدأ من:" : "Price from:"}</p>
               <div className="mt-1 flex items-center justify-between gap-4">
                 <p className="text-2xl font-black tracking-tight">
                   {priceFrom}
@@ -866,7 +875,7 @@ export default function PublicEventPage({
                   asChild
                   className="h-12 rounded-xl bg-zinc-950 px-6 font-black text-white hover:bg-zinc-800"
                 >
-                  <a href="#tickets">Select tickets</a>
+                  <a href="#tickets">{locale === "ar" ? "اختر التذاكر" : "Select tickets"}</a>
                 </Button>
               </div>
               <div className="mt-4 flex items-center gap-2 text-xs font-bold text-zinc-500">
@@ -881,13 +890,13 @@ export default function PublicEventPage({
                 Timing and Schedule
               </h3>
               <div className="flex justify-between gap-4 text-sm">
-                <span className="font-semibold text-zinc-500">Event date</span>
+                <span className="font-semibold text-zinc-500">{locale === "ar" ? "تاريخ الفعالية" : "Event date"}</span>
                 <span className="text-right font-black text-zinc-900">
                   {eventDate}
                 </span>
               </div>
               <div className="mt-3 flex justify-between gap-4 text-sm">
-                <span className="font-semibold text-zinc-500">Start time</span>
+                <span className="font-semibold text-zinc-500">{locale === "ar" ? "وقت البداية" : "Start time"}</span>
                 <span className="text-right font-black text-zinc-900">
                   {eventTime}
                 </span>
@@ -895,7 +904,7 @@ export default function PublicEventPage({
             </section>}
 
             {false && <section className="rounded-2xl border border-zinc-200 bg-white p-5">
-              <h3 className="mb-5 text-lg font-black">Why buy with iTicket?</h3>
+              <h3 className="mb-5 text-lg font-black">{locale === "ar" ? "لماذا تحجز مع iTicket؟" : "Why buy with iTicket?"}</h3>
               <div className="space-y-5">
                 {supportItems.map((item) => {
                   const Icon = item.icon;
@@ -933,7 +942,7 @@ export default function PublicEventPage({
 
             <details id="terms" className="order-[35] group mb-5 scroll-mt-24 overflow-hidden rounded-xl border border-cyan-300/30 bg-[#0b151d] text-white">
               <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-4 font-black marker:content-none">
-                <span className="flex items-center gap-2"><ShieldCheck className="h-5 w-5 text-cyan-300" />Terms &amp; Conditions</span>
+                <span className="flex items-center gap-2"><ShieldCheck className="h-5 w-5 text-cyan-300" />{locale === "ar" ? "الشروط والأحكام" : "Terms & Conditions"}</span>
                 <ChevronRight className="h-4 w-4 text-cyan-300 transition-transform group-open:rotate-90" />
               </summary>
               <ul className="space-y-2 border-t border-white/10 px-5 py-4 text-xs leading-5 text-slate-300">
@@ -956,7 +965,7 @@ export default function PublicEventPage({
                 <p>{locale === "ar"
                   ? "لا تشمل المبالغ المستردة رسوم الخدمة الموضحة قبل الدفع، إلا عندما يفرض القانون استردادها. تظل حقوق المستهلك الإلزامية محفوظة."
                   : "Approved refunds exclude the service charge disclosed before payment, except where a refund of that charge is legally required. Mandatory consumer rights remain protected."}</p>
-                <Link href="/refund-policy" className="inline-block font-bold text-cyan-300 underline underline-offset-2 hover:text-cyan-100">
+                <Link href={`/refund-policy?locale=${locale}`} className="inline-block font-bold text-cyan-300 underline underline-offset-2 hover:text-cyan-100">
                   {locale === "ar" ? "قراءة سياسة الاسترداد كاملة" : "Read the full refund policy"}
                 </Link>
               </div>
@@ -973,7 +982,7 @@ export default function PublicEventPage({
                     : t.freeRegistration}
                 </p>
                 <h3 className="mt-1 text-2xl font-black tracking-tight">
-                  {publicPage.isPaidEvent ? "Buy tickets" : t.reservePlace}
+                  {publicPage.isPaidEvent ? (locale === "ar" ? "شراء التذاكر" : "Buy tickets") : t.reservePlace}
                 </h3>
                 <p className="mt-2 text-sm leading-6 text-zinc-600">
                   {publicPage.isPaidEvent ? t.paidIntro : t.freeIntro}
@@ -985,17 +994,16 @@ export default function PublicEventPage({
                   <div className="mb-3 flex items-center justify-between">
                     <div>
                       <p className="text-xs font-black uppercase tracking-[.18em] text-cyan-600">
-                        Reserved seating
-                      </p>
-                      <h4 className="mt-1 font-black">Choose your seats</h4>
+                         {tr("Reserved seating")} </p>
+                      <h4 className="mt-1 font-black">{locale === "ar" ? "اختر مقاعدك" : "Choose your seats"}</h4>
                     </div>
                     <span className="rounded-full bg-cyan-100 px-3 py-1 text-xs font-bold text-cyan-800">
-                      {selectedSeatIds.length} selected
+                      {selectedSeatIds.length} {locale === "ar" ? "مختار" : "selected"}
                     </span>
                   </div>
                   {usesSeatsIo ? (
                     <SeatsIoChart eventId={event.id} eventKey={seatsIoEventKey ?? undefined} workspaceKey={process.env.NEXT_PUBLIC_SEATSIO_WORKSPACE_KEY!} chartKey={seatsIoChartKey ?? undefined}
-              pricing={seatsIoPricing} basePrice={lowestPrice} currency={currency} ticketTypeId={tickets[0]?.id} ticketTypeName={tickets[0]?.name} autoOpen={searchParams.get("openSeats") === "1"} companySlug={companySlug} eventSlug={eventSlug} returnTo={`/e/${companySlug}/${eventSlug}?openSeats=1#tickets`} />
+              pricing={seatsIoPricing} basePrice={lowestPrice} currency={currency} ticketTypeId={tickets[0]?.id} ticketTypeName={tickets[0]?.name} autoOpen={searchParams.get("openSeats") === "1"} companySlug={companySlug} eventSlug={eventSlug} returnTo={`/e/${companySlug}/${eventSlug}?locale=${locale}&openSeats=1#tickets`} />
                   ) : !seatingPlan.floor_plan_url ||
                   !/\.pdf(?:$|[?#])/i.test(seatingPlan.floor_plan_url) ? (
                     <CustomerHallMap
@@ -1084,8 +1092,7 @@ export default function PublicEventPage({
               ) : null}
 
               <p className="mb-5 rounded-xl border border-cyan-200 bg-cyan-50 px-4 py-3 text-sm text-cyan-900">
-                Your signed-in account details will be used for this order.
-              </p>
+                 {tr("Your signed-in account details will be used for this order.")} </p>
 
               {false && <details id="terms" className="group mb-5 scroll-mt-24 overflow-hidden rounded-xl border border-cyan-300/30 bg-[#0b151d] text-white">
                 <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-4 font-black marker:content-none">
@@ -1128,7 +1135,7 @@ export default function PublicEventPage({
             <p className="mt-5 border-t border-zinc-100 pt-4 text-xs leading-5 text-zinc-500 dark:border-slate-700 dark:text-slate-300">
                 {t.terms}
                 {" "}
-                <Link href="/refund-policy" className="font-semibold text-cyan-700 underline-offset-2 hover:underline dark:text-cyan-300">
+                <Link href={`/refund-policy?locale=${locale}`} className="font-semibold text-cyan-700 underline-offset-2 hover:underline dark:text-cyan-300">
                   {locale === "ar" ? "سياسة الاسترداد" : "Refund policy"}
                 </Link>
               </p>
@@ -1148,7 +1155,7 @@ export default function PublicEventPage({
                       variant="outline"
                       className="mt-4 h-10 rounded-xl font-black"
                     >
-                      <a href="/event-check-in-app">{t.openApp}</a>
+                      <a href={tr.href("/event-check-in-app")}>{t.openApp}</a>
                     </Button>
                   </div>
                 </div>

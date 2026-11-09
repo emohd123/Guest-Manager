@@ -1,5 +1,7 @@
 "use client";
 
+import { usePublicCopy } from "@/lib/use-public-copy";
+
 import { Suspense, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft, CheckCircle2, CreditCard, Ticket } from "lucide-react";
@@ -32,6 +34,7 @@ function parseCart(raw: string | null): CartItem[] {
 }
 
 function TicketCheckout() {
+  const tr = usePublicCopy();
   const router = useRouter();
   const searchParams = useSearchParams();
   const [submitting, setSubmitting] = useState(false);
@@ -135,33 +138,33 @@ function TicketCheckout() {
   };
 
   if (!cartItems.length) {
-    return <main className="min-h-screen bg-zinc-50 px-4 py-24"><div className="mx-auto max-w-xl rounded-3xl border border-zinc-200 bg-white p-7 text-center shadow-sm"><Ticket className="mx-auto h-10 w-10 text-cyan-600" /><h1 className="mt-4 text-2xl font-black">No tickets selected</h1><button onClick={backToEvent} className="mt-5 font-bold text-cyan-700">Back to event</button></div></main>;
+    return <main className="min-h-screen bg-zinc-50 px-4 py-24"><div className="mx-auto max-w-xl rounded-3xl border border-zinc-200 bg-white p-7 text-center shadow-sm"><Ticket className="mx-auto h-10 w-10 text-cyan-600" /><h1 className="mt-4 text-2xl font-black">{tr("No tickets selected")}</h1><button onClick={backToEvent} className="mt-5 font-bold text-cyan-700">{tr("Back to event")}</button></div></main>;
   }
 
   return (
     <main className="min-h-screen bg-zinc-50 px-4 py-10 sm:py-16">
       <section className="mx-auto max-w-xl rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm sm:p-8">
-        <button type="button" onClick={backToEvent} className="inline-flex items-center gap-2 text-sm font-black text-cyan-700 hover:text-cyan-900"><ArrowLeft className="h-4 w-4" /> Back to tickets</button>
-        <div className="mt-6 flex items-start gap-3"><div className="rounded-2xl bg-cyan-50 p-3 text-cyan-700"><Ticket className="h-6 w-6" /></div><div><p className="text-xs font-black uppercase tracking-[.18em] text-cyan-700">Secure checkout</p><h1 className="mt-1 text-3xl font-black tracking-tight text-zinc-950">Confirm your tickets</h1><p className="mt-2 text-sm text-zinc-600">Review your order before {subtotal > 0 ? "secure payment" : "claiming your free tickets"}.</p></div></div>
+        <button type="button" onClick={backToEvent} className="inline-flex items-center gap-2 text-sm font-black text-cyan-700 hover:text-cyan-900"><ArrowLeft className="h-4 w-4" />  {tr("Back to tickets")}</button>
+        <div className="mt-6 flex items-start gap-3"><div className="rounded-2xl bg-cyan-50 p-3 text-cyan-700"><Ticket className="h-6 w-6" /></div><div><p className="text-xs font-black uppercase tracking-[.18em] text-cyan-700">{tr("Secure checkout")}</p><h1 className="mt-1 text-3xl font-black tracking-tight text-zinc-950">{tr("Confirm your tickets")}</h1><p className="mt-2 text-sm text-zinc-600">{tr("Review your order before")} {subtotal > 0 ? tr("secure payment") : tr("claiming your free tickets")}.</p></div></div>
         <div className="mt-7 space-y-3 rounded-2xl bg-zinc-50 p-4">
-          {cartItems.map((item) => <div key={item.ticketTypeId} className="flex justify-between gap-4 text-sm"><span className="text-zinc-700"><strong>{item.quantity}×</strong> {item.name}</span><strong className="whitespace-nowrap text-zinc-950">{subtotal === 0 ? "FREE" : formatMoney(item.price * item.quantity, item.currency || currency)}</strong></div>)}
-          <div className="flex justify-between border-t border-zinc-200 pt-3 text-sm"><span className="text-zinc-600">Tickets ({totalTickets})</span><strong>{subtotal === 0 ? "FREE" : formatMoney(subtotal, currency)}</strong></div>
-          {discountAmount > 0 && <div className="flex justify-between text-sm text-emerald-700"><span>Promo ({appliedPromo?.code})</span><strong>-{formatMoney(discountAmount, currency)}</strong></div>}
-          {discountedSubtotal > 0 && <div className="flex justify-between text-sm"><span className="text-zinc-600">Service fee (10%)</span><strong>{formatMoney(serviceFee, currency)}</strong></div>}
-          <div className="flex justify-between border-t border-zinc-200 pt-3 text-lg font-black text-zinc-950"><span>Total</span><span>{total === 0 ? "FREE" : formatMoney(total, currency)}</span></div>
+          {cartItems.map((item) => <div key={item.ticketTypeId} className="flex justify-between gap-4 text-sm"><span className="text-zinc-700"><strong>{item.quantity}×</strong> {item.name}</span><strong className="whitespace-nowrap text-zinc-950">{subtotal === 0 ? tr("FREE") : formatMoney(item.price * item.quantity, item.currency || currency, tr.locale)}</strong></div>)}
+          <div className="flex justify-between border-t border-zinc-200 pt-3 text-sm"><span className="text-zinc-600">{tr("Tickets")} ({totalTickets})</span><strong>{subtotal === 0 ? tr("FREE") : formatMoney(subtotal, currency, tr.locale)}</strong></div>
+          {discountAmount > 0 && <div className="flex justify-between text-sm text-emerald-700"><span>{tr("Promo code")} ({appliedPromo?.code})</span><strong>-{formatMoney(discountAmount, currency, tr.locale)}</strong></div>}
+          {discountedSubtotal > 0 && <div className="flex justify-between text-sm"><span className="text-zinc-600">{tr("Service fee (10%)")}</span><strong>{formatMoney(serviceFee, currency, tr.locale)}</strong></div>}
+          <div className="flex justify-between border-t border-zinc-200 pt-3 text-lg font-black text-zinc-950"><span>{tr("Total")}</span><span>{total === 0 ? tr("FREE") : formatMoney(total, currency, tr.locale)}</span></div>
         </div>
-        {serviceFee > 0 && <p className="mt-4 text-sm leading-6 text-zinc-600">Tickets are refundable only for qualifying significant event changes or where required by law. The service charge is excluded from approved refunds unless applicable law requires otherwise. <a href="/refund-policy" target="_blank" rel="noopener noreferrer" className="font-semibold text-cyan-700 underline underline-offset-2">Read the refund policy</a>.</p>}
+        {serviceFee > 0 && <p className="mt-4 text-sm leading-6 text-zinc-600">{tr("Tickets are refundable only for qualifying significant event changes or where required by law. The service charge is excluded from approved refunds unless applicable law requires otherwise.")} <a href={tr.href("/refund-policy")} target="_blank" rel="noopener noreferrer" className="font-semibold text-cyan-700 underline underline-offset-2">{tr("Read the refund policy")}</a>.</p>}
         <div className="mt-5 rounded-xl border border-zinc-200 bg-white p-4">
-          <label className="text-xs font-black uppercase tracking-wider text-zinc-600">Promo code</label>
+          <label className="text-xs font-black uppercase tracking-wider text-zinc-600">{tr("Promo code")}</label>
           <div className="mt-2 flex gap-2">
-            <input value={promoCode} onChange={(e) => { setPromoCode(e.target.value.toUpperCase()); setAppliedPromo(null); }} placeholder="Enter code" className="h-11 min-w-0 flex-1 rounded-lg border border-zinc-200 px-3 text-sm font-bold outline-none focus:border-cyan-500" />
-            <button type="button" onClick={applyPromo} disabled={promoLoading || !promoCode.trim()} className="h-11 rounded-lg bg-zinc-900 px-4 text-sm font-black text-white disabled:opacity-50">{promoLoading ? "Checking…" : "Apply"}</button>
+            <input value={promoCode} onChange={(e) => { setPromoCode(e.target.value.toUpperCase()); setAppliedPromo(null); }} placeholder={tr("Enter code")} className="h-11 min-w-0 flex-1 rounded-lg border border-zinc-200 px-3 text-sm font-bold outline-none focus:border-cyan-500" />
+            <button type="button" onClick={applyPromo} disabled={promoLoading || !promoCode.trim()} className="h-11 rounded-lg bg-zinc-900 px-4 text-sm font-black text-white disabled:opacity-50">{promoLoading ? tr("Checking…") : tr("Apply")}</button>
           </div>
-          {appliedPromo && <p className="mt-2 text-sm font-bold text-emerald-700">{appliedPromo.percentage}% discount applied.</p>}
+          {appliedPromo && <p className="mt-2 text-sm font-bold text-emerald-700">{tr.locale === "ar" ? `تم تطبيق خصم ${appliedPromo.percentage}٪.` : `${appliedPromo.percentage}% discount applied.`}</p>}
         </div>
-        {subtotal === 0 && <p className="mt-5 flex items-center gap-2 rounded-xl bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800"><CheckCircle2 className="h-5 w-5 shrink-0" /> Free tickets are added directly to your account.</p>}
-        {checkoutError && <p role="alert" className="mt-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-800">{checkoutError}</p>}
-        <button type="button" disabled={submitting} onClick={submit} className="mt-6 flex h-14 w-full items-center justify-center gap-2 rounded-xl bg-cyan-600 px-5 font-black text-white shadow-lg shadow-cyan-500/20 transition hover:bg-cyan-700 disabled:cursor-not-allowed disabled:opacity-60"><CreditCard className="h-5 w-5" />{submitting ? "Processing…" : total === 0 ? "Get free tickets" : "Continue to secure payment"}</button>
+        {subtotal === 0 && <p className="mt-5 flex items-center gap-2 rounded-xl bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800"><CheckCircle2 className="h-5 w-5 shrink-0" />  {tr("Free tickets are added directly to your account.")}</p>}
+        {checkoutError && <p role="alert" className="mt-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-800">{tr(checkoutError)}</p>}
+        <button type="button" disabled={submitting} onClick={submit} className="mt-6 flex h-14 w-full items-center justify-center gap-2 rounded-xl bg-cyan-600 px-5 font-black text-white shadow-lg shadow-cyan-500/20 transition hover:bg-cyan-700 disabled:cursor-not-allowed disabled:opacity-60"><CreditCard className="h-5 w-5" />{submitting ? tr("Processing…") : total === 0 ? tr("Get free tickets") : tr("Continue to secure payment")}</button>
       </section>
     </main>
   );

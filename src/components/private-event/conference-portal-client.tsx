@@ -1,5 +1,7 @@
 "use client";
 
+import { usePublicCopy } from "@/lib/use-public-copy";
+
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import QRCode from "qrcode";
@@ -41,14 +43,14 @@ type PortalEvent = {
   resources: EventResource[];
   speakers: LineupArtist[];
 };
-const formatDate = (value: string) =>
-  new Intl.DateTimeFormat(undefined, {
+const formatDate = (value: string, locale = "en") =>
+  new Intl.DateTimeFormat(locale === "ar" ? "ar-BH" : "en-BH", {
     dateStyle: "full",
     timeStyle: "short",
   }).format(new Date(value));
-const formatTime = (value?: string | null) =>
+const formatTime = (value?: string | null, locale = "en") =>
   value
-    ? new Intl.DateTimeFormat(undefined, {
+    ? new Intl.DateTimeFormat(locale === "ar" ? "ar-BH" : "en-BH", {
         hour: "numeric",
         minute: "2-digit",
       }).format(new Date(value))
@@ -61,6 +63,7 @@ function QuestionBox({
   eventId: string;
   session: EventSessionRecord;
 }) {
+  const tr = usePublicCopy();
   const [body, setBody] = useState("");
   const [state, setState] = useState<"idle" | "sending" | "sent" | "error">(
     "idle",
@@ -85,8 +88,7 @@ function QuestionBox({
     <div className="mt-4 rounded-xl border border-sky-200 bg-sky-50 p-3 dark:border-cyan-300/20 dark:bg-cyan-300/10">
       <label className="flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-white">
         <MessageCircleQuestion className="h-4 w-4 text-cyan-600 dark:text-cyan-300" />
-        Ask the speaker
-      </label>
+         {tr("Ask the speaker")} </label>
       <div className="mt-2 flex flex-col gap-2 sm:flex-row">
         <textarea
           value={body}
@@ -96,7 +98,7 @@ function QuestionBox({
           }}
           maxLength={600}
           rows={2}
-          placeholder="Write your question"
+          placeholder={tr("Write your question")}
           className="min-w-0 flex-1 resize-none rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-cyan-500 dark:border-white/15 dark:bg-slate-950 dark:text-white"
         />
         <button
@@ -105,26 +107,23 @@ function QuestionBox({
           className="inline-flex min-h-10 items-center justify-center gap-1 rounded-lg bg-cyan-600 px-4 text-sm font-bold text-white disabled:opacity-50"
         >
           <Send className="h-4 w-4" />
-          {state === "sending" ? "Sending…" : "Send"}
+          {state === "sending" ? tr("Sending…") : tr("Send")}
         </button>
       </div>
       <div className="mt-2 flex items-center justify-between gap-3">
         <span className="text-[11px] text-slate-500 dark:text-slate-400">
-          Your name will be shown to the speaker.
-        </span>
+           {tr("Your name will be shown to the speaker.")} </span>
         <span className="text-[11px] tabular-nums text-slate-500 dark:text-slate-400">
           {body.length}/600
         </span>
       </div>
       {state === "sent" && (
         <p className="mt-2 text-xs font-semibold text-emerald-700 dark:text-emerald-300">
-          Your question was sent with your name.
-        </p>
+           {tr("Your question was sent with your name.")} </p>
       )}
       {state === "error" && (
         <p className="mt-2 text-xs font-semibold text-red-700 dark:text-red-300">
-          Could not send the question. Please try again.
-        </p>
+           {tr("Could not send the question. Please try again.")} </p>
       )}
     </div>
   );
@@ -143,6 +142,7 @@ export function ConferencePortalClient({
   event: PortalEvent;
   sessions: EventSessionRecord[];
 }) {
+  const tr = usePublicCopy();
   const router = useRouter();
   const [qr, setQr] = useState("");
   const days = useMemo(
@@ -170,7 +170,7 @@ export function ConferencePortalClient({
   }, [event.endsAt, event.id, guestId, ticketBarcode]);
   async function signOut() {
     await fetch("/api/private-events/signout", { method: "POST" });
-    router.replace("/private-event");
+    router.replace(tr.href("/private-event"));
     router.refresh();
   }
   return (
@@ -182,8 +182,7 @@ export function ConferencePortalClient({
             className="inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-black hover:bg-slate-100 dark:hover:bg-white/10"
           >
             <ArrowLeft className="h-4 w-4" />
-            Back
-          </button>
+             {tr("Back")} </button>
           <p className="truncate text-sm font-black text-slate-700 dark:text-slate-200">
             {event.title}
           </p>
@@ -192,8 +191,7 @@ export function ConferencePortalClient({
             className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-2 text-sm font-black text-slate-800 hover:border-rose-300 hover:text-rose-700 dark:border-white/15 dark:text-slate-100"
           >
             <LogOut className="h-4 w-4" />
-            Sign out
-          </button>
+             {tr("Sign out")} </button>
         </div>
       </header>
       <section className="relative isolate overflow-hidden border-b border-slate-200 bg-slate-950 text-white dark:border-white/10">
@@ -207,19 +205,16 @@ export function ConferencePortalClient({
         <div className="absolute inset-0 -z-10 bg-[linear-gradient(110deg,rgba(5,10,20,.96),rgba(5,10,20,.62))]" />
         <div className="mx-auto max-w-6xl px-5 py-12 sm:px-8 sm:py-16">
           <p className="text-xs font-black uppercase tracking-[0.24em] text-cyan-200">
-            Private conference portal
-          </p>
+             {tr("Private conference portal")} </p>
           <h1 className="mt-3 max-w-3xl text-4xl font-black tracking-tight sm:text-6xl">
             {event.title}
           </h1>
           <p className="mt-4 max-w-2xl text-slate-200">
-            Welcome, {attendeeName}. Your complete conference programme is
-            ready.
-          </p>
+             {tr("Welcome,")} {attendeeName}{tr(". Your complete conference programme is ready.")} </p>
           <div className="mt-7 flex flex-wrap gap-3 text-sm font-bold">
             <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-black/25 px-4 py-2">
               <CalendarDays className="h-4 w-4 text-cyan-200" />
-              {formatDate(event.startsAt)}
+              {formatDate(event.startsAt, tr.locale)}
             </span>
             <a
               href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(event.location)}`}
@@ -235,7 +230,7 @@ export function ConferencePortalClient({
       </section>
       <main className="mx-auto max-w-6xl space-y-10 px-5 py-8 sm:px-8 sm:py-10">
         <nav
-          aria-label="Conference sections"
+          aria-label={tr("Conference sections")}
           className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         >
           <a
@@ -243,48 +238,43 @@ export function ConferencePortalClient({
             className="inline-flex shrink-0 items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-black shadow-sm dark:border-white/10 dark:bg-[#121722]"
           >
             <QrCode className="h-4 w-4 text-cyan-600 dark:text-cyan-300" />
-            Overview
-          </a>
+             {tr("Overview")} </a>
           {event.speakers.length > 0 && (
             <a
               href="#speakers"
               className="inline-flex shrink-0 items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-black shadow-sm dark:border-white/10 dark:bg-[#121722]"
             >
               <Users className="h-4 w-4 text-cyan-600 dark:text-cyan-300" />
-              Speakers
-            </a>
+               {tr("Speakers")} </a>
           )}
           <a
             href="#schedule"
             className="inline-flex shrink-0 items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-black shadow-sm dark:border-white/10 dark:bg-[#121722]"
           >
             <ListChecks className="h-4 w-4 text-cyan-600 dark:text-cyan-300" />
-            Schedule
-          </a>
+             {tr("Schedule")} </a>
           <a
             href="#resources"
             className="inline-flex shrink-0 items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-black shadow-sm dark:border-white/10 dark:bg-[#121722]"
           >
             <FileText className="h-4 w-4 text-cyan-600 dark:text-cyan-300" />
-            Resources
-          </a>
+             {tr("Resources")} </a>
         </nav>
         <section
           id="overview"
           className="scroll-mt-24 grid gap-5 lg:grid-cols-[1fr_300px]"
         >
           <article className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-[#121722]">
-            <h2 className="text-2xl font-black">Conference overview</h2>
+            <h2 className="text-2xl font-black">{tr("Conference overview")}</h2>
             <p className="mt-3 leading-7 text-slate-600 dark:text-slate-300">
               {event.description ||
-                "Your organiser will share the latest conference information here."}
+                tr("Your organiser will share the latest conference information here.")}
             </p>
           </article>
           <article className="rounded-3xl border border-slate-200 bg-white p-6 text-center shadow-sm dark:border-white/10 dark:bg-[#121722]">
             <h2 className="flex items-center justify-center gap-2 text-lg font-black">
               <QrCode className="h-5 w-5 text-cyan-600 dark:text-cyan-300" />
-              Digital access pass
-            </h2>
+               {tr("Digital access pass")} </h2>
             {qr ? (
               <img
                 src={qr}
@@ -293,13 +283,10 @@ export function ConferencePortalClient({
               />
             ) : (
               <p className="mt-4 text-sm text-slate-500">
-                Preparing your QR pass…
-              </p>
+                 {tr("Preparing your QR pass…")} </p>
             )}
             <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">
-              Show this at registration. It uses the same secure check-in flow
-              as an iTicket ticket.
-            </p>
+               {tr("Show this at registration. It uses the same secure check-in flow as an iTicket ticket.")} </p>
           </article>
         </section>
         {event.announcements.length > 0 && (
@@ -308,9 +295,8 @@ export function ConferencePortalClient({
               <Bell className="h-6 w-6 text-cyan-600 dark:text-cyan-300" />
               <div>
                 <p className="text-xs font-black uppercase tracking-[0.2em] text-cyan-700 dark:text-cyan-300">
-                  Latest updates
-                </p>
-                <h2 className="text-2xl font-black">Conference notices</h2>
+                   {tr("Latest updates")} </p>
+                <h2 className="text-2xl font-black">{tr("Conference notices")}</h2>
               </div>
             </div>
             <div className="grid gap-3 md:grid-cols-2">
@@ -334,9 +320,8 @@ export function ConferencePortalClient({
           <section id="speakers" className="scroll-mt-24">
             <div className="mb-5">
               <p className="text-xs font-black uppercase tracking-[0.22em] text-cyan-700 dark:text-cyan-300">
-                Conference speakers
-              </p>
-              <h2 className="mt-1 text-3xl font-black">Meet the speakers</h2>
+                 {tr("Conference speakers")} </p>
+              <h2 className="mt-1 text-3xl font-black">{tr("Meet the speakers")}</h2>
             </div>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {event.speakers.map((speaker) => (
@@ -378,25 +363,20 @@ export function ConferencePortalClient({
         <section id="schedule" className="scroll-mt-24">
           <div className="mb-5">
             <p className="text-xs font-black uppercase tracking-[0.22em] text-cyan-700 dark:text-cyan-300">
-              Full programme
-            </p>
-            <h2 className="mt-1 text-3xl font-black">Schedule</h2>
+               {tr("Full programme")} </p>
+            <h2 className="mt-1 text-3xl font-black">{tr("Schedule")}</h2>
             <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
-              Everything happening at the conference, arranged by day. Ask a
-              live question during any session.
-            </p>
+               {tr("Everything happening at the conference, arranged by day. Ask a live question during any session.")} </p>
           </div>
           {sessions.length === 0 ? (
             <p className="rounded-2xl border border-slate-200 bg-white p-6 text-slate-600 dark:border-white/10 dark:bg-[#121722] dark:text-slate-300">
-              The full schedule will appear here once published by the
-              organiser.
-            </p>
+               {tr("The full schedule will appear here once published by the organiser.")} </p>
           ) : (
             <div className="space-y-7">
               {days.map((day) => (
                 <div key={day}>
                   <h3 className="mb-3 text-lg font-black text-cyan-800 dark:text-cyan-200">
-                    {day}
+                    {Number.isNaN(Date.parse(day)) ? tr(day) : new Intl.DateTimeFormat(tr.locale === "ar" ? "ar-BH" : "en-BH", { dateStyle: "full" }).format(new Date(day))}
                   </h3>
                   <div className="space-y-3">
                     {sessions
@@ -404,7 +384,7 @@ export function ConferencePortalClient({
                         (item) =>
                           (item.startsAt
                             ? new Date(item.startsAt).toDateString()
-                            : "Full programme") === day,
+                            : tr("Full programme")) === day,
                       )
                       .map((session) => (
                         <article
@@ -413,9 +393,9 @@ export function ConferencePortalClient({
                         >
                           <div className="grid gap-4 md:grid-cols-[150px_1fr]">
                             <div className="text-sm font-black text-cyan-700 dark:text-cyan-200">
-                              {formatTime(session.startsAt)}
+                              {formatTime(session.startsAt, tr.locale)}
                               <span className="mt-1 block font-normal text-slate-500 dark:text-slate-400">
-                                {session.location || "Room TBA"}
+                                {session.location || tr("Room TBA")}
                               </span>
                             </div>
                             <div>
@@ -435,8 +415,7 @@ export function ConferencePortalClient({
                                 </div>
                                 {session.liveNow && (
                                   <span className="rounded-full bg-red-100 px-3 py-1 text-xs font-black text-red-700 dark:bg-red-500/15 dark:text-red-300">
-                                    LIVE NOW
-                                  </span>
+                                     {tr("LIVE NOW")} </span>
                                 )}
                               </div>
                               {session.description && (
@@ -453,7 +432,7 @@ export function ConferencePortalClient({
                                 >
                                   <ExternalLink className="h-4 w-4" />
                                   {session.liveStreamLabel ||
-                                    "Open live session"}
+                                    tr("Open live session")}
                                 </a>
                               )}
                               {session.speaker && (
@@ -479,8 +458,7 @@ export function ConferencePortalClient({
           <article className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-[#121722]">
             <h2 className="flex items-center gap-2 text-xl font-black">
               <MapPin className="h-5 w-5 text-cyan-600 dark:text-cyan-300" />
-              Venue & navigation
-            </h2>
+               {tr("Venue & navigation")} </h2>
             <p className="mt-3 text-slate-600 dark:text-slate-300">
               {event.location}
             </p>
@@ -490,14 +468,13 @@ export function ConferencePortalClient({
               rel="noreferrer"
               className="mt-5 inline-flex items-center gap-2 rounded-xl bg-cyan-600 px-4 py-2.5 text-sm font-black text-white"
             >
-              Get directions <ExternalLink className="h-4 w-4" />
+               {tr("Get directions")} <ExternalLink className="h-4 w-4" />
             </a>
           </article>
           <article className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-[#121722]">
             <h2 className="flex items-center gap-2 text-xl font-black">
               <FileText className="h-5 w-5 text-cyan-600 dark:text-cyan-300" />
-              Resources
-            </h2>
+               {tr("Resources")} </h2>
             <div className="mt-4 space-y-2">
               {event.agendaUrl && (
                 <a
@@ -506,7 +483,7 @@ export function ConferencePortalClient({
                   rel="noreferrer"
                   className="flex items-center justify-between rounded-xl border border-slate-200 px-4 py-3 text-sm font-bold dark:border-white/10"
                 >
-                  <span>Schedule PDF</span>
+                  <span>{tr("Schedule PDF")}</span>
                   <Download className="h-4 w-4 text-cyan-600 dark:text-cyan-300" />
                 </a>
               )}
@@ -536,8 +513,7 @@ export function ConferencePortalClient({
               ))}
               {!event.agendaUrl && event.resources.length === 0 && (
                 <p className="text-sm text-slate-500">
-                  No documents have been shared yet.
-                </p>
+                   {tr("No documents have been shared yet.")} </p>
               )}
             </div>
           </article>
@@ -548,8 +524,7 @@ export function ConferencePortalClient({
             className="inline-flex items-center gap-2 rounded-xl border border-rose-200 px-4 py-3 text-sm font-black text-rose-700 hover:bg-rose-50 dark:border-rose-400/30 dark:text-rose-300 dark:hover:bg-rose-500/10"
           >
             <LogOut className="h-4 w-4" />
-            Sign out of conference
-          </button>
+             {tr("Sign out of conference")} </button>
         </footer>
       </main>
     </div>

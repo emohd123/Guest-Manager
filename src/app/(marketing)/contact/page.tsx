@@ -1,5 +1,7 @@
 "use client";
 
+import { usePublicCopy } from "@/lib/use-public-copy";
+
 import { useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -10,6 +12,7 @@ import { Mail, MapPin, Phone, MessageSquare, Send, Clock, Sparkles } from "lucid
 import { toast } from "sonner";
 
 export default function ContactPage() {
+  const tr = usePublicCopy();
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -36,18 +39,14 @@ export default function ContactPage() {
         <div className="relative mx-auto max-w-3xl text-center">
           <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-1.5 text-[10px] font-black uppercase tracking-[0.25em] text-slate-600 backdrop-blur-md">
             <Sparkles className="h-3.5 w-3.5 text-blue-400 animate-pulse" />
-            Get in Touch
-          </div>
+             {tr("Get in Touch")} </div>
           <h1 className="text-5xl font-black tracking-tighter text-slate-900 sm:text-6xl uppercase leading-none">
-            Chat With{" "}
+             {tr("Chat With")}{" "}
             <span className="bg-[linear-gradient(110deg,#2563eb,45%,#7c3aed,55%,#db2777)] bg-[length:200%_100%] bg-clip-text text-transparent animate-[shine_6s_linear_infinite]">
-              An Expert
-            </span>
+               {tr("An Expert")} </span>
           </h1>
           <p className="mt-6 text-lg text-slate-600 leading-relaxed font-medium">
-            Have questions about iTicket? Our team is here to help you find
-            the right solution for your events.
-          </p>
+             {tr("Have questions about iTicket? Our team is here to help you find the right solution for your events.")} </p>
         </div>
       </section>
 
@@ -62,17 +61,17 @@ export default function ContactPage() {
                   <MessageSquare className="h-5 w-5 text-blue-400" />
                 </div>
                 <div>
-                  <h2 className="font-bold text-slate-900">Send us a message</h2>
-                  <p className="text-sm text-slate-600">We&apos;ll get back to you within 24 hours.</p>
+                  <h2 className="font-bold text-slate-900">{tr("Send us a message")}</h2>
+                  <p className="text-sm text-slate-600">{tr("We'll get back to you within 24 hours.")}</p>
                 </div>
               </div>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="space-y-2">
-                    <Label htmlFor="name" className="text-slate-600 text-xs font-bold uppercase tracking-wider">Full Name *</Label>
+                    <Label htmlFor="name" className="text-slate-600 text-xs font-bold uppercase tracking-wider">{tr("Full Name *")}</Label>
                     <Input
                       id="name"
-                      placeholder="John Doe"
+                      placeholder={tr("John Doe")}
                       value={formData.name}
                       onChange={(e) => setFormData((d) => ({ ...d, name: e.target.value }))}
                       required
@@ -80,11 +79,11 @@ export default function ContactPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="email" className="text-slate-600 text-xs font-bold uppercase tracking-wider">Email Address *</Label>
+                    <Label htmlFor="email" className="text-slate-600 text-xs font-bold uppercase tracking-wider">{tr("Email Address *")}</Label>
                     <Input
                       id="email"
                       type="email"
-                      placeholder="john@company.com"
+                      placeholder={tr("john@company.com")}
                       value={formData.email}
                       onChange={(e) => setFormData((d) => ({ ...d, email: e.target.value }))}
                       required
@@ -93,20 +92,20 @@ export default function ContactPage() {
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="company" className="text-slate-600 text-xs font-bold uppercase tracking-wider">Company Name</Label>
+                  <Label htmlFor="company" className="text-slate-600 text-xs font-bold uppercase tracking-wider">{tr("Company Name")}</Label>
                   <Input
                     id="company"
-                    placeholder="Acme Events Inc."
+                    placeholder={tr("Acme Events Inc.")}
                     value={formData.company}
                     onChange={(e) => setFormData((d) => ({ ...d, company: e.target.value }))}
                     className="bg-white border-slate-200 text-slate-900 placeholder:text-slate-500 focus:border-purple-500/50 rounded-xl"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="message" className="text-slate-600 text-xs font-bold uppercase tracking-wider">Message *</Label>
+                  <Label htmlFor="message" className="text-slate-600 text-xs font-bold uppercase tracking-wider">{tr("Message *")}</Label>
                   <Textarea
                     id="message"
-                    placeholder="Tell us about your event management needs..."
+                    placeholder={tr("Tell us about your event management needs...")}
                     rows={6}
                     value={formData.message}
                     onChange={(e) => setFormData((d) => ({ ...d, message: e.target.value }))}
@@ -120,7 +119,7 @@ export default function ContactPage() {
                   disabled={sending}
                 >
                   <Send className="h-4 w-4" />
-                  {sending ? "Sending..." : "Send Message"}
+                  {sending ? tr("Sending...") : tr("Send Message")}
                 </Button>
               </form>
             </div>
@@ -131,10 +130,10 @@ export default function ContactPage() {
             <div className="rounded-2xl border border-slate-200 bg-white p-6">
               <div className="space-y-5">
                 {[
-                  { icon: Mail, label: "Email", value: "info@onestonead.com", color: "blue" },
-                  { icon: Phone, label: "Phone", value: "+973-33382466", color: "purple" },
-                  { icon: MapPin, label: "Office", value: "Bahrain, Seef Area", color: "pink" },
-                  { icon: Clock, label: "Response Time", value: "Within 24 hours", color: "blue" },
+                  { icon: Mail, label: tr("Email"), value: "info@onestonead.com", color: "blue" },
+                  { icon: Phone, label: tr("Phone"), value: "+973-33382466", color: "purple" },
+                  { icon: MapPin, label: tr("Office"), value: tr("Bahrain, Seef Area"), color: "pink" },
+                  { icon: Clock, label: tr("Response Time"), value: tr("Within 24 hours"), color: "blue" },
                 ].map((item) => (
                   <div key={item.label} className="flex items-start gap-4">
                     <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border ${

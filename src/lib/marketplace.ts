@@ -140,3 +140,10 @@ export function getLocalizedText(
   if (typeof english === "string" && english.trim()) return english;
   return fallback;
 }
+
+export function withPublicLocale(path: string, locale: LocaleCode) {
+  if (!path.startsWith("/") || path.startsWith("//")) return path;
+  const url = new URL(path, "https://www.iticket.info");
+  url.searchParams.set("locale", locale);
+  return `${url.pathname}${url.search}${url.hash}`;
+}
