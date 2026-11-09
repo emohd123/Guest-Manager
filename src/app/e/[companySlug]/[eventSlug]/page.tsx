@@ -941,6 +941,27 @@ export default function PublicEventPage({
               </ul>
             </details>
 
+            <details id="refund-policy" className="order-[36] group mb-5 scroll-mt-24 overflow-hidden rounded-xl border border-cyan-300/30 bg-[#0b151d] text-white">
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-4 font-black marker:content-none">
+                <span className="flex items-center gap-2"><ShieldCheck className="h-5 w-5 text-cyan-300" />{locale === "ar" ? "سياسة الاسترداد" : "Refund Policy"}</span>
+                <ChevronRight className="h-4 w-4 text-cyan-300 transition-transform group-open:rotate-90" />
+              </summary>
+              <div className="space-y-3 border-t border-white/10 px-5 py-4 text-xs leading-5 text-slate-300">
+                <p>{locale === "ar"
+                  ? "شراء التذاكر نهائي. لا تُرد قيمة التذكرة بسبب تغيير الرأي أو الخطأ في الحجز أو عدم الحضور."
+                  : "Ticket purchases are final. Change of mind, booking mistakes, and non-attendance do not qualify for a refund."}</p>
+                <p>{locale === "ar"
+                  ? "يمكن طلب الاسترداد عند إلغاء الفعالية أو تأجيلها أو حدوث تغيير جوهري في التجربة المعلنة."
+                  : "Refunds may be requested if the event is cancelled, postponed, or significantly changed from the advertised experience."}</p>
+                <p>{locale === "ar"
+                  ? "لا تشمل المبالغ المستردة رسوم الخدمة الموضحة قبل الدفع، إلا عندما يفرض القانون استردادها. تظل حقوق المستهلك الإلزامية محفوظة."
+                  : "Approved refunds exclude the service charge disclosed before payment, except where a refund of that charge is legally required. Mandatory consumer rights remain protected."}</p>
+                <Link href="/refund-policy" className="inline-block font-bold text-cyan-300 underline underline-offset-2 hover:text-cyan-100">
+                  {locale === "ar" ? "قراءة سياسة الاسترداد كاملة" : "Read the full refund policy"}
+                </Link>
+              </div>
+            </details>
+
             <section
               id="tickets"
               className="order-[30] scroll-mt-6 rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm"
@@ -1106,6 +1127,10 @@ export default function PublicEventPage({
 
             <p className="mt-5 border-t border-zinc-100 pt-4 text-xs leading-5 text-zinc-500 dark:border-slate-700 dark:text-slate-300">
                 {t.terms}
+                {" "}
+                <Link href="/refund-policy" className="font-semibold text-cyan-700 underline-offset-2 hover:underline dark:text-cyan-300">
+                  {locale === "ar" ? "سياسة الاسترداد" : "Refund policy"}
+                </Link>
               </p>
             </section>
 

@@ -150,6 +150,7 @@ function TicketCheckout() {
           {discountedSubtotal > 0 && <div className="flex justify-between text-sm"><span className="text-zinc-600">Service fee (10%)</span><strong>{formatMoney(serviceFee, currency)}</strong></div>}
           <div className="flex justify-between border-t border-zinc-200 pt-3 text-lg font-black text-zinc-950"><span>Total</span><span>{total === 0 ? "FREE" : formatMoney(total, currency)}</span></div>
         </div>
+        {serviceFee > 0 && <p className="mt-4 text-sm leading-6 text-zinc-600">Tickets are refundable only for qualifying significant event changes or where required by law. The service charge is excluded from approved refunds unless applicable law requires otherwise. <a href="/refund-policy" target="_blank" rel="noopener noreferrer" className="font-semibold text-cyan-700 underline underline-offset-2">Read the refund policy</a>.</p>}
         <div className="mt-5 rounded-xl border border-zinc-200 bg-white p-4">
           <label className="text-xs font-black uppercase tracking-wider text-zinc-600">Promo code</label>
           <div className="mt-2 flex gap-2">

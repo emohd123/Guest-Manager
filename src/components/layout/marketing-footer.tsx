@@ -22,6 +22,7 @@ const footerLinks = {
   Legal: [
     { name: "Privacy Policy", href: "/privacy-policy" },
     { name: "Terms of Service", href: "/terms-of-service" },
+    { name: "Refund Policy", href: "/refund-policy" },
     { name: "Cookie Policy", href: "/privacy-policy#cookies" },
   ],
 };
@@ -96,6 +97,12 @@ export function MarketingFooter() {
               className="text-sm text-slate-600 hover:text-cyan-700 dark:text-slate-300 dark:hover:text-cyan-300"
             >
               Terms
+            </Link>
+            <Link
+              href="/refund-policy"
+              className="text-sm text-slate-600 hover:text-cyan-700 dark:text-slate-300 dark:hover:text-cyan-300"
+            >
+              Refunds
             </Link>
           </div>
         </div>
