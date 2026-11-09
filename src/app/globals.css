@@ -4,6 +4,28 @@
 
 @variant dark (&:where(.dark, .dark *));
 
+/* Arabic needs connected letter shaping, not the Latin tracking utilities.
+   :lang() also covers Arabic fields inside the English dashboard, while
+   explicitly English islands (such as the iTicket wordmark) retain tracking. */
+:where(body:lang(ar), [lang="ar"], .font-sans:lang(ar)) {
+  font-family: var(--font-arabic), Tahoma, Arial, sans-serif;
+}
+
+:where([lang="en"]) {
+  font-family: var(--font-sans), Arial, sans-serif;
+}
+
+:where(:lang(ar)) {
+  letter-spacing: normal !important;
+  word-spacing: 0.08em;
+  font-kerning: normal;
+}
+
+:where(:lang(ar)).font-black,
+:where(:lang(ar)).font-extrabold {
+  font-weight: 700;
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
