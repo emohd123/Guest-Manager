@@ -1,6 +1,6 @@
-"use server";
-
+import "server-only";
 import { createSupabaseAdminClient } from "@/server/supabase/admin";
+import { pushEventNotification } from "@/server/services/notification-devices";
 
 export type NotificationType =
   | "event_update"
@@ -12,7 +12,6 @@ export type NotificationType =
   | "session_reminder"
   | "live_stream"
   | "chat_message";
-
 interface CreateNotificationsOptions {
   eventId: string;
   title: string;
@@ -21,104 +20,72 @@ interface CreateNotificationsOptions {
   recipientEmail?: string;
 }
 
-export async function createEventNotifications(opts: CreateNotificationsOptions) {
-  const { eventId, title, body, type, recipientEmail } = opts;
-
+export async function createEventNotifications(
+  opts: CreateNotificationsOptions,
+) {
   try {
-    // These notifications can contain attendee data and are always created by
-    // trusted server actions. Never rely on an anonymous Data API client.
-    const supabase = createSupabaseAdminClient();
-    const { data: eventRow } = await supabase
-      .from("events")
-      .select("metadata")
-      .eq("id", eventId)
-      .maybeSingle();
-
-    const pushDevices = Array.isArray((eventRow as any)?.metadata?.eventApp?.pushDevices)
-      ? ((eventRow as any).metadata.eventApp.pushDevices as Array<{ email: string; token: string }>)
-      : [];
-
-    async function sendExpoPush(recipientEmails: string[]) {
-      const tokens = [...new Set(pushDevices.filter((device) => recipientEmails.includes(device.email)).map((device) => device.token))];
-      if (!tokens.length) return;
-
-      try {
-        await fetch("https://exp.host/--/api/v2/push/send", {
-          method: "POST",
-          headers: {
-            "content-type": "application/json",
-            accept: "application/json",
-          },
-          body: JSON.stringify(
-            tokens.map((to) => ({
-              to,
-              title,
-              body,
-              data: {
-                eventId,
-                type,
-              },
-            }))
-          ),
-        });
-      } catch (pushError) {
-        console.error("[createEventNotifications] Expo push failed:", pushError);
-      }
+    const admin = createSupabaseAdminClient();
+    let emails: string[];
+    if (opts.recipientEmail)
+      emails = [opts.recipientEmail.trim().toLowerCase()];
+    else {
+      const [guests, tickets] = await Promise.all([
+        admin
+          .from("guests")
+          .select("email")
+          .eq("event_id", opts.eventId)
+          .not("email", "is", null),
+        admin
+          .from("tickets")
+          .select("attendee_email")
+          .eq("event_id", opts.eventId)
+          .not("attendee_email", "is", null),
+      ]);
+      if (guests.error || tickets.error)
+        throw new Error("Could not load notification recipients");
+      emails = [
+        ...new Set(
+          [
+            ...(guests.data ?? []).map((item) => item.email),
+            ...(tickets.data ?? []).map((item) => item.attendee_email),
+          ]
+            .filter(
+              (email): email is string =>
+                typeof email === "string" && !!email.trim(),
+            )
+            .map((email) => email.trim().toLowerCase()),
+        ),
+      ];
     }
-
-    if (recipientEmail) {
-      const { error } = await supabase.from("visitor_notifications").insert({
-        event_id: eventId,
-        recipient_email: recipientEmail,
-        title,
-        body,
-        type,
-      });
-
+    for (let offset = 0; offset < emails.length; offset += 250) {
+      const { error } = await admin.from("visitor_notifications").insert(
+        emails.slice(offset, offset + 250).map((email) => ({
+          event_id: opts.eventId,
+          recipient_email: email,
+          title: opts.title,
+          body: opts.body,
+          type: opts.type,
+        })),
+      );
       if (error) throw error;
-      await sendExpoPush([recipientEmail]);
-      return;
     }
-
-    const { data: guests, error: guestsError } = await supabase
-      .from("guests")
-      .select("email")
-      .eq("event_id", eventId)
-      .not("email", "is", null);
-
-    if (guestsError) throw guestsError;
-
-    const guestEmails = [...new Set((guests ?? []).map((guest) => guest.email).filter(Boolean))];
-    let recipientEmails = guestEmails;
-
-    if (recipientEmails.length === 0) {
-      const { data: tickets, error: ticketsError } = await supabase
-        .from("tickets")
-        .select("attendee_email")
-        .eq("event_id", eventId)
-        .not("attendee_email", "is", null);
-
-      if (ticketsError) throw ticketsError;
-
-      recipientEmails = [...new Set((tickets ?? []).map((ticket) => ticket.attendee_email).filter(Boolean))];
+    let delivery = { accepted: 0, failed: 0 };
+    try {
+      delivery = await pushEventNotification({
+        ...opts,
+        emails,
+        recipientOnly: !!opts.recipientEmail,
+      });
+    } catch {
+      console.error("Push delivery unavailable; notification saved in inbox");
     }
-
-    if (recipientEmails.length === 0) {
-      return;
-    }
-
-    const rows = recipientEmails.map((email) => ({
-      event_id: eventId,
-      recipient_email: email,
-      title,
-      body,
-      type,
-    }));
-
-    const { error } = await supabase.from("visitor_notifications").insert(rows);
-    if (error) throw error;
-    await sendExpoPush(recipientEmails);
-  } catch (err) {
-    console.error("[createEventNotifications] Failed:", err);
+    return {
+      stored: emails.length,
+      pushAccepted: delivery.accepted,
+      pushFailed: delivery.failed,
+    };
+  } catch {
+    console.error("Could not save event notifications");
+    return null;
   }
 }

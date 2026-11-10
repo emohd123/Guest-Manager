@@ -173,6 +173,7 @@ export async function POST(request: NextRequest) {
         username:
           credentialGuest.custom_data.accessUsername ?? input.username.trim(),
         role: "speaker",
+        guestId: credentialGuest.id,
       });
       response.cookies.set(privateEventAccessCookie.name, access.token, {
         ...privateEventAccessCookie.options,
@@ -214,6 +215,7 @@ export async function POST(request: NextRequest) {
         eventId: event.id,
         username: input.username.trim(),
         role: "speaker",
+        guestId: speakerSessions[0].id,
       });
       response.cookies.set(privateEventAccessCookie.name, access.token, {
         ...privateEventAccessCookie.options,

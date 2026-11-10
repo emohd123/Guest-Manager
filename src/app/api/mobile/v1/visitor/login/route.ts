@@ -30,11 +30,13 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       token: authData.session.access_token,
+      refreshToken: authData.session.refresh_token,
+      expiresAt: authData.session.expires_at,
       userId: authData.user.id,
       email: parsed.email,
       name,
       guestId: null,
-    });
+    }, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
     if (error instanceof z.ZodError) {
       return jsonError("Invalid request body", 400, "validation_failed");

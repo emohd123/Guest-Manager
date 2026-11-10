@@ -3,6 +3,7 @@ import { router, protectedProcedure, publicProcedure } from "../index";
 import { nanoid } from "nanoid";
 import { createSupabaseAdminClient } from "@/server/supabase/admin";
 import { handleEventPublished } from "@/server/services/discover-push";
+import { after } from "next/server";
 import { applyEventOwnership, isFullDashboardAccess } from "@/server/auth/event-access";
 import { recordAudit } from "@/server/audit";
 import { bilingualEventDetailsSchema, readBilingualEventDetails, withBilingualEventDetails } from "@/lib/event-details";
@@ -303,12 +304,12 @@ export const eventsRouter = router({
       void recordAudit({ companyId: ctx.companyId, actorId: ctx.userId, action: "event.updated", entityType: "event", entityId: updated.id, eventId: updated.id, metadata: { fields: Object.keys(input).filter((key) => key !== "id") } });
       if (input.status === "published" && previousStatus !== "published") {
         // Fire-and-forget: never delay or fail the mutation over a push.
-        void handleEventPublished({
+        after(() => handleEventPublished({
           id: updated.id,
           title: updated.title,
           categoryId: updated.category_id,
           description: updated.short_description ?? updated.description,
-        });
+        }));
       }
 
       return mapEvent(updated);

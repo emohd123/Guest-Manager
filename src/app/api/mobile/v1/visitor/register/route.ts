@@ -9,7 +9,7 @@ const bodySchema = z.object({
   firstName: z.string().min(1).max(100),
   lastName: z.string().max(100).optional().default(""),
   email: z.string().email(),
-  password: z.string().min(6, "Password must be at least 6 characters"),
+  password: z.string().min(8, "Password must be at least 8 characters"),
 });
 
 export async function POST(request: NextRequest) {
@@ -18,19 +18,20 @@ export async function POST(request: NextRequest) {
 
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      { auth: { persistSession: false, autoRefreshToken: false } }
     );
 
-    // Create the Supabase auth user (email_confirm:true = no verification email required)
-    const { data: authData, error: signUpError } = await supabase.auth.admin.createUser({
+    // Use the public verification flow. Never auto-confirm a customer email:
+    // ticket ownership is derived from that verified email address.
+    const { data: authData, error: signUpError } = await supabase.auth.signUp({
       email: parsed.email,
       password: parsed.password,
-      email_confirm: true,
-      user_metadata: {
+      options: { data: {
         name: `${parsed.firstName} ${parsed.lastName}`.trim(),
         firstName: parsed.firstName,
         lastName: parsed.lastName,
-      },
+      } },
     });
 
     if (signUpError) {
@@ -53,16 +54,8 @@ export async function POST(request: NextRequest) {
     const userId = authData.user.id;
     const fullName = `${parsed.firstName} ${parsed.lastName}`.trim();
 
-    // Sign the user in to get a session token
-    const { data: sessionData, error: sessionError } = await supabase.auth.signInWithPassword({
-      email: parsed.email,
-      password: parsed.password,
-    });
-
-    if (sessionError || !sessionData.session) {
-      console.error("[visitor/register] Sign-in after register failed:", sessionError);
-      return jsonError("Account created but sign-in failed. Please log in manually.", 500, "signin_failed");
-    }
+    if (!authData.session || !authData.user.email_confirmed_at) return NextResponse.json({ requiresEmailVerification: true }, { headers: { "Cache-Control": "no-store" } });
+    const sessionData = { session: authData.session };
 
     const token = sessionData.session.access_token;
 
@@ -73,10 +66,12 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       token,
+      refreshToken: sessionData.session.refresh_token,
+      expiresAt: sessionData.session.expires_at,
       userId,
       email: parsed.email,
       name: fullName,
-    });
+    }, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
     if (error instanceof z.ZodError) {
       const firstIssue = error.issues[0];

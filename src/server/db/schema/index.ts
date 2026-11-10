@@ -26,5 +26,6 @@ export * from "./mobile-mutation-dedup";
 export * from "./sent-emails";
 export * from "./visitor-messages";
 export * from "./visitor-notifications";
+export * from "./notification-devices";
 export * from "./reserved-seating";
 export * from "./audit-logs";

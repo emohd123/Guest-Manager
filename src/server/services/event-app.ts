@@ -2,6 +2,8 @@ import crypto from "crypto";
 import { isAssignedConferenceSpeaker, withoutSpeakerCredentials } from "@/lib/conference-speaker";
 import { createSupabaseAdminClient } from "@/server/supabase/admin";
 import { createEventNotifications } from "@/server/actions/createEventNotifications";
+import { after } from "next/server";
+import { changedAnnouncements } from "@/lib/push-notifications";
 import {
   type EventChatMessage,
   type EventChatThread,
@@ -512,7 +514,12 @@ export async function updateEventExperienceSettings(
     .single();
 
   if (error) throw new Error(error.message);
-  return normalizeEventAppSettings((data as { settings: unknown }).settings);
+  const saved = normalizeEventAppSettings((data as { settings: unknown }).settings);
+  const notices = changedAnnouncements(normalizeEventAppSettings(event.settings).announcements, saved.announcements);
+  if (notices.length) after(async () => {
+    for (const notice of notices) await createEventNotifications({ eventId, type: "event_update", title: notice.title, body: notice.body || notice.title });
+  });
+  return saved;
 }
 
 export async function upsertEventSession(
@@ -723,6 +730,10 @@ export async function getPrivateConferenceMobileData(input: {
 
   const guest = guestData as GuestRow;
   const settings = (experience.event.settings ?? {}) as Record<string, unknown>;
+  const { data: accessTicket, error: accessTicketError } = await supabase.from("tickets")
+    .select("barcode").eq("event_id", input.eventId).eq("guest_id", input.guestId)
+    .eq("status", "valid").order("created_at", { ascending: false }).limit(1).maybeSingle();
+  if (accessTicketError) throw new Error(accessTicketError.message);
   const publicPage = (settings.publicPage ?? {}) as {
     venueName?: string;
     locationText?: string;
@@ -750,6 +761,7 @@ export async function getPrivateConferenceMobileData(input: {
       id: guest.id,
       name: input.attendeeName,
       savedSessionIds: getGuestProfile(guest).savedSessionIds,
+      ticketBarcode: accessTicket?.barcode ?? null,
     },
     conference: {
       id: experience.event.id,

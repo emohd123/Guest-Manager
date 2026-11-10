@@ -82,7 +82,7 @@ export async function GET() {
       .is("deleted_at", null)
       .or(`ends_at.gte.${now},and(ends_at.is.null,starts_at.gte.${now})`)
       .order("starts_at", { ascending: true })
-      .limit(12);
+      .limit(100);
 
     if (eventsError) {
       return jsonError(eventsError.message, 500, "fetch_failed");
@@ -173,10 +173,15 @@ export async function GET() {
         return {
           id: event.id,
           title: event.title,
-          titleAr: getLocalizedText(publicPage.headline, "ar", event.title),
+          titleAr: getLocalizedText(settings.localized?.title ?? publicPage.headline, "ar", event.title),
+          description: event.description ?? event.short_description ?? "",
+          descriptionAr: getLocalizedText(settings.localized?.description ?? publicPage.description, "ar", event.description ?? event.short_description ?? ""),
+          galleryImages: Array.isArray(publicPage.galleryImages) ? publicPage.galleryImages.filter((url: unknown) => typeof url === "string") : [],
+          lineup: Array.isArray(publicPage.lineup) ? publicPage.lineup.map((artist: Record<string, unknown>) => ({ id: artist.id, name: artist.name, role: artist.role, bio: artist.bio, imageUrl: artist.imageUrl })) : [],
+          highlights: Array.isArray(publicPage.highlights) ? publicPage.highlights.filter((item: unknown) => typeof item === "string") : [],
           shortDescription: event.short_description ?? event.description,
           shortDescriptionAr: getLocalizedText(
-            publicPage.subheadline ?? publicPage.description,
+            settings.localized?.shortDescription ?? publicPage.subheadline ?? publicPage.description,
             "ar",
             event.short_description ?? event.description ?? ""
           ),

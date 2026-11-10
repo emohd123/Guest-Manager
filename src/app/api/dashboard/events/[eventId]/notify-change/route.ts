@@ -28,6 +28,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     if (!dbUser?.companyId) {
       return Response.json({ error: "Unauthorized" }, { status: 403 });
     }
+    if (dbUser.dashboardAccess !== "full") return Response.json({ error: "Full dashboard access is required to send notifications." }, { status: 403 });
 
     const { eventId } = await params;
     const { data: event, error: eventError } = await supabase
@@ -51,13 +52,15 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       body?: string;
     };
 
-    if (!type || !title || !body) {
+    if (typeof type !== "string" || typeof title !== "string" || typeof body !== "string" || !title.trim() || !body.trim() || !["event_update", "agenda_update", "message_reply", "networking_request", "networking_accept", "meeting_update", "session_reminder", "live_stream", "chat_message"].includes(type)) {
       return Response.json({ error: "Missing fields" }, { status: 400 });
     }
 
-    await createEventNotifications({ eventId, title, body, type });
+    if (title.length > 150 || body.length > 1500) return Response.json({ error: "Keep the title under 150 characters and message under 1500." }, { status: 400 });
+    const result = await createEventNotifications({ eventId, title, body, type });
+    if (!result) return Response.json({ error: "The notification could not be saved. Please retry." }, { status: 503 });
 
-    return Response.json({ success: true });
+    return Response.json({ success: true, ...result });
   } catch (error) {
     return Response.json(
       {

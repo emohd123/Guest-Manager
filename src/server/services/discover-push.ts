@@ -1,5 +1,6 @@
 import { createSupabaseAdminClient } from "@/server/supabase/admin";
 import { generateEventTagline } from "@/server/ai/marketplace-ai";
+import { sendExpoPush } from "./expo-push";
 
 /**
  * Push registry for the public Discover app (pre-auth marketplace users).
@@ -82,12 +83,16 @@ export async function broadcastNewEventPush(
 ): Promise<void> {
   try {
     const admin = createSupabaseAdminClient();
-    const { data, error } = await admin.from("discover_push_tokens").select("token,categories");
+    const { data: published } = await admin.from("events").select("id,status,event_type,slug,companies(slug)").eq("id", event.id).is("deleted_at", null).maybeSingle();
+    if (!published || published.status !== "published" || published.event_type === "conference") return;
+    const company = Array.isArray(published.companies) ? published.companies[0] : published.companies;
+    const url = company?.slug && published.slug ? `/e/${encodeURIComponent(company.slug)}/${encodeURIComponent(published.slug)}` : "/search";
+    const { data, error } = await admin.from("notification_devices").select("token").eq("enabled", true).eq("new_events", true).gt("updated_at", new Date(Date.now() - 90 * 86400000).toISOString());
     if (error) throw new Error(error.message);
 
     // Category targeting: devices with recorded interests only get events in
     // those categories; devices without preferences receive everything.
-    const rows = (data ?? []) as { token: string; categories: string[] | null }[];
+    const rows = (data ?? []) as { token: string; categories?: string[] | null }[];
     const tokens = [
       ...new Set(
         rows
@@ -103,22 +108,8 @@ export async function broadcastNewEventPush(
     if (tokens.length === 0) return;
     console.log(`[discover-push] Broadcasting "${event.title}" to ${tokens.length} device(s)`);
 
-    // Expo accepts up to 100 messages per request.
-    for (let i = 0; i < tokens.length; i += 100) {
-      const chunk = tokens.slice(i, i + 100);
-      await fetch("https://exp.host/--/api/v2/push/send", {
-        method: "POST",
-        headers: { "content-type": "application/json", accept: "application/json" },
-        body: JSON.stringify(
-          chunk.map((to) => ({
-            to,
-            title: "New event in Bahrain 🎉",
-            body: event.title,
-            data: { eventId: event.id, type: "new_event" },
-          }))
-        ),
-      });
-    }
+    const result = await sendExpoPush(tokens.map((to) => ({ to, title: "New event in Bahrain 🎉", body: event.title, data: { eventId: event.id, type: "new_event", category: categorySlug, url } })));
+    if (result.invalidTokens.length) await admin.from("notification_devices").update({ enabled: false }).in("token", result.invalidTokens);
   } catch (pushError) {
     // Broadcasting must never break the publish flow.
     console.error("[discover-push] Broadcast failed:", pushError);
